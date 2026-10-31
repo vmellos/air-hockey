@@ -1,0 +1,76 @@
+<resources>
+    <string name="app_name">Air Hockey</string>
+    <string name="app_tagline">Junte os celulares e comece a partida</string>
+
+    <!-- Menu Principal -->
+    <string name="menu_mode_solo">Modo Solo</string>
+    <string name="menu_mode_solo_desc">Jogue contra o computador com inteligência ajustável</string>
+    <string name="menu_mode_split">Mesa Dividida</string>
+    <string name="menu_mode_split_desc">2 jogadores no mesmo aparelho com tela compartilhada</string>
+    <string name="menu_mode_extended">Mesa Estendida</string>
+    <string name="menu_mode_extended_desc">2 aparelhos lado a lado ou topo a topo via Wi-Fi</string>
+    <string name="menu_settings">Configurações</string>
+
+    <!-- Lobby Mesa Estendida -->
+    <string name="lobby_title">Lobby da Mesa Estendida</string>
+    <string name="lobby_role_host">Criar Mesa</string>
+    <string name="lobby_role_host_desc">Anunciar na rede local e gerar código / QR Code</string>
+    <string name="lobby_role_guest">Entrar na Mesa</string>
+    <string name="lobby_role_guest_desc">Buscar mesas locais ou digitar código de 4 dígitos</string>
+    <string name="lobby_host_table_code">Código da Mesa</string>
+    <string name="lobby_host_listening">Transmitindo na rede local&#8230;</string>
+    <string name="lobby_host_ip">IP do Anfitrião: %1$s</string>
+    <string name="lobby_scan_qr">Escanear QR Code</string>
+    <string name="lobby_camera_permission_required">A permissão de câmera é necessária para escanear o QR Code.</string>
+    <string name="lobby_grant_camera">Conceder Permissão</string>
+    <string name="lobby_enter_code_hint">Código de 4 dígitos</string>
+    <string name="lobby_connect_btn">Conectar</string>
+    <string name="lobby_discovered_tables">Mesas Próximas Encontradas</string>
+    <string name="lobby_no_tables_found">Procurando mesas na rede local&#8230;</string>
+    <string name="lobby_status_connecting">Conectando ao anfitrião&#8230;</string>
+    <string name="lobby_status_connected">Conectado! Preparando mesa&#8230;</string>
+    <string name="lobby_status_waiting_guest">Aguardando o jogador 2 entrar&#8230;</string>
+    <string name="lobby_status_disconnected">Conexão perdida</string>
+    <string name="lobby_hotspot_hint">Dica: Se estiver usando o Roteador Wi-Fi (Hotspot), o convidado pode conectar apontando para o QR Code ou digitando o código.</string>
+
+    <!-- Calibração de Vão Físico -->
+    <string name="calibration_title">Calibração de Vão Físico</string>
+    <string name="calibration_instruction">Encoste os aparelhos topo a topo. Ajuste o controle deslizante até o disco passar pelas duas telas com continuidade natural.</string>
+    <string name="calibration_gap_label">Vão Físico: %1$.1f mm</string>
+    <string name="calibration_test_puck">Testando transição do disco</string>
+    <string name="calibration_ready">Iniciar Partida</string>
+
+    <!-- Arena de Jogo -->
+    <string name="game_countdown_ready">PREPARAR</string>
+    <string name="game_countdown_set">ATENÇÃO</string>
+    <string name="game_countdown_go">VAI!</string>
+    <string name="game_goal">PONTO!</string>
+    <string name="game_paused">Pausado</string>
+    <string name="game_resume">Continuar</string>
+    <string name="game_restart">Reiniciar</string>
+    <string name="game_exit_to_menu">Sair para o Menu</string>
+    <string name="game_reconnecting">Conexão instável. Reconectando&#8230; (%1$ds)</string>
+    <string name="game_winner_player1">Jogador 1 Venceu!</string>
+    <string name="game_winner_player2">Jogador 2 Venceu!</string>
+    <string name="game_winner_you">Você Venceu!</string>
+    <string name="game_winner_opponent">Oponente Venceu!</string>
+    <string name="game_play_again">Jogar Novamente</string>
+
+    <!-- Configurações -->
+    <string name="settings_title">Configurações</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_system">Padrão do Sistema</string>
+    <string name="settings_audio_haptics">Áudio e Vibração</string>
+    <string name="settings_sound_effects">Efeitos Sonoros</string>
+    <string name="settings_sound_volume">Volume do Som</string>
+    <string name="settings_haptics">Vibração Háptica</string>
+    <string name="settings_gameplay">Regras de Jogo</string>
+    <string name="settings_ai_difficulty">Dificuldade da IA</string>
+    <string name="settings_ai_easy">Fácil</string>
+    <string name="settings_ai_medium">Médio</string>
+    <string name="settings_ai_hard">Difícil</string>
+    <string name="settings_target_score">Pontos para Vencer</string>
+    <string name="settings_match_time">Tempo Limite</string>
+    <string name="settings_time_minutes">%1$d Minutos</string>
+    <string name="settings_bezel_default">Vão Físico Padrão</string>
+</resources>

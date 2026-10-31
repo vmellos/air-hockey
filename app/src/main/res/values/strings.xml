@@ -1,0 +1,76 @@
+<resources>
+    <string name="app_name">Air Hockey</string>
+    <string name="app_tagline">Push your devices together</string>
+
+    <!-- Menu Principal -->
+    <string name="menu_mode_solo">Solo Mode</string>
+    <string name="menu_mode_solo_desc">Play against AI with selectable difficulty</string>
+    <string name="menu_mode_split">Split Table</string>
+    <string name="menu_mode_split_desc">2 players on the same device</string>
+    <string name="menu_mode_extended">Extended Table</string>
+    <string name="menu_mode_extended_desc">2 devices side-by-side or top-to-top via Wi-Fi</string>
+    <string name="menu_settings">Settings</string>
+
+    <!-- Lobby Mesa Estendida -->
+    <string name="lobby_title">Extended Table Lobby</string>
+    <string name="lobby_role_host">Host Table</string>
+    <string name="lobby_role_host_desc">Broadcast presence and generate pairing code / QR</string>
+    <string name="lobby_role_guest">Join Table</string>
+    <string name="lobby_role_guest_desc">Discover local tables or enter code</string>
+    <string name="lobby_host_table_code">Table Code</string>
+    <string name="lobby_host_listening">Broadcasting on local network&#8230;</string>
+    <string name="lobby_host_ip">Host IP: %1$s</string>
+    <string name="lobby_scan_qr">Scan QR Code</string>
+    <string name="lobby_camera_permission_required">Camera permission is required to scan QR code.</string>
+    <string name="lobby_grant_camera">Grant Permission</string>
+    <string name="lobby_enter_code_hint">4-digit code</string>
+    <string name="lobby_connect_btn">Connect</string>
+    <string name="lobby_discovered_tables">Discovered Tables Nearby</string>
+    <string name="lobby_no_tables_found">Searching for nearby tables&#8230;</string>
+    <string name="lobby_status_connecting">Connecting to host&#8230;</string>
+    <string name="lobby_status_connected">Connected! Preparing table&#8230;</string>
+    <string name="lobby_status_waiting_guest">Waiting for player 2 to join&#8230;</string>
+    <string name="lobby_status_disconnected">Connection lost</string>
+    <string name="lobby_hotspot_hint">Tip: If using Mobile Hotspot, Guest can connect directly using the QR Code or code.</string>
+
+    <!-- Calibração de Vão Físico -->
+    <string name="calibration_title">Bezel Calibration</string>
+    <string name="calibration_instruction">Align devices top-to-top. Adjust slider until puck transition across screens feels seamless.</string>
+    <string name="calibration_gap_label">Bezel Gap: %1$.1f mm</string>
+    <string name="calibration_test_puck">Testing puck traversal</string>
+    <string name="calibration_ready">Ready to Play</string>
+
+    <!-- Arena de Jogo -->
+    <string name="game_countdown_ready">READY</string>
+    <string name="game_countdown_set">SET</string>
+    <string name="game_countdown_go">GO!</string>
+    <string name="game_goal">GOAL!</string>
+    <string name="game_paused">Paused</string>
+    <string name="game_resume">Resume</string>
+    <string name="game_restart">Restart</string>
+    <string name="game_exit_to_menu">Exit to Menu</string>
+    <string name="game_reconnecting">Connection lost. Reconnecting&#8230; (%1$ds)</string>
+    <string name="game_winner_player1">Player 1 Wins!</string>
+    <string name="game_winner_player2">Player 2 Wins!</string>
+    <string name="game_winner_you">You Win!</string>
+    <string name="game_winner_opponent">Opponent Wins!</string>
+    <string name="game_play_again">Play Again</string>
+
+    <!-- Configurações -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System Default</string>
+    <string name="settings_audio_haptics">Audio &amp; Feedback</string>
+    <string name="settings_sound_effects">Sound Effects</string>
+    <string name="settings_sound_volume">Sound Volume</string>
+    <string name="settings_haptics">Haptic Vibration</string>
+    <string name="settings_gameplay">Gameplay Rules</string>
+    <string name="settings_ai_difficulty">AI Difficulty</string>
+    <string name="settings_ai_easy">Easy</string>
+    <string name="settings_ai_medium">Medium</string>
+    <string name="settings_ai_hard">Hard</string>
+    <string name="settings_target_score">Target Score</string>
+    <string name="settings_match_time">Time Limit</string>
+    <string name="settings_time_minutes">%1$d Minutes</string>
+    <string name="settings_bezel_default">Default Bezel Gap</string>
+</resources>
