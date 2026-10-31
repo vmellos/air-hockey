@@ -64,6 +64,10 @@ _Avoid_: Pin, senha, room code, token, chave de acesso
 O início de uma partida em Mesa Estendida, comandado pelo dispositivo anfitrião somente depois que os dois aparelhos sinalizam que estão prontos, com a mesma contagem regressiva exibida em ambos.
 _Avoid_: Start, início automático, kickoff
 
+**Sessão Multijogador**:
+O ciclo de vida unificado de uma partida em Mesa Estendida que abrange o pareamento, calibração do vão físico, largada sincronizada, transmissão contínua de telemetria e encerramento coordenado da conexão entre os dispositivos.
+_Avoid_: Room, partida online, socket session
+
 **Ponto de Acesso Móvel**:
 O recurso sem fio do dispositivo anfitrião que emite uma rede Wi-Fi local direta para conexão do dispositivo convidado sem requerer roteador externo.
 _Avoid_: Roteador do telefone, hotspot pessoal, ancoragem, tethering

@@ -144,55 +144,11 @@ fun AirHockeyAppNavigation(
             val isHost = lobbyState.role == LobbyRole.HOST
             val gameMode = if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
 
-            // Conecta canais UDP e TCP do lobby com o GameViewModel
-            LaunchedEffect(isHost) {
-                if (isHost) {
-                    gameViewModel.onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy ->
-                        lobbyViewModel.udpSocket.sendHostTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy)
-                    }
-                    gameViewModel.onHostBroadcastState = { remoteState ->
-                        lobbyViewModel.tcpServer.sendMessage(ControlMessages.encodeState(remoteState))
-                    }
-                    lobbyViewModel.udpSocket.onGuestInputReceived = { input ->
-                        gameViewModel.onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
-                    }
-                    lobbyViewModel.onControlMessageReceived = { msg ->
-                        when (msg) {
-                            ControlMessages.PAUSE -> gameViewModel.pauseMatch()
-                            ControlMessages.RESUME -> gameViewModel.resumeMatch()
-                            ControlMessages.RESTART -> gameViewModel.restartMatch()
-                            ControlMessages.EXIT -> gameViewModel.onPeerExited()
-                        }
-                    }
-                } else {
-                    lobbyViewModel.udpSocket.onHostTelemetryReceived = { t ->
-                        gameViewModel.onGuestReceiveTelemetry(
-                            t.puckX, t.puckY,
-                            t.puckVx, t.puckVy,
-                            t.hostMalletX, t.hostMalletY,
-                            t.guestMalletX, t.guestMalletY
-                        )
-                    }
-                    gameViewModel.onGuestSendInput = { gx, gy ->
-                        lobbyViewModel.udpSocket.sendGuestInput(gx, gy)
-                    }
-                    gameViewModel.onGuestSendControl = { msg ->
-                        lobbyViewModel.sendControlMessage(msg)
-                    }
-                    lobbyViewModel.onRemoteStateReceived = { remoteState ->
-                        gameViewModel.onGuestReceiveState(remoteState)
-                    }
-                    lobbyViewModel.onControlMessageReceived = { msg ->
-                        if (msg == ControlMessages.EXIT) {
-                            gameViewModel.onPeerExited()
-                        }
-                    }
-                }
-            }
-
             // Largada Sincronizada: quando o gatilho de largada é acionado, ambos iniciam no mesmo instante
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
+                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
+
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = lobbyState.calibratedGapMm,

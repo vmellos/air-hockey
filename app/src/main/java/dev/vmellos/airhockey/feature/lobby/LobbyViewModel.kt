@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.network.DiscoveredTable
+import dev.vmellos.airhockey.feature.network.HybridSocketTransportAdapter
 import dev.vmellos.airhockey.feature.network.NetworkConstants
 import dev.vmellos.airhockey.feature.network.NsdDiscoveryManager
 import dev.vmellos.airhockey.feature.network.TcpControlClient
 import dev.vmellos.airhockey.feature.network.TcpControlServer
+import dev.vmellos.airhockey.feature.network.TransportConnectionState
 import dev.vmellos.airhockey.feature.network.UdpTelemetrySocket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +71,9 @@ class LobbyViewModel : ViewModel() {
     private val _state = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _state.asStateFlow()
 
+    var coordinator: MultiplayerMatchCoordinator? = null
+        private set
+
     var onRemoteStateReceived: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onControlMessageReceived: ((String) -> Unit)? = null
 
@@ -126,8 +131,10 @@ class LobbyViewModel : ViewModel() {
             )
         }
 
-        tcpServer.start()
-        udpSocket.startListening()
+        val transport = HybridSocketTransportAdapter(isHost = true)
+        val coord = MultiplayerMatchCoordinator(transport, isHost = true)
+        coordinator = coord
+        bindCoordinator(coord)
         nsdManager.startBroadcast(code)
     }
 
@@ -139,7 +146,6 @@ class LobbyViewModel : ViewModel() {
             )
         }
         nsdManager.startDiscovery()
-        udpSocket.startListening()
     }
 
     private fun setupTcpServerCallbacks() {
@@ -236,38 +242,53 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun notifyNavigateToCalibration() {
-        if (_state.value.role == LobbyRole.HOST) {
-            tcpServer.sendMessage("NAVIGATE_CALIBRATION")
-        }
+        coordinator?.notifyNavigateToCalibration()
     }
 
     fun setGuestReady(gapMm: Float) {
-        _state.update { it.copy(isSelfReady = true, calibratedGapMm = gapMm) }
-        tcpClient.sendMessage(ControlMessages.READY)
+        coordinator?.signalCalibrationReady(gapMm)
     }
 
     fun startHostMatch(gapMm: Float) {
-        _state.update {
-            it.copy(
-                calibratedGapMm = gapMm,
-                startMatchTrigger = System.currentTimeMillis()
-            )
-        }
-        tcpServer.sendMessage("${ControlMessages.START}:$gapMm")
+        coordinator?.startMatch(gapMm)
     }
 
     fun sendControlMessage(message: String) {
-        if (_state.value.role == LobbyRole.HOST) {
-            tcpServer.sendMessage(message)
-        } else if (_state.value.role == LobbyRole.GUEST) {
-            tcpClient.sendMessage(message)
+        if (message == ControlMessages.EXIT) {
+            coordinator?.terminateSession()
         }
     }
 
     fun connectToTable(hostIp: String) {
         _state.update { it.copy(hostIp = hostIp, connectionStatus = ConnectionStatus.CONNECTING) }
         nsdManager.stopDiscovery()
-        tcpClient.connect(hostIp)
+        val transport = HybridSocketTransportAdapter(isHost = false, targetHostIp = hostIp)
+        val coord = MultiplayerMatchCoordinator(transport, isHost = false)
+        coordinator = coord
+        bindCoordinator(coord)
+    }
+
+    private fun bindCoordinator(coord: MultiplayerMatchCoordinator) {
+        viewModelScope.launch {
+            coord.state.collect { cState ->
+                _state.update {
+                    it.copy(
+                        isPeerReady = cState.isPeerReady,
+                        isSelfReady = cState.isSelfReady,
+                        startMatchTrigger = cState.startMatchTrigger,
+                        navigateToCalibrationTrigger = cState.navigateToCalibrationTrigger,
+                        calibratedGapMm = cState.calibratedGapMm,
+                        connectionStatus = when (cState.connectionState) {
+                            TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
+                            TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING
+                            TransportConnectionState.DISCONNECTED -> ConnectionStatus.DISCONNECTED
+                            TransportConnectionState.IDLE -> it.connectionStatus
+                        },
+                        isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED)
+                    )
+                }
+            }
+        }
     }
 
     fun connectByCode(code: String) {
@@ -364,11 +385,10 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun stopAll() {
+        coordinator?.terminateSession()
+        coordinator = null
         nsdManager.stopBroadcast()
         nsdManager.stopDiscovery()
-        tcpServer.stop()
-        tcpClient.disconnect()
-        udpSocket.stop()
         _state.update { LobbyState() }
     }
 

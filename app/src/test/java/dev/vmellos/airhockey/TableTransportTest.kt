@@ -1,0 +1,105 @@
+package dev.vmellos.airhockey
+
+import dev.vmellos.airhockey.feature.network.ControlMessages
+import dev.vmellos.airhockey.feature.network.GuestInputPacket
+import dev.vmellos.airhockey.feature.network.HostTelemetryPacket
+import dev.vmellos.airhockey.feature.network.InMemoryLoopbackTransportAdapter
+import dev.vmellos.airhockey.feature.network.TableControlEvent
+import dev.vmellos.airhockey.feature.network.TransportConnectionState
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class TableTransportTest {
+
+    @Test
+    fun testInMemoryLoopbackControlEvents() = runBlocking {
+        val (host, guest) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+
+        assertEquals(TransportConnectionState.CONNECTED, host.connectionState.value)
+        assertEquals(TransportConnectionState.CONNECTED, guest.connectionState.value)
+
+        // Guest envia READY para o Host
+        guest.sendControl(TableControlEvent.Ready)
+        val hostReceived = host.controlEvents.first()
+        assertTrue(hostReceived is TableControlEvent.Ready)
+
+        // Host envia START com vão de 9.5mm para o Guest
+        host.sendControl(TableControlEvent.Start(9.5f))
+        val guestReceived = guest.controlEvents.first()
+        assertTrue(guestReceived is TableControlEvent.Start)
+        assertEquals(9.5f, (guestReceived as TableControlEvent.Start).gapMm, 0.01f)
+
+        // Host fecha -> Guest detecta desconexão
+        host.close()
+        val disconnectEvent = guest.controlEvents.first()
+        assertEquals(TableControlEvent.PeerDisconnected, disconnectEvent)
+        assertEquals(TransportConnectionState.DISCONNECTED, guest.connectionState.value)
+    }
+
+    @Test
+    fun testInMemoryLoopbackTelemetryAndInputFlow() = runBlocking {
+        val (host, guest) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+
+        val telemetry = HostTelemetryPacket(
+            sequenceNumber = 1L,
+            timestampNano = 1000L,
+            puckX = 500f,
+            puckY = 1200f,
+            puckVx = 10f,
+            puckVy = -20f,
+            hostMalletX = 500f,
+            hostMalletY = 1800f,
+            guestMalletX = 500f,
+            guestMalletY = 200f
+        )
+        host.sendTelemetry(telemetry)
+        val receivedTelemetry = guest.telemetryFrames.first()
+        assertEquals(1L, receivedTelemetry.sequenceNumber)
+        assertEquals(500f, receivedTelemetry.puckX, 0.01f)
+
+        val input = GuestInputPacket(
+            sequenceNumber = 2L,
+            timestampNano = 2000L,
+            guestTargetX = 450f,
+            guestTargetY = 300f
+        )
+        guest.sendGuestInput(input)
+        val receivedInput = host.guestInputs.first()
+        assertEquals(2L, receivedInput.sequenceNumber)
+        assertEquals(450f, receivedInput.guestTargetX, 0.01f)
+    }
+
+    @Test
+    fun testControlEventWireStringRoundTrip() {
+        val events = listOf(
+            TableControlEvent.HandshakeOk("1234"),
+            TableControlEvent.NavigateCalibration,
+            TableControlEvent.Ready,
+            TableControlEvent.Start(14.2f),
+            TableControlEvent.Pause,
+            TableControlEvent.Resume,
+            TableControlEvent.Restart,
+            TableControlEvent.Exit,
+            TableControlEvent.StateSync(
+                ControlMessages.RemoteMatchState(
+                    statusName = "PLAYING",
+                    scorePlayer1 = 4,
+                    scorePlayer2 = 2,
+                    remainingTimeSeconds = 120,
+                    countdownNumber = 0,
+                    winner = 0,
+                    lastScorer = 1
+                )
+            )
+        )
+
+        for (event in events) {
+            val wire = event.toWireString()
+            val parsed = TableControlEvent.fromWireString(wire)
+            assertEquals("Event roundtrip failed for: $wire", event, parsed)
+        }
+    }
+}

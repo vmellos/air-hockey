@@ -26,6 +26,7 @@ import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
+import dev.vmellos.airhockey.feature.physics.TableProjection
 import kotlin.math.min
 
 // Paleta Neon Arcade
@@ -50,6 +51,7 @@ fun AirHockeyArenaCanvas(
 ) {
     val engine = viewModel.engine
     val dimensions = engine.dimensions
+    val projection = remember(dimensions, mode) { TableProjection(dimensions, mode) }
     val isExtendedGuest = mode == GameMode.EXTENDED_GUEST
     val isExtendedHost = mode == GameMode.EXTENDED_HOST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
@@ -68,40 +70,34 @@ fun AirHockeyArenaCanvas(
         modifier = modifier
             .fillMaxSize()
             .background(TableBackground)
-            .pointerInput(mode) {
+            .pointerInput(mode, projection) {
                 awaitPointerEventScope {
-                    val activePointers = mutableMapOf<PointerId, Offset>()
-
                     while (true) {
                         val event = awaitPointerEvent()
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
-                        val vWidth = 1000f
-                        val vHeight = if (isExtendedHost || isExtendedGuest) 1000f else 2000f
-                        val scale = min(w / vWidth, h / vHeight)
-                        val offsetX = (w - vWidth * scale) / 2f
-                        val offsetY = (h - vHeight * scale) / 2f
-
                         for (change in event.changes) {
                             if (change.pressed) {
-                                val localX = (change.position.x - offsetX) / scale
-                                val localY = (change.position.y - offsetY) / scale
+                                val tablePt = projection.screenToTable(change.position.x, change.position.y, w, h)
 
-                                if (isExtendedGuest) {
-                                    viewModel.onGuestTouchLocal(localX, localY)
-                                } else if (isExtendedHost) {
-                                    val globalY = dimensions.guestHalfTopY + localY
-                                    viewModel.onTouchPlayer1(localX, globalY)
-                                } else if (isSplitScreen) {
-                                    if (localY < 1000f) {
-                                        viewModel.onTouchPlayer2(localX, localY)
-                                    } else {
-                                        viewModel.onTouchPlayer1(localX, localY)
+                                when (mode) {
+                                    GameMode.EXTENDED_GUEST -> {
+                                        viewModel.onTouchGuestGlobal(tablePt.x, tablePt.y)
                                     }
-                                } else {
-                                    // SOLO: Humano controla P1 na base
-                                    viewModel.onTouchPlayer1(localX, localY)
+                                    GameMode.EXTENDED_HOST -> {
+                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                    }
+                                    GameMode.SPLIT_SCREEN -> {
+                                        if (tablePt.y < dimensions.centerLineY) {
+                                            viewModel.onTouchPlayer2(tablePt.x, tablePt.y)
+                                        } else {
+                                            viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                        }
+                                    }
+                                    GameMode.SOLO -> {
+                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                    }
                                 }
                                 change.consume()
                             }
@@ -111,57 +107,36 @@ fun AirHockeyArenaCanvas(
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Leitura acoplada ao framePulse para redraw suave a 120 FPS
             @Suppress("UNUSED_VARIABLE")
             val pulse = framePulse
 
             val screenW = size.width
             val screenH = size.height
-            val vWidth = 1000f
-            val vHeight = if (isExtendedHost || isExtendedGuest) 1000f else 2000f
-
-            val scale = min(screenW / vWidth, screenH / vHeight)
-            val offsetX = (screenW - vWidth * scale) / 2f
-            val offsetY = (screenH - vHeight * scale) / 2f
+            val scale = projection.calculateScale(screenW, screenH)
+            val offsetX = projection.calculateOffsetX(screenW, screenH)
+            val offsetY = projection.calculateOffsetY(screenW, screenH)
+            val vWidth = projection.viewportVirtualWidth
+            val vHeight = projection.viewportVirtualHeight
 
             // Desenha arena da mesa
             drawTableRink(offsetX, offsetY, vWidth * scale, vHeight * scale, isExtendedHost, isExtendedGuest)
 
-            // Converte coordenadas virtuais em pixels de tela
-            fun toScreenX(vx: Float): Float {
-                val effectiveX = if (isExtendedGuest) (1000f - vx) else vx
-                return offsetX + effectiveX * scale
-            }
-
-            fun toScreenY(vy: Float): Float {
-                val effectiveY = when {
-                    isExtendedHost -> vy - dimensions.guestHalfTopY
-                    isExtendedGuest -> 1000f - vy
-                    else -> vy
-                }
-                return offsetY + effectiveY * scale
-            }
-
             // Desenha metas
             drawGoals(offsetX, offsetY, scale, dimensions, isExtendedHost, isExtendedGuest)
 
-            // Desenha Rebathedor 1
-            val p1X = toScreenX(engine.player1Mallet.x)
-            val p1Y = toScreenY(engine.player1Mallet.y)
-            val p1R = engine.player1Mallet.radius * scale
-            drawMallet(p1X, p1Y, p1R, MalletP1Color, MalletP1RimColor)
+            // Desenha Rebatedor 1
+            val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
+            drawMallet(p1Screen.x, p1Screen.y, engine.player1Mallet.radius * scale, MalletP1Color, MalletP1RimColor)
 
-            // Desenha Rebathedor 2
-            val p2X = toScreenX(engine.player2Mallet.x)
-            val p2Y = toScreenY(engine.player2Mallet.y)
-            val p2R = engine.player2Mallet.radius * scale
-            drawMallet(p2X, p2Y, p2R, MalletP2Color, MalletP2RimColor)
+            // Desenha Rebatedor 2
+            val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
+            drawMallet(p2Screen.x, p2Screen.y, engine.player2Mallet.radius * scale, MalletP2Color, MalletP2RimColor)
 
-            // Desenha Disco
-            val puckX = toScreenX(engine.puck.x)
-            val puckY = toScreenY(engine.puck.y)
-            val puckR = engine.puck.radius * scale
-            drawPuck(puckX, puckY, puckR)
+            // Desenha Disco somente se visível no viewport deste dispositivo
+            if (projection.isVisibleInViewport(engine.puck.x, engine.puck.y, engine.puck.radius)) {
+                val puckScreen = projection.tableToScreen(engine.puck.x, engine.puck.y, screenW, screenH)
+                drawPuck(puckScreen.x, puckScreen.y, engine.puck.radius * scale)
+            }
         }
     }
 }

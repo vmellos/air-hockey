@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.feature.ai.AirHockeyAiController
+import dev.vmellos.airhockey.feature.lobby.MultiplayerMatchCoordinator
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
@@ -35,10 +36,67 @@ class GameViewModel : ViewModel() {
     private var countdownJob: Job? = null
 
     // Callbacks de rede para Mesa Estendida
+    var coordinator: MultiplayerMatchCoordinator? = null
+        private set
+
     var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float) -> Unit)? = null
     var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onGuestSendInput: ((Float, Float) -> Unit)? = null
     var onGuestSendControl: ((String) -> Unit)? = null
+
+    fun attachCoordinator(coord: MultiplayerMatchCoordinator) {
+        coordinator = coord
+        val isHost = coord.isHost
+
+        if (isHost) {
+            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy ->
+                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy)
+            }
+            onHostBroadcastState = { remote ->
+                coord.broadcastState(remote)
+            }
+            viewModelScope.launch {
+                coord.transport.guestInputs.collect { input ->
+                    onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
+                }
+            }
+            coord.onPeerPauseRequested = { pauseMatch() }
+            coord.onPeerResumeRequested = { resumeMatch() }
+            coord.onPeerRestartRequested = { restartMatch() }
+            viewModelScope.launch {
+                coord.state.collect { state ->
+                    if (state.peerExited) onPeerExited()
+                }
+            }
+        } else {
+            viewModelScope.launch {
+                coord.transport.telemetryFrames.collect { t ->
+                    onGuestReceiveTelemetry(
+                        t.puckX, t.puckY,
+                        t.puckVx, t.puckVy,
+                        t.hostMalletX, t.hostMalletY,
+                        t.guestMalletX, t.guestMalletY
+                    )
+                }
+            }
+            viewModelScope.launch {
+                coord.state.collect { state ->
+                    state.remoteMatchState?.let { onGuestReceiveState(it) }
+                    if (state.peerExited) onPeerExited()
+                }
+            }
+            onGuestSendInput = { gx, gy ->
+                coord.sendGuestInput(gx, gy)
+            }
+            onGuestSendControl = { msg ->
+                when (msg) {
+                    ControlMessages.PAUSE -> coord.requestPause()
+                    ControlMessages.RESUME -> coord.requestResume()
+                    ControlMessages.RESTART -> coord.requestRestart()
+                }
+            }
+        }
+    }
 
     fun initializeMatch(
         mode: GameMode,
@@ -243,6 +301,11 @@ class GameViewModel : ViewModel() {
         if (_matchState.value.status != MatchStatus.PLAYING) return
         engine.player2Mallet.targetX = x
         engine.player2Mallet.targetY = y
+    }
+
+    fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
+        if (_matchState.value.status != MatchStatus.PLAYING) return
+        onGuestSendInput?.invoke(globalX, globalY)
     }
 
     fun onGuestTouchLocal(localX: Float, localY: Float) {

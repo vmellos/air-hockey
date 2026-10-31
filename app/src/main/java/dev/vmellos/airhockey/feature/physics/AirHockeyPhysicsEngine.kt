@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.feature.physics
 
+import dev.vmellos.airhockey.feature.game.GameMode
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -35,6 +36,11 @@ class AirHockeyPhysicsEngine(
         radius = dimensions.malletRadius
     )
 
+    private val projection = TableProjection(
+        dimensions,
+        if (dimensions.isExtendedMode) GameMode.EXTENDED_HOST else GameMode.SOLO
+    )
+
     private val wallRestitution = 0.96f
     private val paddleRestitution = 1.0f
     private val maxSpeed = 12000f
@@ -44,20 +50,8 @@ class AirHockeyPhysicsEngine(
     var onCollisionListener: ((CollisionEvent, Float) -> Unit)? = null
 
     fun resetPositions(scorer: Int = 0) {
-        val puckY = if (dimensions.isExtendedMode) {
-            when (scorer) {
-                1 -> dimensions.hostHalfBottomY - 220f // P1 marcou, P2 saca
-                2 -> dimensions.guestHalfTopY + 220f   // P2 marcou, P1 saca
-                else -> dimensions.guestHalfTopY + 220f // Início da partida: P1 saca
-            }
-        } else {
-            when (scorer) {
-                1 -> dimensions.centerLineY - 200f
-                2 -> dimensions.centerLineY + 200f
-                else -> dimensions.centerLineY
-            }
-        }
-        puck.reset(dimensions.width / 2f, puckY)
+        val serveSpot = projection.getServePosition(scorer)
+        puck.reset(serveSpot.x, serveSpot.y)
         player1Mallet.reset(dimensions.width / 2f, dimensions.totalHeight - 250f)
         player2Mallet.reset(dimensions.width / 2f, 250f)
     }
@@ -133,18 +127,9 @@ class AirHockeyPhysicsEngine(
     }
 
     private fun clampMalletToHalf(mallet: Mallet, isPlayer1: Boolean) {
-        val r = mallet.radius
-        mallet.x = mallet.x.coerceIn(r, dimensions.width - r)
-
-        if (isPlayer1) {
-            // Player 1 (Humano / Anfitrião) joga na metade inferior [centerLineY + r, totalHeight - r]
-            val minY = if (dimensions.isExtendedMode) dimensions.guestHalfTopY + r else (dimensions.centerLineY + r)
-            mallet.y = mallet.y.coerceIn(minY, dimensions.totalHeight - r)
-        } else {
-            // Player 2 (IA / Convidado) joga na metade superior [r, centerLineY - r]
-            val maxY = if (dimensions.isExtendedMode) dimensions.hostHalfBottomY - r else (dimensions.centerLineY - r)
-            mallet.y = mallet.y.coerceIn(r, maxY)
-        }
+        val clamped = projection.clampMallet(mallet.x, mallet.y, mallet.radius, isPlayer1)
+        mallet.x = clamped.x
+        mallet.y = clamped.y
     }
 
     private fun resolvePaddleCollision(mallet: Mallet, isPlayer1: Boolean) {
