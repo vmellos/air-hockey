@@ -5,15 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.feature.network.DiscoveredTable
+import dev.vmellos.airhockey.feature.network.NetworkConstants
 import dev.vmellos.airhockey.feature.network.NsdDiscoveryManager
 import dev.vmellos.airhockey.feature.network.TcpControlClient
 import dev.vmellos.airhockey.feature.network.TcpControlServer
 import dev.vmellos.airhockey.feature.network.UdpTelemetrySocket
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 enum class LobbyRole {
@@ -93,7 +100,7 @@ class LobbyViewModel : ViewModel() {
 
     fun startAsHost() {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
-        val ip = NsdDiscoveryManager.getLocalIpAddress()
+        val ip = NsdDiscoveryManager.getLocalIpAddress(context)
         val qr = "airhockey://connect?ip=$ip&port=8888&code=$code"
         val ssid = getNetworkSsid()
         val wifiConnected = checkIsWifiConnected()
@@ -183,13 +190,80 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun connectByCode(code: String) {
-        val table = _state.value.discoveredTables.find { it.tableCode == code.trim() }
+        val cleanCode = code.trim()
+        val table = _state.value.discoveredTables.find { it.tableCode == cleanCode }
         if (table != null) {
             connectToTable(table.hostIp)
-        } else {
-            // Em rede hotspot direta, anfitrião costuma ser o gateway 192.168.43.1
-            connectToTable("192.168.43.1")
+            return
         }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.update { it.copy(connectionStatus = ConnectionStatus.CONNECTING) }
+
+            // 1. Tenta o Gateway DHCP (essencial quando conectado ao Hotspot do anfitrião)
+            val gatewayIp = NsdDiscoveryManager.getDhcpGatewayIp(context)
+            if (!gatewayIp.isNullOrBlank() && probeHost(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
+                withContext(Dispatchers.Main) {
+                    connectToTable(gatewayIp)
+                }
+                return@launch
+            }
+
+            // 2. Varredura rápida concorrente na sub-rede /24
+            val localIp = NsdDiscoveryManager.getLocalIpAddress(context)
+            if (localIp.contains(".")) {
+                val prefix = localIp.substringBeforeLast(".") + "."
+                val foundIp = scanSubnetForHost(prefix, NetworkConstants.DEFAULT_TCP_PORT, localIp)
+                if (foundIp != null) {
+                    withContext(Dispatchers.Main) {
+                        connectToTable(foundIp)
+                    }
+                    return@launch
+                }
+            }
+
+            // 3. Fallback
+            withContext(Dispatchers.Main) {
+                connectToTable(gatewayIp ?: "192.168.43.1")
+            }
+        }
+    }
+
+    private fun probeHost(ip: String, port: Int): Boolean {
+        return try {
+            java.net.Socket().use { s ->
+                s.connect(java.net.InetSocketAddress(ip, port), 250)
+                true
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private suspend fun scanSubnetForHost(prefix: String, port: Int, selfIp: String): String? = coroutineScope {
+        val found = CompletableDeferred<String?>()
+        val jobs = mutableListOf<Job>()
+
+        for (i in 1..254) {
+            val targetIp = "$prefix$i"
+            if (targetIp == selfIp) continue
+            val j = launch(Dispatchers.IO) {
+                if (probeHost(targetIp, port)) {
+                    found.complete(targetIp)
+                }
+            }
+            jobs.add(j)
+        }
+
+        val timeoutJob = launch {
+            delay(500)
+            found.complete(null)
+        }
+
+        val result = found.await()
+        jobs.forEach { it.cancel() }
+        timeoutJob.cancel()
+        result
     }
 
     fun handleQrScanResult(qrText: String) {

@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 object NetworkConstants {
     const val DEFAULT_TCP_PORT = 8888
     const val DEFAULT_UDP_PORT = 8889
+    const val DISCOVERY_UDP_PORT = 8887
     const val SERVICE_TYPE = "_airhockey._tcp."
     const val SERVICE_NAME_PREFIX = "AirHockeyTable_"
 }

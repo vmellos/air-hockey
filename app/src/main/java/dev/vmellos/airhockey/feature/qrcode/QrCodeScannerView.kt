@@ -284,14 +284,33 @@ private fun scanBarcode(imageProxy: ImageProxy): String? {
             }
         }
 
-        val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
         val hints = mapOf(
             DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE),
-            DecodeHintType.TRY_HARDER to java.lang.Boolean.TRUE
+            DecodeHintType.TRY_HARDER to java.lang.Boolean.TRUE,
+            DecodeHintType.CHARACTER_SET to "UTF-8"
         )
         val reader = MultiFormatReader()
-        val result = reader.decode(binaryBitmap, hints)
-        result.text
+
+        // 1. Tenta HybridBinarizer (ótimo para contrastes normais)
+        try {
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+            return reader.decode(binaryBitmap, hints).text
+        } catch (_: Exception) {}
+
+        // 2. Tenta GlobalHistogramBinarizer (ótimo para iluminação variável)
+        try {
+            val binaryBitmap = BinaryBitmap(com.google.zxing.common.GlobalHistogramBinarizer(source))
+            return reader.decode(binaryBitmap, hints).text
+        } catch (_: Exception) {}
+
+        // 3. Tenta fonte invertida (caso o código esteja com contraste invertido)
+        try {
+            val invertedSource = source.invert()
+            val binaryBitmap = BinaryBitmap(HybridBinarizer(invertedSource))
+            return reader.decode(binaryBitmap, hints).text
+        } catch (_: Exception) {}
+
+        null
     } catch (_: Exception) {
         null
     }
