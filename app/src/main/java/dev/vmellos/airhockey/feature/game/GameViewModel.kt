@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
-import dev.vmellos.airhockey.core.preferences.TableAlignment
-import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.ai.AirHockeyAiController
+import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableDimensions
@@ -15,7 +14,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -23,7 +21,6 @@ import kotlinx.coroutines.launch
 class GameViewModel : ViewModel() {
 
     private val audioEngine = AirHockeyApp.instance.audioEngine
-    private val preferencesRepo = AirHockeyApp.instance.preferencesRepository
 
     private val _matchState = MutableStateFlow(MatchState())
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
@@ -37,10 +34,11 @@ class GameViewModel : ViewModel() {
     private var timerJob: Job? = null
     private var countdownJob: Job? = null
 
-    // Callbacks de rede opcionais para modo Mesa Estendida
-    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float) -> Unit)? = null
+    // Callbacks de rede para Mesa Estendida
+    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float) -> Unit)? = null
+    var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onGuestSendInput: ((Float, Float) -> Unit)? = null
-    var onHostGoalScored: ((Int, Int, Int) -> Unit)? = null
+    var onGuestSendControl: ((String) -> Unit)? = null
 
     fun initializeMatch(
         mode: GameMode,
@@ -63,24 +61,31 @@ class GameViewModel : ViewModel() {
 
         engine = AirHockeyPhysicsEngine(dimensions)
 
-        if (mode == GameMode.SOLO) {
-            aiController = AirHockeyAiController(aiDifficulty)
+        // Limpa estritamente o controlador de IA se não for modo SOLO
+        aiController = if (mode == GameMode.SOLO) {
+            AirHockeyAiController(aiDifficulty)
+        } else {
+            null
         }
 
-        _matchState.update {
-            it.copy(
-                mode = mode,
-                status = MatchStatus.COUNTDOWN,
-                scorePlayer1 = 0,
-                scorePlayer2 = 0,
-                targetScore = targetScore,
-                remainingTimeSeconds = matchTimeSeconds,
-                isHost = (mode != GameMode.EXTENDED_GUEST)
-            )
-        }
+        _matchState.value = MatchState(
+            mode = mode,
+            status = MatchStatus.COUNTDOWN,
+            scorePlayer1 = 0,
+            scorePlayer2 = 0,
+            targetScore = targetScore,
+            countdownNumber = 3,
+            remainingTimeSeconds = matchTimeSeconds,
+            isHost = (mode != GameMode.EXTENDED_GUEST),
+            peerExited = false
+        )
 
         setupCollisionListener()
-        startCountdown()
+
+        if (mode != GameMode.EXTENDED_GUEST) {
+            broadcastState()
+            startCountdown()
+        }
     }
 
     private fun setupCollisionListener() {
@@ -113,8 +118,6 @@ class GameViewModel : ViewModel() {
         val p1 = if (scorer == 1) _matchState.value.scorePlayer1 + 1 else _matchState.value.scorePlayer1
         val p2 = if (scorer == 2) _matchState.value.scorePlayer2 + 1 else _matchState.value.scorePlayer2
 
-        onHostGoalScored?.invoke(scorer, p1, p2)
-
         val target = _matchState.value.targetScore
         if (p1 >= target || p2 >= target) {
             _matchState.update {
@@ -126,6 +129,7 @@ class GameViewModel : ViewModel() {
                     status = MatchStatus.GAME_OVER
                 )
             }
+            broadcastState()
             stopGameLoops()
         } else {
             _matchState.update {
@@ -136,10 +140,11 @@ class GameViewModel : ViewModel() {
                     status = MatchStatus.GOAL_PAUSE
                 )
             }
+            broadcastState()
 
             viewModelScope.launch {
                 delay(1200)
-                engine.resetPositions()
+                engine.resetPositions(scorer)
                 startCountdown()
             }
         }
@@ -149,19 +154,23 @@ class GameViewModel : ViewModel() {
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
             _matchState.update { it.copy(status = MatchStatus.COUNTDOWN, countdownNumber = 3) }
+            broadcastState()
             audioEngine.playCountdownBeep(isFinal = false)
             delay(900)
 
             _matchState.update { it.copy(countdownNumber = 2) }
+            broadcastState()
             audioEngine.playCountdownBeep(isFinal = false)
             delay(900)
 
             _matchState.update { it.copy(countdownNumber = 1) }
+            broadcastState()
             audioEngine.playCountdownBeep(isFinal = false)
             delay(900)
 
+            _matchState.update { it.copy(countdownNumber = 0, status = MatchStatus.PLAYING) }
+            broadcastState()
             audioEngine.playCountdownBeep(isFinal = true)
-            _matchState.update { it.copy(status = MatchStatus.PLAYING) }
 
             startGameLoops()
         }
@@ -181,11 +190,12 @@ class GameViewModel : ViewModel() {
                     aiController?.update(engine, dt)
                     engine.tick(dt)
 
-                    // Emite telemetria para o convidado
+                    // Emite telemetria completa (incluindo posição conciliada do convidado)
                     onHostBroadcastTelemetry?.invoke(
                         engine.puck.x, engine.puck.y,
                         engine.puck.vx, engine.puck.vy,
-                        engine.player1Mallet.x, engine.player1Mallet.y
+                        engine.player1Mallet.x, engine.player1Mallet.y,
+                        engine.player2Mallet.x, engine.player2Mallet.y
                     )
                 }
 
@@ -195,19 +205,22 @@ class GameViewModel : ViewModel() {
             }
         }
 
-        // Loop do cronômetro de partida
-        timerJob = viewModelScope.launch {
-            while (isActive && _matchState.value.status == MatchStatus.PLAYING) {
-                delay(1000)
-                _matchState.update { state ->
-                    val nextTime = state.remainingTimeSeconds - 1
-                    if (nextTime <= 0) {
-                        val winner = if (state.scorePlayer1 > state.scorePlayer2) 1
-                        else if (state.scorePlayer2 > state.scorePlayer1) 2 else 0
-                        state.copy(remainingTimeSeconds = 0, winner = winner, status = MatchStatus.GAME_OVER)
-                    } else {
-                        state.copy(remainingTimeSeconds = nextTime)
+        // Loop do cronômetro de partida (apenas no Anfitrião/Solo/Split)
+        if (_matchState.value.isHost) {
+            timerJob = viewModelScope.launch {
+                while (isActive && _matchState.value.status == MatchStatus.PLAYING) {
+                    delay(1000)
+                    _matchState.update { state ->
+                        val nextTime = state.remainingTimeSeconds - 1
+                        if (nextTime <= 0) {
+                            val winner = if (state.scorePlayer1 > state.scorePlayer2) 1
+                            else if (state.scorePlayer2 > state.scorePlayer1) 2 else 0
+                            state.copy(remainingTimeSeconds = 0, winner = winner, status = MatchStatus.GAME_OVER)
+                        } else {
+                            state.copy(remainingTimeSeconds = nextTime)
+                        }
                     }
+                    broadcastState()
                 }
             }
         }
@@ -243,7 +256,8 @@ class GameViewModel : ViewModel() {
     fun onGuestReceiveTelemetry(
         puckX: Float, puckY: Float,
         puckVx: Float, puckVy: Float,
-        hostMalletX: Float, hostMalletY: Float
+        hostMalletX: Float, hostMalletY: Float,
+        guestMalletX: Float, guestMalletY: Float
     ) {
         engine.puck.x = puckX
         engine.puck.y = puckY
@@ -251,6 +265,41 @@ class GameViewModel : ViewModel() {
         engine.puck.vy = puckVy
         engine.player1Mallet.x = hostMalletX
         engine.player1Mallet.y = hostMalletY
+        engine.player2Mallet.x = guestMalletX
+        engine.player2Mallet.y = guestMalletY
+    }
+
+    fun onGuestReceiveState(remote: ControlMessages.RemoteMatchState) {
+        val newStatus = try {
+            MatchStatus.valueOf(remote.statusName)
+        } catch (_: Exception) {
+            MatchStatus.PLAYING
+        }
+        val prev = _matchState.value
+        _matchState.update {
+            it.copy(
+                status = newStatus,
+                scorePlayer1 = remote.scorePlayer1,
+                scorePlayer2 = remote.scorePlayer2,
+                remainingTimeSeconds = remote.remainingTimeSeconds,
+                countdownNumber = remote.countdownNumber,
+                winner = remote.winner,
+                lastScorer = remote.lastScorer
+            )
+        }
+
+        // Reprodução de áudio sincronizada no convidado
+        if (newStatus == MatchStatus.COUNTDOWN && remote.countdownNumber != prev.countdownNumber) {
+            if (remote.countdownNumber > 0) {
+                audioEngine.playCountdownBeep(isFinal = false)
+            } else {
+                audioEngine.playCountdownBeep(isFinal = true)
+            }
+        } else if (newStatus == MatchStatus.PLAYING && prev.status == MatchStatus.COUNTDOWN) {
+            audioEngine.playCountdownBeep(isFinal = true)
+        } else if (newStatus == MatchStatus.GOAL_PAUSE && prev.status != MatchStatus.GOAL_PAUSE) {
+            audioEngine.playGoal()
+        }
     }
 
     fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) {
@@ -258,37 +307,90 @@ class GameViewModel : ViewModel() {
         engine.player2Mallet.targetY = globalTargetY
     }
 
-    fun togglePause() {
+    private fun broadcastState() {
+        if (_matchState.value.isHost) {
+            val s = _matchState.value
+            val remote = ControlMessages.RemoteMatchState(
+                statusName = s.statusName,
+                scorePlayer1 = s.scorePlayer1,
+                scorePlayer2 = s.scorePlayer2,
+                remainingTimeSeconds = s.remainingTimeSeconds,
+                countdownNumber = s.countdownNumber,
+                winner = s.winner,
+                lastScorer = s.lastScorer
+            )
+            onHostBroadcastState?.invoke(remote)
+        }
+    }
+
+    private val MatchState.statusName: String
+        get() = status.name
+
+    fun pauseMatch() {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+            onGuestSendControl?.invoke(ControlMessages.PAUSE)
+            return
+        }
         if (_matchState.value.status == MatchStatus.PLAYING) {
             _matchState.update { it.copy(status = MatchStatus.PAUSED) }
+            broadcastState()
             stopGameLoops()
-        } else if (_matchState.value.status == MatchStatus.PAUSED) {
+        }
+    }
+
+    fun resumeMatch() {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+            onGuestSendControl?.invoke(ControlMessages.RESUME)
+            return
+        }
+        if (_matchState.value.status == MatchStatus.PAUSED) {
             _matchState.update { it.copy(status = MatchStatus.PLAYING) }
+            broadcastState()
             startGameLoops()
         }
     }
 
+    fun togglePause() {
+        if (_matchState.value.status == MatchStatus.PLAYING) {
+            pauseMatch()
+        } else if (_matchState.value.status == MatchStatus.PAUSED) {
+            resumeMatch()
+        }
+    }
+
     fun restartMatch() {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+            onGuestSendControl?.invoke(ControlMessages.RESTART)
+            return
+        }
         stopGameLoops()
         countdownJob?.cancel()
-        engine.resetPositions()
+        engine.resetPositions(0)
         _matchState.update {
             it.copy(
                 status = MatchStatus.COUNTDOWN,
                 scorePlayer1 = 0,
                 scorePlayer2 = 0,
                 winner = 0,
+                countdownNumber = 3,
                 remainingTimeSeconds = 180
             )
         }
+        broadcastState()
         startCountdown()
+    }
+
+    fun onPeerExited() {
+        stopGameLoops()
+        countdownJob?.cancel()
+        _matchState.update { it.copy(peerExited = true, status = MatchStatus.PAUSED) }
     }
 
     fun stopMatch() {
         stopGameLoops()
         countdownJob?.cancel()
         countdownJob = null
-        _matchState.update { it.copy(status = MatchStatus.PAUSED) }
+        _matchState.update { it.copy(status = MatchStatus.IDLE) }
     }
 
     override fun onCleared() {

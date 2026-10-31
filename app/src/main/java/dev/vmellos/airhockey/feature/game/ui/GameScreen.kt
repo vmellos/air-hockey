@@ -21,8 +21,22 @@ fun GameScreen(
 ) {
     val matchState by viewModel.matchState.collectAsState()
 
-    BackHandler {
-        onExitToMenu()
+    // O BackHandler nunca fecha o jogo sem confirmação:
+    // Ele pausa o jogo e exibe o diálogo de opções (Continuar, Reiniciar, Sair para o Menu).
+    BackHandler(enabled = true) {
+        when {
+            matchState.peerExited || matchState.status == MatchStatus.GAME_OVER -> {
+                viewModel.stopMatch()
+                onExitToMenu()
+            }
+            matchState.status == MatchStatus.PAUSED -> {
+                // Já está no diálogo de pausa: permanece aguardando a seleção do usuário
+            }
+            else -> {
+                // Em partida (PLAYING, COUNTDOWN, GOAL_PAUSE): pausa o jogo e espera ação
+                viewModel.pauseMatch()
+            }
+        }
     }
 
     DisposableEffect(Unit) {
@@ -42,10 +56,10 @@ fun GameScreen(
         // Placar e Controles
         ScoreBoardOverlay(
             matchState = matchState,
-            onPauseClick = { viewModel.togglePause() }
+            onPauseClick = { viewModel.pauseMatch() }
         )
 
-        // Overlay de Contagem Regressiva
+        // Overlay de Contagem Regressiva estilizado
         if (matchState.status == MatchStatus.COUNTDOWN) {
             CountdownOverlay(countdownNumber = matchState.countdownNumber)
         }
@@ -56,11 +70,24 @@ fun GameScreen(
         }
 
         // Diálogo de Pausa
-        if (matchState.status == MatchStatus.PAUSED) {
+        if (matchState.status == MatchStatus.PAUSED && !matchState.peerExited) {
             PauseDialog(
-                onResume = { viewModel.togglePause() },
+                onResume = { viewModel.resumeMatch() },
                 onRestart = { viewModel.restartMatch() },
-                onExit = onExitToMenu
+                onExit = {
+                    viewModel.stopMatch()
+                    onExitToMenu()
+                }
+            )
+        }
+
+        // Diálogo quando o adversário sai na Mesa Estendida
+        if (matchState.peerExited) {
+            PeerExitedDialog(
+                onExit = {
+                    viewModel.stopMatch()
+                    onExitToMenu()
+                }
             )
         }
 
@@ -69,7 +96,10 @@ fun GameScreen(
             GameOverDialog(
                 matchState = matchState,
                 onPlayAgain = { viewModel.restartMatch() },
-                onExit = onExitToMenu
+                onExit = {
+                    viewModel.stopMatch()
+                    onExitToMenu()
+                }
             )
         }
     }

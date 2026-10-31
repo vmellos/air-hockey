@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.network.DiscoveredTable
 import dev.vmellos.airhockey.feature.network.NetworkConstants
 import dev.vmellos.airhockey.feature.network.NsdDiscoveryManager
@@ -49,7 +50,12 @@ data class LobbyState(
     val isReadyToPlay: Boolean = false,
     val isScanningQr: Boolean = false,
     val wifiSsid: String = "",
-    val isWifiConnected: Boolean = true
+    val isWifiConnected: Boolean = true,
+    val isPeerReady: Boolean = false,
+    val isSelfReady: Boolean = false,
+    val startMatchTrigger: Long = 0L,
+    val navigateToCalibrationTrigger: Long = 0L,
+    val calibratedGapMm: Float = 8.0f
 )
 
 class LobbyViewModel : ViewModel() {
@@ -62,6 +68,9 @@ class LobbyViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _state.asStateFlow()
+
+    var onRemoteStateReceived: ((ControlMessages.RemoteMatchState) -> Unit)? = null
+    var onControlMessageReceived: ((String) -> Unit)? = null
 
     init {
         viewModelScope.launch {
@@ -150,8 +159,24 @@ class LobbyViewModel : ViewModel() {
             _state.update {
                 it.copy(
                     connectionStatus = ConnectionStatus.DISCONNECTED,
-                    isReadyToPlay = false
+                    isReadyToPlay = false,
+                    isPeerReady = false
                 )
+            }
+            onControlMessageReceived?.invoke(ControlMessages.EXIT)
+        }
+
+        tcpServer.onMessageReceived = { msg ->
+            when {
+                msg == ControlMessages.READY -> {
+                    _state.update { it.copy(isPeerReady = true) }
+                }
+                msg == ControlMessages.EXIT -> {
+                    onControlMessageReceived?.invoke(ControlMessages.EXIT)
+                }
+                else -> {
+                    onControlMessageReceived?.invoke(msg)
+                }
             }
         }
     }
@@ -171,15 +196,71 @@ class LobbyViewModel : ViewModel() {
             _state.update {
                 it.copy(
                     connectionStatus = ConnectionStatus.DISCONNECTED,
-                    isReadyToPlay = false
+                    isReadyToPlay = false,
+                    isPeerReady = false
                 )
             }
+            onControlMessageReceived?.invoke(ControlMessages.EXIT)
         }
 
         tcpClient.onMessageReceived = { msg ->
-            if (msg.startsWith("HANDSHAKE_OK")) {
-                _state.update { it.copy(isReadyToPlay = true) }
+            when {
+                msg.startsWith("HANDSHAKE_OK") -> {
+                    _state.update { it.copy(isReadyToPlay = true) }
+                }
+                msg == "NAVIGATE_CALIBRATION" -> {
+                    _state.update { it.copy(navigateToCalibrationTrigger = System.currentTimeMillis()) }
+                }
+                msg.startsWith(ControlMessages.START) -> {
+                    val gap = msg.substringAfter(":", "8.0").toFloatOrNull() ?: 8.0f
+                    _state.update {
+                        it.copy(
+                            calibratedGapMm = gap,
+                            startMatchTrigger = System.currentTimeMillis()
+                        )
+                    }
+                }
+                msg.startsWith("STATE:") -> {
+                    ControlMessages.decodeState(msg)?.let {
+                        onRemoteStateReceived?.invoke(it)
+                    }
+                }
+                msg == ControlMessages.EXIT -> {
+                    onControlMessageReceived?.invoke(ControlMessages.EXIT)
+                }
+                else -> {
+                    onControlMessageReceived?.invoke(msg)
+                }
             }
+        }
+    }
+
+    fun notifyNavigateToCalibration() {
+        if (_state.value.role == LobbyRole.HOST) {
+            tcpServer.sendMessage("NAVIGATE_CALIBRATION")
+        }
+    }
+
+    fun setGuestReady(gapMm: Float) {
+        _state.update { it.copy(isSelfReady = true, calibratedGapMm = gapMm) }
+        tcpClient.sendMessage(ControlMessages.READY)
+    }
+
+    fun startHostMatch(gapMm: Float) {
+        _state.update {
+            it.copy(
+                calibratedGapMm = gapMm,
+                startMatchTrigger = System.currentTimeMillis()
+            )
+        }
+        tcpServer.sendMessage("${ControlMessages.START}:$gapMm")
+    }
+
+    fun sendControlMessage(message: String) {
+        if (_state.value.role == LobbyRole.HOST) {
+            tcpServer.sendMessage(message)
+        } else if (_state.value.role == LobbyRole.GUEST) {
+            tcpClient.sendMessage(message)
         }
     }
 

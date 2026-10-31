@@ -43,8 +43,21 @@ class AirHockeyPhysicsEngine(
 
     var onCollisionListener: ((CollisionEvent, Float) -> Unit)? = null
 
-    fun resetPositions() {
-        puck.reset(dimensions.width / 2f, dimensions.centerLineY)
+    fun resetPositions(scorer: Int = 0) {
+        val puckY = if (dimensions.isExtendedMode) {
+            when (scorer) {
+                1 -> dimensions.hostHalfBottomY - 220f // P1 marcou, P2 saca
+                2 -> dimensions.guestHalfTopY + 220f   // P2 marcou, P1 saca
+                else -> dimensions.guestHalfTopY + 220f // Início da partida: P1 saca
+            }
+        } else {
+            when (scorer) {
+                1 -> dimensions.centerLineY - 200f
+                2 -> dimensions.centerLineY + 200f
+                else -> dimensions.centerLineY
+            }
+        }
+        puck.reset(dimensions.width / 2f, puckY)
         player1Mallet.reset(dimensions.width / 2f, dimensions.totalHeight - 250f)
         player2Mallet.reset(dimensions.width / 2f, 250f)
     }

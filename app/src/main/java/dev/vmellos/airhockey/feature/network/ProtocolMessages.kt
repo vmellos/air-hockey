@@ -21,6 +21,49 @@ enum class MessageType(val id: Byte) {
     MATCH_RESTART(8)
 }
 
+/**
+ * Mensagens de controle TCP (texto, uma por linha) trocadas na Mesa Estendida.
+ * O anfitrião é a fonte da verdade: ele publica o estado da partida e o convidado apenas espelha.
+ */
+object ControlMessages {
+    const val READY = "READY"
+    const val START = "START"
+    const val PAUSE = "PAUSE"
+    const val RESUME = "RESUME"
+    const val RESTART = "RESTART"
+    const val EXIT = "EXIT"
+    private const val STATE_PREFIX = "STATE:"
+
+    data class RemoteMatchState(
+        val statusName: String,
+        val scorePlayer1: Int,
+        val scorePlayer2: Int,
+        val remainingTimeSeconds: Int,
+        val countdownNumber: Int,
+        val winner: Int,
+        val lastScorer: Int
+    )
+
+    fun encodeState(state: RemoteMatchState): String = with(state) {
+        "$STATE_PREFIX$statusName,$scorePlayer1,$scorePlayer2,$remainingTimeSeconds,$countdownNumber,$winner,$lastScorer"
+    }
+
+    fun decodeState(line: String): RemoteMatchState? {
+        if (!line.startsWith(STATE_PREFIX)) return null
+        val parts = line.removePrefix(STATE_PREFIX).split(",")
+        if (parts.size != 7) return null
+        return RemoteMatchState(
+            statusName = parts[0],
+            scorePlayer1 = parts[1].toIntOrNull() ?: return null,
+            scorePlayer2 = parts[2].toIntOrNull() ?: return null,
+            remainingTimeSeconds = parts[3].toIntOrNull() ?: return null,
+            countdownNumber = parts[4].toIntOrNull() ?: return null,
+            winner = parts[5].toIntOrNull() ?: return null,
+            lastScorer = parts[6].toIntOrNull() ?: return null
+        )
+    }
+}
+
 data class HostTelemetryPacket(
     val sequenceNumber: Long,
     val timestampNano: Long,
@@ -29,10 +72,12 @@ data class HostTelemetryPacket(
     val puckVx: Float,
     val puckVy: Float,
     val hostMalletX: Float,
-    val hostMalletY: Float
+    val hostMalletY: Float,
+    val guestMalletX: Float,
+    val guestMalletY: Float
 ) {
     fun toByteArray(): ByteArray {
-        val buffer = ByteBuffer.allocate(36)
+        val buffer = ByteBuffer.allocate(SIZE_BYTES)
         buffer.put(0x01) // Tipo TELEMETRY
         buffer.putLong(sequenceNumber)
         buffer.putFloat(puckX)
@@ -41,12 +86,16 @@ data class HostTelemetryPacket(
         buffer.putFloat(puckVy)
         buffer.putFloat(hostMalletX)
         buffer.putFloat(hostMalletY)
+        buffer.putFloat(guestMalletX)
+        buffer.putFloat(guestMalletY)
         return buffer.array()
     }
 
     companion object {
+        const val SIZE_BYTES = 1 + 8 + 8 * 4
+
         fun fromByteBuffer(buffer: ByteBuffer): HostTelemetryPacket? {
-            if (buffer.remaining() < 33) return null
+            if (buffer.remaining() < SIZE_BYTES) return null
             val type = buffer.get()
             if (type != 0x01.toByte()) return null
             val seq = buffer.getLong()
@@ -56,7 +105,9 @@ data class HostTelemetryPacket(
             val pvy = buffer.getFloat()
             val hmx = buffer.getFloat()
             val hmy = buffer.getFloat()
-            return HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy)
+            val gmx = buffer.getFloat()
+            val gmy = buffer.getFloat()
+            return HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy, gmx, gmy)
         }
     }
 }

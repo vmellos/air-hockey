@@ -8,7 +8,7 @@ Air Hockey é um jogo arcade multijogador em tempo real executado localmente em 
 O objeto circular deslizante impulsionado pelos jogadores para marcar pontos nas metas.
 _Avoid_: Bola, puck, esfera
 
-**Rebathedor**:
+**Rebatedor**:
 O acessório circular controlado pelo jogador por toque na tela para defender sua meta e golpear o disco.
 _Avoid_: Raquete, taco, paddle, batedor, striker
 
@@ -59,6 +59,10 @@ _Avoid_: Client, peer, slave
 **Código de Pareamento**:
 O identificador visual (Código QR) ou numérico (4 dígitos) exibido pelo dispositivo anfitrião para conexão direta pelo convidado.
 _Avoid_: Pin, senha, room code, token, chave de acesso
+
+**Largada Sincronizada**:
+O início de uma partida em Mesa Estendida, comandado pelo dispositivo anfitrião somente depois que os dois aparelhos sinalizam que estão prontos, com a mesma contagem regressiva exibida em ambos.
+_Avoid_: Start, início automático, kickoff
 
 **Ponto de Acesso Móvel**:
 O recurso sem fio do dispositivo anfitrião que emite uma rede Wi-Fi local direta para conexão do dispositivo convidado sem requerer roteador externo.

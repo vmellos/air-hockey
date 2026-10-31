@@ -75,6 +75,12 @@ fun LobbyScreen(
     val context = LocalContext.current
     var inputCode by remember { mutableStateOf("") }
 
+    androidx.compose.runtime.LaunchedEffect(state.navigateToCalibrationTrigger) {
+        if (state.navigateToCalibrationTrigger > 0L) {
+            onNavigateToCalibration()
+        }
+    }
+
     val handleBack = {
         if (state.isScanningQr) {
             viewModel.setScanningQr(false)
@@ -157,7 +163,10 @@ fun LobbyScreen(
             // Tela do Dispositivo Anfitrião
             HostLobbyView(
                 state = state,
-                onProceed = onNavigateToCalibration
+                onProceed = {
+                    viewModel.notifyNavigateToCalibration()
+                    onNavigateToCalibration()
+                }
             )
         } else if (state.role == LobbyRole.GUEST) {
             // Tela do Dispositivo Convidado

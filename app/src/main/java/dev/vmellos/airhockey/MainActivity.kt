@@ -32,6 +32,7 @@ import dev.vmellos.airhockey.feature.lobby.LobbyViewModel
 import dev.vmellos.airhockey.feature.lobby.ui.BezelCalibrationScreen
 import dev.vmellos.airhockey.feature.lobby.ui.LobbyScreen
 import dev.vmellos.airhockey.feature.menu.ui.MainMenuScreen
+import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.settings.ui.SettingsScreen
 import dev.vmellos.airhockey.ui.theme.AirHockeyTheme
 
@@ -140,40 +141,61 @@ fun AirHockeyAppNavigation(
 
         composable("calibration") {
             val lobbyState by lobbyViewModel.state.collectAsState()
-            BezelCalibrationScreen(
-                role = lobbyState.role,
-                initialGapMm = userPrefs.bezelGapMm,
-                onConfirmGap = { gapMm ->
-                    val isHost = lobbyState.role == LobbyRole.HOST
-                    val gameMode = if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
+            val isHost = lobbyState.role == LobbyRole.HOST
+            val gameMode = if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
 
-                    // Conecta canais UDP e TCP do lobby com o GameViewModel
-                    if (isHost) {
-                        gameViewModel.onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy ->
-                            lobbyViewModel.udpSocket.sendHostTelemetry(px, py, pvx, pvy, hmx, hmy)
-                        }
-                        lobbyViewModel.udpSocket.onGuestInputReceived = { input ->
-                            gameViewModel.onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
-                        }
-                        gameViewModel.onHostGoalScored = { scorer, p1, p2 ->
-                            lobbyViewModel.tcpServer.sendMessage("GOAL:$scorer,$p1,$p2")
-                        }
-                    } else {
-                        lobbyViewModel.udpSocket.onHostTelemetryReceived = { t ->
-                            gameViewModel.onGuestReceiveTelemetry(
-                                t.puckX, t.puckY,
-                                t.puckVx, t.puckVy,
-                                t.hostMalletX, t.hostMalletY
-                            )
-                        }
-                        gameViewModel.onGuestSendInput = { gx, gy ->
-                            lobbyViewModel.udpSocket.sendGuestInput(gx, gy)
+            // Conecta canais UDP e TCP do lobby com o GameViewModel
+            LaunchedEffect(isHost) {
+                if (isHost) {
+                    gameViewModel.onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy ->
+                        lobbyViewModel.udpSocket.sendHostTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy)
+                    }
+                    gameViewModel.onHostBroadcastState = { remoteState ->
+                        lobbyViewModel.tcpServer.sendMessage(ControlMessages.encodeState(remoteState))
+                    }
+                    lobbyViewModel.udpSocket.onGuestInputReceived = { input ->
+                        gameViewModel.onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
+                    }
+                    lobbyViewModel.onControlMessageReceived = { msg ->
+                        when (msg) {
+                            ControlMessages.PAUSE -> gameViewModel.pauseMatch()
+                            ControlMessages.RESUME -> gameViewModel.resumeMatch()
+                            ControlMessages.RESTART -> gameViewModel.restartMatch()
+                            ControlMessages.EXIT -> gameViewModel.onPeerExited()
                         }
                     }
+                } else {
+                    lobbyViewModel.udpSocket.onHostTelemetryReceived = { t ->
+                        gameViewModel.onGuestReceiveTelemetry(
+                            t.puckX, t.puckY,
+                            t.puckVx, t.puckVy,
+                            t.hostMalletX, t.hostMalletY,
+                            t.guestMalletX, t.guestMalletY
+                        )
+                    }
+                    gameViewModel.onGuestSendInput = { gx, gy ->
+                        lobbyViewModel.udpSocket.sendGuestInput(gx, gy)
+                    }
+                    gameViewModel.onGuestSendControl = { msg ->
+                        lobbyViewModel.sendControlMessage(msg)
+                    }
+                    lobbyViewModel.onRemoteStateReceived = { remoteState ->
+                        gameViewModel.onGuestReceiveState(remoteState)
+                    }
+                    lobbyViewModel.onControlMessageReceived = { msg ->
+                        if (msg == ControlMessages.EXIT) {
+                            gameViewModel.onPeerExited()
+                        }
+                    }
+                }
+            }
 
+            // Largada Sincronizada: quando o gatilho de largada é acionado, ambos iniciam no mesmo instante
+            LaunchedEffect(lobbyState.startMatchTrigger) {
+                if (lobbyState.startMatchTrigger > 0L) {
                     gameViewModel.initializeMatch(
                         mode = gameMode,
-                        bezelGapMm = gapMm,
+                        bezelGapMm = lobbyState.calibratedGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds
                     )
@@ -181,6 +203,25 @@ fun AirHockeyAppNavigation(
                     navController.navigate("game/${gameMode.name}") {
                         popUpTo("menu")
                     }
+                }
+            }
+
+            BezelCalibrationScreen(
+                role = lobbyState.role,
+                initialGapMm = userPrefs.bezelGapMm,
+                isPeerReady = lobbyState.isPeerReady,
+                isSelfReady = lobbyState.isSelfReady,
+                onReadyClick = { gapMm ->
+                    if (isHost) {
+                        lobbyViewModel.startHostMatch(gapMm)
+                    } else {
+                        lobbyViewModel.setGuestReady(gapMm)
+                    }
+                },
+                onBackToLobby = {
+                    lobbyViewModel.sendControlMessage(ControlMessages.EXIT)
+                    lobbyViewModel.stopAll()
+                    navController.popBackStack("lobby", inclusive = false)
                 }
             )
         }
@@ -201,6 +242,7 @@ fun AirHockeyAppNavigation(
                 mode = mode,
                 onExitToMenu = {
                     gameViewModel.stopMatch()
+                    lobbyViewModel.sendControlMessage(ControlMessages.EXIT)
                     lobbyViewModel.stopAll()
                     navController.navigate("menu") {
                         popUpTo("menu") { inclusive = true }

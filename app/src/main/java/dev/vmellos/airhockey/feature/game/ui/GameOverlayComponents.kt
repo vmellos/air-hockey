@@ -133,28 +133,32 @@ fun CountdownOverlay(
     countdownNumber: Int,
     modifier: Modifier = Modifier
 ) {
+    val displayText = when (countdownNumber) {
+        3 -> "3"
+        2 -> "2"
+        1 -> "1"
+        0 -> stringResource(R.string.game_countdown_go)
+        else -> ""
+    }
+    if (displayText.isEmpty()) return
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        val label = when (countdownNumber) {
-            3 -> stringResource(R.string.game_countdown_ready)
-            2 -> stringResource(R.string.game_countdown_set)
-            1 -> stringResource(R.string.game_countdown_go)
-            else -> ""
-        }
-
         Surface(
-            color = Color(0xCC000000),
-            shape = RoundedCornerShape(24.dp)
+            color = Color(0x660A0E1A),
+            shape = RoundedCornerShape(20.dp),
+            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0x8800E5FF))
         ) {
             Text(
-                text = "$countdownNumber\n$label",
-                color = Color(0xFF00E5FF),
-                fontSize = 48.sp,
+                text = displayText,
+                color = if (countdownNumber == 0) Color(0xFF10B981) else Color(0xFF00E5FF),
+                fontSize = if (countdownNumber == 0) 56.sp else 64.sp,
                 fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Monospace,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(32.dp)
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 12.dp)
             )
         }
     }
@@ -171,27 +175,76 @@ fun GoalBannerOverlay(
     ) {
         val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
         Surface(
-            color = Color(0xEE0A0E1A),
-            shape = RoundedCornerShape(20.dp),
-            border = androidx.compose.foundation.BorderStroke(3.dp, color)
+            color = Color(0xDD0A0E1A),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(2.dp, color)
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 48.dp, vertical = 24.dp),
+                modifier = Modifier.padding(horizontal = 40.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = stringResource(R.string.game_goal),
                     color = color,
-                    fontSize = 42.sp,
+                    fontSize = 38.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 4.sp
                 )
                 Text(
                     text = if (scorer == 1) "P1" else "P2",
                     color = Color.White,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PeerExitedDialog(
+    onExit: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xAA000000)),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            color = Color(0xFF1E293B),
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Partida Encerrada",
+                    color = Color(0xFFFF5722),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "O adversário saiu da partida.",
+                    color = Color(0xFF94A3B8),
+                    fontSize = 15.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onExit,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.game_exit_to_menu), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

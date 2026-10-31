@@ -1,7 +1,9 @@
 package dev.vmellos.airhockey.feature.network
 
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -13,10 +15,14 @@ import java.net.Socket
 
 class TcpControlClient {
 
-    private var socket: Socket? = null
-    private var writer: PrintWriter? = null
+    @Volatile private var socket: Socket? = null
+    @Volatile private var writer: PrintWriter? = null
     private var clientJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.IO)
+
+    // Envio sequencial em IO: preserva a ordem das mensagens e nunca usa a thread de UI.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val sendScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
     var clockOffsetMs: Long = 0L
         private set
@@ -49,9 +55,14 @@ class TcpControlClient {
                     }
                 }
 
-                onDisconnected?.invoke()
-            } catch (_: Exception) {
+                writer = null
                 if (isActive) onDisconnected?.invoke()
+            } catch (e: Exception) {
+                writer = null
+                if (isActive) {
+                    Log.w(TAG, "Conexão TCP com $hostIp:$port falhou ou caiu", e)
+                    onDisconnected?.invoke()
+                }
             }
         }
     }
@@ -73,10 +84,14 @@ class TcpControlClient {
     }
 
     fun sendMessage(msg: String) {
-        scope.launch {
-            try {
-                writer?.println(msg)
-            } catch (_: Exception) {}
+        sendScope.launch {
+            val w = writer
+            if (w == null) {
+                Log.w(TAG, "Mensagem descartada (sem conexão com o anfitrião): $msg")
+                return@launch
+            }
+            w.println(msg)
+            if (w.checkError()) Log.w(TAG, "Falha ao enviar mensagem TCP: $msg")
         }
     }
 
@@ -88,5 +103,9 @@ class TcpControlClient {
         } catch (_: Exception) {}
         socket = null
         writer = null
+    }
+
+    private companion object {
+        const val TAG = "TcpControlClient"
     }
 }

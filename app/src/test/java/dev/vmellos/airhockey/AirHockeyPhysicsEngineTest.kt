@@ -123,4 +123,25 @@ class AirHockeyPhysicsEngineTest {
         val minDist = engine.puck.radius + engine.player1Mallet.radius
         assertTrue("Puck and mallet must not overlap after collision", dist >= minDist - 0.5f)
     }
+
+    @Test
+    fun testExtendedModeResetPositionsServesCorrectly() {
+        val extDimensions = TableDimensions(
+            width = 1000f,
+            viewportHeight = 1000f,
+            bezelGapUnits = 40f,
+            isExtendedMode = true
+        )
+        val extEngine = AirHockeyPhysicsEngine(extDimensions)
+
+        // When P1 scores (scorer = 1), P2 serves (top half: hostHalfBottomY - 220f = 780f)
+        extEngine.resetPositions(scorer = 1)
+        assertEquals(500f, extEngine.puck.x, 0.1f)
+        assertEquals(780f, extEngine.puck.y, 0.1f)
+
+        // When P2 scores (scorer = 2), P1 serves (bottom half: guestHalfTopY + 220f = 1040 + 220 = 1260f)
+        extEngine.resetPositions(scorer = 2)
+        assertEquals(500f, extEngine.puck.x, 0.1f)
+        assertEquals(1260f, extEngine.puck.y, 0.1f)
+    }
 }

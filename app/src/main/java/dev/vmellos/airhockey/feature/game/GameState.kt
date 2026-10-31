@@ -11,6 +11,7 @@ enum class GameMode {
 }
 
 enum class MatchStatus {
+    IDLE,
     COUNTDOWN,
     PLAYING,
     GOAL_PAUSE,
@@ -21,7 +22,7 @@ enum class MatchStatus {
 
 data class MatchState(
     val mode: GameMode = GameMode.SOLO,
-    val status: MatchStatus = MatchStatus.COUNTDOWN,
+    val status: MatchStatus = MatchStatus.IDLE,
     val scorePlayer1: Int = 0,
     val scorePlayer2: Int = 0,
     val targetScore: Int = 7,
@@ -29,5 +30,6 @@ data class MatchState(
     val lastScorer: Int = 0, // 1 ou 2
     val winner: Int = 0, // 1 ou 2
     val remainingTimeSeconds: Int = 180,
-    val isHost: Boolean = true
+    val isHost: Boolean = true,
+    val peerExited: Boolean = false
 )

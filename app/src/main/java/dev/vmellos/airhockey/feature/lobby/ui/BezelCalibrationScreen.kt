@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.feature.lobby.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -17,9 +18,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -44,10 +52,17 @@ import dev.vmellos.airhockey.feature.lobby.LobbyRole
 fun BezelCalibrationScreen(
     role: LobbyRole,
     initialGapMm: Float = 8.0f,
-    onConfirmGap: (Float) -> Unit,
+    isPeerReady: Boolean = false,
+    isSelfReady: Boolean = false,
+    onReadyClick: (Float) -> Unit,
+    onBackToLobby: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var gapMm by remember { mutableFloatStateOf(initialGapMm) }
+
+    BackHandler {
+        onBackToLobby()
+    }
 
     // Animação cíclica do disco de teste transitando pelo vão
     val transition = rememberInfiniteTransition(label = "puck_calibration")
@@ -65,22 +80,31 @@ fun BezelCalibrationScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0A0E1A))
-            .padding(24.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = stringResource(R.string.calibration_title),
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(onClick = onBackToLobby) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.calibration_title),
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = stringResource(R.string.calibration_instruction),
             color = Color(0xFF94A3B8),
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
@@ -154,20 +178,54 @@ fun BezelCalibrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val isGuest = role == LobbyRole.GUEST
+        val buttonText = when {
+            isGuest && isSelfReady -> "Aguardando anfitrião iniciar..."
+            isGuest -> stringResource(R.string.calibration_ready)
+            !isGuest && isPeerReady -> "Iniciar Partida (Ambos Prontos)"
+            !isGuest -> "Iniciar Partida (Aguardando Jogador 2)"
+            else -> stringResource(R.string.calibration_ready)
+        }
+        val buttonContainerColor = when {
+            isGuest && isSelfReady -> Color(0xFF334155)
+            !isGuest && isPeerReady -> Color(0xFF10B981)
+            else -> Color(0xFF00E5FF)
+        }
+        val isEnabled = !(isGuest && isSelfReady)
+
         Button(
-            onClick = { onConfirmGap(gapMm) },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+            onClick = { onReadyClick(gapMm) },
+            enabled = isEnabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = buttonContainerColor,
+                disabledContainerColor = Color(0xFF1E293B)
+            ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            Text(
-                text = stringResource(R.string.calibration_ready),
-                color = Color(0xFF0A0E1A),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (isGuest && isSelfReady) {
+                CircularProgressIndicator(
+                    color = Color(0xFF00E5FF),
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = buttonText,
+                    color = Color(0xFF94A3B8),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            } else {
+                Text(
+                    text = buttonText,
+                    color = if (buttonContainerColor == Color(0xFF10B981)) Color.White else Color(0xFF0A0E1A),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
