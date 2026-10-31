@@ -91,15 +91,16 @@ fun AirHockeyArenaCanvas(
                                 if (isExtendedGuest) {
                                     viewModel.onGuestTouchLocal(localX, localY)
                                 } else if (isExtendedHost) {
-                                    viewModel.onTouchPlayer1(localX, localY)
+                                    val globalY = dimensions.guestHalfTopY + localY
+                                    viewModel.onTouchPlayer1(localX, globalY)
                                 } else if (isSplitScreen) {
                                     if (localY < 1000f) {
-                                        viewModel.onTouchPlayer1(localX, localY)
-                                    } else {
                                         viewModel.onTouchPlayer2(localX, localY)
+                                    } else {
+                                        viewModel.onTouchPlayer1(localX, localY)
                                     }
                                 } else {
-                                    // SOLO
+                                    // SOLO: Humano controla P1 na base
                                     viewModel.onTouchPlayer1(localX, localY)
                                 }
                                 change.consume()
@@ -133,10 +134,10 @@ fun AirHockeyArenaCanvas(
             }
 
             fun toScreenY(vy: Float): Float {
-                val effectiveY = if (isExtendedGuest) {
-                    (dimensions.totalHeight - vy)
-                } else {
-                    vy
+                val effectiveY = when {
+                    isExtendedHost -> vy - dimensions.guestHalfTopY
+                    isExtendedGuest -> 1000f - vy
+                    else -> vy
                 }
                 return offsetY + effectiveY * scale
             }
@@ -208,8 +209,8 @@ private fun DrawScope.drawTableRink(
             style = Stroke(width = 4f)
         )
     } else {
-        // Na Mesa Estendida, a borda que encosta na outra mesa recebe uma demarcação luminosa
-        val touchY = if (isExtendedHost) (top + height) else top
+        // Na Mesa Estendida (Disposição Topo-a-Topo), a borda do TOPO encosta na outra mesa e recebe a demarcação luminosa
+        val touchY = top
         drawLine(
             color = Color(0x88FFFFFF),
             start = Offset(left, touchY),
@@ -230,9 +231,40 @@ private fun DrawScope.drawGoals(
 ) {
     val goalW = dimensions.goalWidth * scale
     val goalLeft = left + dimensions.goalLeft * scale
+    val vHeight = if (isExtendedHost || isExtendedGuest) 1000f else 2000f
+    val screenBottom = top + vHeight * scale
 
-    // Meta Player 1 (Base na tela do Anfitrião / Mesa única)
+    // Meta Player 1 (Azul / Cyan) - Base da tela para Anfitrião, Solo e Split
     if (!isExtendedGuest) {
+        drawRect(
+            color = GoalSlotColor,
+            topLeft = Offset(goalLeft, screenBottom - 6f),
+            size = Size(goalW, 16f)
+        )
+        drawLine(
+            color = BorderCyan,
+            start = Offset(goalLeft, screenBottom),
+            end = Offset(goalLeft + goalW, screenBottom),
+            strokeWidth = 8f
+        )
+    }
+
+    // Meta Player 2 (Laranja)
+    // No modo Estendido (Convidado): base da tela do Convidado
+    // No modo Solo e Split: topo da tela
+    if (isExtendedGuest) {
+        drawRect(
+            color = GoalSlotColor,
+            topLeft = Offset(goalLeft, screenBottom - 6f),
+            size = Size(goalW, 16f)
+        )
+        drawLine(
+            color = BorderOrange,
+            start = Offset(goalLeft, screenBottom),
+            end = Offset(goalLeft + goalW, screenBottom),
+            strokeWidth = 8f
+        )
+    } else if (!isExtendedHost) {
         val goalTop = top
         drawRect(
             color = GoalSlotColor,
@@ -240,26 +272,9 @@ private fun DrawScope.drawGoals(
             size = Size(goalW, 16f)
         )
         drawLine(
-            color = BorderCyan,
+            color = BorderOrange,
             start = Offset(goalLeft, goalTop),
             end = Offset(goalLeft + goalW, goalTop),
-            strokeWidth = 8f
-        )
-    }
-
-    // Meta Player 2 (Base na tela do Convidado / Topo da mesa única)
-    if (!isExtendedHost) {
-        val vHeight = if (isExtendedGuest) 1000f else 2000f
-        val goalBottom = top + vHeight * scale
-        drawRect(
-            color = GoalSlotColor,
-            topLeft = Offset(goalLeft, goalBottom - 6f),
-            size = Size(goalW, 16f)
-        )
-        drawLine(
-            color = BorderOrange,
-            start = Offset(goalLeft, goalBottom),
-            end = Offset(goalLeft + goalW, goalBottom),
             strokeWidth = 8f
         )
     }

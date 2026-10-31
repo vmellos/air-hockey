@@ -25,13 +25,13 @@ class AirHockeyPhysicsEngine(
 
     val player1Mallet = Mallet(
         x = dimensions.width / 2f,
-        y = 250f,
+        y = dimensions.totalHeight - 250f,
         radius = dimensions.malletRadius
     )
 
     val player2Mallet = Mallet(
         x = dimensions.width / 2f,
-        y = dimensions.totalHeight - 250f,
+        y = 250f,
         radius = dimensions.malletRadius
     )
 
@@ -45,8 +45,8 @@ class AirHockeyPhysicsEngine(
 
     fun resetPositions() {
         puck.reset(dimensions.width / 2f, dimensions.centerLineY)
-        player1Mallet.reset(dimensions.width / 2f, 250f)
-        player2Mallet.reset(dimensions.width / 2f, dimensions.totalHeight - 250f)
+        player1Mallet.reset(dimensions.width / 2f, dimensions.totalHeight - 250f)
+        player2Mallet.reset(dimensions.width / 2f, 250f)
     }
 
     /**
@@ -124,13 +124,13 @@ class AirHockeyPhysicsEngine(
         mallet.x = mallet.x.coerceIn(r, dimensions.width - r)
 
         if (isPlayer1) {
-            // Player 1 joga na metade [0, 1000]
-            val maxY = dimensions.hostHalfBottomY - r
-            mallet.y = mallet.y.coerceIn(r, maxY)
-        } else {
-            // Player 2 joga na metade [1000 + vao, totalHeight]
+            // Player 1 (Humano / Anfitrião) joga na metade inferior [centerLineY + r, totalHeight - r]
             val minY = if (dimensions.isExtendedMode) dimensions.guestHalfTopY + r else (dimensions.centerLineY + r)
             mallet.y = mallet.y.coerceIn(minY, dimensions.totalHeight - r)
+        } else {
+            // Player 2 (IA / Convidado) joga na metade superior [r, centerLineY - r]
+            val maxY = if (dimensions.isExtendedMode) dimensions.hostHalfBottomY - r else (dimensions.centerLineY - r)
+            mallet.y = mallet.y.coerceIn(r, maxY)
         }
     }
 
@@ -183,12 +183,12 @@ class AirHockeyPhysicsEngine(
             onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
         }
 
-        // Meta em Y <= 0 (Defendida pelo Player 1 -> Ponto para Player 2)
+        // Meta em Y <= 0 (Defendida pelo Player 2 / IA no Topo -> Ponto para Player 1)
         if (puck.y - r < 0f) {
             val isInGoal = puck.x in dimensions.goalLeft..dimensions.goalRight
             if (isInGoal) {
                 if (puck.y < -r * 0.5f) {
-                    onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER2, 1.0f)
+                    onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER1, 1.0f)
                 }
             } else {
                 puck.y = r
@@ -197,12 +197,12 @@ class AirHockeyPhysicsEngine(
             }
         }
 
-        // Meta em Y >= totalHeight (Defendida pelo Player 2 -> Ponto para Player 1)
+        // Meta em Y >= totalHeight (Defendida pelo Player 1 / Humano na Base -> Ponto para Player 2)
         if (puck.y + r > dimensions.totalHeight) {
             val isInGoal = puck.x in dimensions.goalLeft..dimensions.goalRight
             if (isInGoal) {
                 if (puck.y > dimensions.totalHeight + r * 0.5f) {
-                    onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER1, 1.0f)
+                    onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER2, 1.0f)
                 }
             } else {
                 puck.y = dimensions.totalHeight - r

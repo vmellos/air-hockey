@@ -1,7 +1,10 @@
 package dev.vmellos.airhockey.feature.lobby.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -22,9 +25,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiTethering
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,10 +36,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +75,26 @@ fun LobbyScreen(
     val context = LocalContext.current
     var inputCode by remember { mutableStateOf("") }
 
+    val handleBack = {
+        if (state.isScanningQr) {
+            viewModel.setScanningQr(false)
+        } else if (state.role != LobbyRole.NONE) {
+            viewModel.stopAll()
+        } else {
+            onBackToMenu()
+        }
+    }
+
+    BackHandler {
+        handleBack()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.setScanningQr(false)
+        }
+    }
+
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -91,7 +117,7 @@ fun LobbyScreen(
                     .padding(24.dp)
                     .background(Color(0x88000000), RoundedCornerShape(12.dp))
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
             }
         }
         return
@@ -107,8 +133,8 @@ fun LobbyScreen(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(onClick = onBackToMenu) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+            IconButton(onClick = handleBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -214,6 +240,8 @@ private fun HostLobbyView(
     state: dev.vmellos.airhockey.feature.lobby.LobbyState,
     onProceed: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -226,13 +254,13 @@ private fun HostLobbyView(
         Text(
             text = state.tableCode,
             color = Color(0xFF00E5FF),
-            fontSize = 48.sp,
+            fontSize = 44.sp,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.Monospace,
             letterSpacing = 6.sp
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // QR Code gerado offline
         val qrBitmap = remember(state.qrContent) {
@@ -243,7 +271,7 @@ private fun HostLobbyView(
             Surface(
                 color = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(200.dp)
+                modifier = Modifier.size(190.dp)
             ) {
                 Image(
                     bitmap = qrBitmap,
@@ -253,14 +281,83 @@ private fun HostLobbyView(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = stringResource(R.string.lobby_host_ip, state.hostIp),
-            color = Color(0xFF64748B),
-            fontSize = 13.sp,
-            fontFamily = FontFamily.Monospace
-        )
+        // Card de Instruções e Status da Rede Wi-Fi
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Wifi,
+                        contentDescription = null,
+                        tint = if (state.isWifiConnected) Color(0xFF00E5FF) else Color(0xFFFF9800),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val networkLabel = if (state.wifiSsid.isNotBlank()) {
+                        stringResource(R.string.lobby_network_ssid, state.wifiSsid)
+                    } else if (state.isWifiConnected) {
+                        stringResource(R.string.lobby_network_wifi_connected, state.hostIp)
+                    } else {
+                        stringResource(R.string.lobby_network_no_wifi)
+                    }
+                    Text(
+                        text = networkLabel,
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = stringResource(R.string.lobby_network_same_wifi),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        try {
+                            val intent = Intent("android.settings.TETHER_SETTINGS").apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
+                            try {
+                                val fallback = Intent(Settings.ACTION_WIRELESS_SETTINGS).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                context.startActivity(fallback)
+                            } catch (_: Exception) {}
+                        }
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.WifiTethering,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.lobby_network_open_hotspot),
+                        color = Color(0xFF00E5FF),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -271,7 +368,7 @@ private fun HostLobbyView(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = onProceed,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
@@ -331,6 +428,28 @@ private fun GuestLobbyView(
                 }
             }
             return
+        }
+
+        if (state.connectionStatus == ConnectionStatus.CONNECTING) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFFF5722), modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text(
+                        text = stringResource(R.string.lobby_status_connecting),
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
 
         // Botão de Escanear QR Code

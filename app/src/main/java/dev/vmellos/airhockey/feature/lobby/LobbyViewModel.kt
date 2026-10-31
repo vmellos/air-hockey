@@ -40,7 +40,9 @@ data class LobbyState(
     val guestIp: String = "",
     val discoveredTables: List<DiscoveredTable> = emptyList(),
     val isReadyToPlay: Boolean = false,
-    val isScanningQr: Boolean = false
+    val isScanningQr: Boolean = false,
+    val wifiSsid: String = "",
+    val isWifiConnected: Boolean = true
 )
 
 class LobbyViewModel : ViewModel() {
@@ -65,10 +67,36 @@ class LobbyViewModel : ViewModel() {
         setupTcpClientCallbacks()
     }
 
+    @Suppress("DEPRECATION")
+    private fun getNetworkSsid(): String {
+        return try {
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+            val info = wifiManager?.connectionInfo
+            val rawSsid = info?.ssid ?: ""
+            val clean = rawSsid.removeSurrounding("\"")
+            if (clean == "<unknown ssid>" || clean.isBlank()) "" else clean
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun checkIsWifiConnected(): Boolean {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val activeNet = cm?.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(activeNet) ?: return false
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+        } catch (_: Exception) {
+            true
+        }
+    }
+
     fun startAsHost() {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress()
         val qr = "airhockey://connect?ip=$ip&port=8888&code=$code"
+        val ssid = getNetworkSsid()
+        val wifiConnected = checkIsWifiConnected()
 
         _state.update {
             it.copy(
@@ -76,7 +104,9 @@ class LobbyViewModel : ViewModel() {
                 connectionStatus = ConnectionStatus.BROADCASTING,
                 tableCode = code,
                 hostIp = ip,
-                qrContent = qr
+                qrContent = qr,
+                wifiSsid = ssid,
+                isWifiConnected = wifiConnected
             )
         }
 
@@ -168,6 +198,7 @@ class LobbyViewModel : ViewModel() {
         if (qrText.contains("ip=")) {
             val ip = qrText.substringAfter("ip=").substringBefore("&")
             if (ip.isNotBlank()) {
+                startAsGuest()
                 connectToTable(ip)
             }
         }

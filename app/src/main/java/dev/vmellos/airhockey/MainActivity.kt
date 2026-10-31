@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -7,9 +8,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -33,10 +37,14 @@ import dev.vmellos.airhockey.ui.theme.AirHockeyTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var deepLinkUri by mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+
+        deepLinkUri = intent?.dataString
 
         setContent {
             val preferencesRepo = AirHockeyApp.instance.preferencesRepository
@@ -45,21 +53,42 @@ class MainActivity : ComponentActivity() {
             // Sincroniza idioma reativo na UI via ProvideAppLocale do iptv_app
             ProvideAppLocale(languageCode = userPrefs.appLanguage) {
                 AirHockeyTheme {
-                    AirHockeyAppNavigation(userPrefs = userPrefs)
+                    AirHockeyAppNavigation(
+                        userPrefs = userPrefs,
+                        deepLinkUri = deepLinkUri
+                    )
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deepLinkUri = intent.dataString
     }
 }
 
 @Composable
 fun AirHockeyAppNavigation(
     userPrefs: UserPreferences,
+    deepLinkUri: String? = null,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val gameViewModel: GameViewModel = viewModel()
     val lobbyViewModel: LobbyViewModel = viewModel()
+
+    // Processa Deep Link (ex: câmera nativa lendo QR code airhockey://connect)
+    LaunchedEffect(deepLinkUri) {
+        val uri = deepLinkUri
+        if (!uri.isNullOrBlank() && uri.startsWith("airhockey://connect")) {
+            lobbyViewModel.handleQrScanResult(uri)
+            navController.navigate("lobby") {
+                popUpTo("menu")
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -171,6 +200,7 @@ fun AirHockeyAppNavigation(
                 viewModel = gameViewModel,
                 mode = mode,
                 onExitToMenu = {
+                    gameViewModel.stopMatch()
                     lobbyViewModel.stopAll()
                     navController.navigate("menu") {
                         popUpTo("menu") { inclusive = true }

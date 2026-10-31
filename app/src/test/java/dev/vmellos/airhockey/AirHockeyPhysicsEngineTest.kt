@@ -57,31 +57,12 @@ class AirHockeyPhysicsEngineTest {
     }
 
     @Test
-    fun testGoalDetectionPlayer2Score() {
-        // Meta em Y <= 0 defendida pelo Player 1 -> Gol do Player 2
+    fun testGoalDetectionPlayer1Score() {
+        // Meta em Y <= 0 defendida pelo Player 2 (Topo) -> Gol do Player 1
         engine.puck.x = 500f // Centro da meta
         engine.puck.y = 20f
         engine.puck.vx = 0f
         engine.puck.vy = -1200f
-
-        var goalDetected = false
-        engine.onCollisionListener = { event, _ ->
-            if (event == CollisionEvent.GOAL_PLAYER2) {
-                goalDetected = true
-            }
-        }
-
-        engine.tick(0.05f)
-        assertTrue("Goal for Player 2 should be detected", goalDetected)
-    }
-
-    @Test
-    fun testGoalDetectionPlayer1Score() {
-        // Meta em Y >= totalHeight defendida pelo Player 2 -> Gol do Player 1
-        engine.puck.x = 500f
-        engine.puck.y = dimensions.totalHeight - 20f
-        engine.puck.vx = 0f
-        engine.puck.vy = 1200f
 
         var goalDetected = false
         engine.onCollisionListener = { event, _ ->
@@ -95,15 +76,34 @@ class AirHockeyPhysicsEngineTest {
     }
 
     @Test
-    fun testPaddleCollisionSeparationAndImpulse() {
-        // Coloca rebathedor do Player 1 colidindo com o disco
+    fun testGoalDetectionPlayer2Score() {
+        // Meta em Y >= totalHeight defendida pelo Player 1 (Base) -> Gol do Player 2
         engine.puck.x = 500f
-        engine.puck.y = 350f
-        engine.player1Mallet.reset(500f, 300f)
+        engine.puck.y = dimensions.totalHeight - 20f
+        engine.puck.vx = 0f
+        engine.puck.vy = 1200f
+
+        var goalDetected = false
+        engine.onCollisionListener = { event, _ ->
+            if (event == CollisionEvent.GOAL_PLAYER2) {
+                goalDetected = true
+            }
+        }
+
+        engine.tick(0.05f)
+        assertTrue("Goal for Player 2 should be detected", goalDetected)
+    }
+
+    @Test
+    fun testPaddleCollisionSeparationAndImpulse() {
+        // Coloca rebathedor do Player 1 colidindo com o disco na metade inferior
+        engine.puck.x = 500f
+        engine.puck.y = 1650f
+        engine.player1Mallet.reset(500f, 1700f)
         engine.player1Mallet.targetX = 500f
-        engine.player1Mallet.targetY = 360f // Movendo para frente na direção do disco
+        engine.player1Mallet.targetY = 1640f // Movendo para cima na direção do disco
         engine.player1Mallet.vx = 0f
-        engine.player1Mallet.vy = 500f
+        engine.player1Mallet.vy = -500f
 
         var paddleHit = false
         engine.onCollisionListener = { event, _ ->
@@ -114,7 +114,7 @@ class AirHockeyPhysicsEngineTest {
 
         engine.tick(0.02f)
         assertTrue("Paddle hit should be detected", paddleHit)
-        assertTrue("Puck should gain downward velocity", engine.puck.vy > 0f)
+        assertTrue("Puck should gain upward velocity", engine.puck.vy < 0f)
 
         // Verifica separação geométrica
         val dx = engine.puck.x - engine.player1Mallet.x

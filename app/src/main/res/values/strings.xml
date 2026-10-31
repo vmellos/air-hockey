@@ -32,6 +32,12 @@
     <string name="lobby_status_waiting_guest">Waiting for player 2 to join&#8230;</string>
     <string name="lobby_status_disconnected">Connection lost</string>
     <string name="lobby_hotspot_hint">Tip: If using Mobile Hotspot, Guest can connect directly using the QR Code or code.</string>
+    <string name="lobby_network_same_wifi">Both devices must be connected to the exact same Wi-Fi network.</string>
+    <string name="lobby_network_ssid">Wi-Fi: %1$s</string>
+    <string name="lobby_network_wifi_connected">Wi-Fi Connected (%1$s)</string>
+    <string name="lobby_network_no_wifi">No Wi-Fi detected</string>
+    <string name="lobby_network_open_hotspot">No Wi-Fi? Turn on Mobile Hotspot</string>
+    <string name="lobby_network_hotspot_instruction">Turn on Hotspot on this phone and connect the other phone to it.</string>
 
     <!-- Calibração de Vão Físico -->
     <string name="calibration_title">Bezel Calibration</string>

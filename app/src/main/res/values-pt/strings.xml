@@ -32,6 +32,12 @@
     <string name="lobby_status_waiting_guest">Aguardando o jogador 2 entrar&#8230;</string>
     <string name="lobby_status_disconnected">Conexão perdida</string>
     <string name="lobby_hotspot_hint">Dica: Se estiver usando o Roteador Wi-Fi (Hotspot), o convidado pode conectar apontando para o QR Code ou digitando o código.</string>
+    <string name="lobby_network_same_wifi">Atenção: Os dois celulares devem estar conectados à mesma rede Wi-Fi.</string>
+    <string name="lobby_network_ssid">Rede Wi-Fi: %1$s</string>
+    <string name="lobby_network_wifi_connected">Wi-Fi Conectado (%1$s)</string>
+    <string name="lobby_network_no_wifi">Nenhuma rede Wi-Fi detectada</string>
+    <string name="lobby_network_open_hotspot">Sem Wi-Fi? Ativar Ponto de Acesso (Roteador)</string>
+    <string name="lobby_network_hotspot_instruction">Ative o Ponto de Acesso neste celular e conecte o outro aparelho nele.</string>
 
     <!-- Calibração de Vão Físico -->
     <string name="calibration_title">Calibração de Vão Físico</string>

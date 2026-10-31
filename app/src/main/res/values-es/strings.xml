@@ -32,6 +32,12 @@
     <string name="lobby_status_waiting_guest">Esperando al jugador 2&#8230;</string>
     <string name="lobby_status_disconnected">Conexión perdida</string>
     <string name="lobby_hotspot_hint">Consejo: Si usas la Zona Wi-Fi móvil, el invitado puede unirse apuntando al código QR o ingresando el código.</string>
+    <string name="lobby_network_same_wifi">Atención: Ambos dispositivos deben estar conectados a la misma red Wi-Fi.</string>
+    <string name="lobby_network_ssid">Red Wi-Fi: %1$s</string>
+    <string name="lobby_network_wifi_connected">Wi-Fi Conectado (%1$s)</string>
+    <string name="lobby_network_no_wifi">No se detectó red Wi-Fi</string>
+    <string name="lobby_network_open_hotspot">¿Sin Wi-Fi? Activar Zona Wi-Fi (Punto de Acceso)</string>
+    <string name="lobby_network_hotspot_instruction">Activa el Punto de Acceso en este teléfono y conecta el otro dispositivo a él.</string>
 
     <!-- Calibração de Vão Físico -->
     <string name="calibration_title">Calibración de Separación Física</string>

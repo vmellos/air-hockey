@@ -39,6 +39,16 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- Deep Link para pareamento direto via Câmera do celular: airhockey://connect?ip=...&code=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="airhockey"
+                    android:host="connect" />
+            </intent-filter>
         </activity>
     </application>
 

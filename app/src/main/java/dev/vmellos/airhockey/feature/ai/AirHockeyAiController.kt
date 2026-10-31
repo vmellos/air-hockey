@@ -13,10 +13,10 @@ class AirHockeyAiController(
         val dimensions = engine.dimensions
 
         val homeX = dimensions.width / 2f
-        val homeY = dimensions.totalHeight - 220f
+        val homeY = 220f
 
-        val isPuckInAiHalf = puck.y > dimensions.centerLineY
-        val isPuckMovingTowardsAi = puck.vy > 0
+        val isPuckInAiHalf = puck.y < dimensions.centerLineY
+        val isPuckMovingTowardsAi = puck.vy < 0
 
         val maxSpeed = when (difficulty) {
             AiDifficulty.EASY -> 450f
@@ -31,7 +31,7 @@ class AirHockeyAiController(
             AiDifficulty.EASY -> {
                 if (isPuckInAiHalf) {
                     desiredX = puck.x
-                    desiredY = homeY - 50f
+                    desiredY = homeY + 50f
                 } else {
                     desiredX = homeX
                     desiredY = homeY
@@ -41,10 +41,10 @@ class AirHockeyAiController(
             AiDifficulty.MEDIUM -> {
                 if (isPuckInAiHalf) {
                     desiredX = puck.x
-                    if (puck.y < homeY && puck.y > dimensions.centerLineY + 100f) {
+                    if (puck.y > homeY && puck.y < dimensions.centerLineY - 100f) {
                         desiredY = puck.y
                     } else {
-                        desiredY = homeY - 70f
+                        desiredY = homeY + 70f
                     }
                 } else {
                     desiredX = homeX + (puck.x - homeX) * 0.35f
@@ -53,20 +53,20 @@ class AirHockeyAiController(
             }
 
             AiDifficulty.HARD -> {
-                if (isPuckInAiHalf || (isPuckMovingTowardsAi && puck.y > dimensions.totalHeight * 0.3f)) {
+                if (isPuckInAiHalf || (isPuckMovingTowardsAi && puck.y < dimensions.totalHeight * 0.7f)) {
                     var predictedX = puck.x
                     if (isPuckMovingTowardsAi && abs(puck.vy) > 10f) {
-                        val timeToReach = (homeY - puck.y) / abs(puck.vy)
+                        val timeToReach = (puck.y - homeY) / abs(puck.vy)
                         predictedX = puck.x + puck.vx * timeToReach
                         if (predictedX < 0) predictedX = -predictedX
                         if (predictedX > dimensions.width) predictedX = 2 * dimensions.width - predictedX
                     }
                     desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
 
-                    if (puck.y in (dimensions.centerLineY + 80f)..(homeY + 20f)) {
-                        desiredY = puck.y - 40f
+                    if (puck.y in (homeY - 20f)..(dimensions.centerLineY - 80f)) {
+                        desiredY = puck.y + 40f
                     } else {
-                        desiredY = homeY - 60f
+                        desiredY = homeY + 60f
                     }
                 } else {
                     desiredX = (homeX + (puck.x - homeX) * 0.5f).coerceIn(dimensions.goalLeft, dimensions.goalRight)

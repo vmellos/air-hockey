@@ -1,8 +1,10 @@
 package dev.vmellos.airhockey.feature.game.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -18,6 +20,16 @@ fun GameScreen(
     modifier: Modifier = Modifier
 ) {
     val matchState by viewModel.matchState.collectAsState()
+
+    BackHandler {
+        onExitToMenu()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.stopMatch()
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Canvas da Mesa de Jogo

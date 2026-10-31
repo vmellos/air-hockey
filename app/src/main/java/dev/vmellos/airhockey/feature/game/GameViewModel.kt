@@ -234,9 +234,9 @@ class GameViewModel : ViewModel() {
 
     fun onGuestTouchLocal(localX: Float, localY: Float) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
-        // Transforma toque do convidado (rotacionado 180 graus) para o espaço global
+        // Transforma toque do convidado (rotacionado 180 graus na Disposição Topo-a-Topo) para o espaço global
         val globalX = 1000f - localX
-        val globalY = dimensions.totalHeight - localY
+        val globalY = 1000f - localY
         onGuestSendInput?.invoke(globalX, globalY)
     }
 
@@ -284,9 +284,15 @@ class GameViewModel : ViewModel() {
         startCountdown()
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    fun stopMatch() {
         stopGameLoops()
         countdownJob?.cancel()
+        countdownJob = null
+        _matchState.update { it.copy(status = MatchStatus.PAUSED) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopMatch()
     }
 }
