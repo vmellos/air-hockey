@@ -13,10 +13,10 @@ enum class TableAlignment {
     SIDE_BY_SIDE
 }
 
-enum class PuckSpeedPreset(val maxSpeed: Float) {
-    SLOW(6500f),
-    NORMAL(9500f),
-    FAST(12000f)
+enum class PuckSpeedPreset(val maxSpeed: Float, val airFriction: Float = 0.40f) {
+    SLOW(3600f, 0.55f),
+    NORMAL(6800f, 0.40f),
+    FAST(9500f, 0.35f)
 }
 
 data class UserPreferences(

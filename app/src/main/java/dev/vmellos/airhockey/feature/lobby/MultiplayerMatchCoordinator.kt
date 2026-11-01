@@ -27,7 +27,7 @@ data class MultiplayerSessionState(
     val startMatchTrigger: Long = 0L,
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
-    val synchronizedPuckSpeed: Float = 9500f,
+    val synchronizedPuckSpeed: Float = 6800f,
     val peerExited: Boolean = false,
     val remoteMatchState: ControlMessages.RemoteMatchState? = null,
     val peerPlayerName: String = "",
@@ -188,7 +188,7 @@ class MultiplayerMatchCoordinator(
         }
     }
 
-    fun startMatch(gapMm: Float, maxSpeed: Float = 9500f) {
+    fun startMatch(gapMm: Float, maxSpeed: Float = 6800f) {
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,

@@ -124,7 +124,8 @@ class GameViewModel : ViewModel() {
         targetScore: Int = 7,
         matchTimeSeconds: Int = 180,
         aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
-        puckMaxSpeed: Float = 9500f,
+        puckMaxSpeed: Float = 6800f,
+        airFriction: Float = 0.40f,
         player1Name: String = "Jogador 1",
         player2Name: String = "Jogador 2"
     ) {
@@ -139,7 +140,7 @@ class GameViewModel : ViewModel() {
             isExtendedMode = isExtended
         )
 
-        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = puckMaxSpeed)
+        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = puckMaxSpeed, airFrictionPerSec = airFriction)
         engine.resetPositions()
 
         // Limpa estritamente o controlador de IA se não for modo SOLO

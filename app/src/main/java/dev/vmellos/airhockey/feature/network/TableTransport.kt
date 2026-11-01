@@ -16,7 +16,7 @@ sealed class TableControlEvent {
     data class HandshakeReject(val reason: String) : TableControlEvent()
     object NavigateCalibration : TableControlEvent()
     object Ready : TableControlEvent()
-    data class Start(val gapMm: Float, val maxSpeed: Float = 9500f) : TableControlEvent()
+    data class Start(val gapMm: Float, val maxSpeed: Float = 6800f) : TableControlEvent()
     data class StateSync(val state: ControlMessages.RemoteMatchState) : TableControlEvent()
     data class TelemetryFallback(val packet: HostTelemetryPacket) : TableControlEvent()
     data class GuestInputFallback(val packet: GuestInputPacket) : TableControlEvent()
@@ -73,7 +73,7 @@ sealed class TableControlEvent {
                 line.startsWith(ControlMessages.START) -> {
                     val parts = line.removePrefix(ControlMessages.START).removePrefix(":").split(":")
                     val gap = parts.getOrNull(0)?.toFloatOrNull() ?: 8.0f
-                    val speed = parts.getOrNull(1)?.toFloatOrNull() ?: 9500f
+                    val speed = parts.getOrNull(1)?.toFloatOrNull() ?: 6800f
                     Start(gap, speed)
                 }
                 line.startsWith("TELEM:") -> {

@@ -17,7 +17,8 @@ enum class CollisionEvent {
 
 class AirHockeyPhysicsEngine(
     val dimensions: TableDimensions,
-    val maxSpeed: Float = 9500f
+    val maxSpeed: Float = 6800f,
+    private val airFrictionPerSec: Float = 0.40f
 ) {
     val puck = Puck(
         x = dimensions.width / 2f,
@@ -49,7 +50,6 @@ class AirHockeyPhysicsEngine(
     private val wallRestitution = 0.96f
     private val paddleRestitution = 1.0f
     private val maxSpeedSq = maxSpeed * maxSpeed
-    private val airFrictionPerSec = 0.35f
 
     var onCollisionListener: ((CollisionEvent, Float) -> Unit)? = null
 
@@ -166,8 +166,9 @@ class AirHockeyPhysicsEngine(
 
             if (velAlongNormal < 0f) {
                 val impulseMag = -(1f + paddleRestitution) * velAlongNormal
-                puck.vx += (impulseMag * nx) + mallet.vx * 0.40f
-                puck.vy += (impulseMag * ny) + mallet.vy * 0.40f
+                val malletFactor = (0.40f * (maxSpeed / 6800f)).coerceIn(0.18f, 0.40f)
+                puck.vx += (impulseMag * nx) + mallet.vx * malletFactor
+                puck.vy += (impulseMag * ny) + mallet.vy * malletFactor
 
                 val impactIntensity = (sqrt(puck.speedSquared()) / 3000f).coerceIn(0.2f, 1.0f)
                 val event = if (isPlayer1) CollisionEvent.PADDLE_HIT_P1 else CollisionEvent.PADDLE_HIT_P2

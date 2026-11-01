@@ -111,4 +111,9 @@
     <string name="lobby_pin_dialog_hint">4-digit code</string>
     <string name="lobby_pin_incorrect">Incorrect code! Check the 4 digits on the host screen.</string>
     <string name="lobby_table_by">Table by %1$s</string>
+    <string name="settings_player_name_save">Save</string>
+    <string name="settings_player_name_reset">Reset</string>
+    <string name="settings_player_name_saved">Player name saved successfully!</string>
+    <string name="settings_player_name_empty">Name cannot be empty</string>
+    <string name="cancel">Cancel</string>
 </resources>

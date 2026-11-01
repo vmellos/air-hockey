@@ -112,6 +112,37 @@ class AirHockeyImprovementsTest {
     }
 
     @Test
+    fun testAiEasyDifficultyPacing() {
+        val engine = AirHockeyPhysicsEngine(dimensions)
+        val ai = AirHockeyAiController(AiDifficulty.EASY)
+
+        engine.puck.x = 200f
+        engine.puck.y = 800f
+        engine.puck.vx = 0f
+        engine.puck.vy = -100f
+
+        engine.player2Mallet.targetX = 500f
+        engine.player2Mallet.targetY = 190f
+
+        ai.update(engine, 0.05f)
+
+        val dx = engine.player2Mallet.targetX - 500f
+        val dy = engine.player2Mallet.targetY - 190f
+        val distMoved = kotlin.math.sqrt(dx * dx + dy * dy)
+
+        // Com maxSpeed = 900f no modo Fácil, em 50ms a IA deve se mover no máximo 46f
+        assertTrue("IA no modo Fácil deve ter deslocamento suave e moderado (distância: $distMoved)", distMoved <= 46f)
+    }
+
+    @Test
+    fun testPuckSpeedPresetsValues() {
+        assertEquals(3600f, dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW.maxSpeed, 0.01f)
+        assertEquals(6800f, dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL.maxSpeed, 0.01f)
+        assertEquals(9500f, dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST.maxSpeed, 0.01f)
+        assertTrue(dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW.airFriction > dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST.airFriction)
+    }
+
+    @Test
     fun testTouchOffsetProjection() {
         val projection = TableProjection(dimensions, GameMode.SPLIT_SCREEN)
         val screenW = 1080f
@@ -133,7 +164,7 @@ class AirHockeyImprovementsTest {
 
     @Test
     fun testPuckSpeedLimitingInPhysicsEngine() {
-        val slowEngine = AirHockeyPhysicsEngine(dimensions, maxSpeed = 6500f)
+        val slowEngine = AirHockeyPhysicsEngine(dimensions, maxSpeed = 3600f)
         slowEngine.puck.vx = 8000f
         slowEngine.puck.vy = 8000f
 
@@ -141,7 +172,7 @@ class AirHockeyImprovementsTest {
         slowEngine.tick(1f / 60f)
 
         val currentSpeed = slowEngine.puck.speed()
-        assertTrue("Velocidade do disco deve respeitar o teto configurado de 6500f (atual: $currentSpeed)", currentSpeed <= 6501f)
+        assertTrue("Velocidade do disco deve respeitar o teto configurado de 3600f (atual: $currentSpeed)", currentSpeed <= 3601f)
     }
 
     @Test
@@ -185,12 +216,12 @@ class AirHockeyImprovementsTest {
 
     @Test
     fun testTableControlEventStartWithCustomSpeed() {
-        val startEvent = dev.vmellos.airhockey.feature.network.TableControlEvent.Start(gapMm = 12.5f, maxSpeed = 6500f)
+        val startEvent = dev.vmellos.airhockey.feature.network.TableControlEvent.Start(gapMm = 12.5f, maxSpeed = 3600f)
         val wire = startEvent.toWireString()
         val parsed = dev.vmellos.airhockey.feature.network.TableControlEvent.fromWireString(wire)
         assertTrue(parsed is dev.vmellos.airhockey.feature.network.TableControlEvent.Start)
         val parsedStart = parsed as dev.vmellos.airhockey.feature.network.TableControlEvent.Start
         assertEquals(12.5f, parsedStart.gapMm, 0.01f)
-        assertEquals(6500f, parsedStart.maxSpeed, 0.01f)
+        assertEquals(3600f, parsedStart.maxSpeed, 0.01f)
     }
 }

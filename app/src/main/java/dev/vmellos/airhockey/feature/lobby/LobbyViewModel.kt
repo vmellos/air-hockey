@@ -59,7 +59,7 @@ data class LobbyState(
     val startMatchTrigger: Long = 0L,
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
-    val synchronizedPuckSpeed: Float = 9500f,
+    val synchronizedPuckSpeed: Float = 6800f,
     val errorMessage: String? = null,
     val peerPlayerName: String = "",
     val selfPlayerName: String = ""
@@ -193,7 +193,7 @@ class LobbyViewModel : ViewModel() {
         coordinator?.signalCalibrationReady(gapMm)
     }
 
-    fun startHostMatch(gapMm: Float, maxSpeed: Float = 9500f) {
+    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f) {
         coordinator?.startMatch(gapMm, maxSpeed)
     }
 
