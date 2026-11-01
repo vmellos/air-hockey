@@ -12,6 +12,12 @@ class AirHockeyAiController(
     private var bankShotDirection: Int = 1 // 1 = ricochete na parede direita, -1 = na parede esquerda
     private var isBankShotActive: Boolean = false
 
+    // Variáveis de percepção com latência e erro de mira para humanizar o modo Fácil
+    private var reactionTimer: Float = 0.3f
+    private var perceivedPuckX: Float = 500f
+    private var perceivedPuckY: Float = 1000f
+    private var aimingErrorX: Float = 0f
+
     fun update(engine: AirHockeyPhysicsEngine, dt: Float) {
         val puck = engine.puck
         val mallet = engine.player2Mallet
@@ -27,9 +33,20 @@ class AirHockeyAiController(
 
         // Configuração de dinâmica e velocidades
         val maxSpeed = when (difficulty) {
-            AiDifficulty.EASY -> 1600f
+            AiDifficulty.EASY -> 900f
             AiDifficulty.MEDIUM -> 3200f
             AiDifficulty.HARD -> 5400f
+        }
+
+        // Para o modo Fácil: atualiza percepção com latência de reflexo humano (~280ms) e erro de mira
+        if (difficulty == AiDifficulty.EASY) {
+            reactionTimer += dt
+            if (reactionTimer >= 0.28f) {
+                reactionTimer = 0f
+                perceivedPuckX = puck.x
+                perceivedPuckY = puck.y
+                aimingErrorX = ((Math.random().toFloat() * 120f) - 60f)
+            }
         }
 
         // Atualiza temporizador de estratégias de Jogada Lateral
@@ -50,11 +67,12 @@ class AirHockeyAiController(
         // -------------------------------------------------------------
         // SALVAGUARDA CONTRA AUTOGOL:
         // Se o disco estiver atrás do rebatedor da IA ou na zona crítica da meta
+        // (Ativa apenas em MEDIUM e HARD; no EASY ela é desarmada para permitir gols acessíveis)
         // -------------------------------------------------------------
         val isPuckBehindMallet = puck.y <= mallet.y + 10f
         val isPuckInGoalMouthDanger = puck.y < 220f && puck.x in (goalLeft - 50f)..(goalRight + 50f)
 
-        if (isPuckBehindMallet || isPuckInGoalMouthDanger) {
+        if (difficulty != AiDifficulty.EASY && (isPuckBehindMallet || isPuckInGoalMouthDanger)) {
             // Nunca acelere para trás contra o disco.
             // Posiciona-se como escudo centralizado na linha de meta sem empurrar o disco para trás.
             desiredY = 130f
@@ -62,12 +80,16 @@ class AirHockeyAiController(
         } else {
             when (difficulty) {
                 AiDifficulty.EASY -> {
-                    if (isPuckInAiHalf) {
-                        desiredX = puck.x
+                    if (isPuckBehindMallet) {
+                        // Se o disco passou, apenas recua para a posição inicial sem interceptação milagrosa
+                        desiredX = homeX
+                        desiredY = homeY
+                    } else if (perceivedPuckY < dimensions.centerLineY) {
+                        desiredX = perceivedPuckX + aimingErrorX
                         // Avança moderadamente sem ultrapassar o disco
-                        desiredY = if (puck.y > homeY + 20f) (puck.y - 20f).coerceAtMost(dimensions.centerLineY - 100f) else homeY
+                        desiredY = if (perceivedPuckY > homeY + 20f) (perceivedPuckY - 20f).coerceAtMost(dimensions.centerLineY - 100f) else homeY
                     } else {
-                        desiredX = homeX + (puck.x - homeX) * 0.3f
+                        desiredX = homeX + (perceivedPuckX - homeX) * 0.25f
                         desiredY = homeY
                     }
                 }

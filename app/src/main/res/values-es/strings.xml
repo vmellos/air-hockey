@@ -111,4 +111,9 @@
     <string name="lobby_pin_dialog_hint">Código de 4 dígitos</string>
     <string name="lobby_pin_incorrect">¡Código incorrecto! Revisa los 4 dígitos en la pantalla del anfitrión.</string>
     <string name="lobby_table_by">Mesa de %1$s</string>
+    <string name="settings_player_name_save">Guardar</string>
+    <string name="settings_player_name_reset">Restablecer</string>
+    <string name="settings_player_name_saved">¡Nombre del jugador guardado con éxito!</string>
+    <string name="settings_player_name_empty">El nombre no puede estar vacío</string>
+    <string name="cancel">Cancelar</string>
 </resources>

@@ -121,12 +121,24 @@ fun LobbyScreen(
                         showNameDialog = false
                     }
                 ) {
-                    Text("Salvar", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_player_name_save), color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showNameDialog = false }) {
-                    Text("Cancelar", color = Color(0xFF94A3B8))
+                Row {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                val defName = AirHockeyApp.instance.preferencesRepository.resetPlayerNameToDefault()
+                                nameInput = defName
+                            }
+                        }
+                    ) {
+                        Text(stringResource(R.string.settings_player_name_reset), color = Color(0xFF94A3B8))
+                    }
+                    TextButton(onClick = { showNameDialog = false }) {
+                        Text(stringResource(R.string.cancel), color = Color(0xFF94A3B8))
+                    }
                 }
             },
             containerColor = Color(0xFF1E293B)

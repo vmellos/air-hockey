@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,10 +20,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
@@ -106,7 +111,15 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                var playerNameInput by remember(prefs.playerName) { mutableStateOf(prefs.playerName) }
+                var playerNameInput by remember { mutableStateOf(prefs.playerName) }
+                var showSavedFeedback by remember { mutableStateOf(false) }
+                var errorMessage by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(prefs.playerName) {
+                    if (playerNameInput.isEmpty() && prefs.playerName.isNotEmpty()) {
+                        playerNameInput = prefs.playerName
+                    }
+                }
 
                 Text(
                     text = stringResource(R.string.settings_player_name),
@@ -126,12 +139,14 @@ fun SettingsScreen(
                     onValueChange = { newValue ->
                         if (newValue.length <= 24) {
                             playerNameInput = newValue
-                            scope.launch {
-                                preferencesRepo.setPlayerName(newValue)
-                            }
+                            errorMessage = null
+                            showSavedFeedback = false
                         }
                     },
                     singleLine = true,
+                    placeholder = {
+                        Text(text = "Ex: Jogador 1", color = Color(0xFF64748B))
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
@@ -140,6 +155,100 @@ fun SettingsScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = errorMessage!!,
+                        color = Color(0xFFEF4444),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                if (showSavedFeedback) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.settings_player_name_saved),
+                            color = Color(0xFF10B981),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val defaultName = preferencesRepo.resetPlayerNameToDefault()
+                                playerNameInput = defaultName
+                                errorMessage = null
+                                showSavedFeedback = true
+                                kotlinx.coroutines.delay(2500)
+                                showSavedFeedback = false
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.settings_player_name_reset),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 13.sp
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            val trimmed = playerNameInput.trim()
+                            if (trimmed.isEmpty()) {
+                                errorMessage = context.getString(R.string.settings_player_name_empty)
+                            } else {
+                                scope.launch {
+                                    preferencesRepo.setPlayerName(trimmed)
+                                    errorMessage = null
+                                    showSavedFeedback = true
+                                    kotlinx.coroutines.delay(2500)
+                                    showSavedFeedback = false
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00E5FF),
+                            contentColor = Color(0xFF0A0E1A)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.settings_player_name_save),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         }
 

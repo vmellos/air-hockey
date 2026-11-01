@@ -112,6 +112,7 @@ fun AirHockeyAppNavigation(
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         aiDifficulty = userPrefs.aiDifficulty,
                         puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
+                        airFriction = userPrefs.puckSpeed.airFriction,
                         player1Name = p1,
                         player2Name = "IA ($diff)"
                     )
@@ -124,6 +125,7 @@ fun AirHockeyAppNavigation(
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
+                        airFriction = userPrefs.puckSpeed.airFriction,
                         player1Name = "Jogador 1",
                         player2Name = "Jogador 2"
                     )
@@ -171,6 +173,7 @@ fun AirHockeyAppNavigation(
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = effectivePuckSpeed,
+                        airFriction = userPrefs.puckSpeed.airFriction,
                         player1Name = p1Name,
                         player2Name = p2Name
                     )
@@ -231,6 +234,7 @@ fun AirHockeyAppNavigation(
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = effectivePuckSpeed,
+                        airFriction = userPrefs.puckSpeed.airFriction,
                         player1Name = p1Name,
                         player2Name = p2Name
                     )

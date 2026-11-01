@@ -106,9 +106,21 @@ class UserPreferencesRepository(private val context: Context) {
         }
 
     suspend fun setPlayerName(name: String) {
+        val trimmed = name.trim()
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.PLAYER_NAME] = name.trim()
+            if (trimmed.isEmpty()) {
+                preferences.remove(PreferencesKeys.PLAYER_NAME)
+            } else {
+                preferences[PreferencesKeys.PLAYER_NAME] = trimmed
+            }
         }
+    }
+
+    suspend fun resetPlayerNameToDefault(): String {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.PLAYER_NAME)
+        }
+        return getDefaultDevicePlayerName(context)
     }
 
     suspend fun setAppLanguage(languageCode: String) {
