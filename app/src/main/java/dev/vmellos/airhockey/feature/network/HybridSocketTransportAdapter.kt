@@ -125,7 +125,8 @@ class HybridSocketTransportAdapter(
             packet.puckX, packet.puckY,
             packet.puckVx, packet.puckVy,
             packet.hostMalletX, packet.hostMalletY,
-            packet.guestMalletX, packet.guestMalletY
+            packet.guestMalletX, packet.guestMalletY,
+            packet.collisionEvent, packet.collisionIntensity
         )
         // Fallback de contingência periódica via TCP para contornar bloqueios de UDP em roteadores Wi-Fi
         if (packet.sequenceNumber % 4L == 0L) {

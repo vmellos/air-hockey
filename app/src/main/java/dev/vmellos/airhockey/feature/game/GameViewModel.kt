@@ -47,7 +47,12 @@ class GameViewModel : ViewModel() {
     var coordinator: MultiplayerMatchCoordinator? = null
         private set
 
-    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float) -> Unit)? = null
+    @Volatile
+    private var pendingCollisionEvent: Byte = 0
+    @Volatile
+    private var pendingCollisionIntensity: Float = 0f
+
+    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float, Byte, Float) -> Unit)? = null
     var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onGuestSendInput: ((Float, Float) -> Unit)? = null
     var onGuestSendControl: ((String) -> Unit)? = null
@@ -57,8 +62,8 @@ class GameViewModel : ViewModel() {
         val isHost = coord.isHost
 
         if (isHost) {
-            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy ->
-                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy)
+            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity ->
+                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy, collisionEvent = evt, collisionIntensity = intensity)
             }
             onHostBroadcastState = { remote ->
                 coord.broadcastState(remote)
@@ -83,7 +88,9 @@ class GameViewModel : ViewModel() {
                         t.puckX, t.puckY,
                         t.puckVx, t.puckVy,
                         t.hostMalletX, t.hostMalletY,
-                        t.guestMalletX, t.guestMalletY
+                        t.guestMalletX, t.guestMalletY,
+                        t.collisionEvent,
+                        t.collisionIntensity
                     )
                 }
             }
@@ -160,11 +167,20 @@ class GameViewModel : ViewModel() {
     private fun setupCollisionListener() {
         engine.onCollisionListener = { event, intensity ->
             when (event) {
-                CollisionEvent.PADDLE_HIT_P1, CollisionEvent.PADDLE_HIT_P2 -> {
+                CollisionEvent.PADDLE_HIT_P1 -> {
                     audioEngine.playPaddleHit(intensity)
+                    pendingCollisionEvent = 1
+                    pendingCollisionIntensity = intensity
+                }
+                CollisionEvent.PADDLE_HIT_P2 -> {
+                    audioEngine.playPaddleHit(intensity)
+                    pendingCollisionEvent = 2
+                    pendingCollisionIntensity = intensity
                 }
                 CollisionEvent.WALL_HIT -> {
                     audioEngine.playWallHit()
+                    pendingCollisionEvent = 3
+                    pendingCollisionIntensity = intensity
                 }
                 CollisionEvent.GOAL_PLAYER1 -> {
                     // Ponto para Player 1 (disco entrou na meta do Player 2 / topo)
@@ -236,7 +252,8 @@ class GameViewModel : ViewModel() {
                         engine.puck.x, engine.puck.y,
                         0f, 0f,
                         engine.player1Mallet.x, engine.player1Mallet.y,
-                        engine.player2Mallet.x, engine.player2Mallet.y
+                        engine.player2Mallet.x, engine.player2Mallet.y,
+                        0.toByte(), 0f
                     )
 
                     val elapsed = System.currentTimeMillis() - start
@@ -287,12 +304,18 @@ class GameViewModel : ViewModel() {
                     aiController?.update(engine, dt)
                     engine.tick(dt)
 
-                    // Emite telemetria completa (incluindo posição conciliada do convidado)
+                    val evt = pendingCollisionEvent
+                    val intensity = pendingCollisionIntensity
+                    pendingCollisionEvent = 0
+                    pendingCollisionIntensity = 0f
+
+                    // Emite telemetria completa (incluindo posição conciliada do convidado e telemetria de colisão)
                     onHostBroadcastTelemetry?.invoke(
                         engine.puck.x, engine.puck.y,
                         engine.puck.vx, engine.puck.vy,
                         engine.player1Mallet.x, engine.player1Mallet.y,
-                        engine.player2Mallet.x, engine.player2Mallet.y
+                        engine.player2Mallet.x, engine.player2Mallet.y,
+                        evt, intensity
                     )
                 }
 
@@ -338,19 +361,19 @@ class GameViewModel : ViewModel() {
     }
 
     fun onTouchPlayer1(x: Float, y: Float) {
-        if (!isInputAllowed()) return
+        if (!::engine.isInitialized || !isInputAllowed()) return
         engine.player1Mallet.targetX = x
         engine.player1Mallet.targetY = y
     }
 
     fun onTouchPlayer2(x: Float, y: Float) {
-        if (!isInputAllowed()) return
+        if (!::engine.isInitialized || !isInputAllowed()) return
         engine.player2Mallet.targetX = x
         engine.player2Mallet.targetY = y
     }
 
     fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
-        if (!isInputAllowed()) return
+        if (!::engine.isInitialized || !isInputAllowed()) return
 
         // Previsão no Cliente: movimenta imediatamente o rebatedor do Jogador 2 no aparelho convidado
         val radius = engine.player2Mallet.radius
@@ -389,8 +412,12 @@ class GameViewModel : ViewModel() {
         puckX: Float, puckY: Float,
         puckVx: Float, puckVy: Float,
         hostMalletX: Float, hostMalletY: Float,
-        guestMalletX: Float, guestMalletY: Float
+        guestMalletX: Float, guestMalletY: Float,
+        collisionEvent: Byte = 0,
+        collisionIntensity: Float = 0f
     ) {
+        if (!::engine.isInitialized) return
+
         engine.puck.x = puckX
         engine.puck.y = puckY
         engine.puck.vx = puckVx
@@ -408,6 +435,14 @@ class GameViewModel : ViewModel() {
         } else if (distSq > 4f) {
             engine.player2Mallet.x += dx * 0.35f
             engine.player2Mallet.y += dy * 0.35f
+        }
+
+        // Telemetria de Colisão: reproduz som de colisão de rebatedor ou borda no dispositivo convidado
+        if (collisionEvent.toInt() != 0) {
+            when (collisionEvent.toInt()) {
+                1, 2 -> audioEngine.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f))
+                3 -> audioEngine.playWallHit()
+            }
         }
     }
 
@@ -445,6 +480,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) {
+        if (!::engine.isInitialized) return
         engine.player2Mallet.targetX = globalTargetX
         engine.player2Mallet.targetY = globalTargetY
     }
@@ -507,7 +543,9 @@ class GameViewModel : ViewModel() {
         }
         stopGameLoops()
         countdownJob?.cancel()
-        engine.resetPositions(0)
+        if (::engine.isInitialized) {
+            engine.resetPositions(0)
+        }
         _matchState.update {
             it.copy(
                 status = MatchStatus.COUNTDOWN,

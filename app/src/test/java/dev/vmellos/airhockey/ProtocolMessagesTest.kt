@@ -40,11 +40,64 @@ class ProtocolMessagesTest {
         assertEquals(1780.0f, deserialized.hostMalletY, 0.01f)
         assertEquals(320.0f, deserialized.guestMalletX, 0.01f)
         assertEquals(240.0f, deserialized.guestMalletY, 0.01f)
+        assertEquals(0.toByte(), deserialized.collisionEvent)
+        assertEquals(0f, deserialized.collisionIntensity, 0.01f)
+    }
+
+    @Test
+    fun testHostTelemetryPacketWithCollisionSerialization() {
+        val original = HostTelemetryPacket(
+            sequenceNumber = 43L,
+            timestampNano = 222333444L,
+            puckX = 500.0f,
+            puckY = 900.0f,
+            puckVx = -300.0f,
+            puckVy = 600.0f,
+            hostMalletX = 500.0f,
+            hostMalletY = 1750.0f,
+            guestMalletX = 500.0f,
+            guestMalletY = 250.0f,
+            collisionEvent = 2.toByte(),
+            collisionIntensity = 0.85f
+        )
+
+        val bytes = original.toByteArray()
+        assertEquals(HostTelemetryPacket.SIZE_BYTES, bytes.size)
+
+        val deserialized = HostTelemetryPacket.fromByteBuffer(ByteBuffer.wrap(bytes))
+        assertNotNull(deserialized)
+        assertEquals(43L, deserialized!!.sequenceNumber)
+        assertEquals(2.toByte(), deserialized.collisionEvent)
+        assertEquals(0.85f, deserialized.collisionIntensity, 0.01f)
+    }
+
+    @Test
+    fun testHostTelemetryPacketBackwardCompatibilityWithoutCollisionFields() {
+        // Formato legado com 41 bytes (sem collisionEvent e collisionIntensity)
+        val legacyBuffer = ByteBuffer.allocate(41)
+        legacyBuffer.put(0x01.toByte())
+        legacyBuffer.putLong(99L)
+        legacyBuffer.putFloat(100f) // puckX
+        legacyBuffer.putFloat(200f) // puckY
+        legacyBuffer.putFloat(10f)  // puckVx
+        legacyBuffer.putFloat(20f)  // puckVy
+        legacyBuffer.putFloat(300f) // hostMalletX
+        legacyBuffer.putFloat(400f) // hostMalletY
+        legacyBuffer.putFloat(500f) // guestMalletX
+        legacyBuffer.putFloat(600f) // guestMalletY
+        legacyBuffer.flip()
+
+        val deserialized = HostTelemetryPacket.fromByteBuffer(legacyBuffer)
+        assertNotNull(deserialized)
+        assertEquals(99L, deserialized!!.sequenceNumber)
+        assertEquals(100f, deserialized.puckX, 0.01f)
+        assertEquals(0.toByte(), deserialized.collisionEvent)
+        assertEquals(0f, deserialized.collisionIntensity, 0.01f)
     }
 
     @Test
     fun testTruncatedTelemetryIsRejected() {
-        val bytes = ByteArray(HostTelemetryPacket.SIZE_BYTES - 1).also { it[0] = 0x01 }
+        val bytes = ByteArray(HostTelemetryPacket.LEGACY_SIZE_BYTES - 1).also { it[0] = 0x01 }
         assertNull(HostTelemetryPacket.fromByteBuffer(ByteBuffer.wrap(bytes)))
     }
 

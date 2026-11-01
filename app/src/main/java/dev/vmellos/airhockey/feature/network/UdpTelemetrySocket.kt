@@ -106,7 +106,9 @@ class UdpTelemetrySocket(
         puckX: Float, puckY: Float,
         puckVx: Float, puckVy: Float,
         hostMalletX: Float, hostMalletY: Float,
-        guestMalletX: Float, guestMalletY: Float
+        guestMalletX: Float, guestMalletY: Float,
+        collisionEvent: Byte = 0,
+        collisionIntensity: Float = 0f
     ) {
         val telemetry = HostTelemetryPacket(
             sequenceNumber = ++sequenceCounter,
@@ -118,7 +120,9 @@ class UdpTelemetrySocket(
             hostMalletX = hostMalletX,
             hostMalletY = hostMalletY,
             guestMalletX = guestMalletX,
-            guestMalletY = guestMalletY
+            guestMalletY = guestMalletY,
+            collisionEvent = collisionEvent,
+            collisionIntensity = collisionIntensity
         )
         outbox.trySend(telemetry.toByteArray())
     }

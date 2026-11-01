@@ -102,4 +102,37 @@ class TableTransportTest {
             assertEquals("Event roundtrip failed for: $wire", event, parsed)
         }
     }
+
+    @Test
+    fun testTelemetryFallbackWireRoundTrip() {
+        val event = TableControlEvent.TelemetryFallback(
+            HostTelemetryPacket(
+                sequenceNumber = 42L,
+                puckX = 500f,
+                puckY = 1000f,
+                puckVx = 100f,
+                puckVy = -50f,
+                hostMalletX = 500f,
+                hostMalletY = 1800f,
+                guestMalletX = 500f,
+                guestMalletY = 200f,
+                collisionEvent = 2.toByte(),
+                collisionIntensity = 0.85f
+            )
+        )
+
+        val wire = event.toWireString()
+        val parsed = TableControlEvent.fromWireString(wire) as TableControlEvent.TelemetryFallback
+        assertEquals(42L, parsed.packet.sequenceNumber)
+        assertEquals(500f, parsed.packet.puckX, 0.01f)
+        assertEquals(1000f, parsed.packet.puckY, 0.01f)
+        assertEquals(100f, parsed.packet.puckVx, 0.01f)
+        assertEquals(-50f, parsed.packet.puckVy, 0.01f)
+        assertEquals(500f, parsed.packet.hostMalletX, 0.01f)
+        assertEquals(1800f, parsed.packet.hostMalletY, 0.01f)
+        assertEquals(500f, parsed.packet.guestMalletX, 0.01f)
+        assertEquals(200f, parsed.packet.guestMalletY, 0.01f)
+        assertEquals(2.toByte(), parsed.packet.collisionEvent)
+        assertEquals(0.85f, parsed.packet.collisionIntensity, 0.01f)
+    }
 }

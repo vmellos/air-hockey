@@ -156,7 +156,9 @@ class MultiplayerMatchCoordinator(
         puckVx: Float, puckVy: Float,
         hostMalletX: Float, hostMalletY: Float,
         guestMalletX: Float, guestMalletY: Float,
-        sequence: Long = 0L
+        sequence: Long = 0L,
+        collisionEvent: Byte = 0,
+        collisionIntensity: Float = 0f
     ) {
         if (isHost) {
             val packet = HostTelemetryPacket(
@@ -169,7 +171,9 @@ class MultiplayerMatchCoordinator(
                 hostMalletX = hostMalletX,
                 hostMalletY = hostMalletY,
                 guestMalletX = guestMalletX,
-                guestMalletY = guestMalletY
+                guestMalletY = guestMalletY,
+                collisionEvent = collisionEvent,
+                collisionIntensity = collisionIntensity
             )
             transport.sendTelemetry(packet)
         }

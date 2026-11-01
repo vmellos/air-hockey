@@ -100,6 +100,10 @@ _Avoid_: Engine, juiz, supervisor, fiscal
 A projeção imediata do rebatedor no dispositivo convidado em resposta ao toque local, conciliada subsequentemente com a telemetria do dispositivo anfitrião.
 _Avoid_: Client-side prediction, toque instantâneo, lag compensation
 
+**Telemetria de Colisão**:
+A transmissão de eventos de impacto e intensidade física no pacote contínuo emitido pelo dispositivo anfitrião para sincronização simultânea de áudio e vibração no dispositivo convidado.
+_Avoid_: Pacote de som, broadcast de áudio, sync de áudio
+
 ## Interface e Apresentação
 
 **Miniatura da Mesa**:

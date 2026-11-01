@@ -142,7 +142,6 @@ fun AirHockeyAppNavigation(
                 if (lobbyState.startMatchTrigger > 0L && lobbyState.targetMode == "CONNECTED") {
                     val gameMode = if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
                     val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
-                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
@@ -151,6 +150,8 @@ fun AirHockeyAppNavigation(
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = effectivePuckSpeed
                     )
+
+                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     navController.navigate("game/${gameMode.name}") {
                         popUpTo("menu")
@@ -186,7 +187,6 @@ fun AirHockeyAppNavigation(
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
                     val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
-                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
@@ -195,6 +195,8 @@ fun AirHockeyAppNavigation(
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = effectivePuckSpeed
                     )
+
+                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     navController.navigate("game/${gameMode.name}") {
                         popUpTo("menu")
