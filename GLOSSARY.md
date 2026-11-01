@@ -54,6 +54,10 @@ _Avoid_: Modo local compartilhado, tela dividida, pass-and-play
 Partida para dois jogadores em dois dispositivos físicos dispostos em Disposição Topo-a-Topo, formando uma única mesa contínua onde o disco transita entre as telas.
 _Avoid_: Dual screen, tela dupla, big board
 
+**Mesa Conectada**:
+Partida para dois jogadores em dois dispositivos físicos pareados via rede sem fio, na qual cada aparelho projeta a mesa inteira e sincroniza os movimentos em tempo real.
+_Avoid_: Modo online, duelo sem fio, campo inteiro p2p, versus wifi, multiplayer normal
+
 **Disposição Topo-a-Topo**:
 A configuração física de dois aparelhos dispostos verticalmente com as bordas superiores em contato mútuo, unindo as duas metades da mesa.
 _Avoid_: Alinhamento vertical, ponta a ponta, tela dupla

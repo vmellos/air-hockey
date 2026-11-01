@@ -20,7 +20,7 @@ class AirHockeyImprovementsTest {
     fun setup() {
         dimensions = TableDimensions(
             width = 1000f,
-            viewportHeight = 1000f,
+            viewportHeight = 2000f,
             bezelGapUnits = 0f,
             isExtendedMode = false
         )

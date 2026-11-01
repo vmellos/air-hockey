@@ -116,11 +116,12 @@ class GameViewModel : ViewModel() {
         aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM
     ) {
         val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST
+        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST
         val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(bezelGapMm, screenHeightPx, yDpi) else 0f
 
         dimensions = TableDimensions(
             width = 1000f,
-            viewportHeight = 1000f,
+            viewportHeight = 2000f,
             bezelGapUnits = bezelUnits,
             isExtendedMode = isExtended
         )
@@ -143,13 +144,13 @@ class GameViewModel : ViewModel() {
             targetScore = targetScore,
             countdownNumber = 3,
             remainingTimeSeconds = matchTimeSeconds,
-            isHost = (mode != GameMode.EXTENDED_GUEST),
+            isHost = !isGuest,
             peerExited = false
         )
 
         setupCollisionListener()
 
-        if (mode != GameMode.EXTENDED_GUEST) {
+        if (!isGuest) {
             broadcastState()
             startCountdown()
         }
@@ -441,7 +442,7 @@ class GameViewModel : ViewModel() {
         get() = status.name
 
     fun pauseMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
             onGuestSendControl?.invoke(ControlMessages.PAUSE)
             return
         }
@@ -453,7 +454,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun resumeMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
             onGuestSendControl?.invoke(ControlMessages.RESUME)
             return
         }
@@ -473,7 +474,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun restartMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST) {
+        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
             onGuestSendControl?.invoke(ControlMessages.RESTART)
             return
         }

@@ -175,8 +175,13 @@ fun LobbyScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
             }
             Spacer(modifier = Modifier.width(8.dp))
+            val titleText = if (state.targetMode == "CONNECTED") {
+                stringResource(R.string.lobby_title_connected)
+            } else {
+                stringResource(R.string.lobby_title)
+            }
             Text(
-                text = stringResource(R.string.lobby_title),
+                text = titleText,
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
@@ -196,8 +201,12 @@ fun LobbyScreen(
             HostLobbyView(
                 state = state,
                 onProceed = {
-                    viewModel.notifyNavigateToCalibration()
-                    onNavigateToCalibration()
+                    if (state.targetMode == "CONNECTED") {
+                        viewModel.startHostMatch(0f)
+                    } else {
+                        viewModel.notifyNavigateToCalibration()
+                        onNavigateToCalibration()
+                    }
                 }
             )
         } else if (state.role == LobbyRole.GUEST) {
@@ -436,7 +445,12 @@ private fun HostLobbyView(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Avançar para Calibração", color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
+                val buttonText = if (state.targetMode == "CONNECTED") {
+                    stringResource(R.string.lobby_btn_start_match)
+                } else {
+                    "Avançar para Calibração"
+                }
+                Text(buttonText, color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {

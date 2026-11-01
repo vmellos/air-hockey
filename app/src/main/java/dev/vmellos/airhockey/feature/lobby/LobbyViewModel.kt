@@ -44,6 +44,7 @@ enum class ConnectionStatus {
 data class LobbyState(
     val role: LobbyRole = LobbyRole.NONE,
     val connectionStatus: ConnectionStatus = ConnectionStatus.IDLE,
+    val targetMode: String = "EXTENDED",
     val tableCode: String = "",
     val hostIp: String = "",
     val qrContent: String = "",
@@ -89,6 +90,10 @@ class LobbyViewModel : ViewModel() {
         setupTcpClientCallbacks()
     }
 
+    fun setTargetMode(mode: String) {
+        _state.update { it.copy(targetMode = mode) }
+    }
+
     @Suppress("DEPRECATION")
     private fun getNetworkSsid(): String {
         return try {
@@ -113,10 +118,10 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun startAsHost() {
+    fun startAsHost(mode: String = _state.value.targetMode) {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress(context)
-        val qr = "airhockey://connect?ip=$ip&port=8888&code=$code"
+        val qr = "airhockey://connect?ip=$ip&port=8888&code=$code&mode=$mode"
         val ssid = getNetworkSsid()
         val wifiConnected = checkIsWifiConnected()
 
@@ -124,6 +129,7 @@ class LobbyViewModel : ViewModel() {
             it.copy(
                 role = LobbyRole.HOST,
                 connectionStatus = ConnectionStatus.BROADCASTING,
+                targetMode = mode,
                 tableCode = code,
                 hostIp = ip,
                 qrContent = qr,
@@ -140,11 +146,12 @@ class LobbyViewModel : ViewModel() {
         nsdManager.startBroadcast(code)
     }
 
-    fun startAsGuest() {
+    fun startAsGuest(mode: String = _state.value.targetMode) {
         _state.update {
             it.copy(
                 role = LobbyRole.GUEST,
                 connectionStatus = ConnectionStatus.DISCOVERING,
+                targetMode = mode,
                 errorMessage = null
             )
         }
@@ -161,7 +168,7 @@ class LobbyViewModel : ViewModel() {
                 )
             }
             udpSocket.setTarget(clientIp)
-            tcpServer.sendMessage("HANDSHAKE_OK:${_state.value.tableCode}")
+            tcpServer.sendMessage("HANDSHAKE_OK:${_state.value.tableCode}:${_state.value.targetMode}")
         }
 
         tcpServer.onClientDisconnected = {
@@ -215,7 +222,9 @@ class LobbyViewModel : ViewModel() {
         tcpClient.onMessageReceived = { msg ->
             when {
                 msg.startsWith("HANDSHAKE_OK") -> {
-                    _state.update { it.copy(isReadyToPlay = true) }
+                    val parts = msg.split(":")
+                    val mode = if (parts.size >= 3) parts[2] else _state.value.targetMode
+                    _state.update { it.copy(isReadyToPlay = true, targetMode = mode) }
                 }
                 msg == "NAVIGATE_CALIBRATION" -> {
                     _state.update { it.copy(navigateToCalibrationTrigger = System.currentTimeMillis()) }
@@ -413,8 +422,13 @@ class LobbyViewModel : ViewModel() {
             qrText.contains(".") -> qrText.substringBefore(":").trim()
             else -> ""
         }
+        val targetMode = if (qrText.contains("mode=")) {
+            qrText.substringAfter("mode=").substringBefore("&").trim()
+        } else {
+            _state.value.targetMode
+        }
         if (targetIp.isNotBlank()) {
-            startAsGuest()
+            startAsGuest(targetMode)
             connectToTable(targetIp)
         } else {
             _state.update {
@@ -428,11 +442,12 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun stopAll() {
+        val currentTargetMode = _state.value.targetMode
         coordinator?.terminateSession()
         coordinator = null
         nsdManager.stopBroadcast()
         nsdManager.stopDiscovery()
-        _state.update { LobbyState() }
+        _state.update { LobbyState(targetMode = currentTargetMode) }
     }
 
     override fun onCleared() {
