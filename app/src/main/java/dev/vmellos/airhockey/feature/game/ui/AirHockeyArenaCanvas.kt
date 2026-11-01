@@ -57,6 +57,8 @@ fun AirHockeyArenaCanvas(
     val projection = remember(dimensions, mode) { TableProjection(dimensions, mode) }
     val isExtendedGuest = mode == GameMode.EXTENDED_GUEST
     val isExtendedHost = mode == GameMode.EXTENDED_HOST
+    val isConnectedGuest = mode == GameMode.CONNECTED_GUEST
+    val isConnectedHost = mode == GameMode.CONNECTED_HOST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
 
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
@@ -88,10 +90,10 @@ fun AirHockeyArenaCanvas(
                                 val tablePt = projection.screenToTable(change.position.x, change.position.y, w, h)
 
                                 when (mode) {
-                                    GameMode.EXTENDED_GUEST -> {
+                                    GameMode.EXTENDED_GUEST, GameMode.CONNECTED_GUEST -> {
                                         viewModel.onTouchGuestGlobal(tablePt.x, tablePt.y + touchOffset)
                                     }
-                                    GameMode.EXTENDED_HOST -> {
+                                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST -> {
                                         viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
                                     }
                                     GameMode.SPLIT_SCREEN -> {
@@ -125,10 +127,10 @@ fun AirHockeyArenaCanvas(
             val vHeight = projection.viewportVirtualHeight
 
             // Desenha arena da mesa
-            drawTableRink(offsetX, offsetY, vWidth * scale, vHeight * scale, isExtendedHost, isExtendedGuest)
+            drawTableRink(offsetX, offsetY, vWidth * scale, vHeight * scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
 
             // Desenha metas
-            drawGoals(offsetX, offsetY, scale, dimensions, isExtendedHost, isExtendedGuest)
+            drawGoals(offsetX, offsetY, scale, dimensions, isExtendedHost, isExtendedGuest, isConnectedGuest)
 
             // Desenha Rebatedor 1
             val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
@@ -153,7 +155,8 @@ private fun DrawScope.drawTableRink(
     width: Float,
     height: Float,
     isExtendedHost: Boolean,
-    isExtendedGuest: Boolean
+    isExtendedGuest: Boolean,
+    isConnectedGuest: Boolean
 ) {
     // Fundo do campo
     drawRoundRect(
@@ -164,7 +167,7 @@ private fun DrawScope.drawTableRink(
     )
 
     // Moldura externa neon
-    val borderColor = if (isExtendedGuest) BorderOrange else BorderCyan
+    val borderColor = if (isExtendedGuest || isConnectedGuest) BorderOrange else BorderCyan
     drawRoundRect(
         color = borderColor,
         topLeft = Offset(left, top),
@@ -199,6 +202,18 @@ private fun DrawScope.drawTableRink(
             strokeWidth = 3f,
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
         )
+
+        // Semicírculo central neon no topo: ao juntar os dois celulares topo-a-topo, completa o círculo central
+        val circleRadius = 140f * (width / 1000f)
+        drawArc(
+            color = CenterLineColor,
+            startAngle = 0f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(left + width / 2f - circleRadius, top - circleRadius),
+            size = Size(circleRadius * 2f, circleRadius * 2f),
+            style = Stroke(width = 4f)
+        )
     }
 }
 
@@ -208,32 +223,17 @@ private fun DrawScope.drawGoals(
     scale: Float,
     dimensions: dev.vmellos.airhockey.feature.physics.TableDimensions,
     isExtendedHost: Boolean,
-    isExtendedGuest: Boolean
+    isExtendedGuest: Boolean,
+    isConnectedGuest: Boolean
 ) {
     val goalW = dimensions.goalWidth * scale
     val goalLeft = left + dimensions.goalLeft * scale
-    val vHeight = if (isExtendedHost || isExtendedGuest) 1000f else 2000f
+    val vHeight = 2000f
     val screenBottom = top + vHeight * scale
 
-    // Meta Player 1 (Azul / Cyan) - Base da tela para Anfitrião, Solo e Split
-    if (!isExtendedGuest) {
-        drawRect(
-            color = GoalSlotColor,
-            topLeft = Offset(goalLeft, screenBottom - 6f),
-            size = Size(goalW, 16f)
-        )
-        drawLine(
-            color = BorderCyan,
-            start = Offset(goalLeft, screenBottom),
-            end = Offset(goalLeft + goalW, screenBottom),
-            strokeWidth = 8f
-        )
-    }
-
-    // Meta Player 2 (Laranja)
-    // No modo Estendido (Convidado): base da tela do Convidado
-    // No modo Solo e Split: topo da tela
-    if (isExtendedGuest) {
+    if (isConnectedGuest) {
+        // No Convidado da Mesa Conectada (180°):
+        // Meta do Player 2 (Laranja) fica na BASE da tela (defendida pelo Convidado)
         drawRect(
             color = GoalSlotColor,
             topLeft = Offset(goalLeft, screenBottom - 6f),
@@ -245,7 +245,8 @@ private fun DrawScope.drawGoals(
             end = Offset(goalLeft + goalW, screenBottom),
             strokeWidth = 8f
         )
-    } else if (!isExtendedHost) {
+
+        // Meta do Player 1 (Ciano) fica no TOPO da tela (defendida pelo Anfitrião)
         val goalTop = top
         drawRect(
             color = GoalSlotColor,
@@ -253,11 +254,56 @@ private fun DrawScope.drawGoals(
             size = Size(goalW, 16f)
         )
         drawLine(
-            color = BorderOrange,
+            color = BorderCyan,
             start = Offset(goalLeft, goalTop),
             end = Offset(goalLeft + goalW, goalTop),
             strokeWidth = 8f
         )
+    } else {
+        // Meta Player 1 (Azul / Cyan) - Base da tela para Anfitrião, Solo e Split
+        if (!isExtendedGuest) {
+            drawRect(
+                color = GoalSlotColor,
+                topLeft = Offset(goalLeft, screenBottom - 6f),
+                size = Size(goalW, 16f)
+            )
+            drawLine(
+                color = BorderCyan,
+                start = Offset(goalLeft, screenBottom),
+                end = Offset(goalLeft + goalW, screenBottom),
+                strokeWidth = 8f
+            )
+        }
+
+        // Meta Player 2 (Laranja)
+        // No modo Estendido (Convidado): base da tela do Convidado
+        // No modo Solo e Split: topo da tela
+        if (isExtendedGuest) {
+            drawRect(
+                color = GoalSlotColor,
+                topLeft = Offset(goalLeft, screenBottom - 6f),
+                size = Size(goalW, 16f)
+            )
+            drawLine(
+                color = BorderOrange,
+                start = Offset(goalLeft, screenBottom),
+                end = Offset(goalLeft + goalW, screenBottom),
+                strokeWidth = 8f
+            )
+        } else if (!isExtendedHost) {
+            val goalTop = top
+            drawRect(
+                color = GoalSlotColor,
+                topLeft = Offset(goalLeft, goalTop - 10f),
+                size = Size(goalW, 16f)
+            )
+            drawLine(
+                color = BorderOrange,
+                start = Offset(goalLeft, goalTop),
+                end = Offset(goalLeft + goalW, goalTop),
+                strokeWidth = 8f
+            )
+        }
     }
 }
 

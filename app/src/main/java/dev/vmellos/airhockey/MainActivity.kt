@@ -117,7 +117,12 @@ fun AirHockeyAppNavigation(
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
+                onStartConnected = {
+                    lobbyViewModel.setTargetMode("CONNECTED")
+                    navController.navigate("lobby")
+                },
                 onStartExtended = {
+                    lobbyViewModel.setTargetMode("EXTENDED")
                     navController.navigate("lobby")
                 },
                 onOpenSettings = {
@@ -127,6 +132,28 @@ fun AirHockeyAppNavigation(
         }
 
         composable("lobby") {
+            val lobbyState by lobbyViewModel.state.collectAsState()
+            val isHost = lobbyState.role == LobbyRole.HOST
+
+            // Para Mesa Conectada: inicia a partida diretamente quando startMatchTrigger for acionado (sem passar por calibração)
+            LaunchedEffect(lobbyState.startMatchTrigger) {
+                if (lobbyState.startMatchTrigger > 0L && lobbyState.targetMode == "CONNECTED") {
+                    val gameMode = if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
+                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
+
+                    gameViewModel.initializeMatch(
+                        mode = gameMode,
+                        bezelGapMm = 0f,
+                        targetScore = userPrefs.targetScore,
+                        matchTimeSeconds = userPrefs.matchTimeSeconds
+                    )
+
+                    navController.navigate("game/${gameMode.name}") {
+                        popUpTo("menu")
+                    }
+                }
+            }
+
             LobbyScreen(
                 viewModel = lobbyViewModel,
                 onNavigateToCalibration = {

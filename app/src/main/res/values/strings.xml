@@ -3,16 +3,20 @@
     <string name="app_tagline">Push your devices together</string>
 
     <!-- Menu Principal -->
+    <string name="menu_mode_connected">Connected Table</string>
+    <string name="menu_mode_connected_desc">2 devices over Wi-Fi with full arena view on each screen</string>
     <string name="menu_mode_solo">Solo Mode</string>
     <string name="menu_mode_solo_desc">Play against AI with selectable difficulty</string>
     <string name="menu_mode_split">Split Table</string>
     <string name="menu_mode_split_desc">2 players on the same device</string>
     <string name="menu_mode_extended">Extended Table</string>
-    <string name="menu_mode_extended_desc">2 devices side-by-side or top-to-top via Wi-Fi</string>
+    <string name="menu_mode_extended_desc">2 devices top-to-top forming one single extended table</string>
     <string name="menu_settings">Settings</string>
 
-    <!-- Lobby Mesa Estendida -->
+    <!-- Lobby Mesa Estendida e Conectada -->
     <string name="lobby_title">Extended Table Lobby</string>
+    <string name="lobby_title_connected">Connected Table Lobby</string>
+    <string name="lobby_btn_start_match">Start Match</string>
     <string name="lobby_role_host">Host Table</string>
     <string name="lobby_role_host_desc">Broadcast presence and generate pairing code / QR</string>
     <string name="lobby_role_guest">Join Table</string>

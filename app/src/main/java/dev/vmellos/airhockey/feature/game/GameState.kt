@@ -7,7 +7,9 @@ enum class GameMode {
     SOLO,
     SPLIT_SCREEN,
     EXTENDED_HOST,
-    EXTENDED_GUEST
+    EXTENDED_GUEST,
+    CONNECTED_HOST,
+    CONNECTED_GUEST
 }
 
 enum class MatchStatus {

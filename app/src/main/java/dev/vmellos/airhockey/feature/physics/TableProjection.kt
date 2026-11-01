@@ -27,8 +27,12 @@ class TableProjection(
     val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST
     val isExtended: Boolean = isExtendedHost || isExtendedGuest
 
+    val isConnectedHost: Boolean = mode == GameMode.CONNECTED_HOST
+    val isConnectedGuest: Boolean = mode == GameMode.CONNECTED_GUEST
+    val isConnected: Boolean = isConnectedHost || isConnectedGuest
+
     val viewportVirtualWidth: Float = 1000f
-    val viewportVirtualHeight: Float = if (isExtended) 1000f else 2000f
+    val viewportVirtualHeight: Float = 2000f
 
     /**
      * Calcula o fator de escala proporcional (ContentScale.Fit) para caber na tela.
@@ -46,9 +50,15 @@ class TableProjection(
     }
 
     /**
-     * Deslocamento vertical para centralização na tela (letterbox).
+     * Deslocamento vertical para posicionamento na tela.
+     * Na Mesa Estendida (Disposição Topo-a-Topo), a metade da mesa é ancorada
+     * diretamente no topo físico da tela (offsetY = 0) para que a borda de toque
+     * encontre a moldura do celular vizinho sem faixas pretas intermediárias.
      */
     fun calculateOffsetY(screenW: Float, screenH: Float): Float {
+        if (isExtended) {
+            return 0f
+        }
         val scale = calculateScale(screenW, screenH)
         return (screenH - viewportVirtualHeight * scale) / 2f
     }
@@ -61,10 +71,14 @@ class TableProjection(
         val offX = calculateOffsetX(screenW, screenH)
         val offY = calculateOffsetY(screenW, screenH)
 
-        val effectiveX = if (isExtendedGuest) (1000f - tableX) else tableX
+        val effectiveX = when {
+            isExtendedGuest || isConnectedGuest -> 1000f - tableX
+            else -> tableX
+        }
         val effectiveY = when {
             isExtendedHost -> tableY - dimensions.guestHalfTopY
-            isExtendedGuest -> 1000f - tableY
+            isExtendedGuest -> dimensions.hostHalfBottomY - tableY
+            isConnectedGuest -> dimensions.totalHeight - tableY
             else -> tableY
         }
 
@@ -87,10 +101,14 @@ class TableProjection(
         val localX = (screenX - offX) / scale
         val localY = (screenY - offY) / scale
 
-        val globalX = if (isExtendedGuest) (1000f - localX) else localX
+        val globalX = when {
+            isExtendedGuest || isConnectedGuest -> 1000f - localX
+            else -> localX
+        }
         val globalY = when {
             isExtendedHost -> dimensions.guestHalfTopY + localY
-            isExtendedGuest -> 1000f - localY
+            isExtendedGuest -> dimensions.hostHalfBottomY - localY
+            isConnectedGuest -> dimensions.totalHeight - localY
             else -> localY
         }
 
@@ -139,14 +157,14 @@ class TableProjection(
     fun getServePosition(scorer: Int): TablePoint {
         val puckY = if (dimensions.isExtendedMode) {
             when (scorer) {
-                1 -> dimensions.hostHalfBottomY - 220f // P1 marcou, P2 saca na metade superior
-                2 -> dimensions.guestHalfTopY + 220f   // P2 marcou, P1 saca na metade inferior
-                else -> dimensions.guestHalfTopY + 220f // Início da partida: P1 saca
+                1 -> dimensions.hostHalfBottomY - 400f // P1 marcou, P2 saca na metade superior
+                2 -> dimensions.guestHalfTopY + 400f   // P2 marcou, P1 saca na metade inferior
+                else -> dimensions.guestHalfTopY + 400f // Início da partida: P1 saca
             }
         } else {
             when (scorer) {
-                1 -> dimensions.centerLineY - 200f
-                2 -> dimensions.centerLineY + 200f
+                1 -> dimensions.centerLineY - 300f
+                2 -> dimensions.centerLineY + 300f
                 else -> dimensions.centerLineY
             }
         }

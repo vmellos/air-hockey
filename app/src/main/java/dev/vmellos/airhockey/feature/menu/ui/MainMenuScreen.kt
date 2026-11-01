@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ fun MainMenuScreen(
     onStartSolo: () -> Unit,
     onStartSplit: () -> Unit,
     onStartExtended: () -> Unit,
+    onStartConnected: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -79,7 +81,7 @@ fun MainMenuScreen(
         // Título Neon Arcade
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 16.dp)
+            modifier = Modifier.padding(vertical = 12.dp)
         ) {
             Text(
                 text = "AIR HOCKEY",
@@ -89,7 +91,7 @@ fun MainMenuScreen(
                 letterSpacing = 4.sp,
                 fontFamily = FontFamily.SansSerif
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.app_tagline),
                 color = Color(0xFF94A3B8),
@@ -100,15 +102,24 @@ fun MainMenuScreen(
 
         // Opções de Jogo
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
+            MenuModeCard(
+                title = stringResource(R.string.menu_mode_connected),
+                description = stringResource(R.string.menu_mode_connected_desc),
+                icon = Icons.Default.Wifi,
+                accentColor = Color(0xFF00E5FF),
+                isHighlight = true,
+                onClick = onStartConnected
+            )
+
             MenuModeCard(
                 title = stringResource(R.string.menu_mode_extended),
                 description = stringResource(R.string.menu_mode_extended_desc),
                 icon = Icons.Default.PhoneAndroid,
-                accentColor = Color(0xFF00E5FF),
-                isHighlight = true,
+                accentColor = Color(0xFF818CF8),
+                isHighlight = false,
                 onClick = onStartExtended
             )
 

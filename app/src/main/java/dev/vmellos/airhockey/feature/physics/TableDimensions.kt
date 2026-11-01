@@ -5,12 +5,12 @@ package dev.vmellos.airhockey.feature.physics
  */
 data class TableDimensions(
     val width: Float = 1000f,
-    val viewportHeight: Float = 1000f,
+    val viewportHeight: Float = 2000f,
     val bezelGapUnits: Float = 0f,
     val isExtendedMode: Boolean = false
 ) {
     val totalHeight: Float
-        get() = if (isExtendedMode) (viewportHeight * 2f + bezelGapUnits) else (viewportHeight * 2f)
+        get() = if (isExtendedMode) (viewportHeight * 2f + bezelGapUnits) else viewportHeight
 
     val puckRadius: Float = 36f
     val malletRadius: Float = 64f
@@ -35,8 +35,8 @@ data class TableDimensions(
         fun calculateBezelUnits(bezelGapMm: Float, screenHeightPx: Float, yDpi: Float): Float {
             val validDpi = if (yDpi > 0f) yDpi else 400f
             val screenHeightMm = (screenHeightPx / validDpi) * 25.4f
-            val unitsPerMm = if (screenHeightMm > 10f) (1000f / screenHeightMm) else 6.5f
-            return (bezelGapMm * unitsPerMm).coerceIn(0f, 180f)
+            val unitsPerMm = if (screenHeightMm > 10f) (2000f / screenHeightMm) else 13.0f
+            return (bezelGapMm * unitsPerMm).coerceIn(0f, 360f)
         }
     }
 }
