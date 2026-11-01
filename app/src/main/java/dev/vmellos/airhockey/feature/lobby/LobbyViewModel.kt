@@ -57,7 +57,8 @@ data class LobbyState(
     val isSelfReady: Boolean = false,
     val startMatchTrigger: Long = 0L,
     val navigateToCalibrationTrigger: Long = 0L,
-    val calibratedGapMm: Float = 8.0f
+    val calibratedGapMm: Float = 8.0f,
+    val errorMessage: String? = null
 )
 
 class LobbyViewModel : ViewModel() {
@@ -127,7 +128,8 @@ class LobbyViewModel : ViewModel() {
                 hostIp = ip,
                 qrContent = qr,
                 wifiSsid = ssid,
-                isWifiConnected = wifiConnected
+                isWifiConnected = wifiConnected,
+                errorMessage = null
             )
         }
 
@@ -142,7 +144,8 @@ class LobbyViewModel : ViewModel() {
         _state.update {
             it.copy(
                 role = LobbyRole.GUEST,
-                connectionStatus = ConnectionStatus.DISCOVERING
+                connectionStatus = ConnectionStatus.DISCOVERING,
+                errorMessage = null
             )
         }
         nsdManager.startDiscovery()
@@ -260,7 +263,7 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun connectToTable(hostIp: String) {
-        _state.update { it.copy(hostIp = hostIp, connectionStatus = ConnectionStatus.CONNECTING) }
+        _state.update { it.copy(hostIp = hostIp, connectionStatus = ConnectionStatus.CONNECTING, errorMessage = null) }
         nsdManager.stopDiscovery()
         val transport = HybridSocketTransportAdapter(isHost = false, targetHostIp = hostIp)
         val coord = MultiplayerMatchCoordinator(transport, isHost = false)
@@ -284,7 +287,12 @@ class LobbyViewModel : ViewModel() {
                             TransportConnectionState.DISCONNECTED -> ConnectionStatus.DISCONNECTED
                             TransportConnectionState.IDLE -> it.connectionStatus
                         },
-                        isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED)
+                        isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED),
+                        errorMessage = if (cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessage == null) {
+                            "Conexão perdida ou não estabelecida com o anfitrião."
+                        } else {
+                            it.errorMessage
+                        }
                     )
                 }
             }
@@ -293,6 +301,16 @@ class LobbyViewModel : ViewModel() {
 
     fun connectByCode(code: String) {
         val cleanCode = code.trim()
+        if (cleanCode.isBlank()) return
+
+        // 1. Entrada direta de IP (ex: 192.168.0.180 ou 10.0.2.2)
+        if (cleanCode.contains(".") && !cleanCode.startsWith("AIRHOCKEY")) {
+            val ip = cleanCode.substringBefore(":")
+            connectToTable(ip)
+            return
+        }
+
+        // 2. Busca entre as mesas já descobertas via NSD / UDP
         val table = _state.value.discoveredTables.find { it.tableCode == cleanCode }
         if (table != null) {
             connectToTable(table.hostIp)
@@ -300,9 +318,12 @@ class LobbyViewModel : ViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            _state.update { it.copy(connectionStatus = ConnectionStatus.CONNECTING) }
+            _state.update { it.copy(connectionStatus = ConnectionStatus.CONNECTING, errorMessage = null) }
 
-            // 1. Tenta o Gateway DHCP (essencial quando conectado ao Hotspot do anfitrião)
+            // 3. Emite sondagem ativa dirigida
+            nsdManager.sendDirectedDiscoveryProbe()
+
+            // 4. Tenta o Gateway DHCP (essencial quando conectado ao Hotspot do anfitrião)
             val gatewayIp = NsdDiscoveryManager.getDhcpGatewayIp(context)
             if (!gatewayIp.isNullOrBlank() && probeHost(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
                 withContext(Dispatchers.Main) {
@@ -311,7 +332,7 @@ class LobbyViewModel : ViewModel() {
                 return@launch
             }
 
-            // 2. Varredura rápida concorrente na sub-rede /24
+            // 5. Varredura rápida concorrente na sub-rede /24
             val localIp = NsdDiscoveryManager.getLocalIpAddress(context)
             if (localIp.contains(".")) {
                 val prefix = localIp.substringBeforeLast(".") + "."
@@ -324,9 +345,25 @@ class LobbyViewModel : ViewModel() {
                 }
             }
 
-            // 3. Fallback
+            // 6. Caso especial de ambiente de emulador (10.0.2.x -> tenta o host da máquina 10.0.2.2)
+            if (localIp.startsWith("10.0.2.")) {
+                val hostPcIp = "10.0.2.2"
+                if (probeHost(hostPcIp, NetworkConstants.DEFAULT_TCP_PORT)) {
+                    withContext(Dispatchers.Main) {
+                        connectToTable(hostPcIp)
+                    }
+                    return@launch
+                }
+            }
+
+            // 7. Não encontrou na rede local
             withContext(Dispatchers.Main) {
-                connectToTable(gatewayIp ?: "192.168.43.1")
+                _state.update {
+                    it.copy(
+                        connectionStatus = ConnectionStatus.DISCONNECTED,
+                        errorMessage = "Mesa não encontrada com o código $cleanCode. Verifique se ambos estão no mesmo Wi-Fi ou digite o IP do anfitrião."
+                    )
+                }
             }
         }
     }
@@ -334,7 +371,7 @@ class LobbyViewModel : ViewModel() {
     private fun probeHost(ip: String, port: Int): Boolean {
         return try {
             java.net.Socket().use { s ->
-                s.connect(java.net.InetSocketAddress(ip, port), 400)
+                s.connect(java.net.InetSocketAddress(ip, port), 350)
                 true
             }
         } catch (_: Exception) {
@@ -358,7 +395,7 @@ class LobbyViewModel : ViewModel() {
         }
 
         val timeoutJob = launch {
-            delay(2500)
+            delay(2000)
             found.complete(null)
         }
 
@@ -370,12 +407,18 @@ class LobbyViewModel : ViewModel() {
 
     fun handleQrScanResult(qrText: String) {
         _state.update { it.copy(isScanningQr = false) }
-        // Exemplo: airhockey://connect?ip=192.168.1.15&port=8888&code=1234
-        if (qrText.contains("ip=")) {
-            val ip = qrText.substringAfter("ip=").substringBefore("&")
-            if (ip.isNotBlank()) {
-                startAsGuest()
-                connectToTable(ip)
+        val targetIp = when {
+            qrText.contains("ip=") -> qrText.substringAfter("ip=").substringBefore("&").trim()
+            qrText.contains("://") -> qrText.substringAfter("://").substringBefore(":").substringBefore("/").trim()
+            qrText.contains(".") -> qrText.substringBefore(":").trim()
+            else -> ""
+        }
+        if (targetIp.isNotBlank()) {
+            startAsGuest()
+            connectToTable(targetIp)
+        } else {
+            _state.update {
+                it.copy(errorMessage = "Código QR inválido ou ilegível.")
             }
         }
     }

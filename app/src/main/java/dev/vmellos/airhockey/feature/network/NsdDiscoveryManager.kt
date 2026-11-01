@@ -2,6 +2,7 @@ package dev.vmellos.airhockey.feature.network
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
@@ -337,6 +338,50 @@ class NsdDiscoveryManager(private val context: Context) {
         releaseMulticastLockIfNeeded()
     }
 
+    /**
+     * Envia uma sondagem ativa imediata de descoberta (UDP Broadcast e Unicast para Gateway).
+     */
+    fun sendDirectedDiscoveryProbe() {
+        scope.launch {
+            try {
+                val socket = try {
+                    DatagramSocket().apply { broadcast = true }
+                } catch (_: Exception) {
+                    return@launch
+                }
+                val msg = "AIRHOCKEY_DISCOVER".toByteArray()
+
+                // Broadcast global
+                try {
+                    val pGlobal = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), NetworkConstants.DISCOVERY_UDP_PORT)
+                    socket.send(pGlobal)
+                } catch (_: Exception) {}
+
+                // Broadcasts das interfaces
+                for (b in getAllBroadcastAddresses()) {
+                    try {
+                        val p = DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT)
+                        socket.send(p)
+                    } catch (_: Exception) {}
+                }
+
+                // Gateway DHCP
+                val gw = getDhcpGatewayIp(context)
+                if (!gw.isNullOrBlank()) {
+                    try {
+                        val pGw = DatagramPacket(msg, msg.size, InetAddress.getByName(gw), NetworkConstants.DISCOVERY_UDP_PORT)
+                        socket.send(pGw)
+                    } catch (_: Exception) {}
+                }
+
+                delay(250)
+                try {
+                    socket.close()
+                } catch (_: Exception) {}
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun startResolveWorker() {
         scope.launch {
             for (service in resolveChannel) {
@@ -441,23 +486,47 @@ class NsdDiscoveryManager(private val context: Context) {
         }
 
         /**
-         * Detecta o endereço IPv4 local do dispositivo priorizando a rede ativa (Wi-Fi)
-         * e interfaces de Ponto de Acesso Móvel (Hotspot), ignorando dados móveis (4G/5G).
+         * Detecta o endereço IPv4 local do dispositivo priorizando conexões Wi-Fi / Ethernet
+         * e interfaces de Ponto de Acesso Móvel (Hotspot), ignorando dados móveis celulares (4G/5G).
          */
         fun getLocalIpAddress(context: Context? = null): String {
-            // 1. Tenta extrair o IPv4 da rede ativa via ConnectivityManager (moderno, sem depender de WifiInfo/localização)
+            // 1. Tenta extrair o IPv4 de uma rede Wi-Fi ou Ethernet ativa via ConnectivityManager
             if (context != null) {
                 try {
                     val cm = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-                    val activeNet = cm?.activeNetwork
-                    val linkProps = cm?.getLinkProperties(activeNet)
-                    val ip = linkProps?.linkAddresses
-                        ?.map { it.address }
-                        ?.filterIsInstance<Inet4Address>()
-                        ?.firstOrNull { !it.isLoopbackAddress }
-                        ?.hostAddress
-                    if (!ip.isNullOrBlank() && ip != "0.0.0.0" && ip != "127.0.0.1") {
-                        return ip
+                    if (cm != null) {
+                        for (net in cm.allNetworks) {
+                            val caps = cm.getNetworkCapabilities(net) ?: continue
+                            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                                val linkProps = cm.getLinkProperties(net) ?: continue
+                                val ip = linkProps.linkAddresses
+                                    .map { it.address }
+                                    .filterIsInstance<Inet4Address>()
+                                    .firstOrNull { !it.isLoopbackAddress }
+                                    ?.hostAddress
+                                if (!ip.isNullOrBlank() && ip != "0.0.0.0" && ip != "127.0.0.1") {
+                                    return ip
+                                }
+                            }
+                        }
+
+                        // Fallback da rede ativa se não for dados celulares
+                        val activeNet = cm.activeNetwork
+                        if (activeNet != null) {
+                            val caps = cm.getNetworkCapabilities(activeNet)
+                            if (caps != null && !caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                                val linkProps = cm.getLinkProperties(activeNet)
+                                val ip = linkProps?.linkAddresses
+                                    ?.map { it.address }
+                                    ?.filterIsInstance<Inet4Address>()
+                                    ?.firstOrNull { !it.isLoopbackAddress }
+                                    ?.hostAddress
+                                if (!ip.isNullOrBlank() && ip != "0.0.0.0" && ip != "127.0.0.1") {
+                                    return ip
+                                }
+                            }
+                        }
                     }
                 } catch (_: Exception) {}
             }

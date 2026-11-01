@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
 import androidx.compose.material3.Button
@@ -111,18 +112,31 @@ fun LobbyScreen(
         }
     }
 
-    val nearbyPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+    val permissionsToRequest = remember {
+        mutableListOf<String>().apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }
+            if (Build.VERSION.SDK_INT >= 34) {
+                // Permissão de proteção de rede local introduzida no Android 14+/15/16/17
+                add("android.permission.ACCESS_LOCAL_NETWORK")
+            }
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }.toTypedArray()
+    }
+
+    val permissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { _ -> }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasNearby = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.NEARBY_WIFI_DEVICES
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!hasNearby) {
-                nearbyPermissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
-            }
+        val missing = permissionsToRequest.filter { perm ->
+            ContextCompat.checkSelfPermission(context, perm) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isNotEmpty()) {
+            permissionsLauncher.launch(missing.toTypedArray())
         }
     }
 
@@ -308,6 +322,27 @@ private fun HostLobbyView(
             }
         }
 
+        if (state.hostIp.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "IP da Mesa: ",
+                    color = Color(0xFF94A3B8),
+                    fontSize = 13.sp
+                )
+                Text(
+                    text = "${state.hostIp}:8888",
+                    color = Color(0xFF00E5FF),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
 
         // Card de Instruções e Status da Rede Wi-Fi
@@ -457,6 +492,23 @@ private fun GuestLobbyView(
             return
         }
 
+        if (state.errorMessage != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF3B1E1E)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(14.dp)
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(text = state.errorMessage, color = Color(0xFFFFCDD2), fontSize = 13.sp)
+                }
+            }
+        }
+
         if (state.connectionStatus == ConnectionStatus.CONNECTING) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
@@ -493,7 +545,7 @@ private fun GuestLobbyView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Digitação manual de código de 4 dígitos
+        // Digitação manual de código de 4 dígitos ou endereço IP direto
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -501,7 +553,7 @@ private fun GuestLobbyView(
             OutlinedTextField(
                 value = inputCode,
                 onValueChange = onInputCodeChange,
-                placeholder = { Text(stringResource(R.string.lobby_enter_code_hint), color = Color(0xFF64748B)) },
+                placeholder = { Text("Código (4 dígitos) ou IP do Host", color = Color(0xFF64748B), fontSize = 13.sp) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
