@@ -79,4 +79,7 @@
     <string name="settings_match_time">Límite de Tiempo</string>
     <string name="settings_time_minutes">%1$d Minutos</string>
     <string name="settings_bezel_default">Separación Predeterminada</string>
+    <string name="settings_controls">Controles</string>
+    <string name="settings_touch_offset">Desplazamiento de Toque</string>
+    <string name="settings_touch_offset_desc">Proyecta el bateador por delante del dedo para mantener visible el disco</string>
 </resources>

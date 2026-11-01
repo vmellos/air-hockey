@@ -20,6 +20,7 @@ fun GameScreen(
     modifier: Modifier = Modifier
 ) {
     val matchState by viewModel.matchState.collectAsState()
+    val isSoundEnabled by viewModel.soundEnabled.collectAsState()
 
     // O BackHandler nunca fecha o jogo sem confirmação:
     // Ele pausa o jogo e exibe o diálogo de opções (Continuar, Reiniciar, Sair para o Menu).
@@ -56,6 +57,8 @@ fun GameScreen(
         // Placar e Controles
         ScoreBoardOverlay(
             matchState = matchState,
+            isSoundEnabled = isSoundEnabled,
+            onToggleSound = { viewModel.toggleSound() },
             onPauseClick = { viewModel.pauseMatch() }
         )
 
@@ -72,6 +75,8 @@ fun GameScreen(
         // Diálogo de Pausa
         if (matchState.status == MatchStatus.PAUSED && !matchState.peerExited) {
             PauseDialog(
+                isSoundEnabled = isSoundEnabled,
+                onToggleSound = { viewModel.toggleSound() },
                 onResume = { viewModel.resumeMatch() },
                 onRestart = { viewModel.restartMatch() },
                 onExit = {

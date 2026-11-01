@@ -24,6 +24,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.collectAsState
+import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.physics.TableProjection
@@ -56,6 +59,9 @@ fun AirHockeyArenaCanvas(
     val isExtendedHost = mode == GameMode.EXTENDED_HOST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
 
+    val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+    val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
+
     // Frame pulse acoplado ao vsync do display sem alocação
     var framePulse by remember { mutableLongStateOf(0L) }
     LaunchedEffect(Unit) {
@@ -70,7 +76,7 @@ fun AirHockeyArenaCanvas(
         modifier = modifier
             .fillMaxSize()
             .background(TableBackground)
-            .pointerInput(mode, projection) {
+            .pointerInput(mode, projection, touchOffset) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
@@ -83,20 +89,20 @@ fun AirHockeyArenaCanvas(
 
                                 when (mode) {
                                     GameMode.EXTENDED_GUEST -> {
-                                        viewModel.onTouchGuestGlobal(tablePt.x, tablePt.y)
+                                        viewModel.onTouchGuestGlobal(tablePt.x, tablePt.y + touchOffset)
                                     }
                                     GameMode.EXTENDED_HOST -> {
-                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
                                     }
                                     GameMode.SPLIT_SCREEN -> {
                                         if (tablePt.y < dimensions.centerLineY) {
-                                            viewModel.onTouchPlayer2(tablePt.x, tablePt.y)
+                                            viewModel.onTouchPlayer2(tablePt.x, tablePt.y + touchOffset)
                                         } else {
-                                            viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                            viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
                                         }
                                     }
                                     GameMode.SOLO -> {
-                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y)
+                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
                                     }
                                 }
                                 change.consume()

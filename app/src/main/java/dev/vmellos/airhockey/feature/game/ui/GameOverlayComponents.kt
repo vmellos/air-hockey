@@ -16,10 +16,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -48,13 +51,16 @@ import dev.vmellos.airhockey.feature.game.MatchStatus
 @Composable
 fun ScoreBoardOverlay(
     matchState: MatchState,
+    isSoundEnabled: Boolean = true,
+    onToggleSound: () -> Unit = {},
     onPauseClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -111,6 +117,21 @@ fun ScoreBoardOverlay(
             }
 
             Spacer(modifier = Modifier.width(16.dp))
+
+            IconButton(
+                onClick = onToggleSound,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0x22FFFFFF), CircleShape)
+            ) {
+                Icon(
+                    imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                    contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
+                    tint = if (isSoundEnabled) Color.White else Color(0xFFFF5252)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             IconButton(
                 onClick = onPauseClick,
@@ -252,6 +273,8 @@ fun PeerExitedDialog(
 
 @Composable
 fun PauseDialog(
+    isSoundEnabled: Boolean = true,
+    onToggleSound: () -> Unit = {},
     onResume: () -> Unit,
     onRestart: () -> Unit,
     onExit: () -> Unit
@@ -278,7 +301,29 @@ fun PauseDialog(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Text(text = "Efeitos Sonoros", color = Color.White, fontSize = 15.sp)
+                    IconButton(
+                        onClick = onToggleSound,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color(0x22FFFFFF), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
+                            tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFFF5252)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = onResume,

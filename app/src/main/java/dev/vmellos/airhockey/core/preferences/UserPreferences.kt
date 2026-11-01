@@ -22,5 +22,6 @@ data class UserPreferences(
     val bezelGapMm: Float = 8.0f,
     val tableAlignment: TableAlignment = TableAlignment.TOP_TO_TOP,
     val targetScore: Int = 7,
-    val matchTimeSeconds: Int = 180
+    val matchTimeSeconds: Int = 180,
+    val touchOffsetEnabled: Boolean = true
 )

@@ -13,8 +13,11 @@ import dev.vmellos.airhockey.feature.physics.TableDimensions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -22,6 +25,10 @@ import kotlinx.coroutines.launch
 class GameViewModel : ViewModel() {
 
     private val audioEngine = AirHockeyApp.instance.audioEngine
+
+    val soundEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
+        .map { it.soundEnabled }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     private val _matchState = MutableStateFlow(MatchState())
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
@@ -32,6 +39,7 @@ class GameViewModel : ViewModel() {
 
     private var aiController: AirHockeyAiController? = null
     private var physicsJob: Job? = null
+    private var countdownPhysicsJob: Job? = null
     private var timerJob: Job? = null
     private var countdownJob: Job? = null
 
@@ -118,6 +126,7 @@ class GameViewModel : ViewModel() {
         )
 
         engine = AirHockeyPhysicsEngine(dimensions)
+        engine.resetPositions()
 
         // Limpa estritamente o controlador de IA se não for modo SOLO
         aiController = if (mode == GameMode.SOLO) {
@@ -210,6 +219,31 @@ class GameViewModel : ViewModel() {
 
     private fun startCountdown() {
         countdownJob?.cancel()
+        countdownPhysicsJob?.cancel()
+
+        // Loop cinemático dos rebatedores a 120 Hz durante a contagem regressiva
+        if (_matchState.value.isHost) {
+            countdownPhysicsJob = viewModelScope.launch {
+                val dt = 1f / 120f
+                val delayMillis = 8L
+                while (isActive && _matchState.value.status == MatchStatus.COUNTDOWN) {
+                    val start = System.currentTimeMillis()
+                    engine.tickMalletsOnly(dt)
+
+                    onHostBroadcastTelemetry?.invoke(
+                        engine.puck.x, engine.puck.y,
+                        0f, 0f,
+                        engine.player1Mallet.x, engine.player1Mallet.y,
+                        engine.player2Mallet.x, engine.player2Mallet.y
+                    )
+
+                    val elapsed = System.currentTimeMillis() - start
+                    val sleep = (delayMillis - elapsed).coerceAtLeast(1L)
+                    delay(sleep)
+                }
+            }
+        }
+
         countdownJob = viewModelScope.launch {
             _matchState.update { it.copy(status = MatchStatus.COUNTDOWN, countdownNumber = 3) }
             broadcastState()
@@ -225,6 +259,9 @@ class GameViewModel : ViewModel() {
             broadcastState()
             audioEngine.playCountdownBeep(isFinal = false)
             delay(900)
+
+            countdownPhysicsJob?.cancel()
+            countdownPhysicsJob = null
 
             _matchState.update { it.copy(countdownNumber = 0, status = MatchStatus.PLAYING) }
             broadcastState()
@@ -287,33 +324,47 @@ class GameViewModel : ViewModel() {
     private fun stopGameLoops() {
         physicsJob?.cancel()
         physicsJob = null
+        countdownPhysicsJob?.cancel()
+        countdownPhysicsJob = null
         timerJob?.cancel()
         timerJob = null
     }
 
+    private fun isInputAllowed(): Boolean {
+        val s = _matchState.value.status
+        return s == MatchStatus.PLAYING || s == MatchStatus.COUNTDOWN
+    }
+
     fun onTouchPlayer1(x: Float, y: Float) {
-        if (_matchState.value.status != MatchStatus.PLAYING) return
+        if (!isInputAllowed()) return
         engine.player1Mallet.targetX = x
         engine.player1Mallet.targetY = y
     }
 
     fun onTouchPlayer2(x: Float, y: Float) {
-        if (_matchState.value.status != MatchStatus.PLAYING) return
+        if (!isInputAllowed()) return
         engine.player2Mallet.targetX = x
         engine.player2Mallet.targetY = y
     }
 
     fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
-        if (_matchState.value.status != MatchStatus.PLAYING) return
+        if (!isInputAllowed()) return
         onGuestSendInput?.invoke(globalX, globalY)
     }
 
     fun onGuestTouchLocal(localX: Float, localY: Float) {
-        if (_matchState.value.status != MatchStatus.PLAYING) return
+        if (!isInputAllowed()) return
         // Transforma toque do convidado (rotacionado 180 graus na Disposição Topo-a-Topo) para o espaço global
         val globalX = 1000f - localX
         val globalY = 1000f - localY
         onGuestSendInput?.invoke(globalX, globalY)
+    }
+
+    fun toggleSound() {
+        val repo = AirHockeyApp.instance.preferencesRepository
+        viewModelScope.launch {
+            repo.setSoundEnabled(!soundEnabled.value)
+        }
     }
 
     fun onGuestReceiveTelemetry(

@@ -3,90 +3,184 @@ package dev.vmellos.airhockey.feature.ai
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import kotlin.math.abs
+import kotlin.math.sqrt
 
 class AirHockeyAiController(
     private val difficulty: AiDifficulty
 ) {
+    private var bankShotTimer: Float = 0f
+    private var bankShotDirection: Int = 1 // 1 = ricochete na parede direita, -1 = na parede esquerda
+    private var isBankShotActive: Boolean = false
+
     fun update(engine: AirHockeyPhysicsEngine, dt: Float) {
         val puck = engine.puck
         val mallet = engine.player2Mallet
         val dimensions = engine.dimensions
 
         val homeX = dimensions.width / 2f
-        val homeY = 220f
+        val homeY = 190f
+        val goalLeft = dimensions.goalLeft
+        val goalRight = dimensions.goalRight
 
         val isPuckInAiHalf = puck.y < dimensions.centerLineY
-        val isPuckMovingTowardsAi = puck.vy < 0
+        val isPuckMovingTowardsAi = puck.vy < -15f
 
+        // Configuração de dinâmica e velocidades
         val maxSpeed = when (difficulty) {
-            AiDifficulty.EASY -> 450f
-            AiDifficulty.MEDIUM -> 900f
-            AiDifficulty.HARD -> 1750f
+            AiDifficulty.EASY -> 1600f
+            AiDifficulty.MEDIUM -> 3200f
+            AiDifficulty.HARD -> 5400f
+        }
+
+        // Atualiza temporizador de estratégias de Jogada Lateral
+        bankShotTimer += dt
+        if (bankShotTimer > 1.8f) {
+            bankShotTimer = 0f
+            bankShotDirection = if (puck.x > homeX) -1 else 1
+            isBankShotActive = when (difficulty) {
+                AiDifficulty.HARD -> true
+                AiDifficulty.MEDIUM -> (Math.random() < 0.40)
+                AiDifficulty.EASY -> false
+            }
         }
 
         var desiredX = homeX
         var desiredY = homeY
 
-        when (difficulty) {
-            AiDifficulty.EASY -> {
-                if (isPuckInAiHalf) {
-                    desiredX = puck.x
-                    desiredY = homeY + 50f
-                } else {
-                    desiredX = homeX
-                    desiredY = homeY
-                }
-            }
+        // -------------------------------------------------------------
+        // SALVAGUARDA CONTRA AUTOGOL:
+        // Se o disco estiver atrás do rebatedor da IA ou na zona crítica da meta
+        // -------------------------------------------------------------
+        val isPuckBehindMallet = puck.y <= mallet.y + 10f
+        val isPuckInGoalMouthDanger = puck.y < 220f && puck.x in (goalLeft - 50f)..(goalRight + 50f)
 
-            AiDifficulty.MEDIUM -> {
-                if (isPuckInAiHalf) {
-                    desiredX = puck.x
-                    if (puck.y > homeY && puck.y < dimensions.centerLineY - 100f) {
-                        desiredY = puck.y
+        if (isPuckBehindMallet || isPuckInGoalMouthDanger) {
+            // Nunca acelere para trás contra o disco.
+            // Posiciona-se como escudo centralizado na linha de meta sem empurrar o disco para trás.
+            desiredY = 130f
+            desiredX = puck.x.coerceIn(goalLeft + mallet.radius * 0.6f, goalRight - mallet.radius * 0.6f)
+        } else {
+            when (difficulty) {
+                AiDifficulty.EASY -> {
+                    if (isPuckInAiHalf) {
+                        desiredX = puck.x
+                        // Avança moderadamente sem ultrapassar o disco
+                        desiredY = if (puck.y > homeY + 20f) (puck.y - 20f).coerceAtMost(dimensions.centerLineY - 100f) else homeY
                     } else {
-                        desiredY = homeY + 70f
+                        desiredX = homeX + (puck.x - homeX) * 0.3f
+                        desiredY = homeY
                     }
-                } else {
-                    desiredX = homeX + (puck.x - homeX) * 0.35f
-                    desiredY = homeY
                 }
-            }
 
-            AiDifficulty.HARD -> {
-                if (isPuckInAiHalf || (isPuckMovingTowardsAi && puck.y < dimensions.totalHeight * 0.7f)) {
-                    var predictedX = puck.x
-                    if (isPuckMovingTowardsAi && abs(puck.vy) > 10f) {
-                        val timeToReach = (puck.y - homeY) / abs(puck.vy)
-                        predictedX = puck.x + puck.vx * timeToReach
-                        if (predictedX < 0) predictedX = -predictedX
-                        if (predictedX > dimensions.width) predictedX = 2 * dimensions.width - predictedX
-                    }
-                    desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                AiDifficulty.MEDIUM -> {
+                    if (isPuckInAiHalf || (isPuckMovingTowardsAi && puck.y < dimensions.totalHeight * 0.65f)) {
+                        var targetX = puck.x
+                        if (isPuckMovingTowardsAi && abs(puck.vy) > 30f) {
+                            val interceptY = 250f
+                            val timeToIntercept = (puck.y - interceptY) / abs(puck.vy)
+                            targetX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
+                        }
 
-                    if (puck.y in (homeY - 20f)..(dimensions.centerLineY - 80f)) {
-                        desiredY = puck.y + 40f
+                        if (isPuckInAiHalf && puck.y > homeY + 40f && isBankShotActive) {
+                            // Jogada lateral moderada
+                            val lateralOffset = bankShotDirection * (mallet.radius * 0.45f)
+                            desiredX = (targetX + lateralOffset).coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                            desiredY = (puck.y + 35f).coerceAtMost(dimensions.centerLineY - 80f)
+                        } else {
+                            desiredX = targetX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                            desiredY = if (puck.y in (homeY + 30f)..(dimensions.centerLineY - 90f)) {
+                                puck.y + 35f
+                            } else {
+                                homeY + 30f
+                            }
+                        }
                     } else {
-                        desiredY = homeY + 60f
+                        desiredX = homeX + (puck.x - homeX) * 0.45f
+                        desiredY = homeY
                     }
-                } else {
-                    desiredX = (homeX + (puck.x - homeX) * 0.5f).coerceIn(dimensions.goalLeft, dimensions.goalRight)
-                    desiredY = homeY
+                }
+
+                AiDifficulty.HARD -> {
+                    if (isPuckInAiHalf || isPuckMovingTowardsAi) {
+                        val interceptY = if (isPuckInAiHalf) puck.y else 260f
+                        var predictedX = puck.x
+                        if (isPuckMovingTowardsAi && abs(puck.vy) > 20f) {
+                            val timeToIntercept = (puck.y - interceptY) / abs(puck.vy)
+                            predictedX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
+                        }
+
+                        val canAttack = isPuckInAiHalf && puck.y > mallet.y + 25f && puck.y < dimensions.centerLineY - 60f
+
+                        if (canAttack) {
+                            if (isBankShotActive) {
+                                // JOGADA LATERAL ESTRATÉGICA:
+                                // Golpeia desfasado na lateral do disco para arremessá-lo de tabela na parede oposta
+                                val lateralOffset = bankShotDirection * (mallet.radius * 0.60f)
+                                desiredX = (puck.x + lateralOffset).coerceIn(mallet.radius + 20f, dimensions.width - mallet.radius - 20f)
+                                desiredY = (puck.y + 65f).coerceAtMost(dimensions.centerLineY - 50f)
+                            } else {
+                                // GOLPE FRONTAL AGRESSIVO
+                                desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                                desiredY = (puck.y + 60f).coerceAtMost(dimensions.centerLineY - 50f)
+                            }
+                        } else {
+                            // Posicionamento defensivo antecipado
+                            desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                            desiredY = (homeY + 40f).coerceAtMost(dimensions.centerLineY - 120f)
+                        }
+                    } else {
+                        // Disco no campo adversário: cobre o ângulo mais perigoso
+                        desiredX = (homeX + (puck.x - homeX) * 0.55f).coerceIn(goalLeft - 20f, goalRight + 20f)
+                        desiredY = homeY
+                    }
                 }
             }
         }
 
-        // Move suavemente até a posição desejada respeitando a velocidade máxima da IA
-        val dx = desiredX - mallet.targetX
-        val dy = desiredY - mallet.targetY
-        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+        // Restringe estritamente o alvo ao meio campo da IA
+        val clampedDesiredX = desiredX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
+        val clampedDesiredY = desiredY.coerceIn(mallet.radius, dimensions.centerLineY - mallet.radius)
+
+        // Movimento cinemático contínuo respeitando maxSpeed
+        val dx = clampedDesiredX - mallet.targetX
+        val dy = clampedDesiredY - mallet.targetY
+        val dist = sqrt(dx * dx + dy * dy)
         val step = maxSpeed * dt
 
         if (dist > step && dist > 0.001f) {
             mallet.targetX += (dx / dist) * step
             mallet.targetY += (dy / dist) * step
         } else {
-            mallet.targetX = desiredX
-            mallet.targetY = desiredY
+            mallet.targetX = clampedDesiredX
+            mallet.targetY = clampedDesiredY
         }
+    }
+
+    /**
+     * Calcula o ricochete exato nas bordas laterais para prever com precisão onde o disco chegará.
+     */
+    private fun predictXWithBounces(startX: Float, vx: Float, time: Float, tableWidth: Float, radius: Float): Float {
+        var x = startX + vx * time
+        val minX = radius
+        val maxX = tableWidth - radius
+        val effectiveWidth = maxX - minX
+
+        if (effectiveWidth <= 0f) return tableWidth / 2f
+
+        // Normaliza em relação a minX
+        var normX = x - minX
+        val doubleWidth = 2f * effectiveWidth
+
+        // Trata reflexões múltiplas
+        normX %= doubleWidth
+        if (normX < 0f) normX += doubleWidth
+
+        val finalNormX = if (normX > effectiveWidth) {
+            doubleWidth - normX
+        } else {
+            normX
+        }
+
+        return minX + finalNormX
     }
 }

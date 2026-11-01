@@ -38,8 +38,8 @@ class Mallet(
     var vx: Float = 0f,
     var vy: Float = 0f,
     var radius: Float = 64f,
-    var targetX: Float = 500f,
-    var targetY: Float = 1750f
+    var targetX: Float = x,
+    var targetY: Float = y
 ) {
     fun reset(initialX: Float, initialY: Float) {
         x = initialX

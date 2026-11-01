@@ -27,13 +27,17 @@ class AirHockeyPhysicsEngine(
     val player1Mallet = Mallet(
         x = dimensions.width / 2f,
         y = dimensions.totalHeight - 250f,
-        radius = dimensions.malletRadius
+        radius = dimensions.malletRadius,
+        targetX = dimensions.width / 2f,
+        targetY = dimensions.totalHeight - 250f
     )
 
     val player2Mallet = Mallet(
         x = dimensions.width / 2f,
         y = 250f,
-        radius = dimensions.malletRadius
+        radius = dimensions.malletRadius,
+        targetX = dimensions.width / 2f,
+        targetY = 250f
     )
 
     private val projection = TableProjection(
@@ -73,6 +77,14 @@ class AirHockeyPhysicsEngine(
         for (i in 0 until steps) {
             subTick(subDt)
         }
+    }
+
+    /**
+     * Atualiza exclusivamente a cinemática dos rebatedores (usado durante a contagem regressiva).
+     * O disco permanece congelado e nenhuma colisão com o disco é processada até a largada.
+     */
+    fun tickMalletsOnly(dt: Float) {
+        updateMalletPositions(dt)
     }
 
     private fun subTick(dt: Float) {

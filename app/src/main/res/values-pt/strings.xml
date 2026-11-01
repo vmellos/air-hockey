@@ -79,4 +79,7 @@
     <string name="settings_match_time">Tempo Limite</string>
     <string name="settings_time_minutes">%1$d Minutos</string>
     <string name="settings_bezel_default">Vão Físico Padrão</string>
+    <string name="settings_controls">Controles</string>
+    <string name="settings_touch_offset">Deslocamento de Toque</string>
+    <string name="settings_touch_offset_desc">Projeta o rebatedor à frente do dedo para manter o disco visível</string>
 </resources>

@@ -28,6 +28,18 @@ _Avoid_: Bezel, bezel gap, borda plástica, gap
 A unidade de contagem de pontuação concedida quando o disco cruza integralmente a meta adversária.
 _Avoid_: Gol, score, contagem
 
+**Autogol**:
+O evento indesejado em que um jogador ou a inteligência artificial impulsiona o disco diretamente para dentro de sua própria meta.
+_Avoid_: Gol contra, own goal, ponto contra
+
+**Deslocamento de Toque**:
+O espaçamento ergonômico vertical aplicado entre o ponto de toque do dedo na tela e o centro do rebatedor para desobstruir a visão do disco.
+_Avoid_: Touch offset, finger offset, margem de dedo, folga de toque
+
+**Jogada Lateral**:
+O golpe angular aplicado no disco contra as bordas laterais da mesa com o objetivo de produzir ricochete veloz em direção à meta oposta.
+_Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
+
 ## Modos de Jogo
 
 **Modo Solo**:

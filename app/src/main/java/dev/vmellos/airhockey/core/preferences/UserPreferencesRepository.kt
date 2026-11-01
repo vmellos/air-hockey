@@ -30,6 +30,7 @@ class UserPreferencesRepository(private val context: Context) {
         val TABLE_ALIGNMENT = stringPreferencesKey("table_alignment")
         val TARGET_SCORE = intPreferencesKey("target_score")
         val MATCH_TIME_SECONDS = intPreferencesKey("match_time_seconds")
+        val TOUCH_OFFSET_ENABLED = booleanPreferencesKey("touch_offset_enabled")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -60,6 +61,7 @@ class UserPreferencesRepository(private val context: Context) {
             }
             val targetScore = preferences[PreferencesKeys.TARGET_SCORE] ?: 7
             val matchTime = preferences[PreferencesKeys.MATCH_TIME_SECONDS] ?: 180
+            val touchOffsetEnabled = preferences[PreferencesKeys.TOUCH_OFFSET_ENABLED] ?: true
 
             UserPreferences(
                 appLanguage = lang,
@@ -70,7 +72,8 @@ class UserPreferencesRepository(private val context: Context) {
                 bezelGapMm = bezelGapMm,
                 tableAlignment = alignment,
                 targetScore = targetScore,
-                matchTimeSeconds = matchTime
+                matchTimeSeconds = matchTime,
+                touchOffsetEnabled = touchOffsetEnabled
             )
         }
 
@@ -125,6 +128,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setMatchTimeSeconds(seconds: Int) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.MATCH_TIME_SECONDS] = seconds.coerceIn(60, 600)
+        }
+    }
+
+    suspend fun setTouchOffsetEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TOUCH_OFFSET_ENABLED] = enabled
         }
     }
 }

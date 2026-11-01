@@ -79,4 +79,7 @@
     <string name="settings_match_time">Time Limit</string>
     <string name="settings_time_minutes">%1$d Minutes</string>
     <string name="settings_bezel_default">Default Bezel Gap</string>
+    <string name="settings_controls">Controls</string>
+    <string name="settings_touch_offset">Touch Offset</string>
+    <string name="settings_touch_offset_desc">Projects mallet forward from finger to keep the puck and striker clearly visible</string>
 </resources>
