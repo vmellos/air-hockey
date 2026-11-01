@@ -46,6 +46,7 @@ class GameViewModel : ViewModel() {
     // Callbacks de rede para Mesa Estendida
     var coordinator: MultiplayerMatchCoordinator? = null
         private set
+    private val coordinatorJobs = mutableListOf<Job>()
 
     @Volatile
     private var pendingCollisionEvent: Byte = 0
@@ -58,6 +59,8 @@ class GameViewModel : ViewModel() {
     var onGuestSendControl: ((String) -> Unit)? = null
 
     fun attachCoordinator(coord: MultiplayerMatchCoordinator) {
+        coordinatorJobs.forEach { it.cancel() }
+        coordinatorJobs.clear()
         coordinator = coord
         val isHost = coord.isHost
 
@@ -68,7 +71,7 @@ class GameViewModel : ViewModel() {
             onHostBroadcastState = { remote ->
                 coord.broadcastState(remote)
             }
-            viewModelScope.launch {
+            coordinatorJobs += viewModelScope.launch {
                 coord.transport.guestInputs.collect { input ->
                     onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
                 }
@@ -76,13 +79,13 @@ class GameViewModel : ViewModel() {
             coord.onPeerPauseRequested = { pauseMatch() }
             coord.onPeerResumeRequested = { resumeMatch() }
             coord.onPeerRestartRequested = { restartMatch() }
-            viewModelScope.launch {
+            coordinatorJobs += viewModelScope.launch {
                 coord.state.collect { state ->
                     if (state.peerExited) onPeerExited()
                 }
             }
         } else {
-            viewModelScope.launch {
+            coordinatorJobs += viewModelScope.launch {
                 coord.transport.telemetryFrames.collect { t ->
                     onGuestReceiveTelemetry(
                         t.puckX, t.puckY,
@@ -94,7 +97,7 @@ class GameViewModel : ViewModel() {
                     )
                 }
             }
-            viewModelScope.launch {
+            coordinatorJobs += viewModelScope.launch {
                 coord.state.collect { state ->
                     state.remoteMatchState?.let { onGuestReceiveState(it) }
                     if (state.peerExited) onPeerExited()
@@ -121,7 +124,9 @@ class GameViewModel : ViewModel() {
         targetScore: Int = 7,
         matchTimeSeconds: Int = 180,
         aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
-        puckMaxSpeed: Float = 9500f
+        puckMaxSpeed: Float = 9500f,
+        player1Name: String = "Jogador 1",
+        player2Name: String = "Jogador 2"
     ) {
         val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST
         val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST
@@ -153,7 +158,9 @@ class GameViewModel : ViewModel() {
             countdownNumber = 3,
             remainingTimeSeconds = matchTimeSeconds,
             isHost = !isGuest,
-            peerExited = false
+            peerExited = false,
+            player1Name = player1Name,
+            player2Name = player2Name
         )
 
         setupCollisionListener()
@@ -266,17 +273,17 @@ class GameViewModel : ViewModel() {
         countdownJob = viewModelScope.launch {
             _matchState.update { it.copy(status = MatchStatus.COUNTDOWN, countdownNumber = 3) }
             broadcastState()
-            audioEngine.playCountdownBeep(isFinal = false)
+            audioEngine.playCountdownBeep(3)
             delay(900)
 
             _matchState.update { it.copy(countdownNumber = 2) }
             broadcastState()
-            audioEngine.playCountdownBeep(isFinal = false)
+            audioEngine.playCountdownBeep(2)
             delay(900)
 
             _matchState.update { it.copy(countdownNumber = 1) }
             broadcastState()
-            audioEngine.playCountdownBeep(isFinal = false)
+            audioEngine.playCountdownBeep(1)
             delay(900)
 
             countdownPhysicsJob?.cancel()
@@ -284,7 +291,7 @@ class GameViewModel : ViewModel() {
 
             _matchState.update { it.copy(countdownNumber = 0, status = MatchStatus.PLAYING) }
             broadcastState()
-            audioEngine.playCountdownBeep(isFinal = true)
+            audioEngine.playCountdownBeep(0)
 
             startGameLoops()
         }
@@ -467,13 +474,9 @@ class GameViewModel : ViewModel() {
 
         // Reprodução de áudio sincronizada no convidado
         if (newStatus == MatchStatus.COUNTDOWN && remote.countdownNumber != prev.countdownNumber) {
-            if (remote.countdownNumber > 0) {
-                audioEngine.playCountdownBeep(isFinal = false)
-            } else {
-                audioEngine.playCountdownBeep(isFinal = true)
-            }
+            audioEngine.playCountdownBeep(remote.countdownNumber)
         } else if (newStatus == MatchStatus.PLAYING && prev.status == MatchStatus.COUNTDOWN) {
-            audioEngine.playCountdownBeep(isFinal = true)
+            audioEngine.playCountdownBeep(0)
         } else if (newStatus == MatchStatus.GOAL_PAUSE && prev.status != MatchStatus.GOAL_PAUSE) {
             audioEngine.playGoal()
         }
@@ -570,6 +573,15 @@ class GameViewModel : ViewModel() {
         stopGameLoops()
         countdownJob?.cancel()
         countdownJob = null
+        countdownPhysicsJob?.cancel()
+        countdownPhysicsJob = null
+        coordinatorJobs.forEach { it.cancel() }
+        coordinatorJobs.clear()
+        coordinator = null
+        onHostBroadcastTelemetry = null
+        onHostBroadcastState = null
+        onGuestSendInput = null
+        onGuestSendControl = null
         _matchState.update { it.copy(status = MatchStatus.IDLE) }
     }
 

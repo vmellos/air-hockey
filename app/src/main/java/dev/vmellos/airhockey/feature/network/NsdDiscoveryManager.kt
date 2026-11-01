@@ -29,7 +29,9 @@ data class DiscoveredTable(
     val name: String,
     val hostIp: String,
     val port: Int,
-    val tableCode: String
+    val tableCode: String,
+    val mode: String = "EXTENDED",
+    val hostName: String = ""
 )
 
 class NsdDiscoveryManager(private val context: Context) {
@@ -82,7 +84,12 @@ class NsdDiscoveryManager(private val context: Context) {
         }
     }
 
-    fun startBroadcast(tableCode: String, port: Int = NetworkConstants.DEFAULT_TCP_PORT) {
+    fun startBroadcast(
+        tableCode: String,
+        port: Int = NetworkConstants.DEFAULT_TCP_PORT,
+        mode: String = "EXTENDED",
+        hostName: String = ""
+    ) {
         stopBroadcast()
         isBroadcasting = true
         acquireMulticastLock()
@@ -96,6 +103,10 @@ class NsdDiscoveryManager(private val context: Context) {
             setPort(port)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 setAttribute("code", tableCode)
+                setAttribute("mode", mode)
+                if (hostName.isNotBlank()) {
+                    setAttribute("hostName", hostName)
+                }
             }
         }
 
@@ -111,10 +122,16 @@ class NsdDiscoveryManager(private val context: Context) {
         } catch (_: Exception) {}
 
         // 2. Canal Ativo UDP Broadcast (Beacon + Resposta Direta a Consultas)
-        startUdpBeacon(tableCode, port, hostIp)
+        startUdpBeacon(tableCode, port, hostIp, mode, hostName)
     }
 
-    private fun startUdpBeacon(tableCode: String, port: Int, hostIp: String) {
+    private fun startUdpBeacon(
+        tableCode: String,
+        port: Int,
+        hostIp: String,
+        mode: String,
+        hostName: String
+    ) {
         udpBroadcastJob?.cancel()
         udpBroadcastJob = scope.launch {
             try {
@@ -138,7 +155,7 @@ class NsdDiscoveryManager(private val context: Context) {
                             socket.receive(packet)
                             val req = String(packet.data, packet.offset, packet.length).trim()
                             if (req.startsWith("AIRHOCKEY_DISCOVER")) {
-                                val reply = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port".toByteArray()
+                                val reply = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port:$mode:$hostName".toByteArray()
                                 val replyPacket = DatagramPacket(reply, reply.size, packet.address, packet.port)
                                 socket.send(replyPacket)
                             }
@@ -150,7 +167,7 @@ class NsdDiscoveryManager(private val context: Context) {
 
                 // Envia beacon periódico via Broadcast a cada 1000ms
                 while (isActive) {
-                    val msg = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port".toByteArray()
+                    val msg = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port:$mode:$hostName".toByteArray()
 
                     // Broadcast global
                     try {
@@ -262,12 +279,16 @@ class NsdDiscoveryManager(private val context: Context) {
                                         packet.address.hostAddress ?: ""
                                     }
                                     val port = parts[3].toIntOrNull() ?: NetworkConstants.DEFAULT_TCP_PORT
+                                    val mode = if (parts.size >= 5 && parts[4].isNotBlank()) parts[4] else "EXTENDED"
+                                    val hostName = if (parts.size >= 6) parts.subList(5, parts.size).joinToString(":") else ""
                                     if (ip.isNotBlank()) {
                                         val table = DiscoveredTable(
                                             name = "${NetworkConstants.SERVICE_NAME_PREFIX}$code",
                                             hostIp = ip,
                                             port = port,
-                                            tableCode = code
+                                            tableCode = code,
+                                            mode = mode,
+                                            hostName = hostName
                                         )
                                         _discoveredTables.update { current ->
                                             if (current.any { it.hostIp == ip && it.tableCode == code }) {
@@ -405,12 +426,24 @@ class NsdDiscoveryManager(private val context: Context) {
                 } else {
                     name.substringAfter(NetworkConstants.SERVICE_NAME_PREFIX, "")
                 }
+                val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    serviceInfo.attributes["mode"]?.let { String(it) } ?: "EXTENDED"
+                } else {
+                    "EXTENDED"
+                }
+                val hostName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    serviceInfo.attributes["hostName"]?.let { String(it) } ?: ""
+                } else {
+                    ""
+                }
 
                 val table = DiscoveredTable(
                     name = name,
                     hostIp = host,
                     port = port,
-                    tableCode = code
+                    tableCode = code,
+                    mode = mode,
+                    hostName = hostName
                 )
 
                 _discoveredTables.update { current ->

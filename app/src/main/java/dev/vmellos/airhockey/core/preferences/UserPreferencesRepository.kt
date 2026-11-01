@@ -32,6 +32,23 @@ class UserPreferencesRepository(private val context: Context) {
         val MATCH_TIME_SECONDS = intPreferencesKey("match_time_seconds")
         val TOUCH_OFFSET_ENABLED = booleanPreferencesKey("touch_offset_enabled")
         val PUCK_SPEED = stringPreferencesKey("puck_speed")
+        val PLAYER_NAME = stringPreferencesKey("player_name")
+    }
+
+    companion object {
+        fun getDefaultDevicePlayerName(context: Context): String {
+            return try {
+                val globalName = android.provider.Settings.Global.getString(context.contentResolver, "device_name")
+                if (!globalName.isNullOrBlank()) return globalName
+                val secureName = android.provider.Settings.Secure.getString(context.contentResolver, "bluetooth_name")
+                if (!secureName.isNullOrBlank()) return secureName
+                val model = android.os.Build.MODEL
+                if (!model.isNullOrBlank()) return model
+                "Jogador"
+            } catch (_: Exception) {
+                "Jogador"
+            }
+        }
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -69,6 +86,8 @@ class UserPreferencesRepository(private val context: Context) {
             } catch (_: Exception) {
                 PuckSpeedPreset.NORMAL
             }
+            val storedName = preferences[PreferencesKeys.PLAYER_NAME]
+            val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)
 
             UserPreferences(
                 appLanguage = lang,
@@ -81,9 +100,16 @@ class UserPreferencesRepository(private val context: Context) {
                 targetScore = targetScore,
                 matchTimeSeconds = matchTime,
                 touchOffsetEnabled = touchOffsetEnabled,
-                puckSpeed = puckSpeed
+                puckSpeed = puckSpeed,
+                playerName = playerName
             )
         }
+
+    suspend fun setPlayerName(name: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PLAYER_NAME] = name.trim()
+        }
+    }
 
     suspend fun setAppLanguage(languageCode: String) {
         context.dataStore.edit { preferences ->

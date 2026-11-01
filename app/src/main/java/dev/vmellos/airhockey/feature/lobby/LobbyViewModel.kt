@@ -60,39 +60,45 @@ data class LobbyState(
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 9500f,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val peerPlayerName: String = "",
+    val selfPlayerName: String = ""
 )
 
 class LobbyViewModel : ViewModel() {
 
     private val context = AirHockeyApp.instance.applicationContext
     val nsdManager = NsdDiscoveryManager(context)
-    val tcpServer = TcpControlServer()
-    val tcpClient = TcpControlClient()
-    val udpSocket = UdpTelemetrySocket()
 
     private val _state = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _state.asStateFlow()
 
     var coordinator: MultiplayerMatchCoordinator? = null
         private set
+    private var coordinatorJob: Job? = null
 
     var onRemoteStateReceived: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onControlMessageReceived: ((String) -> Unit)? = null
 
     init {
         viewModelScope.launch {
-            nsdManager.discoveredTables.collect { tables ->
-                _state.update { it.copy(discoveredTables = tables) }
+            AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collect { prefs ->
+                _state.update { it.copy(selfPlayerName = prefs.playerName) }
             }
         }
 
-        setupTcpServerCallbacks()
-        setupTcpClientCallbacks()
+        viewModelScope.launch {
+            nsdManager.discoveredTables.collect { tables ->
+                val currentTarget = _state.value.targetMode
+                val filtered = tables.filter { it.mode.isBlank() || it.mode.equals(currentTarget, ignoreCase = true) }
+                _state.update { it.copy(discoveredTables = filtered) }
+            }
+        }
     }
 
     fun setTargetMode(mode: String) {
-        _state.update { it.copy(targetMode = mode) }
+        val filtered = nsdManager.discoveredTables.value.filter { it.mode.isBlank() || it.mode.equals(mode, ignoreCase = true) }
+        _state.update { it.copy(targetMode = mode, discoveredTables = filtered) }
     }
 
     @Suppress("DEPRECATION")
@@ -122,7 +128,11 @@ class LobbyViewModel : ViewModel() {
     fun startAsHost(mode: String = _state.value.targetMode) {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress(context)
-        val qr = "airhockey://connect?ip=$ip&port=8888&code=$code&mode=$mode"
+        val selfName = _state.value.selfPlayerName.ifBlank {
+            dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(context)
+        }
+        val encodedName = try { java.net.URLEncoder.encode(selfName, "UTF-8") } catch (_: Exception) { "" }
+        val qr = "airhockey://connect?ip=$ip&port=8888&code=$code&mode=$mode&hostName=$encodedName"
         val ssid = getNetworkSsid()
         val wifiConnected = checkIsWifiConnected()
 
@@ -136,15 +146,26 @@ class LobbyViewModel : ViewModel() {
                 qrContent = qr,
                 wifiSsid = ssid,
                 isWifiConnected = wifiConnected,
-                errorMessage = null
+                errorMessage = null,
+                startMatchTrigger = 0L,
+                navigateToCalibrationTrigger = 0L,
+                isPeerReady = false,
+                isSelfReady = false,
+                peerPlayerName = ""
             )
         }
 
         val transport = HybridSocketTransportAdapter(isHost = true)
-        val coord = MultiplayerMatchCoordinator(transport, isHost = true)
+        val coord = MultiplayerMatchCoordinator(
+            transport = transport,
+            isHost = true,
+            expectedTableCode = code,
+            selfPlayerName = selfName,
+            selfMode = mode
+        )
         coordinator = coord
         bindCoordinator(coord)
-        nsdManager.startBroadcast(code)
+        nsdManager.startBroadcast(code, port = NetworkConstants.DEFAULT_TCP_PORT, mode = mode, hostName = selfName)
     }
 
     fun startAsGuest(mode: String = _state.value.targetMode) {
@@ -153,105 +174,15 @@ class LobbyViewModel : ViewModel() {
                 role = LobbyRole.GUEST,
                 connectionStatus = ConnectionStatus.DISCOVERING,
                 targetMode = mode,
-                errorMessage = null
+                errorMessage = null,
+                startMatchTrigger = 0L,
+                navigateToCalibrationTrigger = 0L,
+                isPeerReady = false,
+                isSelfReady = false,
+                peerPlayerName = ""
             )
         }
         nsdManager.startDiscovery()
-    }
-
-    private fun setupTcpServerCallbacks() {
-        tcpServer.onClientConnected = { clientIp ->
-            _state.update {
-                it.copy(
-                    guestIp = clientIp,
-                    connectionStatus = ConnectionStatus.CONNECTED,
-                    isReadyToPlay = true
-                )
-            }
-            udpSocket.setTarget(clientIp)
-            tcpServer.sendMessage("HANDSHAKE_OK:${_state.value.tableCode}:${_state.value.targetMode}")
-        }
-
-        tcpServer.onClientDisconnected = {
-            _state.update {
-                it.copy(
-                    connectionStatus = ConnectionStatus.DISCONNECTED,
-                    isReadyToPlay = false,
-                    isPeerReady = false
-                )
-            }
-            onControlMessageReceived?.invoke(ControlMessages.EXIT)
-        }
-
-        tcpServer.onMessageReceived = { msg ->
-            when {
-                msg == ControlMessages.READY -> {
-                    _state.update { it.copy(isPeerReady = true) }
-                }
-                msg == ControlMessages.EXIT -> {
-                    onControlMessageReceived?.invoke(ControlMessages.EXIT)
-                }
-                else -> {
-                    onControlMessageReceived?.invoke(msg)
-                }
-            }
-        }
-    }
-
-    private fun setupTcpClientCallbacks() {
-        tcpClient.onConnected = {
-            _state.update {
-                it.copy(
-                    connectionStatus = ConnectionStatus.CONNECTED,
-                    isReadyToPlay = true
-                )
-            }
-            udpSocket.setTarget(_state.value.hostIp)
-        }
-
-        tcpClient.onDisconnected = {
-            _state.update {
-                it.copy(
-                    connectionStatus = ConnectionStatus.DISCONNECTED,
-                    isReadyToPlay = false,
-                    isPeerReady = false
-                )
-            }
-            onControlMessageReceived?.invoke(ControlMessages.EXIT)
-        }
-
-        tcpClient.onMessageReceived = { msg ->
-            when {
-                msg.startsWith("HANDSHAKE_OK") -> {
-                    val parts = msg.split(":")
-                    val mode = if (parts.size >= 3) parts[2] else _state.value.targetMode
-                    _state.update { it.copy(isReadyToPlay = true, targetMode = mode) }
-                }
-                msg == "NAVIGATE_CALIBRATION" -> {
-                    _state.update { it.copy(navigateToCalibrationTrigger = System.currentTimeMillis()) }
-                }
-                msg.startsWith(ControlMessages.START) -> {
-                    val gap = msg.substringAfter(":", "8.0").toFloatOrNull() ?: 8.0f
-                    _state.update {
-                        it.copy(
-                            calibratedGapMm = gap,
-                            startMatchTrigger = System.currentTimeMillis()
-                        )
-                    }
-                }
-                msg.startsWith("STATE:") -> {
-                    ControlMessages.decodeState(msg)?.let {
-                        onRemoteStateReceived?.invoke(it)
-                    }
-                }
-                msg == ControlMessages.EXIT -> {
-                    onControlMessageReceived?.invoke(ControlMessages.EXIT)
-                }
-                else -> {
-                    onControlMessageReceived?.invoke(msg)
-                }
-            }
-        }
     }
 
     fun notifyNavigateToCalibration() {
@@ -272,17 +203,40 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun connectToTable(hostIp: String) {
-        _state.update { it.copy(hostIp = hostIp, connectionStatus = ConnectionStatus.CONNECTING, errorMessage = null) }
+    fun connectToTable(hostIp: String, code: String = "") {
+        val selfName = _state.value.selfPlayerName.ifBlank {
+            dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(context)
+        }
+        val mode = _state.value.targetMode
+        _state.update {
+            it.copy(
+                hostIp = hostIp,
+                tableCode = code,
+                connectionStatus = ConnectionStatus.CONNECTING,
+                errorMessage = null,
+                startMatchTrigger = 0L,
+                navigateToCalibrationTrigger = 0L,
+                isPeerReady = false,
+                isSelfReady = false,
+                peerPlayerName = ""
+            )
+        }
         nsdManager.stopDiscovery()
         val transport = HybridSocketTransportAdapter(isHost = false, targetHostIp = hostIp)
-        val coord = MultiplayerMatchCoordinator(transport, isHost = false)
+        val coord = MultiplayerMatchCoordinator(
+            transport = transport,
+            isHost = false,
+            expectedTableCode = code,
+            selfPlayerName = selfName,
+            selfMode = mode
+        )
         coordinator = coord
         bindCoordinator(coord)
     }
 
     private fun bindCoordinator(coord: MultiplayerMatchCoordinator) {
-        viewModelScope.launch {
+        coordinatorJob?.cancel()
+        coordinatorJob = viewModelScope.launch {
             coord.state.collect { cState ->
                 _state.update {
                     it.copy(
@@ -292,17 +246,26 @@ class LobbyViewModel : ViewModel() {
                         navigateToCalibrationTrigger = cState.navigateToCalibrationTrigger,
                         calibratedGapMm = cState.calibratedGapMm,
                         synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
+                        peerPlayerName = cState.peerPlayerName.ifBlank { it.peerPlayerName },
                         connectionStatus = when (cState.connectionState) {
                             TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
                             TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING
                             TransportConnectionState.DISCONNECTED -> ConnectionStatus.DISCONNECTED
                             TransportConnectionState.IDLE -> it.connectionStatus
                         },
-                        isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED),
-                        errorMessage = if (cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessage == null) {
-                            "Conexão perdida ou não estabelecida com o anfitrião."
-                        } else {
-                            it.errorMessage
+                        isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED && !cState.isHandshakeRejected),
+                        errorMessage = when {
+                            cState.isHandshakeRejected -> {
+                                if (cState.rejectReason == "INVALID_CODE") {
+                                    "Código incorreto! Confira os 4 dígitos na tela do anfitrião."
+                                } else {
+                                    "Modo de jogo incompatível com esta mesa."
+                                }
+                            }
+                            cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessage == null -> {
+                                "Conexão perdida ou não estabelecida com o anfitrião."
+                            }
+                            else -> it.errorMessage
                         }
                     )
                 }
@@ -317,14 +280,14 @@ class LobbyViewModel : ViewModel() {
         // 1. Entrada direta de IP (ex: 192.168.0.180 ou 10.0.2.2)
         if (cleanCode.contains(".") && !cleanCode.startsWith("AIRHOCKEY")) {
             val ip = cleanCode.substringBefore(":")
-            connectToTable(ip)
+            connectToTable(ip, "")
             return
         }
 
         // 2. Busca entre as mesas já descobertas via NSD / UDP
         val table = _state.value.discoveredTables.find { it.tableCode == cleanCode }
         if (table != null) {
-            connectToTable(table.hostIp)
+            connectToTable(table.hostIp, cleanCode)
             return
         }
 
@@ -338,7 +301,7 @@ class LobbyViewModel : ViewModel() {
             val gatewayIp = NsdDiscoveryManager.getDhcpGatewayIp(context)
             if (!gatewayIp.isNullOrBlank() && probeHost(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
                 withContext(Dispatchers.Main) {
-                    connectToTable(gatewayIp)
+                    connectToTable(gatewayIp, cleanCode)
                 }
                 return@launch
             }
@@ -350,7 +313,7 @@ class LobbyViewModel : ViewModel() {
                 val foundIp = scanSubnetForHost(prefix, NetworkConstants.DEFAULT_TCP_PORT, localIp)
                 if (foundIp != null) {
                     withContext(Dispatchers.Main) {
-                        connectToTable(foundIp)
+                        connectToTable(foundIp, cleanCode)
                     }
                     return@launch
                 }
@@ -361,7 +324,7 @@ class LobbyViewModel : ViewModel() {
                 val hostPcIp = "10.0.2.2"
                 if (probeHost(hostPcIp, NetworkConstants.DEFAULT_TCP_PORT)) {
                     withContext(Dispatchers.Main) {
-                        connectToTable(hostPcIp)
+                        connectToTable(hostPcIp, cleanCode)
                     }
                     return@launch
                 }
@@ -424,6 +387,9 @@ class LobbyViewModel : ViewModel() {
             qrText.contains(".") -> qrText.substringBefore(":").trim()
             else -> ""
         }
+        val targetCode = if (qrText.contains("code=")) {
+            qrText.substringAfter("code=").substringBefore("&").trim()
+        } else ""
         val targetMode = if (qrText.contains("mode=")) {
             qrText.substringAfter("mode=").substringBefore("&").trim()
         } else {
@@ -431,7 +397,7 @@ class LobbyViewModel : ViewModel() {
         }
         if (targetIp.isNotBlank()) {
             startAsGuest(targetMode)
-            connectToTable(targetIp)
+            connectToTable(targetIp, targetCode)
         } else {
             _state.update {
                 it.copy(errorMessage = "Código QR inválido ou ilegível.")
@@ -443,13 +409,24 @@ class LobbyViewModel : ViewModel() {
         _state.update { it.copy(isScanningQr = scanning) }
     }
 
+    fun consumeStartMatchTrigger() {
+        _state.update { it.copy(startMatchTrigger = 0L) }
+    }
+
+    fun consumeCalibrationTrigger() {
+        _state.update { it.copy(navigateToCalibrationTrigger = 0L) }
+    }
+
     fun stopAll() {
         val currentTargetMode = _state.value.targetMode
+        val currentSelfName = _state.value.selfPlayerName
+        coordinatorJob?.cancel()
+        coordinatorJob = null
         coordinator?.terminateSession()
         coordinator = null
         nsdManager.stopBroadcast()
         nsdManager.stopDiscovery()
-        _state.update { LobbyState(targetMode = currentTargetMode) }
+        _state.update { LobbyState(targetMode = currentTargetMode, selfPlayerName = currentSelfName) }
     }
 
     override fun onCleared() {

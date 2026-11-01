@@ -11,7 +11,9 @@ enum class TransportConnectionState {
 }
 
 sealed class TableControlEvent {
-    data class HandshakeOk(val tableCode: String) : TableControlEvent()
+    data class HandshakeRequest(val code: String, val guestName: String = "", val mode: String = "") : TableControlEvent()
+    data class HandshakeOk(val tableCode: String, val hostName: String = "", val mode: String = "") : TableControlEvent()
+    data class HandshakeReject(val reason: String) : TableControlEvent()
     object NavigateCalibration : TableControlEvent()
     object Ready : TableControlEvent()
     data class Start(val gapMm: Float, val maxSpeed: Float = 9500f) : TableControlEvent()
@@ -27,7 +29,9 @@ sealed class TableControlEvent {
 
     fun toWireString(): String {
         return when (this) {
-            is HandshakeOk -> "HANDSHAKE_OK:$tableCode"
+            is HandshakeRequest -> "HANDSHAKE_REQ:$code:$guestName:$mode"
+            is HandshakeOk -> "HANDSHAKE_OK:$tableCode:$hostName:$mode"
+            is HandshakeReject -> "HANDSHAKE_REJECT:$reason"
             NavigateCalibration -> "NAVIGATE_CALIBRATION"
             Ready -> ControlMessages.READY
             is Start -> "${ControlMessages.START}:$gapMm:$maxSpeed"
@@ -46,9 +50,23 @@ sealed class TableControlEvent {
     companion object {
         fun fromWireString(line: String): TableControlEvent {
             return when {
+                line.startsWith("HANDSHAKE_REQ:") -> {
+                    val parts = line.split(":")
+                    val code = parts.getOrNull(1) ?: ""
+                    val guestName = parts.getOrNull(2) ?: ""
+                    val mode = parts.getOrNull(3) ?: ""
+                    HandshakeRequest(code, guestName, mode)
+                }
                 line.startsWith("HANDSHAKE_OK") -> {
-                    val code = line.substringAfter(":", "")
-                    HandshakeOk(code)
+                    val parts = line.split(":")
+                    val code = parts.getOrNull(1) ?: ""
+                    val hostName = parts.getOrNull(2) ?: ""
+                    val mode = parts.getOrNull(3) ?: ""
+                    HandshakeOk(code, hostName, mode)
+                }
+                line.startsWith("HANDSHAKE_REJECT:") -> {
+                    val reason = line.substringAfter("HANDSHAKE_REJECT:")
+                    HandshakeReject(reason)
                 }
                 line == "NAVIGATE_CALIBRATION" -> NavigateCalibration
                 line == ControlMessages.READY -> Ready

@@ -29,7 +29,10 @@ data class MultiplayerSessionState(
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 9500f,
     val peerExited: Boolean = false,
-    val remoteMatchState: ControlMessages.RemoteMatchState? = null
+    val remoteMatchState: ControlMessages.RemoteMatchState? = null,
+    val peerPlayerName: String = "",
+    val isHandshakeRejected: Boolean = false,
+    val rejectReason: String? = null
 )
 
 /**
@@ -41,6 +44,9 @@ data class MultiplayerSessionState(
 class MultiplayerMatchCoordinator(
     val transport: TableTransport,
     val isHost: Boolean,
+    val expectedTableCode: String = "",
+    val selfPlayerName: String = "",
+    val selfMode: String = "EXTENDED",
     initialGapMm: Float = 8.0f,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
@@ -66,7 +72,16 @@ class MultiplayerMatchCoordinator(
         scope.launch {
             transport.connectionState.collect { connState ->
                 _state.update { it.copy(connectionState = connState) }
-                if (connState == TransportConnectionState.DISCONNECTED) {
+                if (connState == TransportConnectionState.CONNECTED && !isHost) {
+                    // Convidado envia a solicitação de Handshake com código e nome
+                    transport.sendControl(
+                        TableControlEvent.HandshakeRequest(
+                            code = expectedTableCode,
+                            guestName = selfPlayerName,
+                            mode = selfMode
+                        )
+                    )
+                } else if (connState == TransportConnectionState.DISCONNECTED) {
                     _state.update { it.copy(peerExited = true) }
                 }
             }
@@ -81,6 +96,49 @@ class MultiplayerMatchCoordinator(
 
     private fun handleControlEvent(event: TableControlEvent) {
         when (event) {
+            is TableControlEvent.HandshakeRequest -> {
+                if (isHost) {
+                    val codeMatches = expectedTableCode.isBlank() || event.code == expectedTableCode
+                    val modeMatches = selfMode.isBlank() || event.mode.equals(selfMode, ignoreCase = true)
+                    if (!codeMatches) {
+                        scope.launch {
+                            transport.sendControl(TableControlEvent.HandshakeReject("INVALID_CODE"))
+                        }
+                    } else if (!modeMatches) {
+                        scope.launch {
+                            transport.sendControl(TableControlEvent.HandshakeReject("INVALID_MODE"))
+                        }
+                    } else {
+                        _state.update { it.copy(peerPlayerName = event.guestName) }
+                        scope.launch {
+                            transport.sendControl(
+                                TableControlEvent.HandshakeOk(
+                                    tableCode = expectedTableCode,
+                                    hostName = selfPlayerName,
+                                    mode = selfMode
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            is TableControlEvent.HandshakeOk -> {
+                if (!isHost) {
+                    _state.update { it.copy(peerPlayerName = event.hostName) }
+                }
+            }
+            is TableControlEvent.HandshakeReject -> {
+                if (!isHost) {
+                    _state.update {
+                        it.copy(
+                            isHandshakeRejected = true,
+                            rejectReason = event.reason,
+                            peerExited = true
+                        )
+                    }
+                    terminateSession()
+                }
+            }
             TableControlEvent.NavigateCalibration -> {
                 _state.update { it.copy(navigateToCalibrationTrigger = System.currentTimeMillis()) }
             }

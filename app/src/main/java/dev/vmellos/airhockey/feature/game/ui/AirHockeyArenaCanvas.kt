@@ -228,11 +228,17 @@ private fun DrawScope.drawGoals(
 ) {
     val goalW = dimensions.goalWidth * scale
     val goalLeft = left + dimensions.goalLeft * scale
+    val goalCenterX = goalLeft + goalW / 2f
+    val creaseRadius = (goalW / 2f) * 1.35f
     val vHeight = 2000f
     val screenBottom = top + vHeight * scale
 
     if (isConnectedGuest) {
-        // No Convidado da Mesa Conectada (180°):
+        // Área da Meta Player 2 (Laranja - Base)
+        drawGoalCrease(goalCenterX, screenBottom, creaseRadius, BorderOrange, isTop = false)
+        // Área da Meta Player 1 (Ciano - Topo)
+        drawGoalCrease(goalCenterX, top, creaseRadius, BorderCyan, isTop = true)
+
         // Meta do Player 2 (Laranja) fica na BASE da tela (defendida pelo Convidado)
         drawRect(
             color = GoalSlotColor,
@@ -262,6 +268,8 @@ private fun DrawScope.drawGoals(
     } else {
         // Meta Player 1 (Azul / Cyan) - Base da tela para Anfitrião, Solo e Split
         if (!isExtendedGuest) {
+            drawGoalCrease(goalCenterX, screenBottom, creaseRadius, BorderCyan, isTop = false)
+
             drawRect(
                 color = GoalSlotColor,
                 topLeft = Offset(goalLeft, screenBottom - 6f),
@@ -279,6 +287,8 @@ private fun DrawScope.drawGoals(
         // No modo Estendido (Convidado): base da tela do Convidado
         // No modo Solo e Split: topo da tela
         if (isExtendedGuest) {
+            drawGoalCrease(goalCenterX, screenBottom, creaseRadius, BorderOrange, isTop = false)
+
             drawRect(
                 color = GoalSlotColor,
                 topLeft = Offset(goalLeft, screenBottom - 6f),
@@ -291,6 +301,8 @@ private fun DrawScope.drawGoals(
                 strokeWidth = 8f
             )
         } else if (!isExtendedHost) {
+            drawGoalCrease(goalCenterX, top, creaseRadius, BorderOrange, isTop = true)
+
             val goalTop = top
             drawRect(
                 color = GoalSlotColor,
@@ -305,6 +317,51 @@ private fun DrawScope.drawGoals(
             )
         }
     }
+}
+
+private fun DrawScope.drawGoalCrease(
+    centerX: Float,
+    baseY: Float,
+    radius: Float,
+    color: Color,
+    isTop: Boolean
+) {
+    val startAngle = if (isTop) 0f else 180f
+    val arcTop = if (isTop) baseY - radius else baseY - radius
+
+    // Preenchimento suave translúcido
+    drawArc(
+        color = color.copy(alpha = 0.08f),
+        startAngle = startAngle,
+        sweepAngle = 180f,
+        useCenter = true,
+        topLeft = Offset(centerX - radius, arcTop),
+        size = Size(radius * 2f, radius * 2f)
+    )
+
+    // Contorno neon luminoso
+    drawArc(
+        color = color.copy(alpha = 0.85f),
+        startAngle = startAngle,
+        sweepAngle = 180f,
+        useCenter = false,
+        topLeft = Offset(centerX - radius, arcTop),
+        size = Size(radius * 2f, radius * 2f),
+        style = Stroke(width = 3.5f)
+    )
+
+    // Detalhe tracejado interno de precisão
+    val innerRadius = radius * 0.6f
+    val innerTop = if (isTop) baseY - innerRadius else baseY - innerRadius
+    drawArc(
+        color = color.copy(alpha = 0.35f),
+        startAngle = startAngle,
+        sweepAngle = 180f,
+        useCenter = false,
+        topLeft = Offset(centerX - innerRadius, innerTop),
+        size = Size(innerRadius * 2f, innerRadius * 2f),
+        style = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
+    )
 }
 
 private fun DrawScope.drawMallet(

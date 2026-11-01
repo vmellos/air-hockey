@@ -67,10 +67,11 @@ fun ScoreBoardOverlay(
         // Placar P1 (Cyan)
         Column(horizontalAlignment = Alignment.Start) {
             Text(
-                text = "P1",
+                text = matchState.player1Name,
                 color = Color(0xFF00E5FF),
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
             )
             Text(
                 text = "${matchState.scorePlayer1}",
@@ -102,10 +103,11 @@ fun ScoreBoardOverlay(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = if (matchState.mode == GameMode.SOLO) "IA" else "P2",
+                    text = matchState.player2Name,
                     color = Color(0xFFFF5722),
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
                 )
                 Text(
                     text = "${matchState.scorePlayer2}",
@@ -377,10 +379,11 @@ fun GameOverDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val winnerColor = if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
+                val winnerName = if (matchState.winner == 1) matchState.player1Name else matchState.player2Name
                 val winnerTitle = if (matchState.mode == GameMode.SOLO) {
                     if (matchState.winner == 1) stringResource(R.string.game_winner_you) else stringResource(R.string.game_winner_opponent)
                 } else {
-                    if (matchState.winner == 1) stringResource(R.string.game_winner_player1) else stringResource(R.string.game_winner_player2)
+                    "$winnerName Venceu!"
                 }
 
                 Text(

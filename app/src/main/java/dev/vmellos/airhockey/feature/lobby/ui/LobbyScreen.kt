@@ -30,10 +30,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,15 +47,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -78,7 +86,52 @@ fun LobbyScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var inputCode by remember { mutableStateOf("") }
+    var showNameDialog by remember { mutableStateOf(false) }
+    var nameInput by remember { mutableStateOf("") }
+
+    if (showNameDialog) {
+        AlertDialog(
+            onDismissRequest = { showNameDialog = false },
+            title = { Text(stringResource(R.string.lobby_edit_name), color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { if (it.length <= 24) nameInput = it },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF00E5FF),
+                        unfocusedBorderColor = Color(0xFF475569)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val newName = nameInput.trim()
+                        if (newName.isNotBlank()) {
+                            scope.launch {
+                                AirHockeyApp.instance.preferencesRepository.setPlayerName(newName)
+                            }
+                        }
+                        showNameDialog = false
+                    }
+                ) {
+                    Text("Salvar", color = Color(0xFF00E5FF), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNameDialog = false }) {
+                    Text("Cancelar", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
+    }
 
     androidx.compose.runtime.LaunchedEffect(state.navigateToCalibrationTrigger) {
         if (state.navigateToCalibrationTrigger > 0L) {
@@ -171,23 +224,53 @@ fun LobbyScreen(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            IconButton(onClick = handleBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = handleBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                val titleText = if (state.targetMode == "CONNECTED") {
+                    stringResource(R.string.lobby_title_connected)
+                } else {
+                    stringResource(R.string.lobby_title)
+                }
+                Text(
+                    text = titleText,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            val titleText = if (state.targetMode == "CONNECTED") {
-                stringResource(R.string.lobby_title_connected)
-            } else {
-                stringResource(R.string.lobby_title)
+
+            // Chip com Nome do Jogador
+            Surface(
+                color = Color(0xFF1E293B),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.clickable {
+                    nameInput = state.selfPlayerName
+                    showNameDialog = true
+                }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = state.selfPlayerName.ifBlank { "Jogador" },
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                }
             }
-            Text(
-                text = titleText,
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -219,7 +302,7 @@ fun LobbyScreen(
                 inputCode = inputCode,
                 onInputCodeChange = { inputCode = it },
                 onConnectCode = { viewModel.connectByCode(inputCode) },
-                onConnectTable = { table -> viewModel.connectToTable(table.hostIp) },
+                onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code) },
                 onScanQrClick = {
                     val hasPerm = ContextCompat.checkSelfPermission(
                         context, Manifest.permission.CAMERA
@@ -475,10 +558,79 @@ private fun GuestLobbyView(
     inputCode: String,
     onInputCodeChange: (String) -> Unit,
     onConnectCode: () -> Unit,
-    onConnectTable: (dev.vmellos.airhockey.feature.network.DiscoveredTable) -> Unit,
+    onConnectTable: (dev.vmellos.airhockey.feature.network.DiscoveredTable, String) -> Unit,
     onScanQrClick: () -> Unit,
     onProceed: () -> Unit
 ) {
+    var selectedTableForPin by remember { mutableStateOf<dev.vmellos.airhockey.feature.network.DiscoveredTable?>(null) }
+    var pinDialogInput by remember { mutableStateOf("") }
+
+    val tableForPin = selectedTableForPin
+    if (tableForPin != null) {
+        AlertDialog(
+            onDismissRequest = { selectedTableForPin = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.lobby_pin_dialog_title),
+                    color = Color(0xFF00E5FF),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    val hostName = tableForPin.hostName.ifBlank { "Anfitrião" }
+                    Text(
+                        text = stringResource(R.string.lobby_table_by, hostName),
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.lobby_pin_dialog_desc),
+                        color = Color(0xFF94A3B8),
+                        fontSize = 13.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = pinDialogInput,
+                        onValueChange = { if (it.length <= 6) pinDialogInput = it },
+                        placeholder = { Text(stringResource(R.string.lobby_pin_dialog_hint), color = Color(0xFF64748B)) },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF00E5FF),
+                            unfocusedBorderColor = Color(0xFF475569)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val entered = pinDialogInput.trim()
+                        if (entered.isNotBlank()) {
+                            onConnectTable(tableForPin, entered)
+                            selectedTableForPin = null
+                        }
+                    },
+                    enabled = pinDialogInput.length >= 4,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+                ) {
+                    Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { selectedTableForPin = null }) {
+                    Text("Cancelar", color = Color(0xFF94A3B8))
+                }
+            },
+            containerColor = Color(0xFF1E293B)
+        )
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         if (state.connectionStatus == ConnectionStatus.CONNECTED) {
             Card(
@@ -633,7 +785,10 @@ private fun GuestLobbyView(
             LazyColumn {
                 items(state.discoveredTables) { table ->
                     Card(
-                        onClick = { onConnectTable(table) },
+                        onClick = {
+                            pinDialogInput = ""
+                            selectedTableForPin = table
+                        },
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -647,20 +802,34 @@ private fun GuestLobbyView(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                                 Icon(Icons.Default.Wifi, contentDescription = null, tint = Color(0xFF00E5FF))
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
-                                    Text(table.name, color = Color.White, fontWeight = FontWeight.Bold)
-                                    Text(table.hostIp, color = Color(0xFF64748B), fontSize = 12.sp)
+                                    val title = if (table.hostName.isNotBlank()) {
+                                        stringResource(R.string.lobby_table_by, table.hostName)
+                                    } else {
+                                        table.name
+                                    }
+                                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    val modeLabel = if (table.mode == "CONNECTED") {
+                                        stringResource(R.string.menu_mode_connected)
+                                    } else {
+                                        stringResource(R.string.menu_mode_extended)
+                                    }
+                                    Text("${table.hostIp} • $modeLabel", color = Color(0xFF64748B), fontSize = 12.sp)
                                 }
                             }
-                            Text(
-                                text = "#${table.tableCode}",
-                                color = Color(0xFF00E5FF),
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Lock, contentDescription = "Privada", tint = Color(0xFFFF5722), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Privada",
+                                    color = Color(0xFFFF5722),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

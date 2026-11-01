@@ -99,4 +99,16 @@
     <string name="calibration_diagram_label">Alinee los dispositivos borde con borde</string>
     <string name="calibration_bezel_explanation">Compensa los bordes negros entre las dos pantallas para que el disco pase de un dispositivo a otro de forma fluida.</string>
     <string name="lobby_waiting_host_start">¡Conectado! Esperando que el anfitrión inicie&#8230;</string>
+
+    <!-- Perfil de Jugador y Partida Privada -->
+    <string name="settings_profile">Perfil del Jugador</string>
+    <string name="settings_player_name">Nombre del Jugador</string>
+    <string name="settings_player_name_desc">Nombre que se muestra al crear o unirse a mesas multijugador</string>
+    <string name="lobby_player_name_label">Tu Nombre: %1$s</string>
+    <string name="lobby_edit_name">Editar Nombre</string>
+    <string name="lobby_pin_dialog_title">Partida Privada</string>
+    <string name="lobby_pin_dialog_desc">Introduce el Código de Emparejamiento de 4 dígitos que se muestra en la pantalla del anfitrión para entrar.</string>
+    <string name="lobby_pin_dialog_hint">Código de 4 dígitos</string>
+    <string name="lobby_pin_incorrect">¡Código incorrecto! Revisa los 4 dígitos en la pantalla del anfitrión.</string>
+    <string name="lobby_table_by">Mesa de %1$s</string>
 </resources>

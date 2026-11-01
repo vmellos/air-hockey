@@ -30,5 +30,6 @@ data class UserPreferences(
     val targetScore: Int = 7,
     val matchTimeSeconds: Int = 180,
     val touchOffsetEnabled: Boolean = true,
-    val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL
+    val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL,
+    val playerName: String = ""
 )

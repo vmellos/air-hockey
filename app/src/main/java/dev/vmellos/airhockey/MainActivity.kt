@@ -99,13 +99,21 @@ fun AirHockeyAppNavigation(
         composable("menu") {
             MainMenuScreen(
                 onStartSolo = {
+                    val p1 = userPrefs.playerName.ifBlank { "Você" }
+                    val diff = when (userPrefs.aiDifficulty) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                    }
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         aiDifficulty = userPrefs.aiDifficulty,
-                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed
+                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
+                        player1Name = p1,
+                        player2Name = "IA ($diff)"
                     )
                     navController.navigate("game/SOLO")
                 },
@@ -115,7 +123,9 @@ fun AirHockeyAppNavigation(
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed
+                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
+                        player1Name = "Jogador 1",
+                        player2Name = "Jogador 2"
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
@@ -142,13 +152,27 @@ fun AirHockeyAppNavigation(
                 if (lobbyState.startMatchTrigger > 0L && lobbyState.targetMode == "CONNECTED") {
                     val gameMode = if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
                     val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
+                    val p1Name = if (isHost) {
+                        lobbyState.selfPlayerName.ifBlank { "Jogador 1" }
+                    } else {
+                        lobbyState.peerPlayerName.ifBlank { "Jogador 1" }
+                    }
+                    val p2Name = if (isHost) {
+                        lobbyState.peerPlayerName.ifBlank { "Jogador 2" }
+                    } else {
+                        lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
+                    }
+
+                    lobbyViewModel.consumeStartMatchTrigger()
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = 0f,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        puckMaxSpeed = effectivePuckSpeed
+                        puckMaxSpeed = effectivePuckSpeed,
+                        player1Name = p1Name,
+                        player2Name = p2Name
                     )
 
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
@@ -162,6 +186,7 @@ fun AirHockeyAppNavigation(
             // Para Mesa Estendida: navega o convidado automaticamente quando o anfitrião avança para a calibração
             LaunchedEffect(lobbyState.navigateToCalibrationTrigger) {
                 if (lobbyState.navigateToCalibrationTrigger > 0L && lobbyState.targetMode == "EXTENDED") {
+                    lobbyViewModel.consumeCalibrationTrigger()
                     navController.navigate("calibration")
                 }
             }
@@ -187,13 +212,27 @@ fun AirHockeyAppNavigation(
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
                     val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
+                    val p1Name = if (isHost) {
+                        lobbyState.selfPlayerName.ifBlank { "Jogador 1" }
+                    } else {
+                        lobbyState.peerPlayerName.ifBlank { "Jogador 1" }
+                    }
+                    val p2Name = if (isHost) {
+                        lobbyState.peerPlayerName.ifBlank { "Jogador 2" }
+                    } else {
+                        lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
+                    }
+
+                    lobbyViewModel.consumeStartMatchTrigger()
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = lobbyState.calibratedGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        puckMaxSpeed = effectivePuckSpeed
+                        puckMaxSpeed = effectivePuckSpeed,
+                        player1Name = p1Name,
+                        player2Name = p2Name
                     )
 
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
