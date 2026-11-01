@@ -372,12 +372,20 @@ class GameViewModel : ViewModel() {
         if (!::engine.isInitialized || !isInputAllowed()) return
         engine.player1Mallet.targetX = x
         engine.player1Mallet.targetY = y
+        if (_matchState.value.status == MatchStatus.COUNTDOWN) {
+            engine.player1Mallet.x = x
+            engine.player1Mallet.y = y
+        }
     }
 
     fun onTouchPlayer2(x: Float, y: Float) {
         if (!::engine.isInitialized || !isInputAllowed()) return
         engine.player2Mallet.targetX = x
         engine.player2Mallet.targetY = y
+        if (_matchState.value.status == MatchStatus.COUNTDOWN) {
+            engine.player2Mallet.x = x
+            engine.player2Mallet.y = y
+        }
     }
 
     fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
@@ -434,15 +442,18 @@ class GameViewModel : ViewModel() {
         engine.player1Mallet.y = hostMalletY
 
         // Reconciliação suave da Previsão no Cliente do Jogador 2
-        val dx = guestMalletX - engine.player2Mallet.x
-        val dy = guestMalletY - engine.player2Mallet.y
-        val distSq = dx * dx + dy * dy
-        if (distSq > 2500f) {
-            engine.player2Mallet.x = guestMalletX
-            engine.player2Mallet.y = guestMalletY
-        } else if (distSq > 4f) {
-            engine.player2Mallet.x += dx * 0.35f
-            engine.player2Mallet.y += dy * 0.35f
+        // Durante a contagem regressiva, permite movimentação tática preparatória livre sem puxões
+        if (_matchState.value.status != MatchStatus.COUNTDOWN) {
+            val dx = guestMalletX - engine.player2Mallet.x
+            val dy = guestMalletY - engine.player2Mallet.y
+            val distSq = dx * dx + dy * dy
+            if (distSq > 2500f) {
+                engine.player2Mallet.x = guestMalletX
+                engine.player2Mallet.y = guestMalletY
+            } else if (distSq > 4f) {
+                engine.player2Mallet.x += dx * 0.35f
+                engine.player2Mallet.y += dy * 0.35f
+            }
         }
 
         // Telemetria de Colisão: reproduz som de colisão de rebatedor ou borda no dispositivo convidado
@@ -487,6 +498,10 @@ class GameViewModel : ViewModel() {
         if (!::engine.isInitialized) return
         engine.player2Mallet.targetX = globalTargetX
         engine.player2Mallet.targetY = globalTargetY
+        if (_matchState.value.status == MatchStatus.COUNTDOWN) {
+            engine.player2Mallet.x = globalTargetX
+            engine.player2Mallet.y = globalTargetY
+        }
     }
 
     private fun broadcastState() {
@@ -526,9 +541,7 @@ class GameViewModel : ViewModel() {
             return
         }
         if (_matchState.value.status == MatchStatus.PAUSED) {
-            _matchState.update { it.copy(status = MatchStatus.PLAYING) }
-            broadcastState()
-            startGameLoops()
+            startCountdown()
         }
     }
 

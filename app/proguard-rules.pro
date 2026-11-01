@@ -26,6 +26,8 @@
     <init>(...);
 }
 -keep class androidx.compose.material.icons.** { *; }
+-keepclassmembers class androidx.compose.material.icons.** { *; }
+-keep class androidx.compose.ui.graphics.vector.** { *; }
 
 # -------------------------------------------------------------------
 # 4. AndroidX DataStore Preferences

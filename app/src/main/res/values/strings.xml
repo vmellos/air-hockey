@@ -116,4 +116,7 @@
     <string name="settings_player_name_saved">Player name saved successfully!</string>
     <string name="settings_player_name_empty">Name cannot be empty</string>
     <string name="cancel">Cancel</string>
+    <string name="game_draw">Draw!</string>
+    <string name="settings_show_fps">Show FPS Counter</string>
+    <string name="settings_show_fps_desc">Display real-time frame rate during match</string>
 </resources>

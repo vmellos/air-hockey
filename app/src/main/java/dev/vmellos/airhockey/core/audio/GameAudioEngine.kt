@@ -27,6 +27,7 @@ class GameAudioEngine(private val context: Context) {
     private var soundCountdown2Id: Int = 0
     private var soundCountdown1Id: Int = 0
     private var soundCountdownGoId: Int = 0
+    private val loadedSoundIds = java.util.Collections.synchronizedSet(mutableSetOf<Int>())
 
     var isSoundEnabled: Boolean = true
     var volume: Float = 0.8f
@@ -42,6 +43,12 @@ class GameAudioEngine(private val context: Context) {
             .setMaxStreams(8)
             .setAudioAttributes(audioAttributes)
             .build()
+
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) {
+                loadedSoundIds.add(sampleId)
+            }
+        }
 
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
@@ -65,13 +72,13 @@ class GameAudioEngine(private val context: Context) {
             val countdown1Wav = File(cacheDir, "sfx_countdown_1.wav")
             val countdownGoWav = File(cacheDir, "sfx_countdown_go.wav")
 
-            if (!hitPaddleWav.exists()) generateWav(hitPaddleWav, frequency = 480.0, durationMs = 60, isDecay = true)
-            if (!hitWallWav.exists()) generateWav(hitWallWav, frequency = 240.0, durationMs = 45, isDecay = true)
-            if (!goalWav.exists()) generateFanfareWav(goalWav)
-            if (!countdown3Wav.exists()) generateHarmonicChimeWav(countdown3Wav, frequency = 523.25, durationMs = 140)
-            if (!countdown2Wav.exists()) generateHarmonicChimeWav(countdown2Wav, frequency = 659.25, durationMs = 140)
-            if (!countdown1Wav.exists()) generateHarmonicChimeWav(countdown1Wav, frequency = 783.99, durationMs = 140)
-            if (!countdownGoWav.exists()) generateGoChordWav(countdownGoWav)
+            if (!hitPaddleWav.exists() || hitPaddleWav.length() == 0L) generateWav(hitPaddleWav, frequency = 480.0, durationMs = 60, isDecay = true)
+            if (!hitWallWav.exists() || hitWallWav.length() == 0L) generateWav(hitWallWav, frequency = 240.0, durationMs = 45, isDecay = true)
+            if (!goalWav.exists() || goalWav.length() == 0L) generateFanfareWav(goalWav)
+            if (!countdown3Wav.exists() || countdown3Wav.length() == 0L) generateHarmonicChimeWav(countdown3Wav, frequency = 523.25, durationMs = 140)
+            if (!countdown2Wav.exists() || countdown2Wav.length() == 0L) generateHarmonicChimeWav(countdown2Wav, frequency = 659.25, durationMs = 140)
+            if (!countdown1Wav.exists() || countdown1Wav.length() == 0L) generateHarmonicChimeWav(countdown1Wav, frequency = 783.99, durationMs = 140)
+            if (!countdownGoWav.exists() || countdownGoWav.length() == 0L) generateGoChordWav(countdownGoWav)
 
             soundHitPaddleId = soundPool.load(hitPaddleWav.absolutePath, 1)
             soundHitWallId = soundPool.load(hitWallWav.absolutePath, 1)
