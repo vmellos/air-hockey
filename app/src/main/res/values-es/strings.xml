@@ -116,4 +116,7 @@
     <string name="settings_player_name_saved">¡Nombre del jugador guardado con éxito!</string>
     <string name="settings_player_name_empty">El nombre no puede estar vacío</string>
     <string name="cancel">Cancelar</string>
+    <string name="game_draw">¡Empate!</string>
+    <string name="settings_show_fps">Mostrar Contador de FPS</string>
+    <string name="settings_show_fps_desc">Muestra la tasa de fotogramas por segundo en tiempo real durante la partida</string>
 </resources>

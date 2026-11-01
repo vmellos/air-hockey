@@ -52,6 +52,7 @@ class AirHockeyPhysicsEngine(
     private val maxSpeedSq = maxSpeed * maxSpeed
 
     var onCollisionListener: ((CollisionEvent, Float) -> Unit)? = null
+    var onVisualCollisionListener: ((Float, Float, CollisionEvent) -> Unit)? = null
 
     fun resetPositions(scorer: Int = 0) {
         val serveSpot = projection.getServePosition(scorer)
@@ -173,6 +174,7 @@ class AirHockeyPhysicsEngine(
                 val impactIntensity = (sqrt(puck.speedSquared()) / 3000f).coerceIn(0.2f, 1.0f)
                 val event = if (isPlayer1) CollisionEvent.PADDLE_HIT_P1 else CollisionEvent.PADDLE_HIT_P2
                 onCollisionListener?.invoke(event, impactIntensity)
+                onVisualCollisionListener?.invoke(puck.x, puck.y, event)
             }
         }
     }
@@ -185,6 +187,7 @@ class AirHockeyPhysicsEngine(
             puck.x = r
             puck.vx = -puck.vx * wallRestitution
             onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+            onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
         }
 
         // Parede Direita
@@ -192,6 +195,7 @@ class AirHockeyPhysicsEngine(
             puck.x = dimensions.width - r
             puck.vx = -puck.vx * wallRestitution
             onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+            onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
         }
 
         // Meta em Y <= 0 (Defendida pelo Player 2 / IA no Topo -> Ponto para Player 1)
@@ -205,6 +209,7 @@ class AirHockeyPhysicsEngine(
                 puck.y = r
                 puck.vy = -puck.vy * wallRestitution
                 onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
             }
         }
 
@@ -219,6 +224,7 @@ class AirHockeyPhysicsEngine(
                 puck.y = dimensions.totalHeight - r
                 puck.vy = -puck.vy * wallRestitution
                 onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
             }
         }
     }

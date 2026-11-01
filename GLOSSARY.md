@@ -48,6 +48,18 @@ _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
 A taxa máxima de deslocamento admitida para o disco durante a partida, parametrizada por predefinições de ritmo de jogo.
 _Avoid_: Rapidez da bola, velocidade do jogo, puck speed
 
+**Empate**:
+O resultado oficial de uma partida em que o tempo limite se esgota com pontuação idêntica entre os dois competidores, sem declaração de vitória.
+_Avoid_: Tie, draw, igualdade, sem vencedor
+
+**Retomada com Contagem Regressiva**:
+O intervalo preparatório de 3 segundos disparado ao despausar a partida antes de restabelecer o movimento físico do disco.
+_Avoid_: Unpause countdown, re-start, contagem de despause
+
+**Posicionamento Preparatório**:
+A movimentação tática livre do rebatedor permitida aos participantes em seu próprio meio-campo durante a contagem regressiva enquanto o disco permanece imóvel na saída.
+_Avoid_: Pre-match movement, warm-up move, ajuste pré-jogo
+
 ## Modos de Jogo
 
 **Modo Solo**:
@@ -121,3 +133,7 @@ _Avoid_: Pacote de som, broadcast de áudio, sync de áudio
 **Miniatura da Mesa**:
 A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
 _Avoid_: Ícone de campo, desenho do modo, preview da mesa
+
+**Contador de FPS**:
+O indicador opcional na arena que exibe em tempo real a taxa de quadros por segundo entregue pelo motor de renderização.
+_Avoid_: Frame counter, medidor de taxa, taxa de quadros, medidor de fps

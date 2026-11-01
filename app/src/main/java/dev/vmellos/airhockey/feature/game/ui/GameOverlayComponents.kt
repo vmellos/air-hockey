@@ -124,12 +124,13 @@ fun ScoreBoardOverlay(
                 onClick = onToggleSound,
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Color(0x22FFFFFF), CircleShape)
+                    .background(if (isSoundEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
             ) {
                 Icon(
                     imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                     contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
-                    tint = if (isSoundEnabled) Color.White else Color(0xFFFF5252)
+                    tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
@@ -315,12 +316,13 @@ fun PauseDialog(
                         onClick = onToggleSound,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0x22FFFFFF), CircleShape)
+                            .background(if (isSoundEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
                     ) {
                         Icon(
                             imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                             contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
-                            tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFFF5252)
+                            tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -378,11 +380,14 @@ fun GameOverDialog(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val winnerColor = if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
-                val winnerName = if (matchState.winner == 1) matchState.player1Name else matchState.player2Name
-                val winnerTitle = if (matchState.mode == GameMode.SOLO) {
+                val isDraw = matchState.winner == 0
+                val winnerColor = if (isDraw) Color(0xFFE2E8F0) else if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
+                val winnerTitle = if (isDraw) {
+                    stringResource(R.string.game_draw)
+                } else if (matchState.mode == GameMode.SOLO) {
                     if (matchState.winner == 1) stringResource(R.string.game_winner_you) else stringResource(R.string.game_winner_opponent)
                 } else {
+                    val winnerName = if (matchState.winner == 1) matchState.player1Name else matchState.player2Name
                     "$winnerName Venceu!"
                 }
 

@@ -1,17 +1,28 @@
 package dev.vmellos.airhockey.feature.game.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -24,13 +35,25 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
+import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableProjection
 import kotlin.math.min
+
+private data class VisualShockwave(
+    val x: Float,
+    val y: Float,
+    val color: Color,
+    val maxRadius: Float,
+    var progress: Float = 0f
+)
 
 // Paleta Neon Arcade
 private val TableBackground = Color(0xFF0A0E1A)
@@ -64,11 +87,48 @@ fun AirHockeyArenaCanvas(
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
 
-    // Frame pulse acoplado ao vsync do display sem alocação
+    val shockwaves = remember { mutableStateListOf<VisualShockwave>() }
+    val puckTrail = remember { ArrayDeque<Offset>(8) }
+
+    DisposableEffect(engine) {
+        val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
+            val color = when (evt) {
+                CollisionEvent.PADDLE_HIT_P1 -> Color(0xFF00E5FF)
+                CollisionEvent.PADDLE_HIT_P2 -> Color(0xFFFF5722)
+                else -> Color(0xFFE2E8F0)
+            }
+            if (shockwaves.size < 6) {
+                shockwaves.add(VisualShockwave(px, py, color, maxRadius = 140f, progress = 0f))
+            }
+        }
+        engine.onVisualCollisionListener = listener
+        onDispose {
+            if (engine.onVisualCollisionListener === listener) {
+                engine.onVisualCollisionListener = null
+            }
+        }
+    }
+
+    // Frame pulse acoplado ao vsync do display com medição de FPS
     var framePulse by remember { mutableLongStateOf(0L) }
+    var currentFps by remember { mutableIntStateOf(60) }
+    var frameCount by remember { mutableIntStateOf(0) }
+    var lastFpsTimestamp by remember { mutableLongStateOf(0L) }
+
     LaunchedEffect(Unit) {
         while (true) {
             withFrameNanos { time ->
+                frameCount++
+                if (lastFpsTimestamp == 0L) {
+                    lastFpsTimestamp = time
+                } else {
+                    val elapsedNanos = time - lastFpsTimestamp
+                    if (elapsedNanos >= 500_000_000L) {
+                        currentFps = ((frameCount * 1_000_000_000L) / elapsedNanos).toInt()
+                        frameCount = 0
+                        lastFpsTimestamp = time
+                    }
+                }
                 framePulse = time
             }
         }
@@ -132,18 +192,79 @@ fun AirHockeyArenaCanvas(
             // Desenha metas
             drawGoals(offsetX, offsetY, scale, dimensions, isExtendedHost, isExtendedGuest, isConnectedGuest)
 
-            // Desenha Rebatedor 1
+            // Desenha ondas de choque de impacto
+            val it = shockwaves.iterator()
+            while (it.hasNext()) {
+                val sw = it.next()
+                val swScreen = projection.tableToScreen(sw.x, sw.y, screenW, screenH)
+                val currentRadius = sw.maxRadius * scale * sw.progress
+                val currentAlpha = (1f - sw.progress).coerceIn(0f, 1f) * 0.70f
+                drawCircle(
+                    color = sw.color.copy(alpha = currentAlpha),
+                    radius = currentRadius,
+                    center = Offset(swScreen.x, swScreen.y),
+                    style = Stroke(width = 4f * (1f - sw.progress) * scale)
+                )
+                sw.progress += 0.045f
+                if (sw.progress >= 1f) {
+                    it.remove()
+                }
+            }
+
+            // Desenha Rebatedor 1 com aura neon
             val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
             drawMallet(p1Screen.x, p1Screen.y, engine.player1Mallet.radius * scale, MalletP1Color, MalletP1RimColor)
 
-            // Desenha Rebatedor 2
+            // Desenha Rebatedor 2 com aura neon
             val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
             drawMallet(p2Screen.x, p2Screen.y, engine.player2Mallet.radius * scale, MalletP2Color, MalletP2RimColor)
 
-            // Desenha Disco somente se visível no viewport deste dispositivo
+            // Desenha Disco e Rastro Cinético somente se visível no viewport deste dispositivo
             if (projection.isVisibleInViewport(engine.puck.x, engine.puck.y, engine.puck.radius)) {
                 val puckScreen = projection.tableToScreen(engine.puck.x, engine.puck.y, screenW, screenH)
+                val spd = engine.puck.speed()
+                if (spd > 150f) {
+                    puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
+                    if (puckTrail.size > 6) puckTrail.removeLast()
+                } else if (puckTrail.isNotEmpty()) {
+                    puckTrail.removeLast()
+                }
+
+                // Desenha rastro luminoso decadente
+                for (i in puckTrail.indices) {
+                    val alpha = (1f - (i + 1).toFloat() / (puckTrail.size + 1)) * 0.40f
+                    val trailRadius = (engine.puck.radius * scale) * (1f - i * 0.09f)
+                    drawCircle(
+                        color = PuckGlowColor.copy(alpha = alpha),
+                        radius = trailRadius,
+                        center = puckTrail[i]
+                    )
+                }
+
                 drawPuck(puckScreen.x, puckScreen.y, engine.puck.radius * scale)
+            }
+        }
+
+        // Contador de FPS em tempo real
+        if (prefs.showFps) {
+            Surface(
+                color = Color(0xAA0A0E1A),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, Color(0x44FFFFFF)),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(top = 70.dp, end = 20.dp)
+            ) {
+                val fpsColor = if (currentFps >= 55) Color(0xFF10B981) else if (currentFps >= 30) Color(0xFFFBBF24) else Color(0xFFEF4444)
+                Text(
+                    text = "$currentFps FPS",
+                    color = fpsColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
             }
         }
     }
@@ -371,6 +492,17 @@ private fun DrawScope.drawMallet(
     bodyColor: Color,
     rimColor: Color
 ) {
+    // Aura Neon Radial
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(rimColor.copy(alpha = 0.40f), rimColor.copy(alpha = 0.10f), Color.Transparent),
+            center = Offset(cx, cy),
+            radius = radius * 1.55f
+        ),
+        radius = radius * 1.55f,
+        center = Offset(cx, cy)
+    )
+
     // Sombra suave
     drawCircle(
         color = Color(0x40000000),

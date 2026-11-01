@@ -367,6 +367,26 @@ fun SettingsScreen(
                         colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_show_fps), color = Color.White, fontSize = 15.sp)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = stringResource(R.string.settings_show_fps_desc), color = Color(0xFF94A3B8), fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Switch(
+                        checked = prefs.showFps,
+                        onCheckedChange = { scope.launch { preferencesRepo.setShowFps(it) } },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
+                    )
+                }
             }
         }
 
