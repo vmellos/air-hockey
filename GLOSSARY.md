@@ -17,8 +17,12 @@ A arena retangular delimitada por bordas onde o disco desliza e colide, contendo
 _Avoid_: Campo, tabuleiro, pista, rink
 
 **Meta**:
-A abertura na extremidade do campo de cada jogador onde a entrada do disco concede um ponto ao adversário.
+O abertura na extremidade do campo de cada jogador onde a entrada do disco concede um ponto ao adversário.
 _Avoid_: Gol, caçapa, baliza, pocket
+
+**Área da Meta**:
+A demarcação no piso da mesa em frente à meta que delimita visualmente o arco defensivo e a zona de perigo.
+_Avoid_: Pequena área, grande área, goal crease, área de gol
 
 **Vão Físico**:
 O intervalo físico de separação correspondente às molduras e bordas dos dois aparelhos colocados em contato.
@@ -75,6 +79,14 @@ _Avoid_: Host, servidor, master
 **Dispositivo Convidado**:
 O aparelho secundário que descobre e se conecta ao dispositivo anfitrião para disputar a partida em Mesa Estendida.
 _Avoid_: Client, peer, slave
+
+**Perfil de Jogador**:
+A identidade local do participante composta por seu nome de exibição para identificação em sessões multijogador e no placar.
+_Avoid_: Conta, usuário, login, player profile, gamer tag
+
+**Partida Privada**:
+A sessão multijogador cujo acesso exige a validação do Código de Pareamento pelo dispositivo convidado antes de ingressar.
+_Avoid_: Sala protegida, sala com senha, private room, sala fechada
 
 **Código de Pareamento**:
 O identificador visual (Código QR) ou numérico (4 dígitos) exibido pelo dispositivo anfitrião para conexão direta pelo convidado.

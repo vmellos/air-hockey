@@ -99,4 +99,16 @@
     <string name="calibration_diagram_label">Align devices top-to-top</string>
     <string name="calibration_bezel_explanation">Adjust the gap to match the combined black borders of both devices so the puck transitions smoothly without jumping.</string>
     <string name="lobby_waiting_host_start">Connected! Waiting for host to start&#8230;</string>
+
+    <!-- Perfil de Jogador e Partida Privada -->
+    <string name="settings_profile">Player Profile</string>
+    <string name="settings_player_name">Player Name</string>
+    <string name="settings_player_name_desc">Name shown when hosting or joining multiplayer tables</string>
+    <string name="lobby_player_name_label">Your Name: %1$s</string>
+    <string name="lobby_edit_name">Edit Name</string>
+    <string name="lobby_pin_dialog_title">Private Table</string>
+    <string name="lobby_pin_dialog_desc">Enter the 4-digit Pairing Code shown on the host device to enter this table.</string>
+    <string name="lobby_pin_dialog_hint">4-digit code</string>
+    <string name="lobby_pin_incorrect">Incorrect code! Check the 4 digits on the host screen.</string>
+    <string name="lobby_table_by">Table by %1$s</string>
 </resources>

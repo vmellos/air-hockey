@@ -99,4 +99,16 @@
     <string name="calibration_diagram_label">Alinhe os aparelhos topo a topo</string>
     <string name="calibration_bezel_explanation">Compensa as molduras pretas dos dois aparelhos em contato para que o disco passe de uma tela para a outra de forma natural e sem pulos.</string>
     <string name="lobby_waiting_host_start">Conectado! Aguardando o anfitrião iniciar&#8230;</string>
+
+    <!-- Perfil de Jogador e Partida Privada -->
+    <string name="settings_profile">Perfil do Jogador</string>
+    <string name="settings_player_name">Nome do Jogador</string>
+    <string name="settings_player_name_desc">Nome exibido ao criar ou entrar em mesas multijogador</string>
+    <string name="lobby_player_name_label">Seu Nome: %1$s</string>
+    <string name="lobby_edit_name">Editar Nome</string>
+    <string name="lobby_pin_dialog_title">Partida Privada</string>
+    <string name="lobby_pin_dialog_desc">Digite o Código de Pareamento de 4 dígitos exibido no aparelho do anfitrião para entrar nesta mesa.</string>
+    <string name="lobby_pin_dialog_hint">Código de 4 dígitos</string>
+    <string name="lobby_pin_incorrect">Código incorreto! Confira os 4 dígitos na tela do anfitrião.</string>
+    <string name="lobby_table_by">Mesa de %1$s</string>
 </resources>

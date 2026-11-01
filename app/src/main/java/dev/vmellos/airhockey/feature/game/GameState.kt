@@ -33,5 +33,7 @@ data class MatchState(
     val winner: Int = 0, // 1 ou 2
     val remainingTimeSeconds: Int = 180,
     val isHost: Boolean = true,
-    val peerExited: Boolean = false
+    val peerExited: Boolean = false,
+    val player1Name: String = "P1",
+    val player2Name: String = "P2"
 )
