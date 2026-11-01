@@ -1,6 +1,7 @@
 package dev.vmellos.airhockey.feature.network
 
 import android.content.Context
+import android.net.ConnectivityManager
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
@@ -410,14 +411,29 @@ class NsdDiscoveryManager(private val context: Context) {
          * Quando o jogador está conectado ao Ponto de Acesso Móvel (Hotspot) do anfitrião,
          * o Gateway é exatamente o endereço IP do anfitrião.
          */
-        @Suppress("DEPRECATION")
         fun getDhcpGatewayIp(context: Context): String? {
+            // 1. Tenta extrair a rota padrão do gateway via ConnectivityManager (moderno, sem permissões de localização)
             try {
+                val cm = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                val activeNet = cm?.activeNetwork
+                val linkProps = cm?.getLinkProperties(activeNet)
+                val defaultRoute = linkProps?.routes?.firstOrNull { route ->
+                    val gw = route.gateway
+                    route.isDefaultRoute && gw is Inet4Address && !gw.isAnyLocalAddress
+                }
+                val gwIp = defaultRoute?.gateway?.hostAddress
+                if (!gwIp.isNullOrBlank() && gwIp != "0.0.0.0") {
+                    return gwIp
+                }
+            } catch (_: Exception) {}
+
+            // 2. Fallback via WifiManager (para dispositivos legados)
+            try {
+                @Suppress("DEPRECATION")
                 val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-                val dhcp = wm?.dhcpInfo ?: return null
-                val gateway = dhcp.gateway
-                if (gateway != 0) {
-                    val ip = "${gateway and 0xFF}.${(gateway shr 8) and 0xFF}.${(gateway shr 16) and 0xFF}.${(gateway shr 24) and 0xFF}"
+                val dhcp = wm?.dhcpInfo
+                if (dhcp != null && dhcp.gateway != 0) {
+                    val ip = "${dhcp.gateway and 0xFF}.${(dhcp.gateway shr 8) and 0xFF}.${(dhcp.gateway shr 16) and 0xFF}.${(dhcp.gateway shr 24) and 0xFF}"
                     if (ip != "0.0.0.0") return ip
                 }
             } catch (_: Exception) {}
@@ -425,58 +441,63 @@ class NsdDiscoveryManager(private val context: Context) {
         }
 
         /**
-         * Detecta o endereço IPv4 local do dispositivo priorizando interfaces sem fio
-         * (Wi-Fi e Ponto de Acesso Móvel) e ignorando estritamente interfaces de dados móveis (4G/5G).
+         * Detecta o endereço IPv4 local do dispositivo priorizando a rede ativa (Wi-Fi)
+         * e interfaces de Ponto de Acesso Móvel (Hotspot), ignorando dados móveis (4G/5G).
          */
-        @Suppress("DEPRECATION")
         fun getLocalIpAddress(context: Context? = null): String {
-            // 1. Tenta IP do Wi-Fi ativo via WifiManager
+            // 1. Tenta extrair o IPv4 da rede ativa via ConnectivityManager (moderno, sem depender de WifiInfo/localização)
             if (context != null) {
                 try {
-                    val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-                    val ipInt = wm?.connectionInfo?.ipAddress ?: 0
-                    if (ipInt != 0) {
-                        val ip = "${ipInt and 0xFF}.${(ipInt shr 8) and 0xFF}.${(ipInt shr 16) and 0xFF}.${(ipInt shr 24) and 0xFF}"
-                        if (ip != "0.0.0.0") return ip
+                    val cm = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                    val activeNet = cm?.activeNetwork
+                    val linkProps = cm?.getLinkProperties(activeNet)
+                    val ip = linkProps?.linkAddresses
+                        ?.map { it.address }
+                        ?.filterIsInstance<Inet4Address>()
+                        ?.firstOrNull { !it.isLoopbackAddress }
+                        ?.hostAddress
+                    if (!ip.isNullOrBlank() && ip != "0.0.0.0" && ip != "127.0.0.1") {
+                        return ip
                     }
                 } catch (_: Exception) {}
             }
 
-            // 2. Varredura por interfaces de rede de hardware
+            // 2. Varredura por interfaces de rede de hardware (essencial quando atuando como Hotspot / Ponto de Acesso Móvel)
             try {
                 val interfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
 
-                // Prioridade 1: Interfaces sem fio locais (wlan, swlan, ap, softap, wifi, p2p)
+                // Prioridade 1: Interfaces sem fio locais (wlan, swlan, ap, softap, wifi, p2p, rndis, tether)
                 val wireless = interfaces.filter { iface ->
                     val name = iface.name.lowercase()
                     (name.startsWith("wlan") || name.startsWith("swlan") || name.startsWith("ap") ||
-                     name.startsWith("softap") || name.startsWith("wifi") || name.startsWith("p2p")) &&
-                     !iface.isLoopback && iface.isUp
+                     name.startsWith("softap") || name.startsWith("wifi") || name.startsWith("p2p") ||
+                     name.startsWith("rndis") || name.startsWith("tether")) &&
+                     !iface.isLoopback
                 }
 
                 for (iface in wireless) {
                     for (addr in iface.inetAddresses) {
                         if (addr is Inet4Address && !addr.isLoopbackAddress) {
                             val host = addr.hostAddress ?: ""
-                            if (host.isNotBlank() && host != "127.0.0.1") {
+                            if (host.isNotBlank() && host != "127.0.0.1" && host != "0.0.0.0") {
                                 return host
                             }
                         }
                     }
                 }
 
-                // Prioridade 2: Outras interfaces ativas não-celulares e não-túneis (ethernet, etc.)
+                // Prioridade 2: Outras interfaces ativas não-celulares e não-túneis (ethernet, eth, etc.)
                 val nonCellular = interfaces.filter { iface ->
                     val name = iface.name.lowercase()
                     !name.startsWith("rmnet") && !name.startsWith("ccmni") && !name.startsWith("pdp") &&
-                    !name.startsWith("tun") && !name.startsWith("dummy") && !iface.isLoopback && iface.isUp
+                    !name.startsWith("tun") && !name.startsWith("dummy") && !iface.isLoopback
                 }
 
                 for (iface in nonCellular) {
                     for (addr in iface.inetAddresses) {
                         if (addr is Inet4Address && !addr.isLoopbackAddress) {
                             val host = addr.hostAddress ?: ""
-                            if (host.isNotBlank() && host != "127.0.0.1") {
+                            if (host.isNotBlank() && host != "127.0.0.1" && host != "0.0.0.0") {
                                 return host
                             }
                         }

@@ -5,14 +5,12 @@ plugins {
 
 android {
     namespace = "dev.vmellos.airhockey"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.vmellos.airhockey"
         minSdk = 26
-        targetSdk = 37
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 

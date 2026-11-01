@@ -334,7 +334,7 @@ class LobbyViewModel : ViewModel() {
     private fun probeHost(ip: String, port: Int): Boolean {
         return try {
             java.net.Socket().use { s ->
-                s.connect(java.net.InetSocketAddress(ip, port), 250)
+                s.connect(java.net.InetSocketAddress(ip, port), 400)
                 true
             }
         } catch (_: Exception) {
@@ -358,7 +358,7 @@ class LobbyViewModel : ViewModel() {
         }
 
         val timeoutJob = launch {
-            delay(500)
+            delay(2500)
             found.complete(null)
         }
 

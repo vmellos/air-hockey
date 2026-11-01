@@ -3,6 +3,7 @@ package dev.vmellos.airhockey.feature.lobby.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -107,6 +108,21 @@ fun LobbyScreen(
     ) { granted ->
         if (granted) {
             viewModel.setScanningQr(true)
+        }
+    }
+
+    val nearbyPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasNearby = ContextCompat.checkSelfPermission(
+                context, Manifest.permission.NEARBY_WIFI_DEVICES
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasNearby) {
+                nearbyPermissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+            }
         }
     }
 
