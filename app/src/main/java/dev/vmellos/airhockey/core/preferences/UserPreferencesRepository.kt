@@ -31,6 +31,7 @@ class UserPreferencesRepository(private val context: Context) {
         val TARGET_SCORE = intPreferencesKey("target_score")
         val MATCH_TIME_SECONDS = intPreferencesKey("match_time_seconds")
         val TOUCH_OFFSET_ENABLED = booleanPreferencesKey("touch_offset_enabled")
+        val PUCK_SPEED = stringPreferencesKey("puck_speed")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -62,6 +63,12 @@ class UserPreferencesRepository(private val context: Context) {
             val targetScore = preferences[PreferencesKeys.TARGET_SCORE] ?: 7
             val matchTime = preferences[PreferencesKeys.MATCH_TIME_SECONDS] ?: 180
             val touchOffsetEnabled = preferences[PreferencesKeys.TOUCH_OFFSET_ENABLED] ?: true
+            val puckSpeedStr = preferences[PreferencesKeys.PUCK_SPEED] ?: PuckSpeedPreset.NORMAL.name
+            val puckSpeed = try {
+                PuckSpeedPreset.valueOf(puckSpeedStr)
+            } catch (_: Exception) {
+                PuckSpeedPreset.NORMAL
+            }
 
             UserPreferences(
                 appLanguage = lang,
@@ -73,7 +80,8 @@ class UserPreferencesRepository(private val context: Context) {
                 tableAlignment = alignment,
                 targetScore = targetScore,
                 matchTimeSeconds = matchTime,
-                touchOffsetEnabled = touchOffsetEnabled
+                touchOffsetEnabled = touchOffsetEnabled,
+                puckSpeed = puckSpeed
             )
         }
 
@@ -134,6 +142,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setTouchOffsetEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.TOUCH_OFFSET_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setPuckSpeed(preset: PuckSpeedPreset) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PUCK_SPEED] = preset.name
         }
     }
 }

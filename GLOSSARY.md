@@ -40,6 +40,10 @@ _Avoid_: Touch offset, finger offset, margem de dedo, folga de toque
 O golpe angular aplicado no disco contra as bordas laterais da mesa com o objetivo de produzir ricochete veloz em direção à meta oposta.
 _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
 
+**Velocidade do Disco**:
+A taxa máxima de deslocamento admitida para o disco durante a partida, parametrizada por predefinições de ritmo de jogo.
+_Avoid_: Rapidez da bola, velocidade do jogo, puck speed
+
 ## Modos de Jogo
 
 **Modo Solo**:
@@ -91,3 +95,13 @@ _Avoid_: Roteador do telefone, hotspot pessoal, ancoragem, tethering
 **Árbitro Virtual**:
 O componente central de regras responsável por validar impactos, registrar pontos e controlar o cronômetro da partida.
 _Avoid_: Engine, juiz, supervisor, fiscal
+
+**Previsão no Cliente**:
+A projeção imediata do rebatedor no dispositivo convidado em resposta ao toque local, conciliada subsequentemente com a telemetria do dispositivo anfitrião.
+_Avoid_: Client-side prediction, toque instantâneo, lag compensation
+
+## Interface e Apresentação
+
+**Miniatura da Mesa**:
+A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
+_Avoid_: Ícone de campo, desenho do modo, preview da mesa

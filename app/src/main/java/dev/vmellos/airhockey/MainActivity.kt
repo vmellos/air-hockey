@@ -104,7 +104,8 @@ fun AirHockeyAppNavigation(
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        aiDifficulty = userPrefs.aiDifficulty
+                        aiDifficulty = userPrefs.aiDifficulty,
+                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed
                     )
                     navController.navigate("game/SOLO")
                 },
@@ -113,7 +114,8 @@ fun AirHockeyAppNavigation(
                         mode = GameMode.SPLIT_SCREEN,
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds
+                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
@@ -139,18 +141,27 @@ fun AirHockeyAppNavigation(
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L && lobbyState.targetMode == "CONNECTED") {
                     val gameMode = if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
+                    val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = 0f,
                         targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds
+                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        puckMaxSpeed = effectivePuckSpeed
                     )
 
                     navController.navigate("game/${gameMode.name}") {
                         popUpTo("menu")
                     }
+                }
+            }
+
+            // Para Mesa Estendida: navega o convidado automaticamente quando o anfitrião avança para a calibração
+            LaunchedEffect(lobbyState.navigateToCalibrationTrigger) {
+                if (lobbyState.navigateToCalibrationTrigger > 0L && lobbyState.targetMode == "EXTENDED") {
+                    navController.navigate("calibration")
                 }
             }
 
@@ -174,13 +185,15 @@ fun AirHockeyAppNavigation(
             // Largada Sincronizada: quando o gatilho de largada é acionado, ambos iniciam no mesmo instante
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
+                    val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = lobbyState.calibratedGapMm,
                         targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds
+                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        puckMaxSpeed = effectivePuckSpeed
                     )
 
                     navController.navigate("game/${gameMode.name}") {
@@ -196,7 +209,7 @@ fun AirHockeyAppNavigation(
                 isSelfReady = lobbyState.isSelfReady,
                 onReadyClick = { gapMm ->
                     if (isHost) {
-                        lobbyViewModel.startHostMatch(gapMm)
+                        lobbyViewModel.startHostMatch(gapMm, userPrefs.puckSpeed.maxSpeed)
                     } else {
                         lobbyViewModel.setGuestReady(gapMm)
                     }

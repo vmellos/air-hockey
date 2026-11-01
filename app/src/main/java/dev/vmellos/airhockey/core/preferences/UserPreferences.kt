@@ -13,6 +13,12 @@ enum class TableAlignment {
     SIDE_BY_SIDE
 }
 
+enum class PuckSpeedPreset(val maxSpeed: Float) {
+    SLOW(6500f),
+    NORMAL(9500f),
+    FAST(12000f)
+}
+
 data class UserPreferences(
     val appLanguage: String = LocaleHelper.SYSTEM_DEFAULT,
     val soundEnabled: Boolean = true,
@@ -23,5 +29,6 @@ data class UserPreferences(
     val tableAlignment: TableAlignment = TableAlignment.TOP_TO_TOP,
     val targetScore: Int = 7,
     val matchTimeSeconds: Int = 180,
-    val touchOffsetEnabled: Boolean = true
+    val touchOffsetEnabled: Boolean = true,
+    val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL
 )

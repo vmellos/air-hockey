@@ -113,7 +113,8 @@ class GameViewModel : ViewModel() {
         yDpi: Float = 420f,
         targetScore: Int = 7,
         matchTimeSeconds: Int = 180,
-        aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM
+        aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
+        puckMaxSpeed: Float = 9500f
     ) {
         val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST
         val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST
@@ -126,7 +127,7 @@ class GameViewModel : ViewModel() {
             isExtendedMode = isExtended
         )
 
-        engine = AirHockeyPhysicsEngine(dimensions)
+        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = puckMaxSpeed)
         engine.resetPositions()
 
         // Limpa estritamente o controlador de IA se não for modo SOLO
@@ -350,7 +351,23 @@ class GameViewModel : ViewModel() {
 
     fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
         if (!isInputAllowed()) return
-        onGuestSendInput?.invoke(globalX, globalY)
+
+        // Previsão no Cliente: movimenta imediatamente o rebatedor do Jogador 2 no aparelho convidado
+        val radius = engine.player2Mallet.radius
+        val clampedX = globalX.coerceIn(radius, engine.dimensions.width - radius)
+        val maxY = if (engine.dimensions.isExtendedMode) {
+            engine.dimensions.hostHalfBottomY - radius
+        } else {
+            engine.dimensions.centerLineY - radius
+        }
+        val clampedY = globalY.coerceIn(radius, maxY)
+
+        engine.player2Mallet.targetX = clampedX
+        engine.player2Mallet.targetY = clampedY
+        engine.player2Mallet.x = clampedX
+        engine.player2Mallet.y = clampedY
+
+        onGuestSendInput?.invoke(clampedX, clampedY)
     }
 
     fun onGuestTouchLocal(localX: Float, localY: Float) {
@@ -358,7 +375,7 @@ class GameViewModel : ViewModel() {
         // Transforma toque do convidado (rotacionado 180 graus na Disposição Topo-a-Topo) para o espaço global
         val globalX = 1000f - localX
         val globalY = 1000f - localY
-        onGuestSendInput?.invoke(globalX, globalY)
+        onTouchGuestGlobal(globalX, globalY)
     }
 
     fun toggleSound() {
@@ -380,8 +397,18 @@ class GameViewModel : ViewModel() {
         engine.puck.vy = puckVy
         engine.player1Mallet.x = hostMalletX
         engine.player1Mallet.y = hostMalletY
-        engine.player2Mallet.x = guestMalletX
-        engine.player2Mallet.y = guestMalletY
+
+        // Reconciliação suave da Previsão no Cliente do Jogador 2
+        val dx = guestMalletX - engine.player2Mallet.x
+        val dy = guestMalletY - engine.player2Mallet.y
+        val distSq = dx * dx + dy * dy
+        if (distSq > 2500f) {
+            engine.player2Mallet.x = guestMalletX
+            engine.player2Mallet.y = guestMalletY
+        } else if (distSq > 4f) {
+            engine.player2Mallet.x += dx * 0.35f
+            engine.player2Mallet.y += dy * 0.35f
+        }
     }
 
     fun onGuestReceiveState(remote: ControlMessages.RemoteMatchState) {

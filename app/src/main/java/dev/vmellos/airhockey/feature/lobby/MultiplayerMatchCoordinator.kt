@@ -27,6 +27,7 @@ data class MultiplayerSessionState(
     val startMatchTrigger: Long = 0L,
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
+    val synchronizedPuckSpeed: Float = 9500f,
     val peerExited: Boolean = false,
     val remoteMatchState: ControlMessages.RemoteMatchState? = null
 )
@@ -90,6 +91,7 @@ class MultiplayerMatchCoordinator(
                 _state.update {
                     it.copy(
                         calibratedGapMm = event.gapMm,
+                        synchronizedPuckSpeed = event.maxSpeed,
                         startMatchTrigger = System.currentTimeMillis()
                     )
                 }
@@ -128,15 +130,16 @@ class MultiplayerMatchCoordinator(
         }
     }
 
-    fun startMatch(gapMm: Float) {
+    fun startMatch(gapMm: Float, maxSpeed: Float = 9500f) {
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,
+                synchronizedPuckSpeed = maxSpeed,
                 startMatchTrigger = System.currentTimeMillis()
             )
         }
         scope.launch {
-            transport.sendControl(TableControlEvent.Start(gapMm))
+            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed))
         }
     }
 

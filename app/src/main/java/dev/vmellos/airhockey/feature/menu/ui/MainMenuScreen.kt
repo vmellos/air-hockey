@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.feature.menu.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,23 +18,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +54,7 @@ fun MainMenuScreen(
             .fillMaxSize()
             .background(Color(0xFF0A0E1A))
             .safeDrawingPadding()
-            .padding(24.dp),
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -81,12 +80,12 @@ fun MainMenuScreen(
         // Título Neon Arcade
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 12.dp)
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Text(
                 text = "AIR HOCKEY",
                 color = Color(0xFF00E5FF),
-                fontSize = 44.sp,
+                fontSize = 42.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 4.sp,
                 fontFamily = FontFamily.SansSerif
@@ -95,20 +94,20 @@ fun MainMenuScreen(
             Text(
                 text = stringResource(R.string.app_tagline),
                 color = Color(0xFF94A3B8),
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
         }
 
-        // Opções de Jogo
+        // Opções de Jogo com Miniaturas Neon da Mesa
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             MenuModeCard(
                 title = stringResource(R.string.menu_mode_connected),
                 description = stringResource(R.string.menu_mode_connected_desc),
-                icon = Icons.Default.Wifi,
+                modeKey = "CONNECTED",
                 accentColor = Color(0xFF00E5FF),
                 isHighlight = true,
                 onClick = onStartConnected
@@ -117,7 +116,7 @@ fun MainMenuScreen(
             MenuModeCard(
                 title = stringResource(R.string.menu_mode_extended),
                 description = stringResource(R.string.menu_mode_extended_desc),
-                icon = Icons.Default.PhoneAndroid,
+                modeKey = "EXTENDED",
                 accentColor = Color(0xFF818CF8),
                 isHighlight = false,
                 onClick = onStartExtended
@@ -126,7 +125,7 @@ fun MainMenuScreen(
             MenuModeCard(
                 title = stringResource(R.string.menu_mode_split),
                 description = stringResource(R.string.menu_mode_split_desc),
-                icon = Icons.Default.Group,
+                modeKey = "SPLIT",
                 accentColor = Color(0xFFFF5722),
                 isHighlight = false,
                 onClick = onStartSplit
@@ -135,7 +134,7 @@ fun MainMenuScreen(
             MenuModeCard(
                 title = stringResource(R.string.menu_mode_solo),
                 description = stringResource(R.string.menu_mode_solo_desc),
-                icon = Icons.Default.Person,
+                modeKey = "SOLO",
                 accentColor = Color(0xFF10B981),
                 isHighlight = false,
                 onClick = onStartSolo
@@ -144,7 +143,7 @@ fun MainMenuScreen(
 
         // Rodapé discreto
         Text(
-            text = "v1.0 • P2P Wi-Fi / Hotspot",
+            text = "v1.1 • P2P Wi-Fi / Hotspot",
             color = Color(0xFF475569),
             fontSize = 12.sp,
             fontFamily = FontFamily.Monospace
@@ -156,7 +155,7 @@ fun MainMenuScreen(
 private fun MenuModeCard(
     title: String,
     description: String,
-    icon: ImageVector,
+    modeKey: String,
     accentColor: Color,
     isHighlight: Boolean,
     onClick: () -> Unit
@@ -179,21 +178,14 @@ private fun MenuModeCard(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            // Miniatura Ilustrativa da Mesa
+            TableModeThumbnail(
+                modeKey = modeKey,
+                accentColor = accentColor,
+                modifier = Modifier.size(width = 54.dp, height = 62.dp)
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -201,16 +193,234 @@ private fun MenuModeCard(
                 Text(
                     text = title,
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = description,
                     color = Color(0xFF94A3B8),
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Desenha a Miniatura da Mesa no Canvas demonstrando visualmente a arena de cada modo.
+ */
+@Composable
+private fun TableModeThumbnail(
+    modeKey: String,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .background(Color(0xFF0F172A), RoundedCornerShape(12.dp))
+            .border(1.dp, accentColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .padding(4.dp)
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+
+            when (modeKey) {
+                "CONNECTED" -> {
+                    // Dois aparelhos independentes lado a lado com sinal sem fio
+                    val phoneW = w * 0.38f
+                    val phoneH = h * 0.85f
+                    val topY = (h - phoneH) / 2f
+
+                    // Celular 1 (Esquerda)
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(2f, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFF00E5FF),
+                        topLeft = Offset(2f, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 1.5f)
+                    )
+                    // Linha central e rebatedor P1
+                    drawLine(Color(0x5500E5FF), Offset(2f, topY + phoneH / 2f), Offset(2f + phoneW, topY + phoneH / 2f), 1f)
+                    drawCircle(Color(0xFF00E5FF), radius = 3.5f, center = Offset(2f + phoneW / 2f, topY + phoneH * 0.78f))
+
+                    // Celular 2 (Direita)
+                    val rightX = w - phoneW - 2f
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(rightX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFFFF5722),
+                        topLeft = Offset(rightX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 1.5f)
+                    )
+                    // Linha central e rebatedor P2
+                    drawLine(Color(0x55FF5722), Offset(rightX, topY + phoneH / 2f), Offset(rightX + phoneW, topY + phoneH / 2f), 1f)
+                    drawCircle(Color(0xFFFF5722), radius = 3.5f, center = Offset(rightX + phoneW / 2f, topY + phoneH * 0.78f))
+
+                    // Ondas sem fio no centro
+                    val midX = w / 2f
+                    val midY = h / 2f
+                    drawCircle(Color(0xFF00E5FF), radius = 2f, center = Offset(midX, midY))
+                    drawArc(
+                        color = Color(0xFF00E5FF),
+                        startAngle = 135f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        topLeft = Offset(midX - 7f, midY - 7f),
+                        size = Size(14f, 14f),
+                        style = Stroke(width = 1.5f)
+                    )
+                    drawArc(
+                        color = Color(0xFF00E5FF),
+                        startAngle = -45f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        topLeft = Offset(midX - 7f, midY - 7f),
+                        size = Size(14f, 14f),
+                        style = Stroke(width = 1.5f)
+                    )
+                }
+
+                "EXTENDED" -> {
+                    // Dois aparelhos topo a topo formando uma mesa contínua
+                    val phoneW = w * 0.65f
+                    val phoneH = (h * 0.46f)
+                    val leftX = (w - phoneW) / 2f
+                    val midY = h / 2f
+
+                    // Celular Superior (P2)
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(leftX, 2f),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFFFF5722),
+                        topLeft = Offset(leftX, 2f),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 1.5f)
+                    )
+                    drawCircle(Color(0xFFFF5722), radius = 3.5f, center = Offset(w / 2f, 12f))
+
+                    // Celular Inferior (P1)
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(leftX, midY + 1f),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFF818CF8),
+                        topLeft = Offset(leftX, midY + 1f),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 1.5f)
+                    )
+                    drawCircle(Color(0xFF818CF8), radius = 3.5f, center = Offset(w / 2f, h - 12f))
+
+                    // Linha pontilhada no vão físico de contato
+                    drawLine(
+                        color = Color(0xAAFFFFFF),
+                        start = Offset(leftX - 3f, midY),
+                        end = Offset(leftX + phoneW + 3f, midY),
+                        strokeWidth = 1.5f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), 0f)
+                    )
+
+                    // Disco brilhante cruzando a junção dos aparelhos
+                    drawCircle(Color(0xFF00E5FF), radius = 4f, center = Offset(w / 2f, midY))
+                    drawCircle(Color.White, radius = 2.5f, center = Offset(w / 2f, midY))
+                }
+
+                "SPLIT" -> {
+                    // Um único aparelho na vertical dividido ao meio
+                    val phoneW = w * 0.72f
+                    val phoneH = h * 0.92f
+                    val leftX = (w - phoneW) / 2f
+                    val topY = (h - phoneH) / 2f
+                    val midY = topY + phoneH / 2f
+
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(leftX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(8f, 8f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFFFF5722),
+                        topLeft = Offset(leftX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(8f, 8f),
+                        style = Stroke(width = 1.5f)
+                    )
+
+                    // Linha de centro e círculo central
+                    drawLine(Color(0x66FF5722), Offset(leftX, midY), Offset(leftX + phoneW, midY), 1.5f)
+                    drawCircle(Color(0x66FF5722), radius = 8f, center = Offset(w / 2f, midY), style = Stroke(1.2f))
+
+                    // Rebatedor Superior (P2 Laranja)
+                    drawCircle(Color(0xFFFF5722), radius = 4f, center = Offset(w / 2f, topY + 14f))
+
+                    // Rebatedor Inferior (P1 Azul)
+                    drawCircle(Color(0xFF00E5FF), radius = 4f, center = Offset(w / 2f, topY + phoneH - 14f))
+
+                    // Disco no campo
+                    drawCircle(Color.White, radius = 3f, center = Offset(w / 2f + 8f, midY - 6f))
+                }
+
+                "SOLO" -> {
+                    // Um único aparelho com IA no topo e humano na base
+                    val phoneW = w * 0.72f
+                    val phoneH = h * 0.92f
+                    val leftX = (w - phoneW) / 2f
+                    val topY = (h - phoneH) / 2f
+                    val midY = topY + phoneH / 2f
+
+                    drawRoundRect(
+                        color = Color(0xFF1E293B),
+                        topLeft = Offset(leftX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(8f, 8f)
+                    )
+                    drawRoundRect(
+                        color = Color(0xFF10B981),
+                        topLeft = Offset(leftX, topY),
+                        size = Size(phoneW, phoneH),
+                        cornerRadius = CornerRadius(8f, 8f),
+                        style = Stroke(width = 1.5f)
+                    )
+
+                    // Linha de centro
+                    drawLine(Color(0x6610B981), Offset(leftX, midY), Offset(leftX + phoneW, midY), 1.5f)
+                    drawCircle(Color(0x6610B981), radius = 8f, center = Offset(w / 2f, midY), style = Stroke(1.2f))
+
+                    // Rebatedor IA (Verde neon com quadrado interno simbolizando CPU)
+                    drawCircle(Color(0xFF10B981), radius = 4.5f, center = Offset(w / 2f, topY + 14f))
+
+                    // Rebatedor Humano (Ciano)
+                    drawCircle(Color(0xFF00E5FF), radius = 4.5f, center = Offset(w / 2f, topY + phoneH - 14f))
+
+                    // Disco em movimento com rastro
+                    drawCircle(Color(0x88FFFFFF), radius = 2f, center = Offset(w / 2f - 4f, midY + 8f))
+                    drawCircle(Color.White, radius = 3f, center = Offset(w / 2f, midY + 3f))
+                }
             }
         }
     }

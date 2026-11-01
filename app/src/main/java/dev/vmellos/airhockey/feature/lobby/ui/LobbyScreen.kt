@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.lobby.ui
 
+import dev.vmellos.airhockey.AirHockeyApp
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -197,12 +199,13 @@ fun LobbyScreen(
                 onSelectGuest = { viewModel.startAsGuest() }
             )
         } else if (state.role == LobbyRole.HOST) {
+            val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
             // Tela do Dispositivo Anfitrião
             HostLobbyView(
                 state = state,
                 onProceed = {
                     if (state.targetMode == "CONNECTED") {
-                        viewModel.startHostMatch(0f)
+                        viewModel.startHostMatch(0f, userPrefs.puckSpeed.maxSpeed)
                     } else {
                         viewModel.notifyNavigateToCalibration()
                         onNavigateToCalibration()
@@ -494,12 +497,33 @@ private fun GuestLobbyView(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onProceed,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Avançar para Calibração", color = Color.White, fontWeight = FontWeight.Bold)
+                    if (state.targetMode == "CONNECTED") {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color(0xFF34D399),
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.lobby_waiting_host_start),
+                                color = Color(0xFFA7F3D0),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = onProceed,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Avançar para Calibração", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

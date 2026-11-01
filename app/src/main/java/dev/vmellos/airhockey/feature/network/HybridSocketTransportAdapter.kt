@@ -77,7 +77,10 @@ class HybridSocketTransportAdapter(
             }
             server.onMessageReceived = { line ->
                 val event = TableControlEvent.fromWireString(line)
-                _controlEvents.tryEmit(event)
+                when (event) {
+                    is TableControlEvent.GuestInputFallback -> _guestInputs.tryEmit(event.packet)
+                    else -> _controlEvents.tryEmit(event)
+                }
             }
             _connectionState.value = TransportConnectionState.CONNECTING
             server.start()
@@ -96,7 +99,10 @@ class HybridSocketTransportAdapter(
             }
             client.onMessageReceived = { line ->
                 val event = TableControlEvent.fromWireString(line)
-                _controlEvents.tryEmit(event)
+                when (event) {
+                    is TableControlEvent.TelemetryFallback -> _telemetryFrames.tryEmit(event.packet)
+                    else -> _controlEvents.tryEmit(event)
+                }
             }
             if (ip.isNotBlank()) {
                 _connectionState.value = TransportConnectionState.CONNECTING
@@ -121,10 +127,18 @@ class HybridSocketTransportAdapter(
             packet.hostMalletX, packet.hostMalletY,
             packet.guestMalletX, packet.guestMalletY
         )
+        // Fallback de contingência periódica via TCP para contornar bloqueios de UDP em roteadores Wi-Fi
+        if (packet.sequenceNumber % 4L == 0L) {
+            tcpServer?.sendMessage(TableControlEvent.TelemetryFallback(packet).toWireString())
+        }
     }
 
     override fun sendGuestInput(packet: GuestInputPacket) {
         udpSocket.sendGuestInput(packet.guestTargetX, packet.guestTargetY)
+        // Fallback de contingência periódica via TCP
+        if (packet.sequenceNumber % 4L == 0L) {
+            tcpClient?.sendMessage(TableControlEvent.GuestInputFallback(packet).toWireString())
+        }
     }
 
     override suspend fun close() {

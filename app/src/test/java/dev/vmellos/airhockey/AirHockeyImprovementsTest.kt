@@ -130,4 +130,67 @@ class AirHockeyImprovementsTest {
         val p2TargetY = tablePoint.y + touchOffset
         assertTrue("P2 target Y deve ser maior para ficar à frente do dedo vindo do topo", p2TargetY > tablePoint.y)
     }
+
+    @Test
+    fun testPuckSpeedLimitingInPhysicsEngine() {
+        val slowEngine = AirHockeyPhysicsEngine(dimensions, maxSpeed = 6500f)
+        slowEngine.puck.vx = 8000f
+        slowEngine.puck.vy = 8000f
+
+        // Executa tick
+        slowEngine.tick(1f / 60f)
+
+        val currentSpeed = slowEngine.puck.speed()
+        assertTrue("Velocidade do disco deve respeitar o teto configurado de 6500f (atual: $currentSpeed)", currentSpeed <= 6501f)
+    }
+
+    @Test
+    fun testTelemetryAndGuestInputFallbackWireSerialization() {
+        val telemetry = dev.vmellos.airhockey.feature.network.HostTelemetryPacket(
+            sequenceNumber = 42L,
+            timestampNano = 123L,
+            puckX = 510f,
+            puckY = 980f,
+            puckVx = 120f,
+            puckVy = -340f,
+            hostMalletX = 500f,
+            hostMalletY = 1750f,
+            guestMalletX = 480f,
+            guestMalletY = 250f
+        )
+        val telemEvent = dev.vmellos.airhockey.feature.network.TableControlEvent.TelemetryFallback(telemetry)
+        val telemWire = telemEvent.toWireString()
+        val parsedTelem = dev.vmellos.airhockey.feature.network.TableControlEvent.fromWireString(telemWire)
+        assertTrue(parsedTelem is dev.vmellos.airhockey.feature.network.TableControlEvent.TelemetryFallback)
+        val parsedPacket = (parsedTelem as dev.vmellos.airhockey.feature.network.TableControlEvent.TelemetryFallback).packet
+        assertEquals(42L, parsedPacket.sequenceNumber)
+        assertEquals(510f, parsedPacket.puckX, 0.01f)
+        assertEquals(980f, parsedPacket.puckY, 0.01f)
+
+        val input = dev.vmellos.airhockey.feature.network.GuestInputPacket(
+            sequenceNumber = 17L,
+            timestampNano = 456L,
+            guestTargetX = 350f,
+            guestTargetY = 220f
+        )
+        val inputEvent = dev.vmellos.airhockey.feature.network.TableControlEvent.GuestInputFallback(input)
+        val inputWire = inputEvent.toWireString()
+        val parsedInput = dev.vmellos.airhockey.feature.network.TableControlEvent.fromWireString(inputWire)
+        assertTrue(parsedInput is dev.vmellos.airhockey.feature.network.TableControlEvent.GuestInputFallback)
+        val parsedInputPacket = (parsedInput as dev.vmellos.airhockey.feature.network.TableControlEvent.GuestInputFallback).packet
+        assertEquals(17L, parsedInputPacket.sequenceNumber)
+        assertEquals(350f, parsedInputPacket.guestTargetX, 0.01f)
+        assertEquals(220f, parsedInputPacket.guestTargetY, 0.01f)
+    }
+
+    @Test
+    fun testTableControlEventStartWithCustomSpeed() {
+        val startEvent = dev.vmellos.airhockey.feature.network.TableControlEvent.Start(gapMm = 12.5f, maxSpeed = 6500f)
+        val wire = startEvent.toWireString()
+        val parsed = dev.vmellos.airhockey.feature.network.TableControlEvent.fromWireString(wire)
+        assertTrue(parsed is dev.vmellos.airhockey.feature.network.TableControlEvent.Start)
+        val parsedStart = parsed as dev.vmellos.airhockey.feature.network.TableControlEvent.Start
+        assertEquals(12.5f, parsedStart.gapMm, 0.01f)
+        assertEquals(6500f, parsedStart.maxSpeed, 0.01f)
+    }
 }

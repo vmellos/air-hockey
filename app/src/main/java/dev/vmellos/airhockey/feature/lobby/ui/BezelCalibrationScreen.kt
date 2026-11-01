@@ -9,6 +9,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,10 +43,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.R
@@ -65,13 +73,13 @@ fun BezelCalibrationScreen(
         onBackToLobby()
     }
 
-    // Animação cíclica do disco de teste transitando pelo vão
+    // Animação contínua do disco de teste transitando pelo vão físico
     val transition = rememberInfiniteTransition(label = "puck_calibration")
     val puckProgress by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
+            animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "puck_y"
@@ -82,9 +90,10 @@ fun BezelCalibrationScreen(
             .fillMaxSize()
             .background(Color(0xFF0A0E1A))
             .safeDrawingPadding()
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Barra Superior
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -96,23 +105,42 @@ fun BezelCalibrationScreen(
             Text(
                 text = stringResource(R.string.calibration_title),
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        Text(
-            text = stringResource(R.string.calibration_instruction),
-            color = Color(0xFF94A3B8),
-            fontSize = 13.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
+        // Card didático com instrução clara
+        Surface(
+            color = Color(0xFF1E293B),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhoneAndroid,
+                    contentDescription = null,
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = stringResource(R.string.calibration_bezel_explanation),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Visualizador de calibração em tempo real
+        // Visualizador animado com ilustração dos dois celulares topo-a-topo
         Surface(
             color = Color(0xFF0F172A),
             shape = RoundedCornerShape(16.dp),
@@ -123,47 +151,117 @@ fun BezelCalibrationScreen(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val w = size.width
                 val h = size.height
+                val midY = h / 2f
+                val gapPx = gapMm * 2.8f
 
-                // Linha de borda superior onde os aparelhos se tocam
-                val edgeY = if (role == LobbyRole.HOST) h - 10f else 10f
-                drawLine(
-                    color = Color(0xFF00E5FF),
-                    start = Offset(0f, edgeY),
-                    end = Offset(w, edgeY),
-                    strokeWidth = 4f
+                // Desenha silhuetas dos dois telefones
+                val phoneW = (w * 0.58f).coerceAtMost(240f)
+                val phoneLeft = (w - phoneW) / 2f
+
+                // Telefone Superior (Jogador 2)
+                drawRoundRect(
+                    color = Color(0xFF1E293B),
+                    topLeft = Offset(phoneLeft, 10f),
+                    size = Size(phoneW, midY - gapPx / 2f - 10f),
+                    cornerRadius = CornerRadius(16f, 16f)
+                )
+                drawRoundRect(
+                    color = Color(0xFFFF5722),
+                    topLeft = Offset(phoneLeft, 10f),
+                    size = Size(phoneW, midY - gapPx / 2f - 10f),
+                    cornerRadius = CornerRadius(16f, 16f),
+                    style = Stroke(width = 2.5f)
                 )
 
-                // Posição vertical simulada do disco de teste
-                val puckY = if (role == LobbyRole.HOST) {
-                    (h * 0.4f) + (h * 0.6f + gapMm * 10f) * puckProgress
-                } else {
-                    (h * 0.6f) - (h * 0.6f + gapMm * 10f) * puckProgress
-                }
+                // Telefone Inferior (Jogador 1)
+                drawRoundRect(
+                    color = Color(0xFF1E293B),
+                    topLeft = Offset(phoneLeft, midY + gapPx / 2f),
+                    size = Size(phoneW, h - midY - gapPx / 2f - 10f),
+                    cornerRadius = CornerRadius(16f, 16f)
+                )
+                drawRoundRect(
+                    color = Color(0xFF00E5FF),
+                    topLeft = Offset(phoneLeft, midY + gapPx / 2f),
+                    size = Size(phoneW, h - midY - gapPx / 2f - 10f),
+                    cornerRadius = CornerRadius(16f, 16f),
+                    style = Stroke(width = 2.5f)
+                )
 
-                // Desenha o disco de teste
-                if (puckY in -50f..(h + 50f)) {
-                    drawCircle(
-                        color = Color(0xFF00E5FF),
-                        radius = 28f,
-                        center = Offset(w / 2f, puckY)
-                    )
-                    drawCircle(
-                        color = Color.White,
-                        radius = 20f,
-                        center = Offset(w / 2f, puckY)
-                    )
-                }
+                // Linha pontilhada no vão físico central
+                drawLine(
+                    color = Color(0x66FFFFFF),
+                    start = Offset(phoneLeft - 20f, midY),
+                    end = Offset(phoneLeft + phoneW + 20f, midY),
+                    strokeWidth = 2f,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                )
+
+                // Disco simulado transitando suavemente entre os dois aparelhos
+                val puckY = (h * 0.18f) + (h * 0.64f) * puckProgress
+                val inGap = puckY in (midY - gapPx / 2f)..(midY + gapPx / 2f)
+                val puckAlpha = if (inGap) 0.35f else 1.0f
+
+                drawCircle(
+                    color = Color(0xFF00E5FF).copy(alpha = puckAlpha * 0.4f),
+                    radius = 26f,
+                    center = Offset(w / 2f, puckY)
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = puckAlpha),
+                    radius = 16f,
+                    center = Offset(w / 2f, puckY)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        Text(
-            text = stringResource(R.string.calibration_gap_label, gapMm),
-            color = Color(0xFF00E5FF),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
-        )
+        // Predefinições Rápidas (Chips)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PresetChip(
+                label = stringResource(R.string.calibration_preset_thin),
+                isSelected = gapMm in 3.5f..4.5f,
+                onClick = { gapMm = 4.0f },
+                modifier = Modifier.weight(1f)
+            )
+            PresetChip(
+                label = stringResource(R.string.calibration_preset_standard),
+                isSelected = gapMm in 7.5f..8.5f,
+                onClick = { gapMm = 8.0f },
+                modifier = Modifier.weight(1f)
+            )
+            PresetChip(
+                label = stringResource(R.string.calibration_preset_thick),
+                isSelected = gapMm in 13.5f..14.5f,
+                onClick = { gapMm = 14.0f },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Valor numérico e Slider de Ajuste Fino
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.calibration_gap_label, gapMm),
+                color = Color(0xFF00E5FF),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "0 mm — 20 mm",
+                color = Color(0xFF64748B),
+                fontSize = 12.sp
+            )
+        }
 
         Slider(
             value = gapMm,
@@ -178,8 +276,9 @@ fun BezelCalibrationScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
+        // Botão de Ação (Pronto / Iniciar)
         val isGuest = role == LobbyRole.GUEST
         val buttonText = when {
             isGuest && isSelfReady -> "Aguardando anfitrião iniciar..."
@@ -205,29 +304,62 @@ fun BezelCalibrationScreen(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .height(48.dp)
         ) {
             if (isGuest && isSelfReady) {
                 CircularProgressIndicator(
                     color = Color(0xFF00E5FF),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = buttonText,
                     color = Color(0xFF94A3B8),
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             } else {
                 Text(
                     text = buttonText,
                     color = if (buttonContainerColor == Color(0xFF10B981)) Color.White else Color(0xFF0A0E1A),
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PresetChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .background(
+                if (isSelected) Color(0xFF00E5FF).copy(alpha = 0.2f) else Color(0xFF1E293B),
+                RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = if (isSelected) 1.5.dp else 1.dp,
+                color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF334155),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+            fontSize = 11.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
     }
 }

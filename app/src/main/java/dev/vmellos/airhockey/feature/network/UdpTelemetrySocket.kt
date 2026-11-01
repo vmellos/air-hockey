@@ -29,6 +29,9 @@ class UdpTelemetrySocket(
     @Volatile private var targetPort: Int = NetworkConstants.DEFAULT_UDP_PORT
     private var sequenceCounter = 0L
 
+    @Volatile var lastPacketReceivedTimestamp: Long = 0L
+        private set
+
     var onHostTelemetryReceived: ((HostTelemetryPacket) -> Unit)? = null
     var onGuestInputReceived: ((GuestInputPacket) -> Unit)? = null
 
@@ -51,11 +54,13 @@ class UdpTelemetrySocket(
             val packet = DatagramPacket(buffer, buffer.size)
             while (isActive) {
                 try {
+                    packet.length = buffer.size
                     sock.receive(packet)
                 } catch (e: Exception) {
                     if (isActive) Log.w(TAG, "Recepção UDP encerrada", e)
                     break
                 }
+                lastPacketReceivedTimestamp = System.currentTimeMillis()
                 val byteBuffer = ByteBuffer.wrap(packet.data, packet.offset, packet.length)
                 when (packet.data[packet.offset]) {
                     0x01.toByte() -> HostTelemetryPacket.fromByteBuffer(byteBuffer)
@@ -82,7 +87,14 @@ class UdpTelemetrySocket(
     fun setTarget(targetIp: String, port: Int = NetworkConstants.DEFAULT_UDP_PORT) {
         scope.launch {
             try {
-                targetAddress = InetAddress.getByName(targetIp)
+                val cleanIp = targetIp.removePrefix("/").let { raw ->
+                    if (raw.contains(":") && raw.contains(".")) {
+                        raw.substringAfterLast(":")
+                    } else {
+                        raw
+                    }
+                }
+                targetAddress = InetAddress.getByName(cleanIp)
                 targetPort = port
             } catch (e: Exception) {
                 Log.w(TAG, "Endereço UDP inválido: $targetIp", e)

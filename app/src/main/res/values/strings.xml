@@ -86,4 +86,17 @@
     <string name="settings_controls">Controls</string>
     <string name="settings_touch_offset">Touch Offset</string>
     <string name="settings_touch_offset_desc">Projects mallet forward from finger to keep the puck and striker clearly visible</string>
+
+    <!-- Velocidade do Disco e Calibração Aprimorada -->
+    <string name="settings_puck_speed">Puck Speed</string>
+    <string name="settings_puck_speed_desc">Maximum travel speed of the puck on the table</string>
+    <string name="puck_speed_slow">Slow</string>
+    <string name="puck_speed_normal">Normal</string>
+    <string name="puck_speed_fast">Fast</string>
+    <string name="calibration_preset_thin">Thin (4 mm)</string>
+    <string name="calibration_preset_standard">Standard (8 mm)</string>
+    <string name="calibration_preset_thick">With Case (14 mm)</string>
+    <string name="calibration_diagram_label">Align devices top-to-top</string>
+    <string name="calibration_bezel_explanation">Adjust the gap to match the combined black borders of both devices so the puck transitions smoothly without jumping.</string>
+    <string name="lobby_waiting_host_start">Connected! Waiting for host to start&#8230;</string>
 </resources>

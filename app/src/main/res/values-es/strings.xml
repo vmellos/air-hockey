@@ -86,4 +86,17 @@
     <string name="settings_controls">Controles</string>
     <string name="settings_touch_offset">Desplazamiento de Toque</string>
     <string name="settings_touch_offset_desc">Proyecta el bateador por delante del dedo para mantener visible el disco</string>
+
+    <!-- Velocidad del Disco y Calibración Mejorada -->
+    <string name="settings_puck_speed">Velocidad del Disco</string>
+    <string name="settings_puck_speed_desc">Ajusta la velocidad máxima del disco en la mesa</string>
+    <string name="puck_speed_slow">Lenta</string>
+    <string name="puck_speed_normal">Normal</string>
+    <string name="puck_speed_fast">Rápida</string>
+    <string name="calibration_preset_thin">Fina (4 mm)</string>
+    <string name="calibration_preset_standard">Estándar (8 mm)</string>
+    <string name="calibration_preset_thick">Con Funda (14 mm)</string>
+    <string name="calibration_diagram_label">Alinee los dispositivos borde con borde</string>
+    <string name="calibration_bezel_explanation">Compensa los bordes negros entre las dos pantallas para que el disco pase de un dispositivo a otro de forma fluida.</string>
+    <string name="lobby_waiting_host_start">¡Conectado! Esperando que el anfitrión inicie&#8230;</string>
 </resources>

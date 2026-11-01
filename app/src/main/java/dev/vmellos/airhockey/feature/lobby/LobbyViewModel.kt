@@ -59,6 +59,7 @@ data class LobbyState(
     val startMatchTrigger: Long = 0L,
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
+    val synchronizedPuckSpeed: Float = 9500f,
     val errorMessage: String? = null
 )
 
@@ -261,8 +262,8 @@ class LobbyViewModel : ViewModel() {
         coordinator?.signalCalibrationReady(gapMm)
     }
 
-    fun startHostMatch(gapMm: Float) {
-        coordinator?.startMatch(gapMm)
+    fun startHostMatch(gapMm: Float, maxSpeed: Float = 9500f) {
+        coordinator?.startMatch(gapMm, maxSpeed)
     }
 
     fun sendControlMessage(message: String) {
@@ -290,6 +291,7 @@ class LobbyViewModel : ViewModel() {
                         startMatchTrigger = cState.startMatchTrigger,
                         navigateToCalibrationTrigger = cState.navigateToCalibrationTrigger,
                         calibratedGapMm = cState.calibratedGapMm,
+                        synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
                         connectionStatus = when (cState.connectionState) {
                             TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
                             TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING

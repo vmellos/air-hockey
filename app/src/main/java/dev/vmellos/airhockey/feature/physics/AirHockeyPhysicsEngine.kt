@@ -16,7 +16,8 @@ enum class CollisionEvent {
 }
 
 class AirHockeyPhysicsEngine(
-    val dimensions: TableDimensions
+    val dimensions: TableDimensions,
+    val maxSpeed: Float = 9500f
 ) {
     val puck = Puck(
         x = dimensions.width / 2f,
@@ -47,7 +48,6 @@ class AirHockeyPhysicsEngine(
 
     private val wallRestitution = 0.96f
     private val paddleRestitution = 1.0f
-    private val maxSpeed = 12000f
     private val maxSpeedSq = maxSpeed * maxSpeed
     private val airFrictionPerSec = 0.35f
 

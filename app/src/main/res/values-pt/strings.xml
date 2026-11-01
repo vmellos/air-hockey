@@ -86,4 +86,17 @@
     <string name="settings_controls">Controles</string>
     <string name="settings_touch_offset">Deslocamento de Toque</string>
     <string name="settings_touch_offset_desc">Projeta o rebatedor à frente do dedo para manter o disco visível</string>
+
+    <!-- Velocidade do Disco e Calibração Aprimorada -->
+    <string name="settings_puck_speed">Velocidade do Disco</string>
+    <string name="settings_puck_speed_desc">Ajusta o ritmo e velocidade máxima do disco na mesa</string>
+    <string name="puck_speed_slow">Lenta</string>
+    <string name="puck_speed_normal">Normal</string>
+    <string name="puck_speed_fast">Rápida</string>
+    <string name="calibration_preset_thin">Fina (4 mm)</string>
+    <string name="calibration_preset_standard">Padrão (8 mm)</string>
+    <string name="calibration_preset_thick">Com Capa (14 mm)</string>
+    <string name="calibration_diagram_label">Alinhe os aparelhos topo a topo</string>
+    <string name="calibration_bezel_explanation">Compensa as molduras pretas dos dois aparelhos em contato para que o disco passe de uma tela para a outra de forma natural e sem pulos.</string>
+    <string name="lobby_waiting_host_start">Conectado! Aguardando o anfitrião iniciar&#8230;</string>
 </resources>

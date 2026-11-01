@@ -259,6 +259,56 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_puck_speed),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.settings_puck_speed_desc),
+                    color = Color(0xFF64748B),
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    for (speed in dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.values()) {
+                        val isSelected = prefs.puckSpeed == speed
+                        val label = when (speed) {
+                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW -> stringResource(R.string.puck_speed_slow)
+                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL -> stringResource(R.string.puck_speed_normal)
+                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST -> stringResource(R.string.puck_speed_fast)
+                        }
+
+                        Card(
+                            onClick = { scope.launch { preferencesRepo.setPuckSpeed(speed) } },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) Color(0xFF00E5FF) else Color(0xFF334155)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color(0xFF0A0E1A) else Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
