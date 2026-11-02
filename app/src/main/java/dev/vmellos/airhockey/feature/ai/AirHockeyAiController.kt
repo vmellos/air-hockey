@@ -6,7 +6,8 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 class AirHockeyAiController(
-    val difficulty: AiDifficulty
+    val difficulty: AiDifficulty,
+    val isPlayer1: Boolean = false
 ) {
     private var bankShotTimer: Float = 0f
     private var bankShotDirection: Int = 1 // 1 = ricochete na parede direita, -1 = na parede esquerda
@@ -20,16 +21,21 @@ class AirHockeyAiController(
 
     fun update(engine: AirHockeyPhysicsEngine, dt: Float) {
         val puck = engine.puck
-        val mallet = engine.player2Mallet
+        val mallet = if (isPlayer1) engine.player1Mallet else engine.player2Mallet
         val dimensions = engine.dimensions
+
+        // Coordenadas normalizadas para simetria (se for Player 1, projeta como se estivesse no topo)
+        val puckY = if (isPlayer1) dimensions.totalHeight - puck.y else puck.y
+        val puckVy = if (isPlayer1) -puck.vy else puck.vy
+        val malletY = if (isPlayer1) dimensions.totalHeight - mallet.y else mallet.y
 
         val homeX = dimensions.width / 2f
         val homeY = 190f
         val goalLeft = dimensions.goalLeft
         val goalRight = dimensions.goalRight
 
-        val isPuckInAiHalf = puck.y < dimensions.centerLineY
-        val isPuckMovingTowardsAi = puck.vy < -15f
+        val isPuckInAiHalf = puckY < dimensions.centerLineY
+        val isPuckMovingTowardsAi = puckVy < -15f
 
         // Configuração de dinâmica e velocidades
         val maxSpeed = when (difficulty) {
@@ -44,7 +50,7 @@ class AirHockeyAiController(
             if (reactionTimer >= 0.28f) {
                 reactionTimer = 0f
                 perceivedPuckX = puck.x
-                perceivedPuckY = puck.y
+                perceivedPuckY = puckY
                 aimingErrorX = ((Math.random().toFloat() * 120f) - 60f)
             }
         }
@@ -64,29 +70,21 @@ class AirHockeyAiController(
         var desiredX = homeX
         var desiredY = homeY
 
-        // -------------------------------------------------------------
         // SALVAGUARDA CONTRA AUTOGOL:
-        // Se o disco estiver atrás do rebatedor da IA ou na zona crítica da meta
-        // (Ativa apenas em MEDIUM e HARD; no EASY ela é desarmada para permitir gols acessíveis)
-        // -------------------------------------------------------------
-        val isPuckBehindMallet = puck.y <= mallet.y + 10f
-        val isPuckInGoalMouthDanger = puck.y < 220f && puck.x in (goalLeft - 50f)..(goalRight + 50f)
+        val isPuckBehindMallet = puckY <= malletY + 10f
+        val isPuckInGoalMouthDanger = puckY < 220f && puck.x in (goalLeft - 50f)..(goalRight + 50f)
 
         if (difficulty != AiDifficulty.EASY && (isPuckBehindMallet || isPuckInGoalMouthDanger)) {
-            // Nunca acelere para trás contra o disco.
-            // Posiciona-se como escudo centralizado na linha de meta sem empurrar o disco para trás.
             desiredY = 130f
             desiredX = puck.x.coerceIn(goalLeft + mallet.radius * 0.6f, goalRight - mallet.radius * 0.6f)
         } else {
             when (difficulty) {
                 AiDifficulty.EASY -> {
                     if (isPuckBehindMallet) {
-                        // Se o disco passou, apenas recua para a posição inicial sem interceptação milagrosa
                         desiredX = homeX
                         desiredY = homeY
                     } else if (perceivedPuckY < dimensions.centerLineY) {
                         desiredX = perceivedPuckX + aimingErrorX
-                        // Avança moderadamente sem ultrapassar o disco
                         desiredY = if (perceivedPuckY > homeY + 20f) (perceivedPuckY - 20f).coerceAtMost(dimensions.centerLineY - 100f) else homeY
                     } else {
                         desiredX = homeX + (perceivedPuckX - homeX) * 0.25f
@@ -95,23 +93,22 @@ class AirHockeyAiController(
                 }
 
                 AiDifficulty.MEDIUM -> {
-                    if (isPuckInAiHalf || (isPuckMovingTowardsAi && puck.y < dimensions.totalHeight * 0.65f)) {
+                    if (isPuckInAiHalf || (isPuckMovingTowardsAi && puckY < dimensions.totalHeight * 0.65f)) {
                         var targetX = puck.x
-                        if (isPuckMovingTowardsAi && abs(puck.vy) > 30f) {
+                        if (isPuckMovingTowardsAi && abs(puckVy) > 30f) {
                             val interceptY = 250f
-                            val timeToIntercept = (puck.y - interceptY) / abs(puck.vy)
+                            val timeToIntercept = (puckY - interceptY) / abs(puckVy)
                             targetX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
                         }
 
-                        if (isPuckInAiHalf && puck.y > homeY + 40f && isBankShotActive) {
-                            // Jogada lateral moderada
+                        if (isPuckInAiHalf && puckY > homeY + 40f && isBankShotActive) {
                             val lateralOffset = bankShotDirection * (mallet.radius * 0.45f)
                             desiredX = (targetX + lateralOffset).coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                            desiredY = (puck.y + 35f).coerceAtMost(dimensions.centerLineY - 80f)
+                            desiredY = (puckY + 35f).coerceAtMost(dimensions.centerLineY - 80f)
                         } else {
                             desiredX = targetX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                            desiredY = if (puck.y in (homeY + 30f)..(dimensions.centerLineY - 90f)) {
-                                puck.y + 35f
+                            desiredY = if (puckY in (homeY + 30f)..(dimensions.centerLineY - 90f)) {
+                                puckY + 35f
                             } else {
                                 homeY + 30f
                             }
@@ -124,34 +121,29 @@ class AirHockeyAiController(
 
                 AiDifficulty.HARD -> {
                     if (isPuckInAiHalf || isPuckMovingTowardsAi) {
-                        val interceptY = if (isPuckInAiHalf) puck.y else 260f
+                        val interceptY = if (isPuckInAiHalf) puckY else 260f
                         var predictedX = puck.x
-                        if (isPuckMovingTowardsAi && abs(puck.vy) > 20f) {
-                            val timeToIntercept = (puck.y - interceptY) / abs(puck.vy)
+                        if (isPuckMovingTowardsAi && abs(puckVy) > 20f) {
+                            val timeToIntercept = (puckY - interceptY) / abs(puckVy)
                             predictedX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
                         }
 
-                        val canAttack = isPuckInAiHalf && puck.y > mallet.y + 25f && puck.y < dimensions.centerLineY - 60f
+                        val canAttack = isPuckInAiHalf && puckY > malletY + 25f && puckY < dimensions.centerLineY - 60f
 
                         if (canAttack) {
                             if (isBankShotActive) {
-                                // JOGADA LATERAL ESTRATÉGICA:
-                                // Golpeia desfasado na lateral do disco para arremessá-lo de tabela na parede oposta
                                 val lateralOffset = bankShotDirection * (mallet.radius * 0.60f)
                                 desiredX = (puck.x + lateralOffset).coerceIn(mallet.radius + 20f, dimensions.width - mallet.radius - 20f)
-                                desiredY = (puck.y + 65f).coerceAtMost(dimensions.centerLineY - 50f)
+                                desiredY = (puckY + 65f).coerceAtMost(dimensions.centerLineY - 50f)
                             } else {
-                                // GOLPE FRONTAL AGRESSIVO
                                 desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                                desiredY = (puck.y + 60f).coerceAtMost(dimensions.centerLineY - 50f)
+                                desiredY = (puckY + 60f).coerceAtMost(dimensions.centerLineY - 50f)
                             }
                         } else {
-                            // Posicionamento defensivo antecipado
                             desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
                             desiredY = (homeY + 40f).coerceAtMost(dimensions.centerLineY - 120f)
                         }
                     } else {
-                        // Disco no campo adversário: cobre o ângulo mais perigoso
                         desiredX = (homeX + (puck.x - homeX) * 0.55f).coerceIn(goalLeft - 20f, goalRight + 20f)
                         desiredY = homeY
                     }
@@ -159,11 +151,14 @@ class AirHockeyAiController(
             }
         }
 
-        // Restringe estritamente o alvo ao meio campo da IA
+        // Restringe estritamente o alvo ao meio campo correspondente
         val clampedDesiredX = desiredX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-        val clampedDesiredY = desiredY.coerceIn(mallet.radius, dimensions.centerLineY - mallet.radius)
+        val clampedDesiredY = if (isPlayer1) {
+            (dimensions.totalHeight - desiredY).coerceIn(dimensions.centerLineY + mallet.radius, dimensions.totalHeight - mallet.radius)
+        } else {
+            desiredY.coerceIn(mallet.radius, dimensions.centerLineY - mallet.radius)
+        }
 
-        // Movimento cinemático contínuo respeitando maxSpeed
         val dx = clampedDesiredX - mallet.targetX
         val dy = clampedDesiredY - mallet.targetY
         val dist = sqrt(dx * dx + dy * dy)
@@ -178,9 +173,6 @@ class AirHockeyAiController(
         }
     }
 
-    /**
-     * Calcula o ricochete exato nas bordas laterais para prever com precisão onde o disco chegará.
-     */
     private fun predictXWithBounces(startX: Float, vx: Float, time: Float, tableWidth: Float, radius: Float): Float {
         var x = startX + vx * time
         val minX = radius
@@ -189,11 +181,9 @@ class AirHockeyAiController(
 
         if (effectiveWidth <= 0f) return tableWidth / 2f
 
-        // Normaliza em relação a minX
         var normX = x - minX
         val doubleWidth = 2f * effectiveWidth
 
-        // Trata reflexões múltiplas
         normX %= doubleWidth
         if (normX < 0f) normX += doubleWidth
 

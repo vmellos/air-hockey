@@ -11,6 +11,8 @@
     <string name="menu_mode_split_desc">2 jogadores no mesmo aparelho com tela compartilhada</string>
     <string name="menu_mode_extended">Mesa Estendida</string>
     <string name="menu_mode_extended_desc">2 aparelhos topo a topo formando uma mesa contínua</string>
+    <string name="menu_mode_ai_vs_ai">Modo IA x IA</string>
+    <string name="menu_mode_ai_vs_ai_desc">Duelo autônomo entre inteligências artificiais</string>
     <string name="menu_settings">Configurações</string>
 
     <!-- Lobby Mesa Estendida e Conectada -->

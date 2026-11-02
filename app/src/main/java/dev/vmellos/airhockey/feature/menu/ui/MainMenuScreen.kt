@@ -52,6 +52,15 @@ import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.update.InAppUpdateStatus
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.util.findActivity
 
@@ -61,10 +70,15 @@ fun MainMenuScreen(
     onStartSplit: () -> Unit,
     onStartExtended: () -> Unit,
     onStartConnected: () -> Unit,
+    onStartAiVsAiLocal: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
+    onStartAiVsAiExtended: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
     onOpenLeaderboard: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showAiVsAiDialog by remember { mutableStateOf(false) }
+    val inAppUpdateStatus by AirHockeyApp.instance.inAppUpdateEngine.status.collectAsState()
+
     val adManager = AirHockeyApp.instance.adManager
     val billingManager = AirHockeyApp.instance.billingManager
     val isAdsRemovedPermanently by billingManager.isAdsRemoved.collectAsState()
@@ -256,10 +270,21 @@ fun MainMenuScreen(
                 )
             }
 
-            // Cartões dos 4 Modos de Jogo no Padrão Arcade Glassmorphism
+            // Banner de Atualização Flexível Concluída
+            if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
+                InAppUpdateDownloadedBanner(
+                    onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
+                    onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }
+                )
+            }
+
+            // Cartões dos 5 Modos de Jogo no Padrão Arcade Glassmorphism
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
             ) {
                 MenuModeCard(
                     title = stringResource(R.string.menu_mode_connected),
@@ -299,6 +324,31 @@ fun MainMenuScreen(
                     accentColor = Color(0xFF10B981),
                     hapticsEnabled = prefs.hapticsEnabled,
                     onClick = onStartSolo
+                )
+
+                MenuModeCard(
+                    title = stringResource(R.string.menu_mode_ai_vs_ai),
+                    description = stringResource(R.string.menu_mode_ai_vs_ai_desc),
+                    badgeText = "BOT vs BOT",
+                    modeKey = "AI_VS_AI",
+                    accentColor = Color(0xFFA855F7),
+                    hapticsEnabled = prefs.hapticsEnabled,
+                    onClick = { showAiVsAiDialog = true }
+                )
+            }
+
+            if (showAiVsAiDialog) {
+                AiVsAiConfigDialog(
+                    initialDifficulty = prefs.aiDifficulty,
+                    onDismiss = { showAiVsAiDialog = false },
+                    onStartLocal = { d1, d2 ->
+                        showAiVsAiDialog = false
+                        onStartAiVsAiLocal(d1, d2)
+                    },
+                    onStartExtended = { d1, d2 ->
+                        showAiVsAiDialog = false
+                        onStartAiVsAiExtended(d1, d2)
+                    }
                 )
             }
 
@@ -617,6 +667,288 @@ private fun TableModeThumbnail(
                     // Disco em movimento com rastro
                     drawCircle(Color(0x88FFFFFF), radius = 2f, center = Offset(w / 2f - 4f, midY + 8f))
                     drawCircle(Color.White, radius = 3f, center = Offset(w / 2f, midY + 3f))
+                }
+
+                "AI_VS_AI" -> {
+                    // Mesa com borda púrpura, bot 1 (ciano) na base e bot 2 (laranja) no topo
+                    val phoneW = w * 0.74f
+                    val phoneH = h * 0.94f
+                    val leftX = (w - phoneW) / 2f
+                    val topY = (h - phoneH) / 2f
+                    val midY = topY + phoneH / 2f
+                    val c = 5f
+
+                    val tableBorder = Path().apply {
+                        moveTo(leftX + c, topY)
+                        lineTo(leftX + phoneW - c, topY)
+                        lineTo(leftX + phoneW, topY + c)
+                        lineTo(leftX + phoneW, topY + phoneH - c)
+                        lineTo(leftX + phoneW - c, topY + phoneH)
+                        lineTo(leftX + c, topY + phoneH)
+                        lineTo(leftX, topY + phoneH - c)
+                        lineTo(leftX, topY + c)
+                        close()
+                    }
+                    drawPath(tableBorder, Color(0xFFA855F7), style = Stroke(width = 1.5f))
+
+                    // Linha de centro
+                    drawLine(Color(0x66A855F7), Offset(leftX, midY), Offset(leftX + phoneW, midY), 1.2f)
+                    drawCircle(Color(0x66A855F7), radius = 8f, center = Offset(w / 2f, midY), style = Stroke(1.2f))
+
+                    // Bot 2 (Topo - Laranja com anel púrpura)
+                    drawCircle(Color(0xFFFF5722), radius = 4.5f, center = Offset(w / 2f, topY + 12f))
+                    drawCircle(Color(0xFFA855F7), radius = 6.5f, center = Offset(w / 2f, topY + 12f), style = Stroke(1f))
+
+                    // Bot 1 (Base - Ciano com anel púrpura)
+                    drawCircle(Color(0xFF00E5FF), radius = 4.5f, center = Offset(w / 2f, topY + phoneH - 12f))
+                    drawCircle(Color(0xFFA855F7), radius = 6.5f, center = Offset(w / 2f, topY + phoneH - 12f), style = Stroke(1f))
+
+                    // Disco anelar com energia púrpura
+                    drawCircle(Color.White, radius = 3f, center = Offset(w / 2f, midY))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InAppUpdateDownloadedBanner(
+    onRestart: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Color(0xFF1E1B4B),
+        shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFF818CF8)),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Atualização Pronta",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "Reinicie para aplicar a nova versão",
+                    color = Color(0xFFCBD5E1),
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onRestart,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF818CF8)),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Reiniciar", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun AiVsAiConfigDialog(
+    initialDifficulty: dev.vmellos.airhockey.core.preferences.AiDifficulty,
+    onDismiss: () -> Unit,
+    onStartLocal: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit,
+    onStartExtended: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit
+) {
+    var isExtendedSelected by remember { mutableStateOf(false) }
+    var diffBot1 by remember { mutableStateOf(initialDifficulty) }
+    var diffBot2 by remember { mutableStateOf(initialDifficulty) }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            color = Color(0xFF131826),
+            shape = RoundedCornerShape(22.dp),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFA855F7)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "MODO IA x IA",
+                    color = Color(0xFFA855F7),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Duelo autônomo entre bots",
+                    color = Color(0xFF94A3B8),
+                    fontSize = 13.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Seletor de Tipo de Arena: Local vs Estendido
+                Text(
+                    text = "DISPOSIÇÃO DA MESA",
+                    color = Color(0xFFE2E8F0),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { isExtendedSelected = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!isExtendedSelected) Color(0xFFA855F7) else Color(0xFF1E293B)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Local (1 Tela)",
+                            color = if (!isExtendedSelected) Color.White else Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Button(
+                        onClick = { isExtendedSelected = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isExtendedSelected) Color(0xFFA855F7) else Color(0xFF1E293B)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Estendida (2 Telas)",
+                            color = if (isExtendedSelected) Color.White else Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Dificuldade Bot 1 (Ciano)
+                Text(
+                    text = "BOT 1 (CIANO)",
+                    color = Color(0xFF00E5FF),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.forEach { d ->
+                        val selected = diffBot1 == d
+                        Surface(
+                            onClick = { diffBot1 = d },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selected) Color(0x3300E5FF) else Color(0xFF1E293B),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Color(0xFF00E5FF) else Color.Transparent),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = when (d) {
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                                },
+                                color = if (selected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Dificuldade Bot 2 (Laranja)
+                Text(
+                    text = "BOT 2 (LARANJA)",
+                    color = Color(0xFFFF5722),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.forEach { d ->
+                        val selected = diffBot2 == d
+                        Surface(
+                            onClick = { diffBot2 = d },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selected) Color(0x33FF5722) else Color(0xFF1E293B),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) Color(0xFFFF5722) else Color.Transparent),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = when (d) {
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                                    dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                                },
+                                color = if (selected) Color(0xFFFF5722) else Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Botão de Iniciar
+                Button(
+                    onClick = {
+                        if (isExtendedSelected) {
+                            onStartExtended(diffBot1, diffBot2)
+                        } else {
+                            onStartLocal(diffBot1, diffBot2)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA855F7)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "INICIAR CONFRONTO",
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
             }
         }

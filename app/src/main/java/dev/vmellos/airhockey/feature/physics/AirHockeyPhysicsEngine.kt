@@ -82,10 +82,44 @@ class AirHockeyPhysicsEngine(
 
     /**
      * Atualiza exclusivamente a cinemática dos rebatedores (usado durante a contagem regressiva).
-     * O disco permanece congelado e nenhuma colisão com o disco é processada até a largada.
+     * O disco permanece congelado como obstáculo sólido na marca de saída e nenhuma colisão com ele o move.
      */
     fun tickMalletsOnly(dt: Float) {
         updateMalletPositions(dt)
+        clampMalletAgainstFrozenPuck(player1Mallet)
+        clampMalletAgainstFrozenPuck(player2Mallet)
+    }
+
+    /**
+     * Bloqueia o rebatedor na superfície externa do disco inamovível durante a contagem regressiva.
+     */
+    fun clampMalletAgainstFrozenPuck(mallet: Mallet) {
+        val dx = mallet.x - puck.x
+        val dy = mallet.y - puck.y
+        val distSq = dx * dx + dy * dy
+        val minDist = puck.radius + mallet.radius
+        if (distSq < minDist * minDist) {
+            val dist = if (distSq > 0.0001f) sqrt(distSq) else 0.01f
+            val nx = dx / dist
+            val ny = dy / dist
+            mallet.x = puck.x + nx * minDist
+            mallet.y = puck.y + ny * minDist
+        }
+    }
+
+    fun clampPositionAgainstFrozenPuck(tx: Float, ty: Float, malletRadius: Float): Pair<Float, Float> {
+        val dx = tx - puck.x
+        val dy = ty - puck.y
+        val distSq = dx * dx + dy * dy
+        val minDist = puck.radius + malletRadius
+        return if (distSq < minDist * minDist) {
+            val dist = if (distSq > 0.0001f) sqrt(distSq) else 0.01f
+            val nx = dx / dist
+            val ny = dy / dist
+            Pair(puck.x + nx * minDist, puck.y + ny * minDist)
+        } else {
+            Pair(tx, ty)
+        }
     }
 
     private fun subTick(dt: Float) {

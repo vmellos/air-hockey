@@ -145,4 +145,60 @@ class AirHockeyPhysicsEngineTest {
         assertEquals(500f, extEngine.puck.x, 0.1f)
         assertEquals(2440f, extEngine.puck.y, 0.1f)
     }
+
+    @Test
+    fun testCountdownMalletCannotPenetratePuck() {
+        // Disco estacionado no centro (500, 1000)
+        engine.resetPositions()
+        val puckX = engine.puck.x
+        val puckY = engine.puck.y
+
+        // Tenta mover o rebatedor do Player 1 diretamente para cima do disco
+        engine.player1Mallet.targetX = puckX
+        engine.player1Mallet.targetY = puckY
+        engine.player1Mallet.x = puckX
+        engine.player1Mallet.y = puckY
+
+        // Executa a cinemática de contagem regressiva
+        engine.tickMalletsOnly(0.05f)
+
+        // O disco deve permanecer exatamente no centro e imóvel
+        assertEquals(puckX, engine.puck.x, 0.01f)
+        assertEquals(puckY, engine.puck.y, 0.01f)
+        assertEquals(0f, engine.puck.vx, 0.01f)
+        assertEquals(0f, engine.puck.vy, 0.01f)
+
+        // O rebatedor deve ter sido empurrado para a borda externa do disco
+        val dx = engine.player1Mallet.x - engine.puck.x
+        val dy = engine.player1Mallet.y - engine.puck.y
+        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+        val minDist = engine.puck.radius + engine.player1Mallet.radius
+        assertTrue("Mallet must be blocked at minDist during countdown", dist >= minDist - 0.1f)
+    }
+
+    @Test
+    fun testAiControllerPlayer1Symmetry() {
+        val aiPlayer1 = dev.vmellos.airhockey.feature.ai.AirHockeyAiController(
+            difficulty = dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD,
+            isPlayer1 = true
+        )
+
+        // Disco na metade inferior se aproximando da meta do Player 1
+        engine.puck.x = 500f
+        engine.puck.y = 1500f
+        engine.puck.vx = 0f
+        engine.puck.vy = 200f
+
+        aiPlayer1.update(engine, 0.05f)
+
+        // A IA do Player 1 deve se posicionar estritamente na metade inferior
+        assertTrue(
+            "Player 1 AI target must be in bottom half",
+            engine.player1Mallet.targetY > dimensions.centerLineY
+        )
+        assertTrue(
+            "Player 1 AI target must not cross center line",
+            engine.player1Mallet.targetY >= dimensions.centerLineY + engine.player1Mallet.radius
+        )
+    }
 }

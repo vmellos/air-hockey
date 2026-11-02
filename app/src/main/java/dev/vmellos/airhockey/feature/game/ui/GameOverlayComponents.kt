@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -60,23 +61,27 @@ fun ScoreBoardOverlay(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Placar P1 (Cyan)
-        Column(horizontalAlignment = Alignment.Start) {
+        Column(
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier.widthIn(min = 60.dp, max = 110.dp)
+        ) {
             Text(
                 text = matchState.player1Name,
                 color = Color(0xFF00E5FF),
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Text(
                 text = "${matchState.scorePlayer1}",
                 color = Color(0xFF00E5FF),
-                fontSize = 36.sp,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace
             )
@@ -84,68 +89,61 @@ fun ScoreBoardOverlay(
 
         // Cronômetro central
         Surface(
-            color = Color(0x33000000),
-            shape = RoundedCornerShape(12.dp)
+            color = Color(0x44000000),
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF))
         ) {
             val minutes = matchState.remainingTimeSeconds / 60
             val seconds = matchState.remainingTimeSeconds % 60
             Text(
                 text = String.format("%02d:%02d", minutes, seconds),
                 color = Color(0xFFE2E8F0),
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
             )
         }
 
-        // Placar P2 (Orange) e Botão Pausa
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(horizontalAlignment = Alignment.End) {
+        // Placar P2 (Orange) e Botão Pausa isolado à direita
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.widthIn(min = 60.dp, max = 110.dp)
+            ) {
                 Text(
                     text = matchState.player2Name,
                     color = Color(0xFFFF5722),
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                     text = "${matchState.scorePlayer2}",
                     color = Color(0xFFFF5722),
-                    fontSize = 36.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.Monospace
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            IconButton(
-                onClick = onToggleSound,
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(if (isSoundEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
-            ) {
-                Icon(
-                    imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                    contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
-                    tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             IconButton(
                 onClick = onPauseClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Color(0x22FFFFFF), CircleShape)
+                    .background(Color(0x33FFFFFF), CircleShape)
             ) {
                 Icon(
                     imageVector = Icons.Default.Pause,
                     contentDescription = stringResource(R.string.game_paused),
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -188,7 +186,7 @@ fun GoalBannerOverlay(
     modifier: Modifier = Modifier
 ) {
     val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
-    val displayName = scorerName.ifBlank { if (scorer == 1) "JOGADOR 1" else "JOGADOR 2" }
+    val glowColor = if (scorer == 1) Color(0xFF80D8FF) else Color(0xFFFF9E80)
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -201,30 +199,30 @@ fun GoalBannerOverlay(
             Text(
                 text = stringResource(R.string.game_goal),
                 color = color,
-                fontSize = 58.sp,
+                fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 8.sp,
+                letterSpacing = 10.sp,
                 fontFamily = FontFamily.SansSerif,
                 style = androidx.compose.ui.text.TextStyle(
                     shadow = androidx.compose.ui.graphics.Shadow(
-                        color = color.copy(alpha = 0.9f),
-                        blurRadius = 32f
+                        color = glowColor.copy(alpha = 0.95f),
+                        blurRadius = 36f
                     )
                 )
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Surface(
-                color = color.copy(alpha = 0.18f),
-                shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.2.dp, color.copy(alpha = 0.50f))
+                color = color.copy(alpha = 0.22f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, glowColor.copy(alpha = 0.80f))
             ) {
                 Text(
-                    text = displayName.uppercase(),
+                    text = "+1 PONTO",
                     color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.5.sp,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 4.sp,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                 )
             }
         }
