@@ -185,3 +185,12 @@ _Avoid_: Ad toggle manual, hardcoded ads, anúncio fixo
 **Internacionalização do Placar**:
 A padronização visual e textual do Placar de Líderes regida por recursos de strings (`strings.xml` nos idiomas en, pt-BR e es) e iconografia vetorial limpa do Material Design, sem dependência de glifos de emoji unicode.
 _Avoid_: Emoji no ranking, strings hardcoded, placar fixo em português
+
+**Internacionalização do Portal Oficial**:
+A apresentação multilíngue do sítio estático e da política de privacidade nos 3 idiomas suportados (Inglês, Português e Espanhol), com carregamento padrão em Inglês, persistência em armazenamento local do navegador e seletor no cabeçalho.
+_Avoid_: Site somente em português, landing page estática monolíngue
+
+**Botão Oficial de Loja**:
+O botão de chamada para ação (CTA) principal do Portal Oficial que direciona os jogadores à Google Play Store oficial (`dev.vmellos.airhockey`) com o logotipo vetorial de 4 cores do Google Play, suprimindo links manuais de APK e repositório GitHub.
+_Avoid_: Download de APK direto, link para GitHub, release button
+

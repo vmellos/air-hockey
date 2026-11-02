@@ -1,10 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Política de Privacidade — Air Hockey 2P</title>
-  <link rel="icon" type="image/png" href="icon.png">
+  <title>Privacy Policy — Air Hockey 2P</title>
+  <meta name="description" content="Privacy Policy for Air Hockey 2P (dev.vmellos.airhockey) on Android. 100% offline, local-first privacy, zero data collection.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+  <link rel="icon" type="image/png" href="/favicon.png?v=2">
+  <link rel="shortcut icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #090e1a;
@@ -12,20 +20,22 @@
       --text: #f1f5f9;
       --text-muted: #94a3b8;
       --cyan: #00e5ff;
+      --cyan-glow: rgba(0, 229, 255, 0.4);
       --pink: #ff2a6d;
       --border: #1e293b;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      margin: 0;
-      padding: 0;
+      padding: 0 20px;
+      -webkit-font-smoothing: antialiased;
     }
     header {
-      background: rgba(18, 24, 41, 0.8);
-      backdrop-filter: blur(12px);
+      background: rgba(18, 24, 41, 0.85);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
       padding: 1rem 2rem;
       display: flex;
@@ -34,6 +44,9 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      max-width: 900px;
+      margin: 0 auto;
+      border-radius: 0 0 12px 12px;
     }
     .brand {
       display: flex;
@@ -48,11 +61,51 @@
       width: 36px;
       height: 36px;
       border-radius: 8px;
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+    .back-link {
+      color: var(--cyan);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover {
+      text-decoration: underline;
     }
     .container {
-      max-width: 860px;
+      max-width: 900px;
       margin: 2rem auto;
-      padding: 0 1.5rem;
+    }
+    /* Language Selector */
+    .lang-switcher {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 24px;
+      width: fit-content;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-btn:hover {
+      color: #FFFFFF;
+    }
+    .lang-btn.active {
+      background: var(--cyan);
+      color: #090e1a;
     }
     .card {
       background: var(--card-bg);
@@ -68,18 +121,28 @@
       border-bottom: 2px solid var(--cyan);
       padding-bottom: 0.5rem;
     }
+    .last-updated {
+      color: var(--cyan);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0.8rem 0 1.5rem;
+    }
     h2 {
       color: var(--cyan);
       margin-top: 2rem;
-      font-size: 1.4rem;
-    }
-    h3 {
-      color: #cbd5e1;
-      margin-top: 1.5rem;
+      font-size: 1.35rem;
     }
     p, li {
       color: var(--text-muted);
-      font-size: 1.05rem;
+      font-size: 1.02rem;
+      margin-bottom: 0.8rem;
+    }
+    ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    li {
+      margin-bottom: 0.6rem;
     }
     strong {
       color: #fff;
@@ -97,6 +160,7 @@
     th {
       background: #1e293b;
       color: var(--cyan);
+      font-weight: 700;
     }
     td {
       background: rgba(18, 24, 41, 0.5);
@@ -107,6 +171,7 @@
       padding: 2px 6px;
       border-radius: 4px;
       font-family: monospace;
+      font-size: 0.9rem;
     }
     footer {
       text-align: center;
@@ -128,13 +193,91 @@
       <img src="icon.png" alt="Air Hockey 2P Icon">
       <span>Air Hockey 2P</span>
     </a>
-    <a href="index.html" style="color: var(--cyan); text-decoration: none; font-weight: 500;">← Voltar ao Início</a>
+    <a href="index.html" class="back-link">&larr; <span id="back-text">Back to Home</span></a>
   </header>
 
   <div class="container">
-    <div class="card">
+    <div class="lang-switcher">
+      <button class="lang-btn active" data-lang="en" onclick="switchLang('en')">EN</button>
+      <button class="lang-btn" data-lang="pt" onclick="switchLang('pt')">PT</button>
+      <button class="lang-btn" data-lang="es" onclick="switchLang('es')">ES</button>
+    </div>
+
+    <!-- ENGLISH (DEFAULT) -->
+    <div id="lang-en" class="card content-section">
+      <h1>Privacy Policy — Air Hockey</h1>
+      <div class="last-updated">Last updated: November 2, 2026</div>
+      
+      <p><strong>Air Hockey 2P</strong> ("we", "our", or "the application", package <code>dev.vmellos.airhockey</code>) is committed to protecting the privacy of its users. This Privacy Policy details how data is handled across Android devices.</p>
+
+      <h2>1. Fundamental Principles</h2>
+      <ul>
+        <li><strong>Zero Personal Data Collection:</strong> We do not collect, store, transmit, or share any personal identity information, individual user profiles, or usage telemetry.</li>
+        <li><strong>100% Offline & Peer-to-Peer Architecture:</strong> Gameplay runs entirely without relying on external cloud servers or remote database infrastructure. Multiplayer Extended Table matches establish direct socket connections over local Wi-Fi or Mobile Hotspot.</li>
+        <li><strong>Strictly Local Storage:</strong> Match history records, competitive Elo leaderboard scores, and local preferences remain solely stored within your device's isolated local sandbox.</li>
+      </ul>
+
+      <h2>2. Requested Permissions & Technical Purposes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Technical Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>android.permission.INTERNET</code></td>
+            <td>Used exclusively for peer-to-peer Sockets (TCP/UDP) communication between two devices on the same local Wi-Fi or Hotspot network.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
+            <td>Monitors wireless network state to discover the physical game table.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
+            <td>Resolves the host device IP address in Hotspot mode without requiring manual user input.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.CHANGE_WIFI_MULTICAST_STATE</code></td>
+            <td>Enables mDNS/NSD protocol for zero-configuration local network discovery.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.NEARBY_WIFI_DEVICES</code></td>
+            <td>Discovers nearby devices over local Wi-Fi with <code>neverForLocation</code> flag on modern Android versions (API 31+).</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.VIBRATE</code></td>
+            <td>Delivers haptic vibration feedback upon hitting the puck and scoring goals.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.CAMERA</code></td>
+            <td>Used strictly on demand to scan the game table QR Code. No camera images or video feeds are ever recorded, stored, or transmitted.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. Advertising & Regulatory Compliance (Google AdMob & UMP)</h2>
+      <p>To support continuous development and offer the game completely free of charge, the application may display non-intrusive advertisements served by Google AdMob (bottom banners in menu screens and frequency-capped interstitials upon match completion). The application integrates Google's official User Messaging Platform (UMP) consent SDK, in full compliance with the European General Data Protection Regulation (GDPR), the Brazilian LGPD, and the ePrivacy Directive.</p>
+
+      <h2>4. Children's Privacy</h2>
+      <p>Air Hockey is rated for all ages (Everyone / Family). The application does not contain harmful content, does not target minors maliciously, and does not knowingly collect data from children under 13.</p>
+
+      <h2>5. Developer Contact</h2>
+      <p>If you have any questions or inquiries regarding this Privacy Policy, contact us directly:</p>
+      <ul>
+        <li><strong>Developer:</strong> Vinicius Mellos (VMellos Dev)</li>
+        <li><strong>Email:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
+        <li><strong>Official Portal:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
+        <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P on Google Play</a></li>
+      </ul>
+    </div>
+
+    <!-- PORTUGUESE -->
+    <div id="lang-pt" class="card content-section" style="display: none;">
       <h1>Política de Privacidade — Air Hockey</h1>
-      <p><strong>Última atualização:</strong> 2 de novembro de 2026</p>
+      <div class="last-updated">Última atualização: 2 de novembro de 2026</div>
+
       <p>O <strong>Air Hockey 2P</strong> ("nós", "nosso" ou "o aplicativo", pacote <code>dev.vmellos.airhockey</code>) tem como compromisso prioritário a proteção total da privacidade dos seus usuários.</p>
 
       <h2>1. Princípios Fundamentais</h2>
@@ -196,12 +339,114 @@
         <li><strong>Desenvolvedor:</strong> Vinicius Mellos (VMellos Dev)</li>
         <li><strong>E-mail:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
         <li><strong>Portal Web:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
+        <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P no Google Play</a></li>
+      </ul>
+    </div>
+
+    <!-- SPANISH -->
+    <div id="lang-es" class="card content-section" style="display: none;">
+      <h1>Política de Privacidad — Air Hockey</h1>
+      <div class="last-updated">Última actualización: 2 de noviembre de 2026</div>
+
+      <p><strong>Air Hockey 2P</strong> ("nosotros", "nuestro" o "la aplicación", paquete <code>dev.vmellos.airhockey</code>) tiene como prioridad fundamental la protección absoluta de la privacidad de sus usuarios.</p>
+
+      <h2>1. Principios Fundamentales</h2>
+      <ul>
+        <li><strong>Cero Recopilación de Datos Personales:</strong> No recopilamos, no almacenamos, no transmitimos ni compartimos ninguna información personal, identificador exclusivo o historial de uso.</li>
+        <li><strong>Arquitectura 100% Offline y Peer-to-Peer:</strong> El juego funciona completamente sin depender de servidores en la nube ni de internet externa. Las partidas en Mesa Extendida utilizan comunicación directa por sockets vía Wi-Fi local o Punto de Acceso Móvil (Hotspot).</li>
+        <li><strong>Almacenamiento Estrictamente Local:</strong> El historial de partidas, la puntuación Elo de la Tabla de Clasificación y las preferencias se guardan de forma exclusiva en el almacenamiento seguro de tu dispositivo.</li>
+      </ul>
+
+      <h2>2. Permisos Requeridos y Justificación Técnica</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Permiso</th>
+            <th>Finalidad Técnica</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>android.permission.INTERNET</code></td>
+            <td>Utilizado exclusivamente para la comunicación por Sockets (TCP/UDP) entre ambos dispositivos dentro de la misma red Wi-Fi o Hotspot local.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
+            <td>Supervisa el estado de la red inalámbrica para gestionar la detección de la mesa de juego.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
+            <td>Permite descubrir la dirección IP del dispositivo anfitrión en modo Punto de Acceso (Hotspot) sin configuración manual.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.CHANGE_WIFI_MULTICAST_STATE</code></td>
+            <td>Habilita el protocolo mDNS/NSD para emparejamiento automático en la red local.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.NEARBY_WIFI_DEVICES</code></td>
+            <td>Detección de dispositivos cercanos en red local con el flag <code>neverForLocation</code> en versiones modernas de Android (API 31+).</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.VIBRATE</code></td>
+            <td>Proporciona retroalimentación háptica (vibración) al golpear el disco y anotar puntos.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.CAMERA</code></td>
+            <td>Utilizada bajo demanda únicamente para escanear el Código QR de la mesa. No se graba, almacena ni transmite ningún vídeo o foto.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. Publicidad y Conformidad Normativa (AdMob y UMP)</h2>
+      <p>Para mantener el juego gratuito y en constante evolución, la aplicación puede mostrar anuncios no invasivos gestionados por Google AdMob (banners en menús e intersticiales al finalizar partidas con limitación de frecuencia). La aplicación integra la plataforma oficial de consentimiento de Google (User Messaging Platform - UMP), en estricta conformidad con el RGPD europeo, la LGPD y la directiva ePrivacy.</p>
+
+      <h2>4. Privacidad Infantil</h2>
+      <p>Air Hockey está clasificado para todas las edades (Para todos / Everyone). La aplicación no contiene contenidos inapropiados ni recopila intencionadamente datos de menores de 13 años.</p>
+
+      <h2>5. Contacto del Desarrollador</h2>
+      <p>Para preguntas o comentarios sobre esta Política de Privacidad, contáctanos directamente:</p>
+      <ul>
+        <li><strong>Desarrollador:</strong> Vinicius Mellos (VMellos Dev)</li>
+        <li><strong>Correo:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
+        <li><strong>Sitio Web Oficial:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
+        <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P en Google Play</a></li>
       </ul>
     </div>
   </div>
 
   <footer>
-    <p>© 2026 Air Hockey 2P · Desenvolvido por <a href="https://vmellos.dev">Vinicius Mellos</a></p>
+    <p>&copy; 2026 Air Hockey 2P &bull; Developed by <a href="https://vmellos.dev" target="_blank">Vinicius Mellos</a>. All rights reserved.</p>
   </footer>
+
+  <script>
+    const backTexts = {
+      en: "Back to Home",
+      pt: "Voltar ao Início",
+      es: "Volver al Inicio"
+    };
+
+    function switchLang(lang) {
+      if (!['en', 'pt', 'es'].includes(lang)) lang = 'en';
+      localStorage.setItem('airhockey_lang', lang);
+      document.documentElement.lang = lang === 'en' ? 'en' : (lang === 'pt' ? 'pt-BR' : 'es');
+
+      ['en', 'pt', 'es'].forEach(l => {
+        const el = document.getElementById(`lang-${l}`);
+        if (el) el.style.display = l === lang ? 'block' : 'none';
+      });
+
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+      });
+
+      const backEl = document.getElementById('back-text');
+      if (backEl) {
+        backEl.textContent = backTexts[lang] || backTexts.en;
+      }
+    }
+
+    const saved = localStorage.getItem('airhockey_lang') || 'en';
+    switchLang(saved);
+  </script>
 </body>
 </html>
