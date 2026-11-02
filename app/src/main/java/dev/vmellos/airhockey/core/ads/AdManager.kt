@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dev.vmellos.airhockey.core.billing.BillingManager
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -29,7 +30,10 @@ import kotlinx.coroutines.withContext
 
 private val Context.adDataStore by preferencesDataStore(name = "airhockey_ad_settings")
 
-class AdManager(private val context: Context) {
+class AdManager(
+    private val context: Context,
+    private val billingManager: BillingManager? = null
+) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var isInitialized = false
@@ -38,6 +42,9 @@ class AdManager(private val context: Context) {
     private var rewardedAd: RewardedAd? = null
     private var isLoadingRewarded = false
     private val cooldownTracker = AdCooldownTracker()
+
+    private val _isAdsRemovedPermanently = MutableStateFlow(false)
+    val isAdsRemovedPermanently: StateFlow<Boolean> = _isAdsRemovedPermanently.asStateFlow()
 
     private val _isAdFreeTemporarily = MutableStateFlow(false)
     val isAdFreeTemporarily: StateFlow<Boolean> = _isAdFreeTemporarily.asStateFlow()
@@ -54,7 +61,16 @@ class AdManager(private val context: Context) {
         scope.launch {
             checkAdFreeExpiration()
         }
+        billingManager?.let { bm ->
+            scope.launch {
+                bm.isAdsRemoved.collect { removed ->
+                    _isAdsRemovedPermanently.value = removed
+                }
+            }
+        }
     }
+
+    fun isAdSuppressed(): Boolean = _isAdsRemovedPermanently.value || _isAdFreeTemporarily.value
 
     private suspend fun checkAdFreeExpiration() {
         val prefs = context.adDataStore.data.first()
@@ -99,7 +115,7 @@ class AdManager(private val context: Context) {
     }
 
     fun preloadInterstitial(appContext: Context) {
-        if (interstitialAd != null || isLoadingInterstitial || _isAdFreeTemporarily.value) return
+        if (interstitialAd != null || isLoadingInterstitial || isAdSuppressed()) return
         isLoadingInterstitial = true
 
         val request = AdRequest.Builder().build()
@@ -122,7 +138,7 @@ class AdManager(private val context: Context) {
     }
 
     fun preloadRewarded(appContext: Context) {
-        if (rewardedAd != null || isLoadingRewarded) return
+        if (rewardedAd != null || isLoadingRewarded || _isAdsRemovedPermanently.value) return
         isLoadingRewarded = true
 
         val request = AdRequest.Builder().build()
@@ -153,7 +169,7 @@ class AdManager(private val context: Context) {
     fun showInterstitialIfAllowed(activity: Activity, onDismiss: () -> Unit = {}) {
         scope.launch {
             checkAdFreeExpiration()
-            if (!cooldownTracker.canShowInterstitial(_isAdFreeTemporarily.value)) {
+            if (isAdSuppressed() || !cooldownTracker.canShowInterstitial(_isAdFreeTemporarily.value)) {
                 withContext(Dispatchers.Main) { onDismiss() }
                 return@launch
             }

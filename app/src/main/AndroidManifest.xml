@@ -18,6 +18,9 @@
     <!-- Haptic feedback for tactile paddle/puck impacts -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Google Play In-App Billing -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
     <!-- Optional Camera for On-Demand QR Code scanning -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature

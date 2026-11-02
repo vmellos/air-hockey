@@ -137,4 +137,19 @@
     <string name="leaderboard_player_record">%1$dW - %2$dL · Diff: %3$s</string>
     <string name="leaderboard_delta_elo">%1$s Elo</string>
     <string name="ad_reward_button_desc">Earn 2h Ad-Free</string>
+
+    <!-- Remoção Permanente de Anúncios (Billing) -->
+    <string name="remove_ads_title">Remove Ads</string>
+    <string name="remove_ads_desc">Permanently remove banners and interstitial ads</string>
+    <string name="remove_ads_price_loading">Checking price&#8230;</string>
+    <string name="remove_ads_buy">Buy</string>
+    <string name="remove_ads_active">Ad-Free Version Active</string>
+    <string name="remove_ads_active_desc">All banner and post-match ads have been permanently removed.</string>
+    <string name="remove_ads_restore">Restore Purchases</string>
+    <string name="remove_ads_menu_button">Remove Ads</string>
+    <string name="remove_ads_feedback_success">Purchase completed! Ads removed permanently.</string>
+    <string name="remove_ads_feedback_restored">Purchases restored successfully!</string>
+    <string name="remove_ads_feedback_not_found">No previous purchases found for this account.</string>
+    <string name="remove_ads_feedback_error">Unable to connect to Google Play Store.</string>
+    <string name="remove_ads_feedback_canceled">Purchase canceled.</string>
 </resources>

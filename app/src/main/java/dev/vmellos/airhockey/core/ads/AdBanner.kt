@@ -28,6 +28,11 @@ fun AdBanner(
     adManager: AdManager,
     modifier: Modifier = Modifier
 ) {
+    val isAdsRemovedPermanently by adManager.isAdsRemovedPermanently.collectAsState()
+    if (isAdsRemovedPermanently) {
+        return
+    }
+
     val isAdFreeTemporarily by adManager.isAdFreeTemporarily.collectAsState()
     val context = LocalContext.current
 
@@ -41,7 +46,7 @@ fun AdBanner(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "✨ Recompensa Ativa: 2h Sem Anúncios!",
+                text = "Recompensa Ativa: 2h Sem Anúncios!",
                 color = Color(0xFF00E5FF),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,

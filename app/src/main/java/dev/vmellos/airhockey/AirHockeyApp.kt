@@ -2,6 +2,7 @@ package dev.vmellos.airhockey
 
 import android.app.Application
 import dev.vmellos.airhockey.core.ads.AdManager
+import dev.vmellos.airhockey.core.billing.BillingManager
 import dev.vmellos.airhockey.core.audio.GameAudioEngine
 import dev.vmellos.airhockey.core.database.AppDatabase
 import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
@@ -29,6 +30,9 @@ class AirHockeyApp : Application() {
     lateinit var leaderboardRepository: LeaderboardRepository
         private set
 
+    lateinit var billingManager: BillingManager
+        private set
+
     lateinit var adManager: AdManager
         private set
 
@@ -39,7 +43,9 @@ class AirHockeyApp : Application() {
         audioEngine = GameAudioEngine(this)
         database = AppDatabase.getInstance(this)
         leaderboardRepository = LeaderboardRepository(database.leaderboardDao())
-        adManager = AdManager(this)
+        billingManager = BillingManager(this)
+        billingManager.startConnection()
+        adManager = AdManager(this, billingManager)
 
         applicationScope.launch {
             preferencesRepository.userPreferencesFlow.collectLatest { prefs ->

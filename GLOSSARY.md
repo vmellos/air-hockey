@@ -166,6 +166,10 @@ _Avoid_: Pop-up, interstitial, comercial pós-jogo
 O vídeo publicitário assistido por decisão ativa do jogador em troca de benefícios tangíveis, como 2 horas de supressão completa de anúncios ou desbloqueio de estilos cosméticos.
 _Avoid_: Rewarded ad, propaganda premiada, vídeo de bônus
 
+**Remoção Permanente de Anúncios**:
+O produto digital não consumível adquirido na Google Play Store que suprime em definitivo anúncios em banner e intersticiais na conta do jogador.
+_Avoid_: Versão paga, premium, versão vip, assinatura, compra pro, pacote ad-free
+
 **Portal Oficial**:
 O sítio institucional estático hospedado no Cloudflare Pages contendo a apresentação do jogo, documentação legal de privacidade e arquivo de validação `app-ads.txt`.
 _Avoid_: Site, homepage, web portal

@@ -20,7 +20,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,8 +60,11 @@ import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
+import dev.vmellos.airhockey.core.billing.BillingEvent
 import dev.vmellos.airhockey.core.localization.LocaleHelper
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.util.findActivity
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
@@ -69,6 +76,30 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val preferencesRepo = AirHockeyApp.instance.preferencesRepository
     val prefs by preferencesRepo.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+    val billingManager = AirHockeyApp.instance.billingManager
+    val isAdsRemovedPermanently by billingManager.isAdsRemoved.collectAsState()
+    val formattedPrice by billingManager.formattedPrice.collectAsState()
+    val isLoadingPrice by billingManager.isLoadingPrice.collectAsState()
+    val activity = context.findActivity()
+
+    var feedbackMessage by remember { mutableStateOf<String?>(null) }
+    val successStr = stringResource(R.string.remove_ads_feedback_success)
+    val restoredStr = stringResource(R.string.remove_ads_feedback_restored)
+    val notFoundStr = stringResource(R.string.remove_ads_feedback_not_found)
+    val errorStr = stringResource(R.string.remove_ads_feedback_error)
+    val canceledStr = stringResource(R.string.remove_ads_feedback_canceled)
+
+    LaunchedEffect(Unit) {
+        billingManager.events.collectLatest { event ->
+            when (event) {
+                is BillingEvent.PurchaseSuccess -> feedbackMessage = successStr
+                is BillingEvent.RestoreSuccess -> feedbackMessage = restoredStr
+                is BillingEvent.RestoreNotFound -> feedbackMessage = notFoundStr
+                is BillingEvent.PurchaseCanceled -> feedbackMessage = canceledStr
+                is BillingEvent.BillingError -> feedbackMessage = errorStr
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -92,6 +123,172 @@ fun SettingsScreen(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (feedbackMessage != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E5FF)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = feedbackMessage.orEmpty(),
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { feedbackMessage = null },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Fechar",
+                            tint = Color(0xFF94A3B8),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Seção Remoção Permanente de Anúncios
+        Text(
+            text = stringResource(R.string.remove_ads_title),
+            color = Color(0xFF00E5FF),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isAdsRemovedPermanently) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF132F2B)),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.remove_ads_active),
+                            color = Color(0xFF10B981),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.remove_ads_active_desc),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        } else {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.remove_ads_desc),
+                        color = Color(0xFFCBD5E1),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                if (activity != null) {
+                                    billingManager.launchPurchaseFlow(activity)
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingBag,
+                                contentDescription = null,
+                                tint = Color(0xFF0A0E1A),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            val buttonText = formattedPrice ?: if (isLoadingPrice) {
+                                stringResource(R.string.remove_ads_price_loading)
+                            } else {
+                                stringResource(R.string.remove_ads_buy)
+                            }
+                            Text(
+                                text = buttonText,
+                                color = Color(0xFF0A0E1A),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = { billingManager.restorePurchases() },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E5FF))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Restore,
+                                contentDescription = null,
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.remove_ads_restore),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
