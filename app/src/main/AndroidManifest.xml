@@ -37,6 +37,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AirHockey"
+        android:localeConfig="@xml/locales_config"
         android:usesCleartextTraffic="true">
 
         <!-- Google AdMob Application ID (Configured via manifestPlaceholders) -->

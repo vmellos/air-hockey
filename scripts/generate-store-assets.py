@@ -17,9 +17,15 @@ RES_DIR = os.path.join(BASE_DIR, "app/src/main/res")
 STORE_DIR = os.path.join(BASE_DIR, "store_assets")
 
 FONT_BOLD = "/usr/share/fonts/julietaula-montserrat-fonts/Montserrat-Bold.otf"
+FONT_EXTRABOLD = "/usr/share/fonts/julietaula-montserrat-fonts/Montserrat-ExtraBold.otf"
+FONT_MEDIUM = "/usr/share/fonts/julietaula-montserrat-fonts/Montserrat-Medium.otf"
 FONT_REGULAR = "/usr/share/fonts/julietaula-montserrat-fonts/Montserrat-Regular.otf"
 if not os.path.exists(FONT_BOLD):
     FONT_BOLD = "/usr/share/fonts/google-droid-sans-fonts/DroidSans-Bold.ttf"
+if not os.path.exists(FONT_EXTRABOLD):
+    FONT_EXTRABOLD = FONT_BOLD
+if not os.path.exists(FONT_MEDIUM):
+    FONT_MEDIUM = "/usr/share/fonts/google-droid-sans-fonts/DroidSans.ttf"
 if not os.path.exists(FONT_REGULAR):
     FONT_REGULAR = "/usr/share/fonts/google-droid-sans-fonts/DroidSans.ttf"
 
@@ -209,136 +215,192 @@ def generate_air_hockey_icon(size=512, is_foreground_only=False):
         return glow_layer
 
 
-def generate_feature_graphic(lang="pt"):
+def generate_feature_graphic(lang="en"):
     """
     Renders the official 1024x500 Feature Graphic banner for Google Play.
-    Left: Copywriting & Badges
+    Left: Copywriting & Badges (Clean, legible, dynamic width, no FPS reference)
     Right: Dual Phone Mockup showing the Mesa Estendida experience!
     """
     canvas_w, canvas_h = 1024, 500
-    banner = Image.new("RGB", (canvas_w, canvas_h), (8, 12, 26))
+    banner = Image.new("RGBA", (canvas_w, canvas_h), (10, 14, 26, 255))
+
+    # 1. Ambient Lighting Layer
+    glow = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    
+    # Left ambient soft blue
+    glow_draw.ellipse([-80, 80, 480, 620], fill=(0, 100, 255, 35))
+    # Top right crimson glow behind top phone
+    glow_draw.ellipse([640, -60, 960, 260], fill=(255, 42, 109, 65))
+    # Bottom right cyan glow behind bottom phone
+    glow_draw.ellipse([630, 260, 950, 580], fill=(0, 229, 255, 60))
+    # Golden center glow behind seam/puck
+    glow_draw.ellipse([670, 150, 890, 370], fill=(255, 180, 0, 80))
+    
+    glow = glow.filter(ImageFilter.GaussianBlur(55))
+    banner = Image.alpha_composite(banner, glow)
+
+    # 2. Subtle Tech Grid Pattern
+    grid = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    grid_draw = ImageDraw.Draw(grid)
+    for y in range(0, canvas_h, 24):
+        grid_draw.line([(0, y), (canvas_w, y)], fill=(120, 160, 220, 14), width=1)
+    for x in range(0, canvas_w, 24):
+        grid_draw.line([(x, 0), (x, canvas_h)], fill=(120, 160, 220, 14), width=1)
+    banner = Image.alpha_composite(banner, grid)
+
+    # 3. Dual Phone Mockup (Right Side)
+    cx = 780
+    pw = 184
+    ph = 196
+    gap = 8
+    total_h = ph * 2 + gap
+    top_y = (canvas_h - total_h) // 2
+
+    p1_box = [cx - pw//2, top_y, cx + pw//2, top_y + ph]
+    p2_box = [cx - pw//2, top_y + ph + gap, cx + pw//2, top_y + ph + gap + ph]
+
+    # Drop shadows for phones
+    shadow = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    s_draw = ImageDraw.Draw(shadow)
+    s_draw.rounded_rectangle([p1_box[0]-6, p1_box[1]+6, p1_box[2]+6, p1_box[3]+10], radius=24, fill=(0, 0, 0, 140))
+    s_draw.rounded_rectangle([p2_box[0]-6, p2_box[1]+6, p2_box[2]+6, p2_box[3]+10], radius=24, fill=(0, 0, 0, 140))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(14))
+    banner = Image.alpha_composite(banner, shadow)
+
     draw = ImageDraw.Draw(banner)
 
-    # 1. Background grid and ambient glow
-    for y in range(0, canvas_h, 32):
-        draw.line([(0, y), (canvas_w, y)], fill=(16, 24, 48), width=1)
-    for x in range(0, canvas_w, 32):
-        draw.line([(x, 0), (x, canvas_h)], fill=(16, 24, 48), width=1)
+    # ------------------ Phone 1 (Top Device) ------------------
+    draw.rounded_rectangle(p1_box, radius=22, fill=(24, 30, 44), outline=(70, 85, 120), width=2)
+    s1 = [p1_box[0] + 6, p1_box[1] + 6, p1_box[2] - 6, p1_box[3] - 4]
+    draw.rounded_rectangle(s1, radius=16, fill=(8, 12, 22))
+    draw.rounded_rectangle(s1, radius=16, outline=(255, 42, 109, 90), width=2)
+    draw.arc([cx - 44, s1[1] - 18, cx + 44, s1[1] + 46], start=0, end=180, fill=(255, 42, 109), width=3)
+    striker1_y = s1[1] + 55
+    draw.ellipse([cx - 28, striker1_y - 28, cx + 28, striker1_y + 28], fill=(255, 42, 109, 30))
+    draw.ellipse([cx - 24, striker1_y - 24, cx + 24, striker1_y + 24], fill=(180, 20, 60), outline=(255, 120, 160), width=2)
+    draw.ellipse([cx - 11, striker1_y - 11, cx + 11, striker1_y + 11], fill=(255, 60, 100), outline=(255, 210, 230), width=1)
+    draw.rounded_rectangle([cx - 16, p1_box[1] + 2, cx + 16, p1_box[1] + 4], radius=2, fill=(60, 75, 105))
 
-    # Ambient neon glows
-    # Cyan glow bottom left
-    for r in range(250, 0, -10):
-        alpha = int(45 * (1.0 - r / 250))
-        draw.ellipse([80 - r, 420 - r, 80 + r, 420 + r], fill=(0, 229, 255, alpha))
-    # Crimson glow top right
-    for r in range(320, 0, -10):
-        alpha = int(50 * (1.0 - r / 320))
-        draw.ellipse([850 - r, 80 - r, 850 + r, 80 + r], fill=(255, 42, 109, alpha))
+    # ------------------ Phone 2 (Bottom Device) ------------------
+    draw.rounded_rectangle(p2_box, radius=22, fill=(24, 30, 44), outline=(70, 85, 120), width=2)
+    s2 = [p2_box[0] + 6, p2_box[1] + 4, p2_box[2] - 6, p2_box[3] - 6]
+    draw.rounded_rectangle(s2, radius=16, fill=(8, 12, 22))
+    draw.rounded_rectangle(s2, radius=16, outline=(0, 229, 255, 90), width=2)
+    draw.arc([cx - 44, s2[3] - 46, cx + 44, s2[3] + 18], start=180, end=360, fill=(0, 229, 255), width=3)
+    striker2_y = s2[3] - 55
+    draw.ellipse([cx - 28, striker2_y - 28, cx + 28, striker2_y + 28], fill=(0, 229, 255, 30))
+    draw.ellipse([cx - 24, striker2_y - 24, cx + 24, striker2_y + 24], fill=(0, 140, 185), outline=(100, 240, 255), width=2)
+    draw.ellipse([cx - 11, striker2_y - 11, cx + 11, striker2_y + 11], fill=(0, 229, 255), outline=(220, 255, 255), width=1)
+    draw.rounded_rectangle([cx - 22, p2_box[3] - 4, cx + 22, p2_box[3] - 2], radius=2, fill=(60, 75, 105))
 
-    # 2. Right Side: Dual-Device "Mesa Estendida" Mockup
-    # Two phones placed top-to-top with seamless table inside
-    phone_w = 175
-    phone_h = 295
-    center_x = 760
-    
-    # Phone 1 (Top device - upside down or top half)
-    p1_box = [center_x - phone_w // 2, 35, center_x + phone_w // 2, 35 + phone_h]
-    # Phone 2 (Bottom device)
-    gap_y = 12
-    p2_box = [center_x - phone_w // 2, 35 + phone_h + gap_y, center_x + phone_w // 2, 35 + phone_h * 2 + gap_y]
+    # ------------------ Center Seam Table Graphics ------------------
+    seam_center_y = top_y + ph + gap // 2
+    draw.arc([cx - 40, seam_center_y - 40, cx + 40, seam_center_y + 40], start=180, end=360, fill=(255, 42, 109, 180), width=2)
+    draw.arc([cx - 40, seam_center_y - 40, cx + 40, seam_center_y + 40], start=0, end=180, fill=(0, 229, 255, 180), width=2)
+    draw.line([(s1[0], s1[3]), (s1[2], s1[3])], fill=(255, 42, 109, 220), width=2)
+    draw.line([(s2[0], s2[1]), (s2[2], s2[1])], fill=(0, 229, 255, 220), width=2)
 
-    # Draw Phone 1 frame
-    draw.rounded_rectangle([p1_box[0] - 5, p1_box[1] - 5, p1_box[2] + 5, p1_box[3] + 5], radius=24, fill=(28, 34, 52), outline=(0, 229, 255, 120), width=2)
-    draw.rounded_rectangle(p1_box, radius=20, fill=(10, 16, 32))
+    # Translucent glass reflection sheen
+    sheen = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
+    sheen_draw = ImageDraw.Draw(sheen)
+    sheen_draw.polygon([(cx - 70, top_y), (cx + 10, top_y), (cx - 30, top_y + total_h), (cx - 110, top_y + total_h)], fill=(255, 255, 255, 15))
+    banner = Image.alpha_composite(banner, sheen)
+    draw = ImageDraw.Draw(banner)
 
-    # Draw Phone 2 frame
-    draw.rounded_rectangle([p2_box[0] - 5, p2_box[1] - 5, p2_box[2] + 5, p2_box[3] + 5], radius=24, fill=(28, 34, 52), outline=(0, 229, 255, 120), width=2)
-    draw.rounded_rectangle(p2_box, radius=20, fill=(10, 16, 32))
-
-    # Draw table extending across both phones!
-    # Goal at Top Phone
-    draw.arc([center_x - 45, 45, center_x + 45, 95], start=0, end=180, fill=(255, 42, 109), width=3)
-    # Opponent Striker (Top)
-    draw.ellipse([center_x - 22, 110, center_x + 22, 154], fill=(220, 20, 60), outline=(255, 120, 160), width=2)
-
-    # Dividing line right between the two phones (simulating the physical seam)
-    seam_y = 35 + phone_h + gap_y // 2
-    draw.line([(center_x - phone_w // 2, seam_y), (center_x + phone_w // 2, seam_y)], fill=(0, 229, 255, 180), width=2)
-
-    # Center circle spanning the seam!
-    draw.ellipse([center_x - 40, seam_y - 40, center_x + 40, seam_y + 40], outline=(0, 229, 255, 180), width=2)
+    # Dynamic Motion Trail from bottom to top crossing the seam
+    puck_x = cx + 18
+    puck_y = seam_center_y - 4
+    for i in range(18):
+        t = i / 18.0
+        tx = (cx - 8) + (puck_x - (cx - 8)) * t
+        ty = (striker2_y - 18) + (puck_y - (striker2_y - 18)) * t
+        r = int(5 + 8 * t)
+        alpha = int(190 * (t ** 1.6))
+        draw.ellipse([tx - r, ty - r, tx + r, ty + r], fill=(255, 175, 0, alpha))
 
     # Glowing Puck crossing the seam!
-    pk_x = center_x + 12
-    pk_y = seam_y - 6
-    draw.ellipse([pk_x - 14, pk_y - 14, pk_x + 14, pk_y + 14], fill=(255, 200, 0), outline=(255, 255, 255), width=2)
+    draw.ellipse([puck_x - 22, puck_y - 22, puck_x + 22, puck_y + 22], fill=(255, 160, 0, 60))
+    draw.ellipse([puck_x - 16, puck_y - 16, puck_x + 16, puck_y + 16], fill=(255, 180, 0, 110))
+    draw.ellipse([puck_x - 13, puck_y - 13, puck_x + 13, puck_y + 13], fill=(255, 220, 0, 230), outline=(255, 255, 255), width=2)
+    draw.ellipse([puck_x - 6, puck_y - 6, puck_x + 6, puck_y + 6], fill=(255, 255, 240))
 
-    # Motion trail across the seam
-    draw.line([(center_x - 15, seam_y + 55), (pk_x, pk_y)], fill=(255, 160, 0, 180), width=5)
+    # Sparks around puck
+    sparks = [(14, -16), (-12, -14), (18, 10), (-16, 14), (10, 18), (-10, -20), (22, -4), (-20, 6)]
+    for dx, dy in sparks:
+        draw.line([(puck_x, puck_y), (puck_x + dx, puck_y + dy)], fill=(255, 255, 210, 220), width=2)
 
-    # Player Striker (Bottom Phone)
-    draw.ellipse([center_x - 24, 35 + phone_h + gap_y + 60, center_x + 24, 35 + phone_h + gap_y + 108], fill=(0, 180, 230), outline=(140, 245, 255), width=2)
-
-    # 3. Left Side: Typography and ASO Selling Points
-    font_badge = ImageFont.truetype(FONT_BOLD, 14)
-    font_title = ImageFont.truetype(FONT_BOLD, 46)
-    font_sub = ImageFont.truetype(FONT_BOLD, 22)
-    font_desc = ImageFont.truetype(FONT_REGULAR, 17)
-    font_tag = ImageFont.truetype(FONT_BOLD, 13)
+    # 4. Left Side Typography & Elements
+    font_badge = ImageFont.truetype(FONT_BOLD, 13)
+    font_title = ImageFont.truetype(FONT_EXTRABOLD, 46)
+    font_sub = ImageFont.truetype(FONT_BOLD, 21)
+    font_desc = ImageFont.truetype(FONT_MEDIUM, 16)
+    font_tag = ImageFont.truetype(FONT_BOLD, 12)
 
     if lang == "en":
-        badge_text = "REAL-TIME DUAL DEVICE MULTIPLAYER"
+        badge_text = "DUAL SCREEN MULTIPLAYER"
         title_text = "AIR HOCKEY 2P"
         sub_text = "EXTENDED TABLE ACROSS 2 PHONES"
-        desc_text = "Connect two phones top-to-top via Wi-Fi or Hotspot.\nThe puck glides seamlessly from screen to screen!"
+        desc_text = "Place two phones top-to-top to play on one huge table!\n100% offline via local Wi-Fi or Hotspot."
         tag1 = "100% OFFLINE"
-        tag2 = "ZERO LAG HOTSPOT"
-        tag3 = "ARCADE 60/120 FPS"
+        tag2 = "ZERO LAG WI-FI"
+        tag3 = "INSTANT QR PAIR"
     elif lang == "es":
-        badge_text = "MULTIJUGADOR LOCAL EN 2 CELULARES"
+        badge_text = "MULTIJUGADOR EN 2 CELULARES"
         title_text = "AIR HOCKEY 2P"
         sub_text = "MESA EXTENDIDA EN 2 PANTALLAS"
-        desc_text = "Coloca dos celulares punta a punta por Wi-Fi o Punto de Acceso.\n¡El disco pasa fluidamente de una pantalla a la otra!"
+        desc_text = "Conecta dos celulares punta a punta por Wi-Fi o Hotspot.\nEl disco pasa fluidamente de una pantalla a la otra!"
         tag1 = "100% SIN INTERNET"
-        tag2 = "CERO LAG HOTSPOT"
-        tag3 = "ARCADE 60/120 FPS"
+        tag2 = "CERO LAG WI-FI"
+        tag3 = "CONEXION POR QR"
     else: # pt
-        badge_text = "MULTIJOGADOR LOCAL EM 2 CELULARES"
+        badge_text = "MULTIJOGADOR EM 2 CELULARES"
         title_text = "AIR HOCKEY 2P"
         sub_text = "MESA ESTENDIDA EM 2 TELAS"
-        desc_text = "Junte dois celulares topo-a-topo por Wi-Fi ou Ponto de Acesso.\nO disco desliza suavemente de uma tela para a outra!"
+        desc_text = "Encoste dois celulares topo-a-topo para jogar em tela dupla!\n100% offline via Wi-Fi local ou Ponto de Acesso."
         tag1 = "100% OFFLINE"
-        tag2 = "ZERO LAG HOTSPOT"
-        tag3 = "ARCADE 60/120 FPS"
+        tag2 = "ZERO LAG WI-FI"
+        tag3 = "PAREAMENTO POR QR"
 
-    # Category capsule
-    draw.rounded_rectangle([60, 52, 60 + 340, 84], radius=16, fill=(16, 32, 64), outline=(0, 229, 255, 180), width=1)
-    draw.text((76, 60), badge_text, font=font_badge, fill=(0, 229, 255))
+    margin_x = 64
+
+    # Category Capsule (Pill) with dynamic width
+    badge_w = int(draw.textlength(badge_text, font=font_badge))
+    pill_w = badge_w + 32
+    pill_h = 32
+    pill_y = 60
+    draw.rounded_rectangle([margin_x, pill_y, margin_x + pill_w, pill_y + pill_h], radius=16, fill=(16, 28, 52), outline=(0, 229, 255), width=2)
+    text_x = margin_x + 16
+    text_y = pill_y + 8
+    draw.text((text_x, text_y), badge_text, font=font_badge, fill=(0, 240, 255))
 
     # Main Title
-    draw.text((60, 102), title_text, font=font_title, fill=(255, 255, 255))
+    draw.text((margin_x, 112), title_text, font=font_title, fill=(255, 255, 255))
 
-    # Subtitle
-    draw.text((60, 166), sub_text, font=font_sub, fill=(0, 229, 255))
+    # Subtitle (Cyan)
+    draw.text((margin_x, 178), sub_text, font=font_sub, fill=(0, 229, 255))
 
-    # Description lines
+    # Description
     lines = desc_text.split("\n")
-    y_off = 214
+    cur_y = 226
     for line in lines:
-        draw.text((60, y_off), line, font=font_desc, fill=(180, 195, 220))
-        y_off += 28
+        draw.text((margin_x, cur_y), line, font=font_desc, fill=(185, 205, 230))
+        cur_y += 26
 
-    # Feature tags
+    # Tags (Pills)
     tags = [tag1, tag2, tag3]
-    tx = 60
-    ty = 305
+    tx = margin_x
+    ty = 320
     for tag in tags:
         tw = int(draw.textlength(tag, font=font_tag)) + 24
-        draw.rounded_rectangle([tx, ty, tx + tw, ty + 34], radius=8, fill=(20, 28, 48), outline=(255, 42, 109, 160), width=1)
-        draw.text((tx + 12, ty + 8), tag, font=font_tag, fill=(255, 180, 205))
+        draw.rounded_rectangle([tx, ty, tx + tw, ty + 36], radius=10, fill=(24, 30, 48), outline=(255, 42, 109, 180), width=1)
+        draw.text((tx + 12, ty + 10), tag, font=font_tag, fill=(255, 190, 215))
         tx += tw + 14
 
-    return banner
+    # Convert to pure RGB for Google Play Store compliance
+    rgb_banner = Image.new("RGB", (canvas_w, canvas_h), (10, 14, 26))
+    rgb_banner.paste(banner, (0, 0), banner)
+    return rgb_banner
 
 
 def generate_launcher_icons():
@@ -388,19 +450,28 @@ def generate_launcher_icons():
         print(f"✓ Generated {folder} ({size}x{size})")
 
     # Generate Feature Graphics in 3 languages
+    # English (default)
+    fg_en = generate_feature_graphic("en")
+    fg_en_root = os.path.join(STORE_DIR, "feature_graphic_1024x500.png")
+    fg_en.save(fg_en_root, "PNG", optimize=True)
+    os.makedirs(os.path.join(STORE_DIR, "feature_graphic/en"), exist_ok=True)
+    fg_en.save(os.path.join(STORE_DIR, "feature_graphic/en/feature_graphic_1024x500.png"), "PNG", optimize=True)
+    fg_en.save(os.path.join(BASE_DIR, "web/feature_graphic.png"), "PNG", optimize=True)
+    print(f"✓ Saved Feature Graphic (EN / Default): {fg_en_root}")
+
+    # Portuguese
     fg_pt = generate_feature_graphic("pt")
-    fg_pt_path = os.path.join(STORE_DIR, "feature_graphic_1024x500.png")
+    os.makedirs(os.path.join(STORE_DIR, "feature_graphic/pt"), exist_ok=True)
+    fg_pt_path = os.path.join(STORE_DIR, "feature_graphic/pt/feature_graphic_1024x500.png")
     fg_pt.save(fg_pt_path, "PNG", optimize=True)
-    fg_pt.save(os.path.join(STORE_DIR, "feature_graphic/pt/feature_graphic_1024x500.png"), "PNG", optimize=True)
     print(f"✓ Saved Feature Graphic (PT): {fg_pt_path}")
 
-    fg_en = generate_feature_graphic("en")
-    fg_en.save(os.path.join(STORE_DIR, "feature_graphic/en/feature_graphic_1024x500.png"), "PNG", optimize=True)
-    print("✓ Saved Feature Graphic (EN)")
-
+    # Spanish
     fg_es = generate_feature_graphic("es")
-    fg_es.save(os.path.join(STORE_DIR, "feature_graphic/es/feature_graphic_1024x500.png"), "PNG", optimize=True)
-    print("✓ Saved Feature Graphic (ES)")
+    os.makedirs(os.path.join(STORE_DIR, "feature_graphic/es"), exist_ok=True)
+    fg_es_path = os.path.join(STORE_DIR, "feature_graphic/es/feature_graphic_1024x500.png")
+    fg_es.save(fg_es_path, "PNG", optimize=True)
+    print(f"✓ Saved Feature Graphic (ES): {fg_es_path}")
 
 
 if __name__ == "__main__":

@@ -224,7 +224,14 @@ Se o Google Play Console solicitar instruções de acesso para testes ("Acesso a
 
 Os seguintes ativos foram gerados no diretório [`store_assets/`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/):
 - **Ícone de Alta Resolução:** [`store_assets/icon_512x512.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/icon_512x512.png) (512x512, RGB 32-bit sem transparência)
-- **Gráfico de Recursos Principal (PT):** [`store_assets/feature_graphic_1024x500.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/feature_graphic_1024x500.png) (1024x500)
+- **Gráfico de Recursos Principal (EN / Padrão):** [`store_assets/feature_graphic_1024x500.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/feature_graphic_1024x500.png) (1024x500)
 - **Gráfico de Recursos em Inglês:** [`store_assets/feature_graphic/en/feature_graphic_1024x500.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/feature_graphic/en/feature_graphic_1024x500.png)
+- **Gráfico de Recursos em Português:** [`store_assets/feature_graphic/pt/feature_graphic_1024x500.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/feature_graphic/pt/feature_graphic_1024x500.png)
 - **Gráfico de Recursos em Espanhol:** [`store_assets/feature_graphic/es/feature_graphic_1024x500.png`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/feature_graphic/es/feature_graphic_1024x500.png)
+- **Capturas de Tela ASO (1080x2340 px - 19.5:9):**
+  - **Inglês (Padrão):** [`store_assets/screenshots/en/`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/screenshots/en/) (5 telas diagramadas)
+  - **Português:** [`store_assets/screenshots/pt/`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/screenshots/pt/) (5 telas diagramadas)
+  - **Espanhol:** [`store_assets/screenshots/es/`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/screenshots/es/) (5 telas diagramadas)
+  - **Capturas Brutas (Raw):** [`store_assets/screenshots/raw/`](file:///home/vinicius/AndroidStudioProjects/AirHockey/store_assets/screenshots/raw/)
+- **Script de Automação de Capturas:** [`scripts/generate-store-screenshots.py`](file:///home/vinicius/AndroidStudioProjects/AirHockey/scripts/generate-store-screenshots.py)
 - **Ícones Adaptativos no App:** [`app/src/main/res/drawable/ic_launcher_foreground.xml`](file:///home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/res/drawable/ic_launcher_foreground.xml), [`app/src/main/res/drawable/ic_launcher_background.xml`](file:///home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/res/drawable/ic_launcher_background.xml) e pastas `mipmap-mdpi` até `mipmap-xxxhdpi`.
