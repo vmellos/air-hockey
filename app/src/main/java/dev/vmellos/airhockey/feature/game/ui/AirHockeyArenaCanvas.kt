@@ -109,26 +109,12 @@ fun AirHockeyArenaCanvas(
         }
     }
 
-    // Frame pulse acoplado ao vsync do display com medição de FPS
+    // Frame pulse acoplado ao vsync do display
     var framePulse by remember { mutableLongStateOf(0L) }
-    var currentFps by remember { mutableIntStateOf(60) }
-    var frameCount by remember { mutableIntStateOf(0) }
-    var lastFpsTimestamp by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(Unit) {
         while (true) {
             withFrameNanos { time ->
-                frameCount++
-                if (lastFpsTimestamp == 0L) {
-                    lastFpsTimestamp = time
-                } else {
-                    val elapsedNanos = time - lastFpsTimestamp
-                    if (elapsedNanos >= 500_000_000L) {
-                        currentFps = ((frameCount * 1_000_000_000L) / elapsedNanos).toInt()
-                        frameCount = 0
-                        lastFpsTimestamp = time
-                    }
-                }
                 framePulse = time
             }
         }
@@ -242,29 +228,6 @@ fun AirHockeyArenaCanvas(
                 }
 
                 drawPuck(puckScreen.x, puckScreen.y, engine.puck.radius * scale)
-            }
-        }
-
-        // Contador de FPS em tempo real
-        if (prefs.showFps) {
-            Surface(
-                color = Color(0xAA0A0E1A),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color(0x44FFFFFF)),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(top = 70.dp, end = 20.dp)
-            ) {
-                val fpsColor = if (currentFps >= 55) Color(0xFF10B981) else if (currentFps >= 30) Color(0xFFFBBF24) else Color(0xFFEF4444)
-                Text(
-                    text = "$currentFps FPS",
-                    color = fpsColor,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
             }
         }
     }

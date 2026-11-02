@@ -117,6 +117,5 @@
     <string name="settings_player_name_empty">O nome não pode ficar em branco</string>
     <string name="cancel">Cancelar</string>
     <string name="game_draw">Empate!</string>
-    <string name="settings_show_fps">Exibir Contador de FPS</string>
-    <string name="settings_show_fps_desc">Mostra a taxa de quadros por segundo em tempo real durante a partida</string>
+
 </resources>

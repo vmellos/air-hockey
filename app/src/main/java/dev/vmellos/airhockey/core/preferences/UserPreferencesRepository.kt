@@ -33,7 +33,6 @@ class UserPreferencesRepository(private val context: Context) {
         val TOUCH_OFFSET_ENABLED = booleanPreferencesKey("touch_offset_enabled")
         val PUCK_SPEED = stringPreferencesKey("puck_speed")
         val PLAYER_NAME = stringPreferencesKey("player_name")
-        val SHOW_FPS = booleanPreferencesKey("show_fps")
     }
 
     companion object {
@@ -89,7 +88,6 @@ class UserPreferencesRepository(private val context: Context) {
             }
             val storedName = preferences[PreferencesKeys.PLAYER_NAME]
             val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)
-            val showFps = preferences[PreferencesKeys.SHOW_FPS] ?: false
 
             UserPreferences(
                 appLanguage = lang,
@@ -103,8 +101,7 @@ class UserPreferencesRepository(private val context: Context) {
                 matchTimeSeconds = matchTime,
                 touchOffsetEnabled = touchOffsetEnabled,
                 puckSpeed = puckSpeed,
-                playerName = playerName,
-                showFps = showFps
+                playerName = playerName
             )
         }
 
@@ -189,12 +186,6 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setPuckSpeed(preset: PuckSpeedPreset) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.PUCK_SPEED] = preset.name
-        }
-    }
-
-    suspend fun setShowFps(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.SHOW_FPS] = enabled
         }
     }
 }

@@ -31,6 +31,5 @@ data class UserPreferences(
     val matchTimeSeconds: Int = 180,
     val touchOffsetEnabled: Boolean = true,
     val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL,
-    val playerName: String = "",
-    val showFps: Boolean = false
+    val playerName: String = ""
 )

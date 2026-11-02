@@ -14,9 +14,6 @@
     <uses-permission
         android:name="android.permission.ACCESS_FINE_LOCATION"
         android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.ACCESS_LOCAL_NETWORK"
-        tools:ignore="ProtectedPermissions" />
 
     <!-- Haptic feedback for tactile paddle/puck impacts -->
     <uses-permission android:name="android.permission.VIBRATE" />

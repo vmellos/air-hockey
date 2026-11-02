@@ -134,6 +134,6 @@ _Avoid_: Pacote de som, broadcast de áudio, sync de áudio
 A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
 _Avoid_: Ícone de campo, desenho do modo, preview da mesa
 
-**Contador de FPS**:
-O indicador opcional na arena que exibe em tempo real a taxa de quadros por segundo entregue pelo motor de renderização.
+**Contador de FPS** (Descontinuado):
+O antigo indicador na arena que exibia a taxa de quadros por segundo entregue pelo motor de renderização, removido na preparação para publicação na loja.
 _Avoid_: Frame counter, medidor de taxa, taxa de quadros, medidor de fps
