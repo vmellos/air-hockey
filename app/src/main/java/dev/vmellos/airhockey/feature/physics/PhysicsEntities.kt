@@ -8,20 +8,22 @@ class Puck(
     var y: Float = 1000f,
     var vx: Float = 0f,
     var vy: Float = 0f,
-    var radius: Float = 36f
+    var radius: Float = 36f,
+    var lastHitBy: Int = 0
 ) {
     fun reset(centerX: Float, centerY: Float) {
         x = centerX
         y = centerY
         vx = 0f
         vy = 0f
+        lastHitBy = 0
     }
 
     fun speedSquared(): Float = vx * vx + vy * vy
 
     fun speed(): Float = kotlin.math.sqrt(speedSquared())
 
-    fun createSnapshot(): PuckSnapshot = PuckSnapshot(x, y, vx, vy, radius)
+    fun createSnapshot(): PuckSnapshot = PuckSnapshot(x, y, vx, vy, radius, lastHitBy)
 }
 
 data class PuckSnapshot(
@@ -29,7 +31,8 @@ data class PuckSnapshot(
     val y: Float,
     val vx: Float,
     val vy: Float,
-    val radius: Float
+    val radius: Float,
+    val lastHitBy: Int = 0
 )
 
 class Mallet(

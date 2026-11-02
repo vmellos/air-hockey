@@ -257,7 +257,17 @@ class GameAudioEngine(private val context: Context) {
         }
     }
 
+    fun stopAll() {
+        soundPool.autoPause()
+        vibrator?.cancel()
+    }
+
+    fun resumeAudio() {
+        soundPool.autoResume()
+    }
+
     fun release() {
+        stopAll()
         soundPool.release()
     }
 }

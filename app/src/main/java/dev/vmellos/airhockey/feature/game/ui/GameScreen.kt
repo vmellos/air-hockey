@@ -15,6 +15,10 @@ import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
 
+import androidx.compose.runtime.rememberCoroutineScope
+import dev.vmellos.airhockey.core.preferences.UserPreferences
+import kotlinx.coroutines.launch
+
 @Composable
 fun GameScreen(
     viewModel: GameViewModel,
@@ -24,6 +28,8 @@ fun GameScreen(
 ) {
     val matchState by viewModel.matchState.collectAsState()
     val isSoundEnabled by viewModel.soundEnabled.collectAsState()
+    val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+    val scope = rememberCoroutineScope()
 
     // O BackHandler nunca fecha o jogo sem confirmação:
     // Ele pausa o jogo e exibe o diálogo de opções (Continuar, Reiniciar, Sair para o Menu).
@@ -43,9 +49,19 @@ fun GameScreen(
         }
     }
 
-    DisposableEffect(Unit) {
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                viewModel.pauseMatch()
+                AirHockeyApp.instance.audioEngine.stopAll()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.stopMatch()
+            AirHockeyApp.instance.audioEngine.stopAll()
         }
     }
 
@@ -72,7 +88,8 @@ fun GameScreen(
 
         // Overlay de Gol/Ponto
         if (matchState.status == MatchStatus.GOAL_PAUSE) {
-            GoalBannerOverlay(scorer = matchState.lastScorer)
+            val scorerName = if (matchState.lastScorer == 1) matchState.player1Name else matchState.player2Name
+            GoalBannerOverlay(scorer = matchState.lastScorer, scorerName = scorerName)
         }
 
         // Diálogo de Pausa
@@ -80,6 +97,12 @@ fun GameScreen(
             PauseDialog(
                 isSoundEnabled = isSoundEnabled,
                 onToggleSound = { viewModel.toggleSound() },
+                visualEffectsProfile = prefs.visualEffectsProfile,
+                onChangeVisualEffects = { profile ->
+                    scope.launch {
+                        AirHockeyApp.instance.preferencesRepository.setVisualEffectsProfile(profile)
+                    }
+                },
                 onResume = { viewModel.resumeMatch() },
                 onRestart = { viewModel.restartMatch() },
                 onExit = {

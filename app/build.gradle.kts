@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "dev.vmellos.airhockey"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.vmellos.airhockey"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 2
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

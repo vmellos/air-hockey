@@ -42,9 +42,9 @@ class MainActivity : ComponentActivity() {
     private var deepLinkUri by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        window.decorView.keepScreenOn = true
 
         AirHockeyApp.instance.adManager.initialize(this)
 
@@ -64,6 +64,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        AirHockeyApp.instance.audioEngine.stopAll()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        AirHockeyApp.instance.audioEngine.stopAll()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -108,27 +118,33 @@ fun AirHockeyAppNavigation(
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
                     }
+                    val puckPreset = when (userPrefs.aiDifficulty) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
+                    }
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         aiDifficulty = userPrefs.aiDifficulty,
-                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
-                        airFriction = userPrefs.puckSpeed.airFriction,
+                        puckMaxSpeed = puckPreset.maxSpeed,
+                        airFriction = puckPreset.airFriction,
                         player1Name = p1,
                         player2Name = "IA ($diff)"
                     )
                     navController.navigate("game/SOLO")
                 },
                 onStartSplit = {
+                    val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
                     gameViewModel.initializeMatch(
                         mode = GameMode.SPLIT_SCREEN,
                         bezelGapMm = userPrefs.bezelGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        puckMaxSpeed = userPrefs.puckSpeed.maxSpeed,
-                        airFriction = userPrefs.puckSpeed.airFriction,
+                        puckMaxSpeed = puckPreset.maxSpeed,
+                        airFriction = puckPreset.airFriction,
                         player1Name = "Jogador 1",
                         player2Name = "Jogador 2"
                     )

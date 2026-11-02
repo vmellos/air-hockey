@@ -170,55 +170,61 @@ fun CountdownOverlay(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            color = Color(0x660A0E1A),
-            shape = RoundedCornerShape(20.dp),
-            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0x8800E5FF))
-        ) {
-            Text(
-                text = displayText,
-                color = if (countdownNumber == 0) Color(0xFF10B981) else Color(0xFF00E5FF),
-                fontSize = if (countdownNumber == 0) 56.sp else 64.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp, vertical = 12.dp)
-            )
-        }
+        Text(
+            text = displayText,
+            color = if (countdownNumber == 0) Color(0xFF10B981) else Color(0xFF00E5FF),
+            fontSize = if (countdownNumber == 0) 64.sp else 80.sp,
+            fontWeight = FontWeight.Black,
+            fontFamily = FontFamily.SansSerif,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
 
 @Composable
 fun GoalBannerOverlay(
     scorer: Int,
+    scorerName: String = "",
     modifier: Modifier = Modifier
 ) {
+    val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
+    val displayName = scorerName.ifBlank { if (scorer == 1) "JOGADOR 1" else "JOGADOR 2" }
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
-        Surface(
-            color = Color(0xDD0A0E1A),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(2.dp, color)
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 40.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = stringResource(R.string.game_goal),
+                color = color,
+                fontSize = 58.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 8.sp,
+                fontFamily = FontFamily.SansSerif,
+                style = androidx.compose.ui.text.TextStyle(
+                    shadow = androidx.compose.ui.graphics.Shadow(
+                        color = color.copy(alpha = 0.9f),
+                        blurRadius = 32f
+                    )
+                )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = color.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.2.dp, color.copy(alpha = 0.50f))
             ) {
                 Text(
-                    text = stringResource(R.string.game_goal),
-                    color = color,
-                    fontSize = 38.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 4.sp
-                )
-                Text(
-                    text = if (scorer == 1) "P1" else "P2",
+                    text = displayName.uppercase(),
                     color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.5.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
                 )
             }
         }
@@ -278,6 +284,8 @@ fun PeerExitedDialog(
 fun PauseDialog(
     isSoundEnabled: Boolean = true,
     onToggleSound: () -> Unit = {},
+    visualEffectsProfile: dev.vmellos.airhockey.core.preferences.VisualEffectsProfile = dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL,
+    onChangeVisualEffects: (dev.vmellos.airhockey.core.preferences.VisualEffectsProfile) -> Unit = {},
     onResume: () -> Unit,
     onRestart: () -> Unit,
     onExit: () -> Unit
@@ -304,7 +312,7 @@ fun PauseDialog(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -327,7 +335,80 @@ fun PauseDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                // Seletor Rápido de Efeitos Visuais
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_visual_effects),
+                        color = Color.White,
+                        fontSize = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val full = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL
+                        val balanced = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED
+                        val off = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF
+
+                        Surface(
+                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (full) Color(0x3300E5FF) else Color(0xFF0F172A),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (full) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Completo",
+                                color = if (full) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = if (full) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        Surface(
+                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (balanced) Color(0x3300E5FF) else Color(0xFF0F172A),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (balanced) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Econômico",
+                                color = if (balanced) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = if (balanced) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        Surface(
+                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (off) Color(0x3300E5FF) else Color(0xFF0F172A),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (off) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Mínimo",
+                                color = if (off) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = if (off) FontWeight.Bold else FontWeight.Normal,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Button(
                     onClick = onResume,
@@ -337,7 +418,7 @@ fun PauseDialog(
                     Text(stringResource(R.string.game_resume), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 FilledTonalButton(
                     onClick = onRestart,
@@ -346,7 +427,7 @@ fun PauseDialog(
                     Text(stringResource(R.string.game_restart))
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 FilledTonalButton(
                     onClick = onExit,

@@ -540,7 +540,13 @@ class GameViewModel : ViewModel() {
             onGuestSendControl?.invoke(ControlMessages.PAUSE)
             return
         }
-        if (_matchState.value.status == MatchStatus.PLAYING) {
+        val currentStatus = _matchState.value.status
+        if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE) {
+            countdownJob?.cancel()
+            countdownJob = null
+            countdownPhysicsJob?.cancel()
+            countdownPhysicsJob = null
+            audioEngine.stopAll()
             _matchState.update { it.copy(status = MatchStatus.PAUSED) }
             broadcastState()
             stopGameLoops()
@@ -602,6 +608,7 @@ class GameViewModel : ViewModel() {
         countdownJob = null
         countdownPhysicsJob?.cancel()
         countdownPhysicsJob = null
+        audioEngine.stopAll()
         coordinatorJobs.forEach { it.cancel() }
         coordinatorJobs.clear()
         coordinator = null

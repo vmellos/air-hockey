@@ -32,6 +32,7 @@ class UserPreferencesRepository(private val context: Context) {
         val MATCH_TIME_SECONDS = intPreferencesKey("match_time_seconds")
         val TOUCH_OFFSET_ENABLED = booleanPreferencesKey("touch_offset_enabled")
         val PUCK_SPEED = stringPreferencesKey("puck_speed")
+        val VISUAL_EFFECTS_PROFILE = stringPreferencesKey("visual_effects_profile")
         val PLAYER_NAME = stringPreferencesKey("player_name")
     }
 
@@ -86,6 +87,12 @@ class UserPreferencesRepository(private val context: Context) {
             } catch (_: Exception) {
                 PuckSpeedPreset.NORMAL
             }
+            val fxProfileStr = preferences[PreferencesKeys.VISUAL_EFFECTS_PROFILE] ?: VisualEffectsProfile.FULL.name
+            val fxProfile = try {
+                VisualEffectsProfile.valueOf(fxProfileStr)
+            } catch (_: Exception) {
+                VisualEffectsProfile.FULL
+            }
             val storedName = preferences[PreferencesKeys.PLAYER_NAME]
             val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)
 
@@ -101,6 +108,7 @@ class UserPreferencesRepository(private val context: Context) {
                 matchTimeSeconds = matchTime,
                 touchOffsetEnabled = touchOffsetEnabled,
                 puckSpeed = puckSpeed,
+                visualEffectsProfile = fxProfile,
                 playerName = playerName
             )
         }
@@ -186,6 +194,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setPuckSpeed(preset: PuckSpeedPreset) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.PUCK_SPEED] = preset.name
+        }
+    }
+
+    suspend fun setVisualEffectsProfile(profile: VisualEffectsProfile) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.VISUAL_EFFECTS_PROFILE] = profile.name
         }
     }
 }

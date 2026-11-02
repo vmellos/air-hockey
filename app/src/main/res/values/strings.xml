@@ -152,4 +152,14 @@
     <string name="remove_ads_feedback_not_found">No previous purchases found for this account.</string>
     <string name="remove_ads_feedback_error">Unable to connect to Google Play Store.</string>
     <string name="remove_ads_feedback_canceled">Purchase canceled.</string>
+
+    <!-- Visual Effects Profile -->
+    <string name="settings_visual_effects">Visual Effects</string>
+    <string name="settings_visual_effects_desc">Graphics fidelity and particle density</string>
+    <string name="visual_effects_full">Full (Arcade Neon)</string>
+    <string name="visual_effects_full_desc">Plasma flame trail, incandescent sparks, vortex countdown and celebration shockwaves</string>
+    <string name="visual_effects_balanced">Balanced (Battery Saver)</string>
+    <string name="visual_effects_balanced_desc">Smooth kinetic trail and light shockwaves without heavy sparks</string>
+    <string name="visual_effects_off">Performance (Clean)</string>
+    <string name="visual_effects_off_desc">Zero trails or particles for maximum FPS on entry devices</string>
 </resources>

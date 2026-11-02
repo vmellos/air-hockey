@@ -1,6 +1,7 @@
 package dev.vmellos.airhockey.feature.settings.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -387,7 +388,7 @@ fun SettingsScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(
@@ -402,7 +403,10 @@ fun SettingsScreen(
                             }
                         },
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f)
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                        modifier = Modifier
+                            .weight(1.15f)
+                            .height(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -410,11 +414,13 @@ fun SettingsScreen(
                             tint = Color(0xFF94A3B8),
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.settings_player_name_reset),
                             color = Color(0xFF94A3B8),
-                            fontSize = 13.sp
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
 
@@ -438,12 +444,15 @@ fun SettingsScreen(
                             contentColor = Color(0xFF0A0E1A)
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(0.85f)
+                            .height(48.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.settings_player_name_save),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            maxLines = 1
                         )
                     }
                 }
@@ -627,56 +636,6 @@ fun SettingsScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.settings_puck_speed),
-                    color = Color(0xFF94A3B8),
-                    fontSize = 13.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.settings_puck_speed_desc),
-                    color = Color(0xFF64748B),
-                    fontSize = 11.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    for (speed in dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.values()) {
-                        val isSelected = prefs.puckSpeed == speed
-                        val label = when (speed) {
-                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW -> stringResource(R.string.puck_speed_slow)
-                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL -> stringResource(R.string.puck_speed_normal)
-                            dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST -> stringResource(R.string.puck_speed_fast)
-                        }
-
-                        Card(
-                            onClick = { scope.launch { preferencesRepo.setPuckSpeed(speed) } },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) Color(0xFF00E5FF) else Color(0xFF334155)
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) Color(0xFF0A0E1A) else Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -723,6 +682,87 @@ fun SettingsScreen(
                         onCheckedChange = { scope.launch { preferencesRepo.setTouchOffsetEnabled(it) } },
                         colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
                     )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Seção Efeitos Visuais e Desempenho
+        Text(
+            text = stringResource(R.string.settings_visual_effects),
+            color = Color(0xFF00E5FF),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_visual_effects_desc),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                for (profile in dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.values()) {
+                    val isSelected = prefs.visualEffectsProfile == profile
+                    val (title, desc) = when (profile) {
+                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL ->
+                            Pair(stringResource(R.string.visual_effects_full), stringResource(R.string.visual_effects_full_desc))
+                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED ->
+                            Pair(stringResource(R.string.visual_effects_balanced), stringResource(R.string.visual_effects_balanced_desc))
+                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF ->
+                            Pair(stringResource(R.string.visual_effects_off), stringResource(R.string.visual_effects_off_desc))
+                    }
+
+                    Card(
+                        onClick = { scope.launch { preferencesRepo.setVisualEffectsProfile(profile) } },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) Color(0xFF142038) else Color(0xFF243247)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .then(
+                                if (isSelected) Modifier.border(1.5.dp, Color(0xFF00E5FF), RoundedCornerShape(12.dp))
+                                else Modifier
+                            )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = { scope.launch { preferencesRepo.setVisualEffectsProfile(profile) } },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF00E5FF))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = title,
+                                    color = if (isSelected) Color(0xFF00E5FF) else Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = desc,
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

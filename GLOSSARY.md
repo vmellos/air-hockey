@@ -45,8 +45,8 @@ O golpe angular aplicado no disco contra as bordas laterais da mesa com o objeti
 _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
 
 **Velocidade do Disco**:
-A taxa máxima de deslocamento admitida para o disco durante a partida, parametrizada por predefinições de ritmo de jogo.
-_Avoid_: Rapidez da bola, velocidade do jogo, puck speed
+A taxa máxima de deslocamento admitida para o disco durante a partida, acoplada diretamente ao nível de Dificuldade da IA nos confrontos individuais (Fácil = Lento, Médio = Normal, Difícil = Rápido).
+_Avoid_: Rapidez da bola, velocidade do jogo, puck speed, ajuste manual de velocidade
 
 **Empate**:
 O resultado oficial de uma partida em que o tempo limite se esgota com pontuação idêntica entre os dois competidores, sem declaração de vitória.
@@ -133,6 +133,26 @@ _Avoid_: Pacote de som, broadcast de áudio, sync de áudio
 **Miniatura da Mesa**:
 A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
 _Avoid_: Ícone de campo, desenho do modo, preview da mesa
+
+**Bordas Chanfradas Neon**:
+O traçado perimetral da mesa com cantos angulados em 45 graus e gradiente luminoso em neon ciano e laranja, substituindo cantos arredondados simples.
+_Avoid_: Borda redonda, moldura do campo, cantos da mesa
+
+**Rastro de Energia do Disco**:
+O efeito visual fluido de plasma emitido atrás do disco em alta velocidade, cuja tonalidade cromática reflete o último rebatedor a golpeá-lo (ciano para o Jogador 1 e laranja para o Jogador 2).
+_Avoid_: Fogo da bola, rastro da bola, rastro de fumaça, cauda do puck
+
+**Vórtice de Contagem Regressiva**:
+A animação central composta por anéis de energia concêntricos e pulsantes que circundam os números da contagem regressiva no início e reinício da partida.
+_Avoid_: Círculo do countdown, relógio central, animação de início
+
+**Celebração de Ponto**:
+O efeito de impacto visual e partículas incandescentes desencadeado quando o disco cruza a meta adversária, iluminando a arena com faíscas e ondas de choque na cor do marcador.
+_Avoid_: Animação de gol, comemoração de gol, goal fx
+
+**Perfil de Efeitos Visuais**:
+A configuração gráfica ajustável pelo usuário que calibra a densidade de partículas, o volume do rastro de plasma e o detalhamento das animações para equilibrar fidelidade visual e consumo energético.
+_Avoid_: Gráficos, qualidade gráfica, resolução, modo batata
 
 **Contador de FPS** (Descontinuado):
 O antigo indicador na arena que exibia a taxa de quadros por segundo entregue pelo motor de renderização, removido na preparação para publicação na loja.

@@ -19,6 +19,12 @@ enum class PuckSpeedPreset(val maxSpeed: Float, val airFriction: Float = 0.40f) 
     FAST(9500f, 0.35f)
 }
 
+enum class VisualEffectsProfile {
+    FULL,
+    BALANCED,
+    OFF
+}
+
 data class UserPreferences(
     val appLanguage: String = LocaleHelper.SYSTEM_DEFAULT,
     val soundEnabled: Boolean = true,
@@ -31,5 +37,6 @@ data class UserPreferences(
     val matchTimeSeconds: Int = 180,
     val touchOffsetEnabled: Boolean = true,
     val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL,
+    val visualEffectsProfile: VisualEffectsProfile = VisualEffectsProfile.FULL,
     val playerName: String = ""
 )
