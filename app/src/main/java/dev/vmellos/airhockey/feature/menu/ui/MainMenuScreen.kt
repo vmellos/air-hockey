@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -59,6 +60,8 @@ fun MainMenuScreen(
     modifier: Modifier = Modifier
 ) {
     val adManager = AirHockeyApp.instance.adManager
+    val billingManager = AirHockeyApp.instance.billingManager
+    val isAdsRemovedPermanently by billingManager.isAdsRemoved.collectAsState()
     val isAdFreeTemporarily by adManager.isAdFreeTemporarily.collectAsState()
     val isRewardedLoaded by adManager.isRewardedLoaded.collectAsState()
     val activity = LocalContext.current.findActivity()
@@ -72,7 +75,7 @@ fun MainMenuScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Cabeçalho com Placar de Líderes, Recompensas e Configurações
+        // Cabeçalho com Placar de Líderes, Remoção de Anúncios, Recompensas e Configurações
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -92,12 +95,27 @@ fun MainMenuScreen(
                 )
             }
 
-            // Ações da Direita (Recompensa de Anúncio e Configurações)
+            // Ações da Direita (Remover Anúncios, Recompensa de Anúncio e Configurações)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (!isAdFreeTemporarily && isRewardedLoaded && activity != null) {
+                if (!isAdsRemovedPermanently && activity != null) {
+                    IconButton(
+                        onClick = { billingManager.launchPurchaseFlow(activity) },
+                        modifier = Modifier
+                            .background(Color(0xFF1E293B), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = stringResource(R.string.remove_ads_menu_button),
+                            tint = Color(0xFF00E5FF)
+                        )
+                    }
+                }
+
+                if (!isAdsRemovedPermanently && !isAdFreeTemporarily && isRewardedLoaded && activity != null) {
                     IconButton(
                         onClick = {
                             adManager.showRewarded(

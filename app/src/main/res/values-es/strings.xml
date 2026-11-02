@@ -137,4 +137,19 @@
     <string name="leaderboard_player_record">%1$dV - %2$dD · Dif: %3$s</string>
     <string name="leaderboard_delta_elo">%1$s Elo</string>
     <string name="ad_reward_button_desc">Obtener 2h Sin Anuncios</string>
+
+    <!-- Remoção Permanente de Anúncios (Billing) -->
+    <string name="remove_ads_title">Quitar Anuncios</string>
+    <string name="remove_ads_desc">Elimina banners y anuncios pospartido definitivamente</string>
+    <string name="remove_ads_price_loading">Consultando precio&#8230;</string>
+    <string name="remove_ads_buy">Comprar</string>
+    <string name="remove_ads_active">Versión Sin Anuncios Activa</string>
+    <string name="remove_ads_active_desc">Todos los banners y anuncios pospartido han sido eliminados definitivamente.</string>
+    <string name="remove_ads_restore">Restaurar Compras</string>
+    <string name="remove_ads_menu_button">Quitar Anuncios</string>
+    <string name="remove_ads_feedback_success">¡Compra completada! Anuncios eliminados definitivamente.</string>
+    <string name="remove_ads_feedback_restored">¡Compras restauradas con éxito!</string>
+    <string name="remove_ads_feedback_not_found">No se encontraron compras anteriores para esta cuenta.</string>
+    <string name="remove_ads_feedback_error">No se pudo conectar a Google Play Store.</string>
+    <string name="remove_ads_feedback_canceled">Compra cancelada.</string>
 </resources>

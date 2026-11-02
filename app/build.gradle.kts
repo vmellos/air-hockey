@@ -110,6 +110,9 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.user.messaging.platform)
 
+    // Google Play In-App Billing
+    implementation(libs.play.billing.ktx)
+
     // Offline QR Code Generation & Scanning
     implementation(libs.zxing.core)
     implementation(libs.androidx.camera.camera2)
