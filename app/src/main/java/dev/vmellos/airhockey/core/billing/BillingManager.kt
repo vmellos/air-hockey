@@ -116,10 +116,10 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, queryResultList ->
+        billingClient.queryProductDetailsAsync(params) { billingResult, queryResult ->
             _isLoadingPrice.value = false
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val details = queryResultList.firstOrNull { it.productId == BillingConstants.PRODUCT_REMOVE_ADS }
+                val details = queryResult.productDetailsList?.firstOrNull { it.productId == BillingConstants.PRODUCT_REMOVE_ADS }
                 if (details != null) {
                     removeAdsProductDetails = details
                     val price = details.oneTimePurchaseOfferDetails?.formattedPrice
