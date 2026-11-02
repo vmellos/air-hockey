@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.localization.LocaleHelper
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import kotlinx.coroutines.launch
@@ -530,5 +531,10 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        AdBanner(
+            adManager = AirHockeyApp.instance.adManager,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
     }
 }

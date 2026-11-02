@@ -1,8 +1,11 @@
 package dev.vmellos.airhockey
 
 import android.app.Application
+import dev.vmellos.airhockey.core.ads.AdManager
 import dev.vmellos.airhockey.core.audio.GameAudioEngine
+import dev.vmellos.airhockey.core.database.AppDatabase
 import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
+import dev.vmellos.airhockey.feature.leaderboard.LeaderboardRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,11 +23,23 @@ class AirHockeyApp : Application() {
     lateinit var audioEngine: GameAudioEngine
         private set
 
+    lateinit var database: AppDatabase
+        private set
+
+    lateinit var leaderboardRepository: LeaderboardRepository
+        private set
+
+    lateinit var adManager: AdManager
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         preferencesRepository = UserPreferencesRepository(this)
         audioEngine = GameAudioEngine(this)
+        database = AppDatabase.getInstance(this)
+        leaderboardRepository = LeaderboardRepository(database.leaderboardDao())
+        adManager = AdManager(this)
 
         applicationScope.launch {
             preferencesRepository.userPreferencesFlow.collectLatest { prefs ->

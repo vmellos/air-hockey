@@ -35,6 +35,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AirHockey"
         android:usesCleartextTraffic="true">
+
+        <!-- Google AdMob Application ID (Configured via manifestPlaceholders) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

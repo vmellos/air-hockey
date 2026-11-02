@@ -3,6 +3,8 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -45,7 +47,22 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+        }
         release {
+            val localProps = project.rootProject.file("local.properties").let { file ->
+                if (file.exists()) {
+                    Properties().apply { file.inputStream().use { load(it) } }
+                } else {
+                    Properties()
+                }
+            }
+            val admobReleaseId = localProps.getProperty("ADMOB_APP_ID")
+                ?: System.getenv("ADMOB_APP_ID")
+                ?: "ca-app-pub-6935322996335458~6357365605"
+            manifestPlaceholders["admobAppId"] = admobReleaseId
+
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -61,7 +78,12 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
@@ -78,6 +100,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
+
+    // Room Database for Match History & Leaderboard
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Google Mobile Ads (AdMob) & UMP Consent
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 
     // Offline QR Code Generation & Scanning
     implementation(libs.zxing.core)

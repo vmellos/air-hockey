@@ -27,6 +27,7 @@ import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.ui.GameScreen
+import dev.vmellos.airhockey.feature.leaderboard.ui.LeaderboardScreen
 import dev.vmellos.airhockey.feature.lobby.LobbyRole
 import dev.vmellos.airhockey.feature.lobby.LobbyViewModel
 import dev.vmellos.airhockey.feature.lobby.ui.BezelCalibrationScreen
@@ -44,6 +45,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+
+        AirHockeyApp.instance.adManager.initialize(this)
 
         deepLinkUri = intent?.dataString
 
@@ -138,6 +141,9 @@ fun AirHockeyAppNavigation(
                 onStartExtended = {
                     lobbyViewModel.setTargetMode("EXTENDED")
                     navController.navigate("lobby")
+                },
+                onOpenLeaderboard = {
+                    navController.navigate("leaderboard")
                 },
                 onOpenSettings = {
                     navController.navigate("settings")
@@ -289,6 +295,12 @@ fun AirHockeyAppNavigation(
                         popUpTo("menu") { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable("leaderboard") {
+            LeaderboardScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 

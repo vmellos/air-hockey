@@ -137,3 +137,35 @@ _Avoid_: Ícone de campo, desenho do modo, preview da mesa
 **Contador de FPS** (Descontinuado):
 O antigo indicador na arena que exibia a taxa de quadros por segundo entregue pelo motor de renderização, removido na preparação para publicação na loja.
 _Avoid_: Frame counter, medidor de taxa, taxa de quadros, medidor de fps
+
+## Competição e Classificação
+
+**Placar de Líderes**:
+O sistema de classificação competitivo que ranqueia os participantes em abas por modo de jogo, ordenando por pontuação Elo, vitórias, sequência invicta e saldo de gols.
+_Avoid_: Hanking, ranking, tabela de pontos, leaderboard
+
+**Pontuação Elo**:
+A pontuação numérica dinâmica atribuída a cada perfil (iniciada em 1.000 pontos) ajustada ao final de cada partida com base na probabilidade matemática de vitória e nível do oponente.
+_Avoid_: MMR, rank points, troféus, score
+
+**Registro de Partida**:
+A entrada histórica imutável gravada no banco de dados local contendo os participantes, modo de jogo, placar final, duração e variação de Elo.
+_Avoid_: Histórico, log de jogo, match log, súmula
+
+## Monetização e Infraestrutura Web
+
+**Anúncio em Banner**:
+O formato publicitário retangular fixado na base dos menus e telas de configuração, com supressão estrita durante a partida na arena.
+_Avoid_: Propaganda, banner ad, anúncio de rodapé
+
+**Anúncio Intersticial de Pós-Partida**:
+O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão.
+_Avoid_: Pop-up, interstitial, comercial pós-jogo
+
+**Anúncio Recompensado**:
+O vídeo publicitário assistido por decisão ativa do jogador em troca de benefícios tangíveis, como 2 horas de supressão completa de anúncios ou desbloqueio de estilos cosméticos.
+_Avoid_: Rewarded ad, propaganda premiada, vídeo de bônus
+
+**Portal Oficial**:
+O sítio institucional estático hospedado no Cloudflare Pages contendo a apresentação do jogo, documentação legal de privacidade e arquivo de validação `app-ads.txt`.
+_Avoid_: Site, homepage, web portal

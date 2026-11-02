@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,8 +27,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.ads.AdBanner
+import dev.vmellos.airhockey.core.util.findActivity
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -46,34 +54,82 @@ fun MainMenuScreen(
     onStartSplit: () -> Unit,
     onStartExtended: () -> Unit,
     onStartConnected: () -> Unit,
+    onOpenLeaderboard: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val adManager = AirHockeyApp.instance.adManager
+    val isAdFreeTemporarily by adManager.isAdFreeTemporarily.collectAsState()
+    val isRewardedLoaded by adManager.isRewardedLoaded.collectAsState()
+    val activity = LocalContext.current.findActivity()
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0A0E1A))
             .safeDrawingPadding()
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Cabeçalho com botão de configurações no topo
+        // Cabeçalho com Placar de Líderes, Recompensas e Configurações
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Botão Placar de Líderes
             IconButton(
-                onClick = onOpenSettings,
+                onClick = onOpenLeaderboard,
                 modifier = Modifier
                     .background(Color(0xFF1E293B), CircleShape)
                     .size(44.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.menu_settings),
-                    tint = Color(0xFF00E5FF)
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Placar de Líderes",
+                    tint = Color(0xFFFFB800)
                 )
+            }
+
+            // Ações da Direita (Recompensa de Anúncio e Configurações)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (!isAdFreeTemporarily && isRewardedLoaded && activity != null) {
+                    IconButton(
+                        onClick = {
+                            adManager.showRewarded(
+                                activity = activity,
+                                onRewardGranted = {},
+                                onDismiss = {}
+                            )
+                        },
+                        modifier = Modifier
+                            .background(Color(0xFF1E293B), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Redeem,
+                            contentDescription = "Ganhar 2h Sem Anúncios",
+                            tint = Color(0xFFFF2A6D)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = onOpenSettings,
+                    modifier = Modifier
+                        .background(Color(0xFF1E293B), CircleShape)
+                        .size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(R.string.menu_settings),
+                        tint = Color(0xFF00E5FF)
+                    )
+                }
             }
         }
 
@@ -141,11 +197,17 @@ fun MainMenuScreen(
             )
         }
 
+        // Anúncio em Banner não-invasivo
+        AdBanner(
+            adManager = adManager,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
         // Rodapé discreto
         Text(
             text = "v1.1 • P2P Wi-Fi / Hotspot",
             color = Color(0xFF475569),
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontFamily = FontFamily.Monospace
         )
     }

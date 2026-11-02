@@ -1,0 +1,186 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "de474b517467709553032027962515cf",
+    "entities": [
+      {
+        "tableName": "match_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `gameMode` TEXT NOT NULL, `aiDifficulty` TEXT, `playerAName` TEXT NOT NULL, `playerBName` TEXT NOT NULL, `playerAScore` INTEGER NOT NULL, `playerBScore` INTEGER NOT NULL, `durationSeconds` INTEGER NOT NULL, `winner` TEXT NOT NULL, `ratingDeltaA` INTEGER NOT NULL, `ratingDeltaB` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameMode",
+            "columnName": "gameMode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aiDifficulty",
+            "columnName": "aiDifficulty",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "playerAName",
+            "columnName": "playerAName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerBName",
+            "columnName": "playerBName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerAScore",
+            "columnName": "playerAScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerBScore",
+            "columnName": "playerBScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationSeconds",
+            "columnName": "durationSeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "winner",
+            "columnName": "winner",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratingDeltaA",
+            "columnName": "ratingDeltaA",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratingDeltaB",
+            "columnName": "ratingDeltaB",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "player_profile_stats",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playerName` TEXT NOT NULL, `ratingElo` INTEGER NOT NULL, `soloWins` INTEGER NOT NULL, `soloLosses` INTEGER NOT NULL, `soloDraws` INTEGER NOT NULL, `multiplayerWins` INTEGER NOT NULL, `multiplayerLosses` INTEGER NOT NULL, `multiplayerDraws` INTEGER NOT NULL, `currentWinStreak` INTEGER NOT NULL, `bestWinStreak` INTEGER NOT NULL, `goalsScored` INTEGER NOT NULL, `goalsConceded` INTEGER NOT NULL, `lastMatchTimestamp` INTEGER NOT NULL, PRIMARY KEY(`playerName`))",
+        "fields": [
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratingElo",
+            "columnName": "ratingElo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "soloWins",
+            "columnName": "soloWins",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "soloLosses",
+            "columnName": "soloLosses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "soloDraws",
+            "columnName": "soloDraws",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "multiplayerWins",
+            "columnName": "multiplayerWins",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "multiplayerLosses",
+            "columnName": "multiplayerLosses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "multiplayerDraws",
+            "columnName": "multiplayerDraws",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentWinStreak",
+            "columnName": "currentWinStreak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bestWinStreak",
+            "columnName": "bestWinStreak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goalsScored",
+            "columnName": "goalsScored",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goalsConceded",
+            "columnName": "goalsConceded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastMatchTimestamp",
+            "columnName": "lastMatchTimestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playerName"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'de474b517467709553032027962515cf')"
+    ]
+  }
+}

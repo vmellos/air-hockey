@@ -1,0 +1,2 @@
+# Google AdMob app-ads.txt for dev.vmellos.airhockey
+google.com, pub-6935322996335458, DIRECT, f08c47fec0942fa0

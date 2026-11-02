@@ -6,7 +6,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 class AirHockeyAiController(
-    private val difficulty: AiDifficulty
+    val difficulty: AiDifficulty
 ) {
     private var bankShotTimer: Float = 0f
     private var bankShotDirection: Int = 1 // 1 = ricochete na parede direita, -1 = na parede esquerda

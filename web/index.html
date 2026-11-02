@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Hockey 2P — Mesa Estendida em 2 Celulares</title>
+  <meta name="description" content="Transforme 2 smartphones em uma única mesa gigante de Air Hockey via Wi-Fi ou Hotspot local. 100% offline, zero lag e física arcade ultrarrealista.">
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    :root {
+      --bg: #070a14;
+      --bg-card: #0f1629;
+      --cyan: #00e5ff;
+      --cyan-glow: rgba(0, 229, 255, 0.4);
+      --pink: #ff2a6d;
+      --pink-glow: rgba(255, 42, 109, 0.4);
+      --gold: #ffb800;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+    header {
+      background: rgba(7, 10, 20, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.5px;
+    }
+    .brand img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--cyan); }
+    .hero {
+      position: relative;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin: 0 0 1.2rem;
+      background: linear-gradient(135deg, #ffffff 40%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      color: var(--text-muted);
+      max-width: 740px;
+      margin: 0 auto 2.5rem;
+    }
+    .cta-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cyan), #00a8cc);
+      color: #03131e;
+      padding: 14px 32px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+      box-shadow: 0 10px 25px var(--cyan-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0, 229, 255, 0.6);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--cyan);
+    }
+    .showcase-banner {
+      margin: 3.5rem auto 1rem;
+      max-width: 960px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 229, 255, 0.15);
+    }
+    .showcase-banner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .features {
+      padding: 5rem 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .section-title h2 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin: 0 0 0.8rem;
+    }
+    .section-title p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--cyan);
+    }
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+    .feature-card h3 {
+      font-size: 1.3rem;
+      margin: 0 0 0.6rem;
+      color: #fff;
+    }
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin: 0;
+    }
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .footer a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="#" class="brand">
+      <img src="icon.png" alt="Air Hockey 2P Logo">
+      <span>Air Hockey 2P</span>
+    </a>
+    <nav>
+      <a href="#features">Recursos</a>
+      <a href="privacy.html">Privacidade</a>
+      <a href="https://github.com/vmellos/AirHockey" target="_blank">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="badge">Inovação em Jogos Mobile</div>
+      <h1>Mesa Estendida em 2 Celulares</h1>
+      <p>Transforme dois smartphones em uma única mesa gigante de Air Hockey. Conecte topo-a-topo via Wi-Fi ou Ponto de Acesso sem internet e sinta a física real de fliperama.</p>
+      
+      <div class="cta-group">
+        <a href="https://github.com/vmellos/AirHockey/releases" class="btn-primary" target="_blank">
+          <span>🏒 Baixar APK Release (5.8 MB)</span>
+        </a>
+        <a href="privacy.html" class="btn-secondary">
+          <span>Política de Privacidade</span>
+        </a>
+      </div>
+
+      <div class="showcase-banner">
+        <img src="feature_graphic.png" alt="Air Hockey 2P Banner — Mesa Estendida">
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="section-title">
+        <h2>Por que o Air Hockey 2P é Único?</h2>
+        <p>A primeira física de tela dupla contínua sem depender da nuvem.</p>
+      </div>
+
+      <div class="grid">
+        <div class="feature-card">
+          <div class="feature-icon">🏒</div>
+          <h3>Mesa Estendida (2 Celulares)</h3>
+          <p>Encoste as bordas superiores de dois telefones e veja o disco deslizar suavemente de uma tela para a outra com compensação milimétrica de vão (bezel).</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>100% Offline e Zero Lag</h3>
+          <p>Dispute partidas no avião, no parque ou na viagem. O jogo funciona via Wi-Fi local ou Ponto de Acesso Móvel (Hotspot) sem consumir dados.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📲</div>
+          <h3>Pareamento Instantâneo por QR Code</h3>
+          <p>Sem burocracia de salas ou amigos adicionados: aponte a câmera para o QR Code da mesa e conecte-se em menos de 1 segundo.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🏆</div>
+          <h3>Placar de Líderes Competitivo</h3>
+          <p>Sistema de pontuação Elo (iniciando em 1.000 pontos), estatísticas detalhadas de vitórias, saldo de gols e histórico de partidas local.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>Modo Solo vs IA Inteligente</h3>
+          <p>Treine contra uma inteligência artificial balanceada em 3 níveis (Fácil, Médio e Difícil) com desvios angulares e jogadas de tabela realistas.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Privacidade e Leveza</h3>
+          <p>Com apenas 5.8 MB, sem coleta de dados pessoais e sem anúncios invasivos durante as partidas.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Air Hockey 2P · Desenvolvido por <a href="https://vmellos.dev" target="_blank">Vinicius Mellos</a></p>
+    <p><a href="privacy.html">Política de Privacidade</a> · <a href="app-ads.txt">app-ads.txt</a></p>
+  </footer>
+</body>
+</html>

@@ -53,6 +53,10 @@ class GameViewModel : ViewModel() {
     @Volatile
     private var pendingCollisionIntensity: Float = 0f
 
+    @Volatile
+    private var hasRecordedMatch = false
+    private var currentMatchTimeSeconds: Int = 180
+
     var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float, Byte, Float) -> Unit)? = null
     var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onGuestSendInput: ((Float, Float) -> Unit)? = null
@@ -142,6 +146,8 @@ class GameViewModel : ViewModel() {
 
         engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = puckMaxSpeed, airFrictionPerSec = airFriction)
         engine.resetPositions()
+        hasRecordedMatch = false
+        currentMatchTimeSeconds = matchTimeSeconds
 
         // Limpa estritamente o controlador de IA se não for modo SOLO
         aiController = if (mode == GameMode.SOLO) {
@@ -222,6 +228,7 @@ class GameViewModel : ViewModel() {
                     status = MatchStatus.GAME_OVER
                 )
             }
+            handleGameOver()
             broadcastState()
             stopGameLoops()
         } else {
@@ -343,6 +350,7 @@ class GameViewModel : ViewModel() {
                         if (nextTime <= 0) {
                             val winner = if (state.scorePlayer1 > state.scorePlayer2) 1
                             else if (state.scorePlayer2 > state.scorePlayer1) 2 else 0
+                            handleGameOver()
                             state.copy(remainingTimeSeconds = 0, winner = winner, status = MatchStatus.GAME_OVER)
                         } else {
                             state.copy(remainingTimeSeconds = nextTime)
@@ -484,6 +492,10 @@ class GameViewModel : ViewModel() {
             )
         }
 
+        if (newStatus == MatchStatus.GAME_OVER) {
+            handleGameOver()
+        }
+
         // Reprodução de áudio sincronizada no convidado
         if (newStatus == MatchStatus.COUNTDOWN && remote.countdownNumber != prev.countdownNumber) {
             audioEngine.playCountdownBeep(remote.countdownNumber)
@@ -560,6 +572,7 @@ class GameViewModel : ViewModel() {
         }
         stopGameLoops()
         countdownJob?.cancel()
+        hasRecordedMatch = false
         if (::engine.isInitialized) {
             engine.resetPositions(0)
         }
@@ -597,6 +610,30 @@ class GameViewModel : ViewModel() {
         onGuestSendInput = null
         onGuestSendControl = null
         _matchState.update { it.copy(status = MatchStatus.IDLE) }
+    }
+
+    private fun handleGameOver() {
+        if (hasRecordedMatch) return
+        hasRecordedMatch = true
+        val state = _matchState.value
+        val duration = (currentMatchTimeSeconds - state.remainingTimeSeconds).coerceAtLeast(0)
+        val modeStr = state.mode.name
+        val diff = if (state.mode == GameMode.SOLO) aiController?.difficulty?.name else null
+
+        viewModelScope.launch {
+            try {
+                AirHockeyApp.instance.leaderboardRepository.recordMatch(
+                    gameMode = modeStr,
+                    aiDifficulty = diff,
+                    playerAName = state.player1Name,
+                    playerBName = state.player2Name,
+                    scoreA = state.scorePlayer1,
+                    scoreB = state.scorePlayer2,
+                    durationSeconds = duration
+                )
+            } catch (_: Exception) {}
+            AirHockeyApp.instance.adManager.recordMatchFinished()
+        }
     }
 
     override fun onCleared() {

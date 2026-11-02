@@ -8,6 +8,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.util.findActivity
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
@@ -98,12 +101,28 @@ fun GameScreen(
 
         // Diálogo de Fim de Jogo
         if (matchState.status == MatchStatus.GAME_OVER) {
+            val activity = LocalContext.current.findActivity()
             GameOverDialog(
                 matchState = matchState,
-                onPlayAgain = { viewModel.restartMatch() },
+                onPlayAgain = {
+                    if (activity != null) {
+                        AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                            viewModel.restartMatch()
+                        }
+                    } else {
+                        viewModel.restartMatch()
+                    }
+                },
                 onExit = {
-                    viewModel.stopMatch()
-                    onExitToMenu()
+                    if (activity != null) {
+                        AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                            viewModel.stopMatch()
+                            onExitToMenu()
+                        }
+                    } else {
+                        viewModel.stopMatch()
+                        onExitToMenu()
+                    }
                 }
             )
         }
