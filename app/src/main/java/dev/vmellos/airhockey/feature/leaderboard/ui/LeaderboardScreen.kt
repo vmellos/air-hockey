@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +60,11 @@ import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private data class LeaderboardTabItem(
+    val titleRes: Int,
+    val icon: ImageVector
+)
 
 @Composable
 fun LeaderboardScreen(
@@ -74,11 +80,19 @@ fun LeaderboardScreen(
     val topSolo by repo.topSoloPlayers.collectAsState(initial = emptyList())
     val recentMatches by repo.recentMatches.collectAsState(initial = emptyList())
 
-    val selfName = userPrefs.playerName.ifBlank { "Jogador" }
+    val defaultPlayerName = stringResource(R.string.settings_player_name_default)
+    val selfName = userPrefs.playerName.ifBlank { defaultPlayerName }
     val selfStats by repo.getPlayerStats(selfName).collectAsState(initial = null)
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("🏆 Geral (Elo)", "🏒 Mesa Estendida", "🤖 Solo vs IA", "📜 Histórico")
+    val tabs = remember {
+        listOf(
+            LeaderboardTabItem(R.string.leaderboard_tab_elo, Icons.Default.EmojiEvents),
+            LeaderboardTabItem(R.string.leaderboard_tab_extended, Icons.Default.SportsEsports),
+            LeaderboardTabItem(R.string.leaderboard_tab_solo, Icons.Default.SmartToy),
+            LeaderboardTabItem(R.string.leaderboard_tab_history, Icons.Default.History)
+        )
+    }
 
     Column(
         modifier = modifier
@@ -96,13 +110,13 @@ fun LeaderboardScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
+                    contentDescription = stringResource(R.string.back),
                     tint = Color.White
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Placar de Líderes",
+                text = stringResource(R.string.leaderboard_title),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -155,7 +169,7 @@ fun LeaderboardScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Sequência: $streak vitória(s)",
+                            text = stringResource(R.string.leaderboard_win_streak, streak),
                             color = Color(0xFF94A3B8),
                             fontSize = 12.sp
                         )
@@ -164,13 +178,13 @@ fun LeaderboardScreen(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "$rating Elo",
+                        text = stringResource(R.string.leaderboard_elo_value, rating),
                         color = Color(0xFFFFB800),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = "$wins/$matches vitórias ($winRate%)",
+                        text = stringResource(R.string.leaderboard_win_rate, wins, matches, winRate),
                         color = Color(0xFF00E5FF),
                         fontSize = 12.sp
                     )
@@ -193,17 +207,28 @@ fun LeaderboardScreen(
                 )
             }
         ) {
-            tabs.forEachIndexed { index, title ->
+            tabs.forEachIndexed { index, tabItem ->
                 Tab(
                     selected = selectedTabIndex == index,
                     onClick = { selectedTabIndex = index },
                     text = {
-                        Text(
-                            text = title,
-                            fontSize = 13.sp,
-                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = tabItem.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                            )
+                            Text(
+                                text = stringResource(tabItem.titleRes),
+                                fontSize = 13.sp,
+                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                            )
+                        }
                     }
                 )
             }
@@ -211,9 +236,9 @@ fun LeaderboardScreen(
 
         // Tab Content
         when (selectedTabIndex) {
-            0 -> PlayerListContent(players = topElo, metricLabel = "Elo")
-            1 -> PlayerListContent(players = topMulti, metricLabel = "Vitórias 2P")
-            2 -> PlayerListContent(players = topSolo, metricLabel = "Vitórias Solo")
+            0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
+            1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
+            2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
             3 -> RecentMatchesContent(matches = recentMatches)
         }
     }
@@ -232,7 +257,7 @@ private fun PlayerListContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Nenhuma partida registrada ainda.\nJogue sua primeira partida para pontuar no ranking!",
+                text = stringResource(R.string.leaderboard_empty_players),
                 color = Color(0xFF94A3B8),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -285,7 +310,7 @@ private fun PlayerRankCard(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            // Rank Badge
+            // Rank Badge (Numeric circle)
             Box(
                 modifier = Modifier
                     .size(32.dp)
@@ -313,7 +338,12 @@ private fun PlayerRankCard(
                 val diff = player.goalDifferential
                 val diffStr = if (diff > 0) "+$diff" else "$diff"
                 Text(
-                    text = "${player.totalWins}V - ${player.totalMatches - player.totalWins}D · Saldo: $diffStr",
+                    text = stringResource(
+                        R.string.leaderboard_player_record,
+                        player.totalWins,
+                        player.totalMatches - player.totalWins,
+                        diffStr
+                    ),
                     color = Color(0xFF94A3B8),
                     fontSize = 11.sp
                 )
@@ -321,9 +351,9 @@ private fun PlayerRankCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 val valueText = when (metricLabel) {
-                    "Elo" -> "${player.ratingElo}"
-                    "Vitórias 2P" -> "${player.multiplayerWins}V"
-                    "Vitórias Solo" -> "${player.soloWins}V"
+                    stringResource(R.string.leaderboard_metric_elo) -> "${player.ratingElo}"
+                    stringResource(R.string.leaderboard_metric_multi_wins) -> "${player.multiplayerWins}"
+                    stringResource(R.string.leaderboard_metric_solo_wins) -> "${player.soloWins}"
                     else -> "${player.ratingElo}"
                 }
                 Text(
@@ -333,7 +363,7 @@ private fun PlayerRankCard(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = "$metricLabel",
+                    text = metricLabel,
                     color = Color(0xFF64748B),
                     fontSize = 10.sp
                 )
@@ -354,7 +384,7 @@ private fun RecentMatchesContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Nenhum histórico recente disponível.",
+                text = stringResource(R.string.leaderboard_empty_history),
                 color = Color(0xFF94A3B8),
                 fontSize = 14.sp
             )
@@ -386,9 +416,18 @@ private fun RecentMatchesContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         val modeLabel = when (match.gameMode) {
-                            "EXTENDED_TABLE", "EXTENDED_HOST", "EXTENDED_GUEST" -> "Mesa Estendida"
-                            "SPLIT_SCREEN" -> "Mesa Dividida"
-                            "SOLO" -> "Solo vs IA ${match.aiDifficulty?.let { "($it)" } ?: ""}"
+                            "EXTENDED_TABLE", "EXTENDED_HOST", "EXTENDED_GUEST" -> stringResource(R.string.menu_mode_extended)
+                            "SPLIT_SCREEN" -> stringResource(R.string.menu_mode_split)
+                            "SOLO" -> {
+                                val difficultyStr = when (match.aiDifficulty) {
+                                    "EASY" -> stringResource(R.string.settings_ai_easy)
+                                    "MEDIUM" -> stringResource(R.string.settings_ai_medium)
+                                    "HARD" -> stringResource(R.string.settings_ai_hard)
+                                    else -> match.aiDifficulty ?: ""
+                                }
+                                val soloBase = stringResource(R.string.menu_mode_solo)
+                                if (difficultyStr.isNotBlank()) "$soloBase ($difficultyStr)" else soloBase
+                            }
                             else -> match.gameMode
                         }
                         Text(
@@ -419,10 +458,10 @@ private fun RecentMatchesContent(
                             fontWeight = FontWeight.ExtraBold
                         )
                         val deltaA = match.ratingDeltaA
-                        val deltaText = if (deltaA >= 0) "+$deltaA Elo" else "$deltaA Elo"
+                        val deltaSign = if (deltaA >= 0) "+$deltaA" else "$deltaA"
                         val deltaColor = if (deltaA > 0) Color(0xFF10B981) else if (deltaA < 0) Color(0xFFEF4444) else Color(0xFF94A3B8)
                         Text(
-                            text = deltaText,
+                            text = stringResource(R.string.leaderboard_delta_elo, deltaSign),
                             color = deltaColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold

@@ -116,6 +116,25 @@
     <string name="settings_player_name_saved">Player name saved successfully!</string>
     <string name="settings_player_name_empty">Name cannot be empty</string>
     <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
     <string name="game_draw">Draw!</string>
+    <string name="settings_player_name_default">Player</string>
 
+    <!-- Leaderboard / Placar de Líderes -->
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="leaderboard_tab_elo">General (Elo)</string>
+    <string name="leaderboard_tab_extended">Extended Table</string>
+    <string name="leaderboard_tab_solo">Solo vs AI</string>
+    <string name="leaderboard_tab_history">History</string>
+    <string name="leaderboard_win_streak">Streak: %1$d win(s)</string>
+    <string name="leaderboard_elo_value">%1$d Elo</string>
+    <string name="leaderboard_win_rate">%1$d/%2$d wins (%3$d%%)</string>
+    <string name="leaderboard_metric_elo">Elo</string>
+    <string name="leaderboard_metric_multi_wins">2P Wins</string>
+    <string name="leaderboard_metric_solo_wins">Solo Wins</string>
+    <string name="leaderboard_empty_players">No matches recorded yet.\nPlay your first match to rank on the leaderboard!</string>
+    <string name="leaderboard_empty_history">No recent match history available.</string>
+    <string name="leaderboard_player_record">%1$dW - %2$dL · Diff: %3$s</string>
+    <string name="leaderboard_delta_elo">%1$s Elo</string>
+    <string name="ad_reward_button_desc">Earn 2h Ad-Free</string>
 </resources>

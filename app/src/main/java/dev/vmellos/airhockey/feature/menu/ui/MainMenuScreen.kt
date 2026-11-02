@@ -87,7 +87,7 @@ fun MainMenuScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = "Placar de Líderes",
+                    contentDescription = stringResource(R.string.leaderboard_title),
                     tint = Color(0xFFFFB800)
                 )
             }
@@ -112,7 +112,7 @@ fun MainMenuScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Redeem,
-                            contentDescription = "Ganhar 2h Sem Anúncios",
+                            contentDescription = stringResource(R.string.ad_reward_button_desc),
                             tint = Color(0xFFFF2A6D)
                         )
                     }

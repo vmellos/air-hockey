@@ -169,3 +169,15 @@ _Avoid_: Rewarded ad, propaganda premiada, vídeo de bônus
 **Portal Oficial**:
 O sítio institucional estático hospedado no Cloudflare Pages contendo a apresentação do jogo, documentação legal de privacidade e arquivo de validação `app-ads.txt`.
 _Avoid_: Site, homepage, web portal
+
+**Trava de Segurança de Teste Fechado**:
+A diretriz de proteção de conta que mantém os identificadores de blocos de anúncios roteados estritamente para os blocos de teste oficiais do Google AdMob durante o teste fechado de 14 dias do Google Play Console, prevenindo deduções e suspensão por tráfego inválido.
+_Avoid_: Anúncio real em teste, modo produção antecipado, auto-clique
+
+**Roteamento de Anúncios por Ambiente**:
+A política arquitetural (`USE_PRODUCTION_ADS`) que serve blocos comerciais de anúncios exclusivamente após o lançamento público em produção, isolando builds de depuração e testes fechados em ambiente sandbox.
+_Avoid_: Ad toggle manual, hardcoded ads, anúncio fixo
+
+**Internacionalização do Placar**:
+A padronização visual e textual do Placar de Líderes regida por recursos de strings (`strings.xml` nos idiomas en, pt-BR e es) e iconografia vetorial limpa do Material Design, sem dependência de glifos de emoji unicode.
+_Avoid_: Emoji no ranking, strings hardcoded, placar fixo em português
