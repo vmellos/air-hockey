@@ -9,7 +9,9 @@ enum class GameMode {
     EXTENDED_HOST,
     EXTENDED_GUEST,
     CONNECTED_HOST,
-    CONNECTED_GUEST
+    CONNECTED_GUEST,
+    AI_VS_AI_LOCAL,
+    AI_VS_AI_EXTENDED
 }
 
 enum class MatchStatus {

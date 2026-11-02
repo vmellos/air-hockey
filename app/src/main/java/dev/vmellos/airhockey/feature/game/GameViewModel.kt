@@ -37,7 +37,8 @@ class GameViewModel : ViewModel() {
     lateinit var engine: AirHockeyPhysicsEngine
         private set
 
-    private var aiController: AirHockeyAiController? = null
+    private var aiControllerP1: AirHockeyAiController? = null
+    private var aiControllerP2: AirHockeyAiController? = null
     private var physicsJob: Job? = null
     private var countdownPhysicsJob: Job? = null
     private var timerJob: Job? = null
@@ -128,12 +129,14 @@ class GameViewModel : ViewModel() {
         targetScore: Int = 7,
         matchTimeSeconds: Int = 180,
         aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
+        aiDifficultyPlayer1: AiDifficulty = AiDifficulty.MEDIUM,
+        aiDifficultyPlayer2: AiDifficulty = aiDifficulty,
         puckMaxSpeed: Float = 6800f,
         airFriction: Float = 0.40f,
         player1Name: String = "Jogador 1",
         player2Name: String = "Jogador 2"
     ) {
-        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST
+        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED
         val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST
         val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(bezelGapMm, screenHeightPx, yDpi) else 0f
 
@@ -149,11 +152,18 @@ class GameViewModel : ViewModel() {
         hasRecordedMatch = false
         currentMatchTimeSeconds = matchTimeSeconds
 
-        // Limpa estritamente o controlador de IA se não for modo SOLO
-        aiController = if (mode == GameMode.SOLO) {
-            AirHockeyAiController(aiDifficulty)
-        } else {
-            null
+        // Inicializa controladores de IA conforme o modo
+        aiControllerP1 = when (mode) {
+            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true)
+            GameMode.AI_VS_AI_EXTENDED -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true) else null
+            else -> null
+        }
+
+        aiControllerP2 = when (mode) {
+            GameMode.SOLO -> AirHockeyAiController(aiDifficulty, isPlayer1 = false)
+            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false)
+            GameMode.AI_VS_AI_EXTENDED -> AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false)
+            else -> null
         }
 
         _matchState.value = MatchState(
@@ -316,7 +326,8 @@ class GameViewModel : ViewModel() {
                 val start = System.currentTimeMillis()
 
                 if (_matchState.value.isHost) {
-                    aiController?.update(engine, dt)
+                    aiControllerP1?.update(engine, dt)
+                    aiControllerP2?.update(engine, dt)
                     engine.tick(dt)
 
                     val evt = pendingCollisionEvent
@@ -332,6 +343,9 @@ class GameViewModel : ViewModel() {
                         engine.player2Mallet.x, engine.player2Mallet.y,
                         evt, intensity
                     )
+                } else if (aiControllerP2 != null) {
+                    aiControllerP2?.update(engine, dt)
+                    onGuestSendInput?.invoke(engine.player2Mallet.targetX, engine.player2Mallet.targetY)
                 }
 
                 val elapsed = System.currentTimeMillis() - start
@@ -378,21 +392,31 @@ class GameViewModel : ViewModel() {
 
     fun onTouchPlayer1(x: Float, y: Float) {
         if (!::engine.isInitialized || !isInputAllowed()) return
-        engine.player1Mallet.targetX = x
-        engine.player1Mallet.targetY = y
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            engine.player1Mallet.x = x
-            engine.player1Mallet.y = y
+            val (cx, cy) = engine.clampPositionAgainstFrozenPuck(x, y, engine.player1Mallet.radius)
+            engine.player1Mallet.targetX = cx
+            engine.player1Mallet.targetY = cy
+            engine.player1Mallet.x = cx
+            engine.player1Mallet.y = cy
+            engine.clampMalletAgainstFrozenPuck(engine.player1Mallet)
+        } else {
+            engine.player1Mallet.targetX = x
+            engine.player1Mallet.targetY = y
         }
     }
 
     fun onTouchPlayer2(x: Float, y: Float) {
         if (!::engine.isInitialized || !isInputAllowed()) return
-        engine.player2Mallet.targetX = x
-        engine.player2Mallet.targetY = y
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            engine.player2Mallet.x = x
-            engine.player2Mallet.y = y
+            val (cx, cy) = engine.clampPositionAgainstFrozenPuck(x, y, engine.player2Mallet.radius)
+            engine.player2Mallet.targetX = cx
+            engine.player2Mallet.targetY = cy
+            engine.player2Mallet.x = cx
+            engine.player2Mallet.y = cy
+            engine.clampMalletAgainstFrozenPuck(engine.player2Mallet)
+        } else {
+            engine.player2Mallet.targetX = x
+            engine.player2Mallet.targetY = y
         }
     }
 
@@ -625,7 +649,7 @@ class GameViewModel : ViewModel() {
         val state = _matchState.value
         val duration = (currentMatchTimeSeconds - state.remainingTimeSeconds).coerceAtLeast(0)
         val modeStr = state.mode.name
-        val diff = if (state.mode == GameMode.SOLO) aiController?.difficulty?.name else null
+        val diff = if (state.mode == GameMode.SOLO) aiControllerP2?.difficulty?.name else null
 
         viewModelScope.launch {
             try {

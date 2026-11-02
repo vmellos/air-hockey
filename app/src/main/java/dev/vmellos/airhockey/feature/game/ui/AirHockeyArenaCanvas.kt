@@ -16,6 +16,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.UserPreferences
@@ -76,6 +77,9 @@ fun AirHockeyArenaCanvas(
         }
     }
 
+    var activePointerP1 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
+    var activePointerP2 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -87,29 +91,93 @@ fun AirHockeyArenaCanvas(
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
-                        for (change in event.changes) {
-                            if (change.pressed) {
-                                val tablePt = projection.screenToTable(change.position.x, change.position.y, w, h)
+                        if (mode == GameMode.AI_VS_AI_LOCAL || mode == GameMode.AI_VS_AI_EXTENDED) {
+                            // No modo espectador IA x IA, os toques não interferem nos rebatedores
+                            continue
+                        }
 
+                        val grabRadiusSq = (engine.player1Mallet.radius * 2.2f).let { it * it }
+
+                        for (change in event.changes) {
+                            val tablePt = projection.screenToTable(change.position.x, change.position.y, w, h)
+
+                            if (change.pressed) {
                                 when (mode) {
                                     GameMode.EXTENDED_GUEST, GameMode.CONNECTED_GUEST -> {
-                                        viewModel.onTouchGuestGlobal(tablePt.x, tablePt.y + touchOffset)
+                                        val mallet = engine.player2Mallet
+                                        val targetY = tablePt.y + touchOffset
+                                        val dx = tablePt.x - mallet.x
+                                        val dy = targetY - mallet.y
+                                        val distSq = dx * dx + dy * dy
+
+                                        if (activePointerP2 == change.id) {
+                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
+                                            change.consume()
+                                        } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
+                                            activePointerP2 = change.id
+                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
+                                            change.consume()
+                                        }
                                     }
-                                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST -> {
-                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
+                                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST, GameMode.SOLO -> {
+                                        val mallet = engine.player1Mallet
+                                        val targetY = tablePt.y - touchOffset
+                                        val dx = tablePt.x - mallet.x
+                                        val dy = targetY - mallet.y
+                                        val distSq = dx * dx + dy * dy
+
+                                        if (activePointerP1 == change.id) {
+                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
+                                            change.consume()
+                                        } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
+                                            activePointerP1 = change.id
+                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
+                                            change.consume()
+                                        }
                                     }
                                     GameMode.SPLIT_SCREEN -> {
                                         if (tablePt.y < dimensions.centerLineY) {
-                                            viewModel.onTouchPlayer2(tablePt.x, tablePt.y + touchOffset)
+                                            val mallet = engine.player2Mallet
+                                            val targetY = tablePt.y + touchOffset
+                                            val dx = tablePt.x - mallet.x
+                                            val dy = targetY - mallet.y
+                                            val distSq = dx * dx + dy * dy
+
+                                            if (activePointerP2 == change.id) {
+                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
+                                                change.consume()
+                                            } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
+                                                activePointerP2 = change.id
+                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
+                                                change.consume()
+                                            }
                                         } else {
-                                            viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
+                                            val mallet = engine.player1Mallet
+                                            val targetY = tablePt.y - touchOffset
+                                            val dx = tablePt.x - mallet.x
+                                            val dy = targetY - mallet.y
+                                            val distSq = dx * dx + dy * dy
+
+                                            if (activePointerP1 == change.id) {
+                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
+                                                change.consume()
+                                            } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
+                                                activePointerP1 = change.id
+                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
+                                                change.consume()
+                                            }
                                         }
                                     }
-                                    GameMode.SOLO -> {
-                                        viewModel.onTouchPlayer1(tablePt.x, tablePt.y - touchOffset)
-                                    }
+                                    else -> {}
                                 }
-                                change.consume()
+                            } else {
+                                // Liberação do toque
+                                if (activePointerP1 == change.id) {
+                                    activePointerP1 = null
+                                }
+                                if (activePointerP2 == change.id) {
+                                    activePointerP2 = null
+                                }
                             }
                         }
                     }
@@ -208,8 +276,9 @@ fun AirHockeyArenaCanvas(
                 )
             }
 
-            // 5. Desenha ondas de choque expansivas
-            particlePool.drawShockwaves(this, scale)
+            // 5. Desenha ondas de choque expansivas e ondas de choque radiais
+            val timeSec = (framePulse / 1_000_000_000.0).toFloat()
+            particlePool.drawShockwaves(this, scale, timeSec)
 
             // 6. Desenha faíscas incandescentes
             if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL) {

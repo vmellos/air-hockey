@@ -36,6 +36,9 @@ class AirHockeyApp : Application() {
     lateinit var adManager: AdManager
         private set
 
+    lateinit var inAppUpdateEngine: dev.vmellos.airhockey.core.update.InAppUpdateEngine
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -46,6 +49,7 @@ class AirHockeyApp : Application() {
         billingManager = BillingManager(this)
         billingManager.startConnection()
         adManager = AdManager(this, billingManager)
+        inAppUpdateEngine = dev.vmellos.airhockey.core.update.PlayInAppUpdateEngine(this)
 
         applicationScope.launch {
             preferencesRepository.userPreferencesFlow.collectLatest { prefs ->
@@ -60,6 +64,7 @@ class AirHockeyApp : Application() {
         super.onTerminate()
         applicationScope.cancel()
         audioEngine.release()
+        inAppUpdateEngine.unregister()
     }
 
     companion object {

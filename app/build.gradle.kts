@@ -113,6 +113,10 @@ dependencies {
     // Google Play In-App Billing
     implementation(libs.play.billing.ktx)
 
+    // Google Play In-App Updates
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
+
     // Offline QR Code Generation & Scanning
     implementation(libs.zxing.core)
     implementation(libs.androidx.camera.camera2)

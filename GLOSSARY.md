@@ -40,6 +40,10 @@ _Avoid_: Gol contra, own goal, ponto contra
 O espaçamento ergonômico vertical aplicado entre o ponto de toque do dedo na tela e o centro do rebatedor para desobstruir a visão do disco.
 _Avoid_: Touch offset, finger offset, margem de dedo, folga de toque
 
+**Raio de Agarre do Rebatedor**:
+A zona circular de tolerância ao redor do centro do rebatedor que condiciona o início do controle por toque, bloqueando saltos e deslocamentos anômalos disparados por cliques em áreas distantes da mesa.
+_Avoid_: Grab radius, margem de toque, gatilho de clique, toque solto
+
 **Jogada Lateral**:
 O golpe angular aplicado no disco contra as bordas laterais da mesa com o objetivo de produzir ricochete veloz em direção à meta oposta.
 _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
@@ -77,6 +81,10 @@ _Avoid_: Dual screen, tela dupla, big board
 **Mesa Conectada**:
 Partida para dois jogadores em dois dispositivos físicos pareados via rede sem fio, na qual cada aparelho projeta a mesa inteira e sincroniza os movimentos em tempo real.
 _Avoid_: Modo online, duelo sem fio, campo inteiro p2p, versus wifi, multiplayer normal
+
+**Modo IA x IA**:
+Partida de demonstração disputada exclusivamente entre dois oponentes virtuais controlados por inteligência artificial em um único dispositivo (Local) ou em dois dispositivos (Mesa Estendida).
+_Avoid_: Modo bot x bot, modo espectador, simulação ia, cpu vs cpu
 
 **Disposição Topo-a-Topo**:
 A configuração física de dois aparelhos dispostos verticalmente com as bordas superiores em contato mútuo, unindo as duas metades da mesa.
@@ -149,6 +157,10 @@ _Avoid_: Círculo do countdown, relógio central, animação de início
 **Celebração de Ponto**:
 O efeito de impacto visual e partículas incandescentes desencadeado quando o disco cruza a meta adversária, iluminando a arena com faíscas e ondas de choque na cor do marcador.
 _Avoid_: Animação de gol, comemoração de gol, goal fx
+
+**Onda de Choque Radial**:
+O efeito visual luminoso em formato de anel com feixes de plasma expansivos e raios irradiados emitido no centro da mesa ou na meta durante a contagem regressiva e celebração de ponto.
+_Avoid_: Onda de impacto, explosão de gol, círculo com raios, choque neon
 
 **Perfil de Efeitos Visuais**:
 A configuração gráfica ajustável pelo usuário que calibra a densidade de partículas, o volume do rastro de plasma e o detalhamento das animações para equilibrar fidelidade visual e consumo energético.

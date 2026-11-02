@@ -6,6 +6,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import dev.vmellos.airhockey.core.update.InAppUpdateEngine
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +54,11 @@ class MainActivity : ComponentActivity() {
 
         deepLinkUri = intent?.dataString
 
+        lifecycleScope.launch {
+            delay(500)
+            AirHockeyApp.instance.inAppUpdateEngine.checkForUpdate(this@MainActivity)
+        }
+
         setContent {
             val preferencesRepo = AirHockeyApp.instance.preferencesRepository
             val userPrefs by preferencesRepo.userPreferencesFlow.collectAsState(initial = UserPreferences())
@@ -66,6 +75,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        AirHockeyApp.instance.inAppUpdateEngine.checkDownloadedStatus()
+    }
+
     override fun onPause() {
         super.onPause()
         AirHockeyApp.instance.audioEngine.stopAll()
@@ -74,6 +88,14 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         AirHockeyApp.instance.audioEngine.stopAll()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == InAppUpdateEngine.REQUEST_CODE_FLEXIBLE_UPDATE) {
+            AirHockeyApp.instance.inAppUpdateEngine.onUpdateFlowResult(resultCode)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -155,6 +177,41 @@ fun AirHockeyAppNavigation(
                     navController.navigate("lobby")
                 },
                 onStartExtended = {
+                    lobbyViewModel.setTargetMode("EXTENDED")
+                    navController.navigate("lobby")
+                },
+                onStartAiVsAiLocal = { diff1, diff2 ->
+                    val puckPreset = when (diff1) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
+                    }
+                    val d1Str = when (diff1) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                    }
+                    val d2Str = when (diff2) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                    }
+                    gameViewModel.initializeMatch(
+                        mode = GameMode.AI_VS_AI_LOCAL,
+                        bezelGapMm = userPrefs.bezelGapMm,
+                        targetScore = userPrefs.targetScore,
+                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        aiDifficulty = diff1,
+                        aiDifficultyPlayer1 = diff1,
+                        aiDifficultyPlayer2 = diff2,
+                        puckMaxSpeed = puckPreset.maxSpeed,
+                        airFriction = puckPreset.airFriction,
+                        player1Name = "Bot 1 ($d1Str)",
+                        player2Name = "Bot 2 ($d2Str)"
+                    )
+                    navController.navigate("game/AI_VS_AI_LOCAL")
+                },
+                onStartAiVsAiExtended = { _, _ ->
                     lobbyViewModel.setTargetMode("EXTENDED")
                     navController.navigate("lobby")
                 },

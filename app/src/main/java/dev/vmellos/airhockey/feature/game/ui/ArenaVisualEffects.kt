@@ -77,14 +77,16 @@ class VisualShockwave {
     var maxRadius: Float = 160f
     var progress: Float = 0f
     var active: Boolean = false
+    var isRadiating: Boolean = false
 
-    fun init(startX: Float, startY: Float, waveColor: Color, radius: Float) {
+    fun init(startX: Float, startY: Float, waveColor: Color, radius: Float, radiating: Boolean = false) {
         x = startX
         y = startY
         color = waveColor
         maxRadius = radius
         progress = 0f
         active = true
+        isRadiating = radiating
     }
 
     fun update(speed: Float) {
@@ -129,8 +131,8 @@ class ParticlePool(
     }
 
     fun spawnGoalBurst(goalCenterX: Float, goalY: Float, isTop: Boolean, color: Color) {
-        // Dispara onda de choque expansiva
-        spawnShockwave(goalCenterX, goalY, color, maxRadius = 380f)
+        // Dispara onda de choque radial expansiva com raios irradiantes (estilo arcade neon)
+        spawnShockwave(goalCenterX, goalY, color, maxRadius = 520f, radiating = true)
 
         // Dispara leque de faíscas incandescentes em direção ao interior da arena
         var spawned = 0
@@ -151,10 +153,10 @@ class ParticlePool(
         }
     }
 
-    fun spawnShockwave(x: Float, y: Float, color: Color, maxRadius: Float = 160f) {
+    fun spawnShockwave(x: Float, y: Float, color: Color, maxRadius: Float = 160f, radiating: Boolean = false) {
         for (sw in shockwaves) {
             if (!sw.active) {
-                sw.init(x, y, color, maxRadius)
+                sw.init(x, y, color, maxRadius, radiating)
                 break
             }
         }
@@ -165,21 +167,36 @@ class ParticlePool(
             if (p.active) p.update(dt)
         }
         for (sw in shockwaves) {
-            if (sw.active) sw.update(0.040f)
+            val speed = if (sw.isRadiating) 0.024f else 0.040f
+            if (sw.active) sw.update(speed)
         }
     }
 
-    fun drawShockwaves(drawScope: DrawScope, scale: Float) {
+    fun drawShockwaves(drawScope: DrawScope, scale: Float, timeSec: Float = 0f) {
         for (sw in shockwaves) {
             if (!sw.active) continue
             val currentRadius = sw.maxRadius * scale * sw.progress
-            val currentAlpha = (1f - sw.progress).coerceIn(0f, 1f) * 0.75f
-            drawScope.drawCircle(
-                color = sw.color.copy(alpha = currentAlpha),
-                radius = currentRadius,
-                center = Offset(sw.x, sw.y),
-                style = Stroke(width = 4.5f * (1f - sw.progress) * scale)
-            )
+            val currentAlpha = (1f - sw.progress).coerceIn(0f, 1f)
+
+            if (sw.isRadiating) {
+                drawScope.drawRadiatingEnergyWave(
+                    centerX = sw.x,
+                    centerY = sw.y,
+                    radius = currentRadius,
+                    color = sw.color,
+                    timeSec = timeSec,
+                    rayCount = 48,
+                    scale = scale,
+                    alpha = currentAlpha
+                )
+            } else {
+                drawScope.drawCircle(
+                    color = sw.color.copy(alpha = currentAlpha * 0.75f),
+                    radius = currentRadius,
+                    center = Offset(sw.x, sw.y),
+                    style = Stroke(width = 4.5f * currentAlpha * scale)
+                )
+            }
         }
     }
 
@@ -674,6 +691,100 @@ fun DrawScope.drawDynamicEnergyTrail(
 }
 
 /**
+ * Desenha a Onda de Choque Radial Arcada com feixes densos e filamentos de energia
+ * que se expandem e irradiam a partir do centro (idêntico à referência visual do print).
+ */
+fun DrawScope.drawRadiatingEnergyWave(
+    centerX: Float,
+    centerY: Float,
+    radius: Float,
+    color: Color,
+    timeSec: Float,
+    rayCount: Int = 48,
+    scale: Float = 1f,
+    alpha: Float = 1f
+) {
+    if (radius <= 0f || alpha <= 0.01f) return
+
+    val coreColor = if (color == NeonOrange) NeonOrangeCore else NeonCyanCore
+    val brightColor = if (color == NeonOrange) NeonOrangeBright else NeonCyanBright
+
+    // 1. Halo volumétrico de energia difusa
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                coreColor.copy(alpha = 0.50f * alpha),
+                color.copy(alpha = 0.30f * alpha),
+                color.copy(alpha = 0.08f * alpha),
+                Color.Transparent
+            ),
+            center = Offset(centerX, centerY),
+            radius = radius * 1.35f
+        ),
+        radius = radius * 1.35f,
+        center = Offset(centerX, centerY)
+    )
+
+    // 2. Anel interno de contenção
+    val innerRadius = radius * 0.42f
+    drawCircle(
+        color = coreColor.copy(alpha = 0.90f * alpha),
+        radius = innerRadius,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 3.5f * scale)
+    )
+
+    // 3. Feixes de plasma densos irradiando do anel interno até a periferia (efeito raio de sol / íris de choque do print)
+    val angleStep = (2f * PI / rayCount).toFloat()
+    for (i in 0 until rayCount) {
+        val angle = i * angleStep + timeSec * 0.35f
+        // Variação de comprimento harmônico para gerar textura pulsante de energia
+        val lengthMod = 0.72f + 0.28f * sin(i * 3.7f + timeSec * 10f)
+        val outerRayRadius = innerRadius + (radius - innerRadius) * lengthMod
+
+        val cosA = cos(angle)
+        val sinA = sin(angle)
+
+        val startX = centerX + cosA * innerRadius
+        val startY = centerY + sinA * innerRadius
+        val endX = centerX + cosA * outerRayRadius
+        val endY = centerY + sinA * outerRayRadius
+
+        val rayWidth = if (i % 2 == 0) 2.5f * scale else 1.5f * scale
+        val rayAlpha = (0.50f + 0.45f * lengthMod) * alpha
+
+        drawLine(
+            brush = Brush.linearGradient(
+                colors = listOf(coreColor.copy(alpha = rayAlpha), color.copy(alpha = rayAlpha * 0.35f)),
+                start = Offset(startX, startY),
+                end = Offset(endX, endY)
+            ),
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = rayWidth,
+            cap = StrokeCap.Round
+        )
+    }
+
+    // 4. Anel externo perimetral brilhante
+    drawCircle(
+        color = brightColor.copy(alpha = 0.90f * alpha),
+        radius = radius,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 4.2f * scale)
+    )
+
+    // 5. Linha horizontal e retícula de mira estilizada (idêntica ao print)
+    val crossExtension = radius * 1.35f
+    drawLine(
+        color = color.copy(alpha = 0.50f * alpha),
+        start = Offset(centerX - crossExtension, centerY),
+        end = Offset(centerX + crossExtension, centerY),
+        strokeWidth = 2f * scale
+    )
+}
+
+/**
  * Desenha o Vórtice de Contagem Regressiva central radiante no início e retomada.
  */
 fun DrawScope.drawCountdownVortex(
@@ -685,50 +796,18 @@ fun DrawScope.drawCountdownVortex(
 ) {
     val timeSec = (framePulse / 1_000_000_000.0).toFloat()
     val vortexColor = if (countdownNumber == 0) Color(0xFF10B981) else NeonCyan
-    val baseRadius = 145f * scale
-
-    // 1. Anéis concêntricos pulsantes
     val pulse = (sin(timeSec * 8f) * 0.5f + 0.5f)
-    val ring1Radius = baseRadius * (1f + pulse * 0.14f)
-    val ring2Radius = baseRadius * (0.75f - pulse * 0.08f)
+    val baseRadius = (155f + pulse * 15f) * scale
 
-    drawCircle(
-        color = vortexColor.copy(alpha = 0.20f),
-        radius = ring1Radius * 1.3f,
-        center = Offset(centerX, centerY)
+    drawRadiatingEnergyWave(
+        centerX = centerX,
+        centerY = centerY,
+        radius = baseRadius,
+        color = vortexColor,
+        timeSec = timeSec,
+        rayCount = 56,
+        scale = scale,
+        alpha = 1f
     )
-    drawCircle(
-        color = vortexColor.copy(alpha = 0.50f),
-        radius = ring1Radius,
-        center = Offset(centerX, centerY),
-        style = Stroke(width = 4f * scale)
-    )
-    drawCircle(
-        color = vortexColor.copy(alpha = 0.85f),
-        radius = ring2Radius,
-        center = Offset(centerX, centerY),
-        style = Stroke(width = 3.5f * scale, pathEffect = PathEffect.dashPathEffect(floatArrayOf(24f * scale, 16f * scale), timeSec * 60f))
-    )
-
-    // 2. Lâminas de energia em rotação ao redor do centro (estilo turbina/vórtice como no Print 1)
-    rotate(degrees = timeSec * 90f, pivot = Offset(centerX, centerY)) {
-        val bladeCount = 12
-        val bladeLength = 40f * scale
-        for (i in 0 until bladeCount) {
-            val angle = (i.toFloat() / bladeCount.toFloat()) * (2f * PI).toFloat()
-            val startX = centerX + cos(angle) * (ring2Radius + 8f * scale)
-            val startY = centerY + sin(angle) * (ring2Radius + 8f * scale)
-            val endX = centerX + cos(angle + 0.18f) * (ring2Radius + 8f * scale + bladeLength)
-            val endY = centerY + sin(angle + 0.18f) * (ring2Radius + 8f * scale + bladeLength)
-
-            drawLine(
-                color = vortexColor.copy(alpha = 0.75f),
-                start = Offset(startX, startY),
-                end = Offset(endX, endY),
-                strokeWidth = 3f * scale,
-                cap = StrokeCap.Round
-            )
-        }
-    }
 }
 

@@ -11,6 +11,8 @@
     <string name="menu_mode_split_desc">2 players on the same device</string>
     <string name="menu_mode_extended">Extended Table</string>
     <string name="menu_mode_extended_desc">2 devices top-to-top forming one single extended table</string>
+    <string name="menu_mode_ai_vs_ai">AI vs AI Mode</string>
+    <string name="menu_mode_ai_vs_ai_desc">Autonomous duel between artificial intelligences</string>
     <string name="menu_settings">Settings</string>
 
     <!-- Lobby Mesa Estendida e Conectada -->
