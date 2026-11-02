@@ -27,6 +27,14 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Suporte a dispositivos de tela grande, tablets e dobráveis -->
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:anyDensity="true" />
+
     <application
         android:name=".AirHockeyApp"
         android:allowBackup="true"
@@ -38,6 +46,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AirHockey"
         android:localeConfig="@xml/locales_config"
+        android:resizeableActivity="true"
         android:usesCleartextTraffic="true">
 
         <!-- Google AdMob Application ID (Configured via manifestPlaceholders) -->
@@ -49,7 +58,8 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density"
             android:theme="@style/Theme.AirHockey"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

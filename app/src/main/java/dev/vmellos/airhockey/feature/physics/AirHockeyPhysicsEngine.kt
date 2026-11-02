@@ -172,6 +172,7 @@ class AirHockeyPhysicsEngine(
                 puck.vy += (impulseMag * ny) + mallet.vy * malletFactor
 
                 val impactIntensity = (sqrt(puck.speedSquared()) / 3000f).coerceIn(0.2f, 1.0f)
+                puck.lastHitBy = if (isPlayer1) 1 else 2
                 val event = if (isPlayer1) CollisionEvent.PADDLE_HIT_P1 else CollisionEvent.PADDLE_HIT_P2
                 onCollisionListener?.invoke(event, impactIntensity)
                 onVisualCollisionListener?.invoke(puck.x, puck.y, event)

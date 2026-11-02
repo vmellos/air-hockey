@@ -94,6 +94,8 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                     queryProductDetails()
                     queryPurchases(isRestoreExplicit = false)
                     onConnected?.invoke()
+                } else {
+                    _events.tryEmit(BillingEvent.BillingError(billingResult.debugMessage.ifBlank { "Falha ao conectar com o Google Play" }))
                 }
             }
 
@@ -103,7 +105,7 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         })
     }
 
-    private fun queryProductDetails() {
+    fun queryProductDetails(onComplete: ((ProductDetails?) -> Unit)? = null) {
         _isLoadingPrice.value = true
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
@@ -118,14 +120,16 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(params) { billingResult, queryResult ->
             _isLoadingPrice.value = false
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val details = queryResult.productDetailsList?.firstOrNull { it.productId == BillingConstants.PRODUCT_REMOVE_ADS }
-                if (details != null) {
-                    removeAdsProductDetails = details
-                    val price = details.oneTimePurchaseOfferDetails?.formattedPrice
-                    _formattedPrice.value = price
-                }
+            val details = if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                queryResult.productDetailsList?.firstOrNull { it.productId == BillingConstants.PRODUCT_REMOVE_ADS }
+            } else {
+                null
             }
+            if (details != null) {
+                removeAdsProductDetails = details
+                _formattedPrice.value = details.oneTimePurchaseOfferDetails?.formattedPrice
+            }
+            onComplete?.invoke(details)
         }
     }
 
@@ -136,19 +140,22 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         }
 
         val details = removeAdsProductDetails
-        if (details == null) {
-            startConnection {
-                val updatedDetails = removeAdsProductDetails
-                if (updatedDetails != null) {
-                    launchFlowWithDetails(activity, updatedDetails)
-                } else {
-                    _events.tryEmit(BillingEvent.BillingError("Product details not available yet"))
-                }
-            }
+        if (details != null) {
+            launchFlowWithDetails(activity, details)
             return
         }
 
-        launchFlowWithDetails(activity, details)
+        _isLoadingPrice.value = true
+        startConnection {
+            queryProductDetails { updatedDetails ->
+                _isLoadingPrice.value = false
+                if (updatedDetails != null) {
+                    launchFlowWithDetails(activity, updatedDetails)
+                } else {
+                    _events.tryEmit(BillingEvent.BillingError("Produto ainda não disponível no Google Play. Verifique se o produto está Ativo no Play Console."))
+                }
+            }
+        }
     }
 
     private fun launchFlowWithDetails(activity: Activity, productDetails: ProductDetails) {

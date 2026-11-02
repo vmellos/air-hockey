@@ -115,6 +115,7 @@ class AirHockeyPhysicsEngineTest {
         engine.tick(0.02f)
         assertTrue("Paddle hit should be detected", paddleHit)
         assertTrue("Puck should gain upward velocity", engine.puck.vy < 0f)
+        assertEquals(1, engine.puck.lastHitBy)
 
         // Verifica separação geométrica
         val dx = engine.puck.x - engine.player1Mallet.x

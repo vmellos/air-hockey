@@ -152,4 +152,14 @@
     <string name="remove_ads_feedback_not_found">No se encontraron compras anteriores para esta cuenta.</string>
     <string name="remove_ads_feedback_error">No se pudo conectar a Google Play Store.</string>
     <string name="remove_ads_feedback_canceled">Compra cancelada.</string>
+
+    <!-- Perfil de Efectos Visuales -->
+    <string name="settings_visual_effects">Efectos Visuales</string>
+    <string name="settings_visual_effects_desc">Fidelidad gráfica y densidad de partículas</string>
+    <string name="visual_effects_full">Completo (Arcade Neón)</string>
+    <string name="visual_effects_full_desc">Estela de plasma de fuego, chispas incandescentes, vórtice de cuenta atrás y celebración explosiva</string>
+    <string name="visual_effects_balanced">Económico (Ahorro de Batería)</string>
+    <string name="visual_effects_balanced_desc">Estela cinética suave y ondas de choque ligeras sin lluvia de chispas</string>
+    <string name="visual_effects_off">Rendimiento (Mínimo)</string>
+    <string name="visual_effects_off_desc">Sin estelas ni partículas para máxima fluidez en dispositivos básicos</string>
 </resources>
