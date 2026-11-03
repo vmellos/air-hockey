@@ -224,4 +224,93 @@ class AirHockeyImprovementsTest {
         assertEquals(12.5f, parsedStart.gapMm, 0.01f)
         assertEquals(3600f, parsedStart.maxSpeed, 0.01f)
     }
+
+    @Test
+    fun testInitialServePositionSingleDeviceStartsInPlayer1Court() {
+        val projection = TableProjection(dimensions)
+        val serveSpot = projection.getServePosition(scorer = 0)
+        // No início da partida, o saque deve ser concedido ao Jogador 1 (metade inferior)
+        assertEquals(dimensions.width / 2f, serveSpot.x, 0.01f)
+        assertEquals(dimensions.centerLineY + 300f, serveSpot.y, 0.01f)
+    }
+
+    @Test
+    fun testAiPlayer1InitiatesOpeningServeStrike() {
+        val aiP1 = AirHockeyAiController(AiDifficulty.HARD, isPlayer1 = true)
+        engine.resetPositions(scorer = 0) // Disco em 500f, 1300f; P1 em 500f, 1750f
+
+        assertEquals(1300f, engine.puck.y, 0.1f)
+        assertEquals(1750f, engine.player1Mallet.y, 0.1f)
+
+        // Simula alguns ciclos de atualização da IA
+        for (i in 0 until 5) {
+            aiP1.update(engine, 1f / 60f)
+        }
+
+        // A IA do Jogador 1 deve avançar para frente (targetY menor que 1750f) para sacar o disco
+        assertTrue("IA do Jogador 1 deve avançar para frente para sacar o disco", engine.player1Mallet.targetY < 1700f)
+    }
+
+    @Test
+    fun testAiTacticalAntiOpponentAimingExploitsOpenPost() {
+        val ai = AirHockeyAiController(AiDifficulty.HARD, isPlayer1 = false)
+
+        // Disco em posição de ataque na metade superior
+        engine.puck.x = 500f
+        engine.puck.y = 600f
+        engine.puck.vx = 0f
+        engine.puck.vy = 10f
+
+        engine.player2Mallet.x = 500f
+        engine.player2Mallet.y = 300f
+        engine.player2Mallet.targetX = 500f
+        engine.player2Mallet.targetY = 300f
+
+        // Caso 1: Oponente marcando o canto esquerdo (X = 350f)
+        engine.player1Mallet.x = 350f
+        engine.player1Mallet.y = 1750f
+
+        ai.update(engine, 1f / 60f)
+
+        // Para chutar no poste direito livre, o rebatedor da IA deve se posicionar ligeiramente à esquerda do disco
+        val targetXWhenOpponentOnLeft = engine.player2Mallet.targetX
+        assertTrue("IA deve atacar pelo flanco esquerdo para direcionar a bola ao poste direito livre", targetXWhenOpponentOnLeft < 500f)
+
+        // Caso 2: Oponente marcando o canto direito (X = 650f)
+        engine.player2Mallet.x = 500f
+        engine.player2Mallet.y = 300f
+        engine.player2Mallet.targetX = 500f
+        engine.player2Mallet.targetY = 300f
+        engine.player1Mallet.x = 650f
+
+        ai.update(engine, 1f / 60f)
+
+        // Para chutar no poste esquerdo livre, o rebatedor da IA deve se posicionar à direita do disco
+        val targetXWhenOpponentOnRight = engine.player2Mallet.targetX
+        assertTrue("IA deve atacar pelo flanco direito para direcionar a bola ao poste esquerdo livre", targetXWhenOpponentOnRight > 500f)
+    }
+
+    @Test
+    fun testAiDeadlockBreakNearCenterLine() {
+        val ai = AirHockeyAiController(AiDifficulty.HARD, isPlayer1 = false)
+
+        // Disco parado próximo à linha divisória (950f)
+        engine.puck.x = 500f
+        engine.puck.y = 950f
+        engine.puck.vx = 0f
+        engine.puck.vy = 0f
+
+        engine.player2Mallet.x = 500f
+        engine.player2Mallet.y = 190f
+        engine.player2Mallet.targetX = 500f
+        engine.player2Mallet.targetY = 190f
+
+        // Simula 1 segundo de disco estático (detecta deadlock)
+        for (i in 0 until 65) {
+            ai.update(engine, 1f / 60f)
+        }
+
+        // IA deve sair da defesa e avançar até próximo à linha central para desempacar
+        assertTrue("IA deve avançar até a linha de centro para quebrar o desempate", engine.player2Mallet.targetY > 500f)
+    }
 }

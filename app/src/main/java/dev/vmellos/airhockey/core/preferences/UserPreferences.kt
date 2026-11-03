@@ -29,6 +29,8 @@ data class UserPreferences(
     val appLanguage: String = LocaleHelper.SYSTEM_DEFAULT,
     val soundEnabled: Boolean = true,
     val soundVolume: Float = 0.8f,
+    val musicEnabled: Boolean = true,
+    val musicVolume: Float = 0.6f,
     val hapticsEnabled: Boolean = true,
     val aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
     val bezelGapMm: Float = 8.0f,

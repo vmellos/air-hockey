@@ -99,9 +99,12 @@ class AirHockeyPhysicsEngine(
         val distSq = dx * dx + dy * dy
         val minDist = puck.radius + mallet.radius
         if (distSq < minDist * minDist) {
-            val dist = if (distSq > 0.0001f) sqrt(distSq) else 0.01f
-            val nx = dx / dist
-            val ny = dy / dist
+            val dist = sqrt(distSq)
+            val (nx, ny) = if (dist > 0.001f) {
+                Pair(dx / dist, dy / dist)
+            } else {
+                Pair(0f, if (mallet.y >= puck.y) 1f else -1f)
+            }
             mallet.x = puck.x + nx * minDist
             mallet.y = puck.y + ny * minDist
         }
@@ -113,9 +116,12 @@ class AirHockeyPhysicsEngine(
         val distSq = dx * dx + dy * dy
         val minDist = puck.radius + malletRadius
         return if (distSq < minDist * minDist) {
-            val dist = if (distSq > 0.0001f) sqrt(distSq) else 0.01f
-            val nx = dx / dist
-            val ny = dy / dist
+            val dist = sqrt(distSq)
+            val (nx, ny) = if (dist > 0.001f) {
+                Pair(dx / dist, dy / dist)
+            } else {
+                Pair(0f, if (ty >= puck.y) 1f else -1f)
+            }
             Pair(puck.x + nx * minDist, puck.y + ny * minDist)
         } else {
             Pair(tx, ty)

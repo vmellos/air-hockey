@@ -21,7 +21,7 @@ data class TablePoint(val x: Float, val y: Float)
  */
 class TableProjection(
     val dimensions: TableDimensions,
-    val mode: GameMode
+    val mode: GameMode = GameMode.SOLO
 ) {
     val isExtendedHost: Boolean = mode == GameMode.EXTENDED_HOST
     val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST
@@ -165,7 +165,7 @@ class TableProjection(
             when (scorer) {
                 1 -> dimensions.centerLineY - 300f
                 2 -> dimensions.centerLineY + 300f
-                else -> dimensions.centerLineY
+                else -> dimensions.centerLineY + 300f // Início da partida: P1 saca na metade inferior
             }
         }
         return TablePoint(dimensions.width / 2f, puckY)

@@ -64,6 +64,14 @@ _Avoid_: Unpause countdown, re-start, contagem de despause
 A movimentação tática livre do rebatedor permitida aos participantes em seu próprio meio-campo durante a contagem regressiva enquanto o disco permanece imóvel na saída.
 _Avoid_: Pre-match movement, warm-up move, ajuste pré-jogo
 
+**Saque de Início**:
+O posicionamento do disco na metade da mesa do jogador que detém a posse de saída no começo da partida e após cada ponto marcado, permitindo a tacada inicial imediata sem estagnação.
+_Avoid_: Tiro de saída, início parado, saque neutro
+
+**Mira Tática Anti-Oponente**:
+A análise posicional contínua executada pela inteligência artificial sobre as coordenadas do rebatedor adversário para direcionar o golpe deliberadamente no lado desprotegido da meta rival.
+_Avoid_: Tiro mirado, mira automática, exploit de IA
+
 ## Modos de Jogo
 
 **Modo Solo**:
@@ -165,6 +173,14 @@ _Avoid_: Onda de impacto, explosão de gol, círculo com raios, choque neon
 **Perfil de Efeitos Visuais**:
 A configuração gráfica ajustável pelo usuário que calibra a densidade de partículas, o volume do rastro de plasma e o detalhamento das animações para equilibrar fidelidade visual e consumo energético.
 _Avoid_: Gráficos, qualidade gráfica, resolução, modo batata
+
+**Música de Fundo Arcade**:
+A trilha sonora temática instrumental em estilo synthwave sintetizada proceduralmente e reproduzida em loop contínuo durante as partidas, com controle independente de volume em relação aos efeitos sonoros.
+_Avoid_: Trilha sonora estática, música mp3, som do jogo
+
+**Modo Imersivo de Partida**:
+A ocultação estrita das barras de navegação do sistema operacional e da barra de status durante a partida na arena para blindar a área de jogo contra toques acidentais nos controles do aparelho.
+_Avoid_: Fullscreen comum, tela cheia simples, modo sem borda
 
 **Contador de FPS** (Descontinuado):
 O antigo indicador na arena que exibia a taxa de quadros por segundo entregue pelo motor de renderização, removido na preparação para publicação na loja.

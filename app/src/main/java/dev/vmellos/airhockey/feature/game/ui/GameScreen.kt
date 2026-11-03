@@ -5,18 +5,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.util.findActivity
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
-
-import androidx.compose.runtime.rememberCoroutineScope
-import dev.vmellos.airhockey.core.preferences.UserPreferences
 import kotlinx.coroutines.launch
 
 @Composable
@@ -28,8 +31,48 @@ fun GameScreen(
 ) {
     val matchState by viewModel.matchState.collectAsState()
     val isSoundEnabled by viewModel.soundEnabled.collectAsState()
+    val isMusicEnabled by viewModel.musicEnabled.collectAsState()
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val window = context.findActivity()?.window
+
+    // Oculta barras do sistema (controles físicos/virtuais e barra de status) durante a partida (Modo Imersivo)
+    DisposableEffect(window) {
+        if (window != null) {
+            val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+            insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose {
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+    }
+
+    // Controle dinâmico da música de fundo (BGM) conforme o ciclo de vida e estado do jogo
+    LaunchedEffect(matchState.status, isMusicEnabled) {
+        when (matchState.status) {
+            MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE -> {
+                if (isMusicEnabled) {
+                    AirHockeyApp.instance.audioEngine.playBgm()
+                } else {
+                    AirHockeyApp.instance.audioEngine.pauseBgm()
+                }
+            }
+            MatchStatus.PAUSED -> {
+                AirHockeyApp.instance.audioEngine.pauseBgm()
+            }
+            MatchStatus.GAME_OVER -> {
+                AirHockeyApp.instance.audioEngine.stopBgm()
+            }
+            else -> {
+                AirHockeyApp.instance.audioEngine.pauseBgm()
+            }
+        }
+    }
 
     // O BackHandler nunca fecha o jogo sem confirmação:
     // Ele pausa o jogo e exibe o diálogo de opções (Continuar, Reiniciar, Sair para o Menu).
@@ -97,6 +140,8 @@ fun GameScreen(
             PauseDialog(
                 isSoundEnabled = isSoundEnabled,
                 onToggleSound = { viewModel.toggleSound() },
+                isMusicEnabled = isMusicEnabled,
+                onToggleMusic = { viewModel.toggleMusic() },
                 visualEffectsProfile = prefs.visualEffectsProfile,
                 onChangeVisualEffects = { profile ->
                     scope.launch {

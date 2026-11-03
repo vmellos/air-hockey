@@ -567,6 +567,35 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    Text(text = stringResource(R.string.settings_music), color = Color.White, fontSize = 15.sp)
+                    Switch(
+                        checked = prefs.musicEnabled,
+                        onCheckedChange = { scope.launch { preferencesRepo.setMusicEnabled(it) } },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
+                    )
+                }
+
+                if (prefs.musicEnabled) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.settings_music_volume),
+                        color = Color(0xFF94A3B8),
+                        fontSize = 13.sp
+                    )
+                    Slider(
+                        value = prefs.musicVolume,
+                        onValueChange = { scope.launch { preferencesRepo.setMusicVolume(it) } },
+                        colors = SliderDefaults.colors(thumbColor = Color(0xFF00E5FF), activeTrackColor = Color(0xFF00E5FF))
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(text = stringResource(R.string.settings_haptics), color = Color.White, fontSize = 15.sp)
                     Switch(
                         checked = prefs.hapticsEnabled,
