@@ -42,7 +42,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
@@ -558,7 +560,7 @@ private fun HostLobbyView(
         val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
             "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
             "AI_EXTENDED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
-            else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.Devices)
+            else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
         }
 
         Surface(
@@ -762,8 +764,7 @@ private fun GuestLobbyView(
     onInputCodeChange: (String) -> Unit,
     onConnectCode: () -> Unit,
     onConnectTable: (dev.vmellos.airhockey.feature.network.DiscoveredTable, String) -> Unit,
-    onScanQrClick: () -> Unit,
-    onProceed: () -> Unit
+    onScanQrClick: () -> Unit
 ) {
     var selectedTableForPin by remember { mutableStateOf<dev.vmellos.airhockey.feature.network.DiscoveredTable?>(null) }
     var pinDialogInput by remember { mutableStateOf("") }
@@ -1004,7 +1005,7 @@ private fun GuestLobbyView(
                     val (modeColor, modeLabel, modeIcon) = when (table.mode) {
                         "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
                         "AI_EXTENDED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
-                        else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.Devices)
+                        else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
                     }
                     val tableShape = CutCornerShape(12.dp)
                     Card(
