@@ -52,9 +52,17 @@ _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
 A taxa máxima de deslocamento admitida para o disco durante a partida, acoplada diretamente ao nível de Dificuldade da IA nos confrontos individuais (Fácil = Lento, Médio = Normal, Difícil = Rápido).
 _Avoid_: Rapidez da bola, velocidade do jogo, puck speed, ajuste manual de velocidade
 
-**Empate**:
-O resultado oficial de uma partida em que o tempo limite se esgota com pontuação idêntica entre os dois competidores, sem declaração de vitória.
-_Avoid_: Tie, draw, igualdade, sem vencedor
+**Empate** (Descontinuado):
+O antigo resultado admitido quando a partida operava sob cronômetro regressivo. Com a remoção do limite de tempo em favor da vitória por Pontuação Alvo soberana, todas as partidas prosseguem continuamente até que um jogador alcance a meta de pontos, eliminando encerramentos arbitrários aos 00:00.
+_Avoid_: Tie, draw, igualdade, sem vencedor, tempo esgotado
+
+**Pontuação Alvo**:
+A meta quantitativa de pontos definida para a partida (3, 5, 7 ou 10 pontos) cuja conquista pelo primeiro jogador encerra o confronto e declara o vencedor imediato e definitivo de forma soberana, sem interferência de cronômetro ou tempo limite.
+_Avoid_: Placar final, limite de gols, meta de gols, target score
+
+**Modo Espectador**:
+O estado operacional da interface e dos controles acionado durante o Modo IA x IA no qual o toque manual sobre a mesa é desativado em favor da simulação autônoma dos robôs, permitindo ao usuário acompanhar o duelo e interagir apenas através do menu de pausa.
+_Avoid_: Tela travada, modo observador, bot view
 
 **Retomada com Contagem Regressiva**:
 O intervalo preparatório de 3 segundos disparado ao despausar a partida antes de restabelecer o movimento físico do disco.
@@ -77,6 +85,22 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 **Modo Solo**:
 Partida disputada por um jogador humano contra um oponente controlado por inteligência artificial em um único dispositivo.
 _Avoid_: Modo treino, single player, vs bot
+
+**Modo Fases**:
+A modalidade de progressão do Modo Solo estruturada em uma jornada de 100 níveis sequenciais com dificuldade gradativa e metas de vitória, na qual cada triunfo concede estrelas de desempenho e destrava o estágio seguinte.
+_Avoid_: Modo campanha, stage mode, levels, fases infinitas
+
+**Estrelas de Desempenho**:
+A classificação de 1 a 3 estrelas concedida ao concluir uma fase no Modo Fases, avaliando a eficiência defensiva do jogador pelo número de pontos cedidos ao adversário.
+_Avoid_: Stars, rating de fase, nota da fase
+
+**Tela de Vitória da Fase**:
+A interface de encerramento exibida após superar uma fase no Modo Fases, destacando as estrelas conquistadas e os controles de avanço direto (Lista de Fases, Reiniciar e Próxima Fase).
+_Avoid_: Win screen, tela de parabéns, resultado da fase
+
+**Disco Flamejante**:
+O elemento gráfico e animado de destaque na tela inicial, apresentando o disco metálico envolto por labaredas de plasma posicionado como plano de fundo atrás dos modos de jogo.
+_Avoid_: Flaming puck, fogo de fundo, bola de fogo, puck animado
 
 **Mesa Dividida**:
 Partida para dois jogadores no mesmo dispositivo físico, dividindo a tela da mesa ao meio.

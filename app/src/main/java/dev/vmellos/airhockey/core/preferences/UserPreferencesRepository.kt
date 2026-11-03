@@ -67,8 +67,8 @@ class UserPreferencesRepository(private val context: Context) {
             val soundEnabled = preferences[PreferencesKeys.SOUND_ENABLED] ?: true
             val soundVolume = preferences[PreferencesKeys.SOUND_VOLUME] ?: 0.8f
             val musicEnabled = preferences[PreferencesKeys.MUSIC_ENABLED] ?: true
-            val musicVolume = preferences[PreferencesKeys.MUSIC_VOLUME] ?: 0.6f
-            val hapticsEnabled = preferences[PreferencesKeys.HAPTICS_ENABLED] ?: true
+            val musicVolume = preferences[PreferencesKeys.MUSIC_VOLUME] ?: 0.15f
+            val hapticsEnabled = preferences[PreferencesKeys.HAPTICS_ENABLED] ?: false
             val difficultyStr = preferences[PreferencesKeys.AI_DIFFICULTY] ?: AiDifficulty.MEDIUM.name
             val difficulty = try {
                 AiDifficulty.valueOf(difficultyStr)

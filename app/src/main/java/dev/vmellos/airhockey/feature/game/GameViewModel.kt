@@ -62,7 +62,7 @@ class GameViewModel : ViewModel() {
     private var hasRecordedMatch = false
     private var currentMatchTimeSeconds: Int = 180
 
-    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float, Byte, Float) -> Unit)? = null
+    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float, Byte, Float, Byte) -> Unit)? = null
     var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onGuestSendInput: ((Float, Float) -> Unit)? = null
     var onGuestSendControl: ((String) -> Unit)? = null
@@ -74,8 +74,8 @@ class GameViewModel : ViewModel() {
         val isHost = coord.isHost
 
         if (isHost) {
-            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity ->
-                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy, collisionEvent = evt, collisionIntensity = intensity)
+            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity, lastHit ->
+                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy, collisionEvent = evt, collisionIntensity = intensity, puckLastHitBy = lastHit)
             }
             onHostBroadcastState = { remote ->
                 coord.broadcastState(remote)
@@ -102,7 +102,8 @@ class GameViewModel : ViewModel() {
                         t.hostMalletX, t.hostMalletY,
                         t.guestMalletX, t.guestMalletY,
                         t.collisionEvent,
-                        t.collisionIntensity
+                        t.collisionIntensity,
+                        t.puckLastHitBy
                     )
                 }
             }
@@ -138,10 +139,12 @@ class GameViewModel : ViewModel() {
         puckMaxSpeed: Float = 6800f,
         airFriction: Float = 0.40f,
         player1Name: String = "Jogador 1",
-        player2Name: String = "Jogador 2"
+        player2Name: String = "Jogador 2",
+        stageNumber: Int = 1
     ) {
-        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED
-        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST
+        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
+                mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
         val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(bezelGapMm, screenHeightPx, yDpi) else 0f
 
         dimensions = TableDimensions(
@@ -151,7 +154,25 @@ class GameViewModel : ViewModel() {
             isExtendedMode = isExtended
         )
 
-        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = puckMaxSpeed, airFrictionPerSec = airFriction)
+        val effectiveTargetScore: Int
+        val effectiveAiDiff: AiDifficulty
+        val effectivePuckMaxSpeed: Float
+        val effectiveAirFriction: Float
+
+        if (mode == GameMode.SOLO) {
+            val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(stageNumber)
+            effectiveTargetScore = stageConfig.targetScore
+            effectiveAiDiff = stageConfig.aiDifficulty
+            effectivePuckMaxSpeed = stageConfig.puckSpeed.maxSpeed
+            effectiveAirFriction = stageConfig.puckSpeed.airFriction
+        } else {
+            effectiveTargetScore = targetScore
+            effectiveAiDiff = aiDifficulty
+            effectivePuckMaxSpeed = puckMaxSpeed
+            effectiveAirFriction = airFriction
+        }
+
+        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = effectivePuckMaxSpeed, airFrictionPerSec = effectiveAirFriction)
         engine.resetPositions()
         hasRecordedMatch = false
         currentMatchTimeSeconds = matchTimeSeconds
@@ -159,14 +180,14 @@ class GameViewModel : ViewModel() {
         // Inicializa controladores de IA conforme o modo
         aiControllerP1 = when (mode) {
             GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true)
-            GameMode.AI_VS_AI_EXTENDED -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true) else null
+            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true) else null
             else -> null
         }
 
         aiControllerP2 = when (mode) {
-            GameMode.SOLO -> AirHockeyAiController(aiDifficulty, isPlayer1 = false)
+            GameMode.SOLO -> AirHockeyAiController(effectiveAiDiff, isPlayer1 = false)
             GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false)
-            GameMode.AI_VS_AI_EXTENDED -> AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false)
+            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false) else null
             else -> null
         }
 
@@ -175,13 +196,15 @@ class GameViewModel : ViewModel() {
             status = MatchStatus.COUNTDOWN,
             scorePlayer1 = 0,
             scorePlayer2 = 0,
-            targetScore = targetScore,
+            targetScore = effectiveTargetScore,
             countdownNumber = 3,
-            remainingTimeSeconds = matchTimeSeconds,
+            remainingTimeSeconds = 0,
             isHost = !isGuest,
             peerExited = false,
             player1Name = player1Name,
-            player2Name = player2Name
+            player2Name = player2Name,
+            currentStage = stageNumber,
+            starsEarned = 0
         )
 
         setupCollisionListener()
@@ -282,7 +305,8 @@ class GameViewModel : ViewModel() {
                         0f, 0f,
                         engine.player1Mallet.x, engine.player1Mallet.y,
                         engine.player2Mallet.x, engine.player2Mallet.y,
-                        0.toByte(), 0f
+                        0.toByte(), 0f,
+                        engine.puck.lastHitBy.toByte()
                     )
 
                     val elapsed = System.currentTimeMillis() - start
@@ -345,7 +369,8 @@ class GameViewModel : ViewModel() {
                         engine.puck.vx, engine.puck.vy,
                         engine.player1Mallet.x, engine.player1Mallet.y,
                         engine.player2Mallet.x, engine.player2Mallet.y,
-                        evt, intensity
+                        evt, intensity,
+                        engine.puck.lastHitBy.toByte()
                     )
                 } else if (aiControllerP2 != null) {
                     aiControllerP2?.update(engine, dt)
@@ -358,21 +383,13 @@ class GameViewModel : ViewModel() {
             }
         }
 
-        // Loop do cronômetro de partida (apenas no Anfitrião/Solo/Split)
+        // Loop de tempo decorrido da partida (apenas no Anfitrião/Solo/Split para estatísticas)
         if (_matchState.value.isHost) {
             timerJob = viewModelScope.launch {
                 while (isActive && _matchState.value.status == MatchStatus.PLAYING) {
                     delay(1000)
                     _matchState.update { state ->
-                        val nextTime = state.remainingTimeSeconds - 1
-                        if (nextTime <= 0) {
-                            val winner = if (state.scorePlayer1 > state.scorePlayer2) 1
-                            else if (state.scorePlayer2 > state.scorePlayer1) 2 else 0
-                            handleGameOver()
-                            state.copy(remainingTimeSeconds = 0, winner = winner, status = MatchStatus.GAME_OVER)
-                        } else {
-                            state.copy(remainingTimeSeconds = nextTime)
-                        }
+                        state.copy(remainingTimeSeconds = state.remainingTimeSeconds + 1)
                     }
                     broadcastState()
                 }
@@ -391,6 +408,7 @@ class GameViewModel : ViewModel() {
 
     private fun isInputAllowed(): Boolean {
         val s = _matchState.value.status
+        if (_matchState.value.isSpectator) return false
         return s == MatchStatus.PLAYING || s == MatchStatus.COUNTDOWN
     }
 
@@ -473,7 +491,8 @@ class GameViewModel : ViewModel() {
         hostMalletX: Float, hostMalletY: Float,
         guestMalletX: Float, guestMalletY: Float,
         collisionEvent: Byte = 0,
-        collisionIntensity: Float = 0f
+        collisionIntensity: Float = 0f,
+        puckLastHitBy: Byte = 0
     ) {
         if (!::engine.isInitialized) return
 
@@ -481,6 +500,7 @@ class GameViewModel : ViewModel() {
         engine.puck.y = puckY
         engine.puck.vx = puckVx
         engine.puck.vy = puckVy
+        engine.puck.lastHitBy = puckLastHitBy.toInt()
         engine.player1Mallet.x = hostMalletX
         engine.player1Mallet.y = hostMalletY
 
@@ -623,8 +643,9 @@ class GameViewModel : ViewModel() {
                 scorePlayer1 = 0,
                 scorePlayer2 = 0,
                 winner = 0,
+                starsEarned = 0,
                 countdownNumber = 3,
-                remainingTimeSeconds = 180
+                remainingTimeSeconds = 0
             )
         }
         broadcastState()
@@ -658,7 +679,7 @@ class GameViewModel : ViewModel() {
         if (hasRecordedMatch) return
         hasRecordedMatch = true
         val state = _matchState.value
-        val duration = (currentMatchTimeSeconds - state.remainingTimeSeconds).coerceAtLeast(0)
+        val duration = state.remainingTimeSeconds.coerceAtLeast(0)
         val modeStr = state.mode.name
         val diff = if (state.mode == GameMode.SOLO) aiControllerP2?.difficulty?.name else null
 
@@ -674,6 +695,18 @@ class GameViewModel : ViewModel() {
                     durationSeconds = duration
                 )
             } catch (_: Exception) {}
+
+            if (state.mode == GameMode.SOLO) {
+                try {
+                    val stars = AirHockeyApp.instance.stageRepository.recordStageResult(
+                        stageNumber = state.currentStage,
+                        scorePlayer = state.scorePlayer1,
+                        scoreAi = state.scorePlayer2
+                    )
+                    _matchState.update { it.copy(starsEarned = stars) }
+                } catch (_: Exception) {}
+            }
+
             AirHockeyApp.instance.adManager.recordMatchFinished()
         }
     }

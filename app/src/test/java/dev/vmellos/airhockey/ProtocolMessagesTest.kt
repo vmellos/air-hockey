@@ -42,10 +42,11 @@ class ProtocolMessagesTest {
         assertEquals(240.0f, deserialized.guestMalletY, 0.01f)
         assertEquals(0.toByte(), deserialized.collisionEvent)
         assertEquals(0f, deserialized.collisionIntensity, 0.01f)
+        assertEquals(0.toByte(), deserialized.puckLastHitBy)
     }
 
     @Test
-    fun testHostTelemetryPacketWithCollisionSerialization() {
+    fun testHostTelemetryPacketWithCollisionAndLastHitBySerialization() {
         val original = HostTelemetryPacket(
             sequenceNumber = 43L,
             timestampNano = 222333444L,
@@ -58,7 +59,8 @@ class ProtocolMessagesTest {
             guestMalletX = 500.0f,
             guestMalletY = 250.0f,
             collisionEvent = 2.toByte(),
-            collisionIntensity = 0.85f
+            collisionIntensity = 0.85f,
+            puckLastHitBy = 2.toByte()
         )
 
         val bytes = original.toByteArray()
@@ -69,6 +71,7 @@ class ProtocolMessagesTest {
         assertEquals(43L, deserialized!!.sequenceNumber)
         assertEquals(2.toByte(), deserialized.collisionEvent)
         assertEquals(0.85f, deserialized.collisionIntensity, 0.01f)
+        assertEquals(2.toByte(), deserialized.puckLastHitBy)
     }
 
     @Test

@@ -27,6 +27,8 @@ fun GameScreen(
     viewModel: GameViewModel,
     mode: GameMode,
     onExitToMenu: () -> Unit,
+    onExitToStages: () -> Unit = onExitToMenu,
+    onStartNextStage: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val matchState by viewModel.matchState.collectAsState()
@@ -170,29 +172,70 @@ fun GameScreen(
         // Diálogo de Fim de Jogo
         if (matchState.status == MatchStatus.GAME_OVER) {
             val activity = LocalContext.current.findActivity()
-            GameOverDialog(
-                matchState = matchState,
-                onPlayAgain = {
-                    if (activity != null) {
-                        AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+            if (matchState.mode == GameMode.SOLO) {
+                StageResultDialog(
+                    stageNumber = matchState.currentStage,
+                    starsEarned = matchState.starsEarned,
+                    isWon = matchState.winner == 1,
+                    scorePlayer = matchState.scorePlayer1,
+                    scoreAi = matchState.scorePlayer2,
+                    onSelectStages = {
+                        if (activity != null) {
+                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                                viewModel.stopMatch()
+                                onExitToStages()
+                            }
+                        } else {
+                            viewModel.stopMatch()
+                            onExitToStages()
+                        }
+                    },
+                    onRetry = {
+                        if (activity != null) {
+                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                                viewModel.restartMatch()
+                            }
+                        } else {
                             viewModel.restartMatch()
                         }
-                    } else {
-                        viewModel.restartMatch()
+                    },
+                    onNextStage = {
+                        if (activity != null) {
+                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                                viewModel.stopMatch()
+                                onStartNextStage(matchState.currentStage + 1)
+                            }
+                        } else {
+                            viewModel.stopMatch()
+                            onStartNextStage(matchState.currentStage + 1)
+                        }
                     }
-                },
-                onExit = {
-                    if (activity != null) {
-                        AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                )
+            } else {
+                GameOverDialog(
+                    matchState = matchState,
+                    onPlayAgain = {
+                        if (activity != null) {
+                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                                viewModel.restartMatch()
+                            }
+                        } else {
+                            viewModel.restartMatch()
+                        }
+                    },
+                    onExit = {
+                        if (activity != null) {
+                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
+                                viewModel.stopMatch()
+                                onExitToMenu()
+                            }
+                        } else {
                             viewModel.stopMatch()
                             onExitToMenu()
                         }
-                    } else {
-                        viewModel.stopMatch()
-                        onExitToMenu()
                     }
-                }
-            )
+                )
+            }
         }
     }
 }

@@ -1,0 +1,134 @@
+package dev.vmellos.airhockey.feature.stage
+
+import dev.vmellos.airhockey.core.database.StageProgressDao
+import dev.vmellos.airhockey.core.database.StageProgressEntity
+import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+data class StageConfig(
+    val stageNumber: Int,
+    val targetScore: Int,
+    val aiDifficulty: AiDifficulty,
+    val puckSpeed: PuckSpeedPreset,
+    val tierName: String
+)
+
+class StageRepository(private val stageProgressDao: StageProgressDao) {
+
+    val stagesFlow: Flow<List<StageProgressEntity>> = stageProgressDao.getAllStages()
+
+    val totalStarsFlow: Flow<Int> = stageProgressDao.getTotalStars().map { it ?: 0 }
+
+    suspend fun ensureStagesInitialized() {
+        val count = stageProgressDao.getStagesCount()
+        if (count < 100) {
+            val stages = (1..100).map { stageNum ->
+                StageProgressEntity(
+                    stageNumber = stageNum,
+                    starsEarned = 0,
+                    isUnlocked = stageNum == 1
+                )
+            }
+            stageProgressDao.insertAll(stages)
+        }
+    }
+
+    fun getStageConfig(stageNumber: Int): StageConfig {
+        val validStage = stageNumber.coerceIn(1, 100)
+        return when (validStage) {
+            in 1..10 -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 3,
+                aiDifficulty = AiDifficulty.EASY,
+                puckSpeed = PuckSpeedPreset.NORMAL,
+                tierName = "Iniciante"
+            )
+            in 11..20 -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 5,
+                aiDifficulty = AiDifficulty.EASY,
+                puckSpeed = PuckSpeedPreset.NORMAL,
+                tierName = "Iniciante"
+            )
+            in 21..50 -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 5,
+                aiDifficulty = AiDifficulty.MEDIUM,
+                puckSpeed = PuckSpeedPreset.NORMAL,
+                tierName = "Intermediario"
+            )
+            in 51..80 -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 7,
+                aiDifficulty = AiDifficulty.HARD,
+                puckSpeed = PuckSpeedPreset.FAST,
+                tierName = "Avancado"
+            )
+            in 81..90 -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 7,
+                aiDifficulty = AiDifficulty.HARD,
+                puckSpeed = PuckSpeedPreset.FAST,
+                tierName = "Mestre"
+            )
+            else -> StageConfig(
+                stageNumber = validStage,
+                targetScore = 10,
+                aiDifficulty = AiDifficulty.HARD,
+                puckSpeed = PuckSpeedPreset.FAST,
+                tierName = "Mestre"
+            )
+        }
+    }
+
+    fun calculateStars(stageNumber: Int, scorePlayer: Int, scoreAi: Int): Int {
+        val config = getStageConfig(stageNumber)
+        if (scorePlayer < config.targetScore) return 0
+
+        return if (config.targetScore <= 3) {
+            when {
+                scoreAi == 0 -> 3
+                scoreAi == 1 -> 2
+                else -> 1
+            }
+        } else {
+            when {
+                scoreAi <= 1 -> 3
+                scoreAi <= 2 -> 2
+                else -> 1
+            }
+        }
+    }
+
+    suspend fun recordStageResult(
+        stageNumber: Int,
+        scorePlayer: Int,
+        scoreAi: Int
+    ): Int {
+        val stars = calculateStars(stageNumber, scorePlayer, scoreAi)
+        val isWin = stars > 0
+
+        val existing = stageProgressDao.getStageDirect(stageNumber)
+        val highestStars = if (existing != null) maxOf(existing.starsEarned, stars) else stars
+        val bestScoreP = if (existing != null) maxOf(existing.bestScorePlayer, scorePlayer) else scorePlayer
+        val bestScoreA = if (existing != null) minOf(existing.bestScoreAi, scoreAi) else scoreAi
+
+        val updated = StageProgressEntity(
+            stageNumber = stageNumber,
+            starsEarned = highestStars,
+            isUnlocked = true,
+            bestScorePlayer = bestScoreP,
+            bestScoreAi = bestScoreA,
+            completedTimestamp = if (isWin) System.currentTimeMillis() else (existing?.completedTimestamp ?: 0L)
+        )
+        stageProgressDao.upsertStage(updated)
+
+        if (isWin && stageNumber < 100) {
+            stageProgressDao.unlockStage(stageNumber + 1)
+        }
+
+        return stars
+    }
+}

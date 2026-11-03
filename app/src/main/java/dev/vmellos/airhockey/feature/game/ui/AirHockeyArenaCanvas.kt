@@ -36,8 +36,8 @@ fun AirHockeyArenaCanvas(
     val engine = viewModel.engine
     val dimensions = engine.dimensions
     val projection = remember(dimensions, mode) { TableProjection(dimensions, mode) }
-    val isExtendedGuest = mode == GameMode.EXTENDED_GUEST
-    val isExtendedHost = mode == GameMode.EXTENDED_HOST
+    val isExtendedGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isExtendedHost = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
     val isConnectedGuest = mode == GameMode.CONNECTED_GUEST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
 
@@ -48,6 +48,13 @@ fun AirHockeyArenaCanvas(
     val particlePool = remember { ParticlePool(maxSparks = 50, maxShockwaves = 8) }
     val puckTrail = remember { ArrayDeque<Offset>(16) }
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(12) }
+
+    // Limpa o rastro de energia nas pausas de gol, contagem regressiva e reposicionamento
+    androidx.compose.runtime.LaunchedEffect(matchState.status, matchState.lastScorer) {
+        if (matchState.status != MatchStatus.PLAYING) {
+            puckTrail.clear()
+        }
+    }
 
     DisposableEffect(engine) {
         val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
@@ -91,7 +98,7 @@ fun AirHockeyArenaCanvas(
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
-                        if (mode == GameMode.AI_VS_AI_LOCAL || mode == GameMode.AI_VS_AI_EXTENDED) {
+                        if (matchState.isSpectator) {
                             // No modo espectador IA x IA, os toques não interferem nos rebatedores
                             continue
                         }
@@ -312,8 +319,10 @@ fun AirHockeyArenaCanvas(
                 val puckScreen = projection.tableToScreen(engine.puck.x, engine.puck.y, screenW, screenH)
                 val spd = engine.puck.speed()
 
-                // Atualiza histórico do rastro de plasma
-                if (spd > 220f && prefs.visualEffectsProfile != VisualEffectsProfile.OFF) {
+                // Atualiza histórico do rastro de plasma (higienizado fora do estado PLAYING)
+                if (matchState.status != MatchStatus.PLAYING) {
+                    puckTrail.clear()
+                } else if (spd > 220f && prefs.visualEffectsProfile != VisualEffectsProfile.OFF) {
                     puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
                     val maxPoints = if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL) 14 else 7
                     if (puckTrail.size > maxPoints) puckTrail.removeLast()

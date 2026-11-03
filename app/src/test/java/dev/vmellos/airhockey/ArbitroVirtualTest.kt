@@ -93,6 +93,39 @@ class ArbitroVirtualTest {
     }
 
     @Test
+    fun testTimerDoesNotEndMatch() {
+        val dimensions = TableDimensions()
+        val arbitro = ArbitroVirtual(dimensions, mode = GameMode.SOLO, matchTimeSeconds = 0)
+        arbitro.setCountdown(0) // PLAYING
+        assertEquals(MatchStatus.PLAYING, arbitro.frames.value.matchStatus)
+
+        // Incrementa o tempo 300 vezes (5 minutos)
+        for (i in 0 until 300) {
+            arbitro.tickTimer()
+        }
+
+        // A partida deve continuar em PLAYING, sem GAME_OVER por tempo
+        assertEquals(MatchStatus.PLAYING, arbitro.frames.value.matchStatus)
+        assertEquals(300, arbitro.frames.value.remainingTimeSeconds)
+    }
+
+    @Test
+    fun testTelemetrySynchronizesLastHitBy() {
+        val dimensions = TableDimensions()
+        val arbitro = ArbitroVirtual(dimensions)
+        arbitro.setCountdown(0)
+        arbitro.engine.puck.lastHitBy = 2
+        arbitro.tick(0.001f) // Publica snapshot com lastHitBy
+
+        val packet = arbitro.frames.value.toTelemetryPacket(sequenceNumber = 1L)
+        assertEquals(2.toByte(), packet.puckLastHitBy)
+
+        val guestArbitro = ArbitroVirtual(dimensions)
+        guestArbitro.applyRemoteTelemetry(packet)
+        assertEquals(2, guestArbitro.engine.puck.lastHitBy)
+    }
+
+    @Test
     fun testSnapshotToTelemetryRoundTrip() {
         val dimensions = TableDimensions()
         val arbitro = ArbitroVirtual(dimensions)

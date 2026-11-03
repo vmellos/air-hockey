@@ -32,6 +32,7 @@ data class MatchFrameSnapshot(
     val matchStatus: MatchStatus = MatchStatus.COUNTDOWN,
     val winner: Int = 0,
     val lastScorer: Int = 0,
+    val puckLastHitBy: Int = 0,
     val timestampNano: Long = System.nanoTime()
 ) {
     fun toTelemetryPacket(sequenceNumber: Long): HostTelemetryPacket {
@@ -45,7 +46,8 @@ data class MatchFrameSnapshot(
             hostMalletX = player1MalletX,
             hostMalletY = player1MalletY,
             guestMalletX = player2MalletX,
-            guestMalletY = player2MalletY
+            guestMalletY = player2MalletY,
+            puckLastHitBy = puckLastHitBy.toByte()
         )
     }
 
@@ -191,14 +193,7 @@ class ArbitroVirtual(
     fun tickTimer() {
         _currentSnapshot.update { current ->
             if (current.matchStatus != MatchStatus.PLAYING) return@update current
-            val nextTime = current.remainingTimeSeconds - 1
-            if (nextTime <= 0) {
-                val win = if (current.scorePlayer1 > current.scorePlayer2) 1
-                else if (current.scorePlayer2 > current.scorePlayer1) 2 else 0
-                current.copy(remainingTimeSeconds = 0, winner = win, matchStatus = MatchStatus.GAME_OVER)
-            } else {
-                current.copy(remainingTimeSeconds = nextTime)
-            }
+            current.copy(remainingTimeSeconds = current.remainingTimeSeconds + 1)
         }
     }
 
@@ -232,6 +227,7 @@ class ArbitroVirtual(
         engine.puck.y = telemetry.puckY
         engine.puck.vx = telemetry.puckVx
         engine.puck.vy = telemetry.puckVy
+        engine.puck.lastHitBy = telemetry.puckLastHitBy.toInt()
         engine.player1Mallet.x = telemetry.hostMalletX
         engine.player1Mallet.y = telemetry.hostMalletY
         engine.player2Mallet.x = telemetry.guestMalletX
@@ -279,6 +275,7 @@ class ArbitroVirtual(
             player1MalletY = engine.player1Mallet.y,
             player2MalletX = engine.player2Mallet.x,
             player2MalletY = engine.player2Mallet.y,
+            puckLastHitBy = engine.puck.lastHitBy,
             timestampNano = System.nanoTime()
         )
     }

@@ -76,7 +76,8 @@ data class HostTelemetryPacket(
     val guestMalletX: Float,
     val guestMalletY: Float,
     val collisionEvent: Byte = 0,
-    val collisionIntensity: Float = 0f
+    val collisionIntensity: Float = 0f,
+    val puckLastHitBy: Byte = 0
 ) {
     fun toByteArray(): ByteArray {
         val buffer = ByteBuffer.allocate(SIZE_BYTES)
@@ -92,12 +93,13 @@ data class HostTelemetryPacket(
         buffer.putFloat(guestMalletY)
         buffer.put(collisionEvent)
         buffer.putFloat(collisionIntensity)
+        buffer.put(puckLastHitBy)
         return buffer.array()
     }
 
     companion object {
         const val LEGACY_SIZE_BYTES = 1 + 8 + 8 * 4
-        const val SIZE_BYTES = 1 + 8 + 8 * 4 + 1 + 4
+        const val SIZE_BYTES = 1 + 8 + 8 * 4 + 1 + 4 + 1 // 47 bytes
 
         fun fromByteBuffer(buffer: ByteBuffer): HostTelemetryPacket? {
             if (buffer.remaining() < LEGACY_SIZE_BYTES) return null
@@ -112,9 +114,10 @@ data class HostTelemetryPacket(
             val hmy = buffer.getFloat()
             val gmx = buffer.getFloat()
             val gmy = buffer.getFloat()
-            val evt = if (buffer.remaining() >= 5) buffer.get() else 0.toByte()
-            val intensity = if (buffer.remaining() >= 4) buffer.getFloat() else 0f
-            return HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity)
+            val evt = if (buffer.remaining() >= 6) buffer.get() else (if (buffer.remaining() >= 5) buffer.get() else 0.toByte())
+            val intensity = if (buffer.remaining() >= 5) buffer.getFloat() else (if (buffer.remaining() >= 4) buffer.getFloat() else 0f)
+            val lastHit = if (buffer.remaining() >= 1) buffer.get() else 0.toByte()
+            return HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity, lastHit)
         }
     }
 }

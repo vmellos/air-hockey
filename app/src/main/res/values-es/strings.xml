@@ -5,8 +5,13 @@
     <!-- Menu Principal -->
     <string name="menu_mode_connected">Mesa Conectada</string>
     <string name="menu_mode_connected_desc">2 dispositivos por Wi-Fi con vista completa de la arena en cada pantalla</string>
-    <string name="menu_mode_solo">Modo Solo</string>
-    <string name="menu_mode_solo_desc">Juega contra la máquina con dificultad ajustable</string>
+    <string name="menu_mode_solo">Modo Fases</string>
+    <string name="menu_mode_solo_desc">100 fases con dificultad progresiva y estrellas</string>
+    <string name="stage_title">Fases</string>
+    <string name="stage_level">Fase %d</string>
+    <string name="stage_locked">Bloqueada</string>
+    <string name="stage_back">Volver</string>
+    <string name="stage_failed">Fase No Completada</string>
     <string name="menu_mode_split">Mesa Dividida</string>
     <string name="menu_mode_split_desc">2 jugadores en el mismo dispositivo con pantalla compartida</string>
     <string name="menu_mode_extended">Mesa Extendida</string>
@@ -166,4 +171,17 @@
     <string name="visual_effects_balanced_desc">Estela cinética suave y ondas de choque ligeras sin lluvia de chispas</string>
     <string name="visual_effects_off">Rendimiento (Mínimo)</string>
     <string name="visual_effects_off_desc">Sin estelas ni partículas para máxima fluidez en dispositivos básicos</string>
+
+    <!-- Marcador Objetivo en el HUD y Diálogo IA vs IA -->
+    <string name="target_score_hud">OBJETIVO: %1$d</string>
+    <string name="ai_vs_ai_title">MODO IA x IA</string>
+    <string name="ai_vs_ai_subtitle">Duelo autónomo entre bots</string>
+    <string name="table_layout">DISPOSICIÓN DE LA MESA</string>
+    <string name="layout_local">Local (1 Pantalla)</string>
+    <string name="layout_extended">Extendida (2 Pantallas)</string>
+    <string name="bot_1_cyan">BOT 1 (CIAN)</string>
+    <string name="bot_2_orange">BOT 2 (NARANJA)</string>
+    <string name="start_showdown">INICIAR CONFRONTACIÓN</string>
+    <string name="spectator_mode">MODO ESPECTADOR</string>
+    <string name="close">Cerrar</string>
 </resources>
