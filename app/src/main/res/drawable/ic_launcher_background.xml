@@ -5,21 +5,21 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#090E1A"
+        android:fillColor="#020920"
         android:pathData="M0,0h108v108h-108z" />
 
     <!-- Ambient Grid Lines -->
     <path
         android:pathData="M18,0L18,108 M36,0L36,108 M54,0L54,108 M72,0L72,108 M90,0L90,108"
         android:strokeWidth="0.5"
-        android:strokeColor="#162036" />
+        android:strokeColor="#0B1A3D" />
     <path
         android:pathData="M0,18L108,18 M0,36L108,36 M0,54L108,54 M0,72L108,72 M0,90L108,90"
         android:strokeWidth="0.5"
-        android:strokeColor="#162036" />
+        android:strokeColor="#0B1A3D" />
 
     <!-- Radial Dark Glow -->
     <path
-        android:fillColor="#0F172A"
+        android:fillColor="#071433"
         android:pathData="M54,20 A34,34 0 1,1 54,88 A34,34 0 1,1 54,20 Z" />
 </vector>

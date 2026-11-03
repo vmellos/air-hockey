@@ -123,16 +123,16 @@ fun MainMenuScreen(
             contentScale = ContentScale.Crop
         )
 
-        // Camada de Contraste / Scrim para destacar os modos de jogo sobre o fundo
+        // Camada de Contraste / Scrim sutil para manter legibilidade sem apagar o fundo
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xDD070B14),
-                            Color(0x99070B14),
-                            Color(0xF2070B14)
+                            Color(0x66070B14),
+                            Color(0x33070B14),
+                            Color(0x88070B14)
                         )
                     )
                 )
@@ -277,24 +277,26 @@ fun MainMenuScreen(
                 }
             }
 
-            // Título Neon Arcade Volumétrico
+            // Título Neon Arcade Volumétrico com Arte Oficial
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(vertical = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
             ) {
-                Text(
-                    text = "AIR HOCKEY",
-                    color = Color(0xFF00E5FF),
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 6.sp,
-                    fontFamily = FontFamily.SansSerif
+                Image(
+                    painter = painterResource(id = R.drawable.title_banner_championship),
+                    contentDescription = stringResource(R.string.app_name),
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .height(72.dp),
+                    contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.app_tagline),
                     color = Color(0xFF94A3B8),
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 1.sp
                 )
