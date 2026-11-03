@@ -74,18 +74,10 @@ object LocaleHelper {
     }
 
     fun applySystemLocale(context: Context, languageCode: String) {
-        if (languageCode.isBlank() || languageCode.equals(SYSTEM_DEFAULT, ignoreCase = true)) {
-            AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val localeManager = context.getSystemService(Context.LOCALE_SERVICE) as? LocaleManager
-                localeManager?.applicationLocales = LocaleList.getEmptyLocaleList()
-            }
-            return
-        }
-
+        val effectiveLang = resolveLanguage(languageCode)
         val tag = when {
-            languageCode.startsWith("pt", ignoreCase = true) -> "pt-BR"
-            languageCode.startsWith("es", ignoreCase = true) -> "es"
+            effectiveLang.startsWith("pt", ignoreCase = true) -> "pt-BR"
+            effectiveLang.startsWith("es", ignoreCase = true) -> "es"
             else -> "en"
         }
         val localeListCompat = LocaleListCompat.forLanguageTags(tag)

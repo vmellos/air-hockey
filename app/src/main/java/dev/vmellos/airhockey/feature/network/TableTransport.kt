@@ -36,7 +36,7 @@ sealed class TableControlEvent {
             Ready -> ControlMessages.READY
             is Start -> "${ControlMessages.START}:$gapMm:$maxSpeed"
             is StateSync -> ControlMessages.encodeState(state)
-            is TelemetryFallback -> "TELEM:${packet.sequenceNumber},${packet.puckX},${packet.puckY},${packet.puckVx},${packet.puckVy},${packet.hostMalletX},${packet.hostMalletY},${packet.guestMalletX},${packet.guestMalletY},${packet.collisionEvent},${packet.collisionIntensity}"
+            is TelemetryFallback -> "TELEM:${packet.sequenceNumber},${packet.puckX},${packet.puckY},${packet.puckVx},${packet.puckVy},${packet.hostMalletX},${packet.hostMalletY},${packet.guestMalletX},${packet.guestMalletY},${packet.collisionEvent},${packet.collisionIntensity},${packet.puckLastHitBy}"
             is GuestInputFallback -> "GINPUT:${packet.sequenceNumber},${packet.guestTargetX},${packet.guestTargetY}"
             Pause -> ControlMessages.PAUSE
             Resume -> ControlMessages.RESUME
@@ -90,8 +90,9 @@ sealed class TableControlEvent {
                         val gmy = parts[8].toFloatOrNull() ?: 250f
                         val evt = if (parts.size >= 10) parts[9].toByteOrNull() ?: 0.toByte() else 0.toByte()
                         val intensity = if (parts.size >= 11) parts[10].toFloatOrNull() ?: 0f else 0f
+                        val lastHit = if (parts.size >= 12) parts[11].toByteOrNull() ?: 0.toByte() else 0.toByte()
                         TelemetryFallback(
-                            HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity)
+                            HostTelemetryPacket(seq, System.nanoTime(), px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity, lastHit)
                         )
                     } else Raw(line)
                 }

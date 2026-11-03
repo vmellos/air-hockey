@@ -8,14 +8,16 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [
         MatchRecordEntity::class,
-        PlayerProfileStatsEntity::class
+        PlayerProfileStatsEntity::class,
+        StageProgressEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun leaderboardDao(): LeaderboardDao
+    abstract fun stageProgressDao(): StageProgressDao
 
     companion object {
         @Volatile

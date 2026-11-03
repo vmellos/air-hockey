@@ -10,7 +10,9 @@ import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -234,54 +236,84 @@ fun LobbyScreen(
             .safeDrawingPadding()
             .padding(20.dp)
     ) {
+        // Linha 1: Botão Voltar e Título da Tela
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = handleBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                val titleText = if (state.targetMode == "CONNECTED") {
-                    stringResource(R.string.lobby_title_connected)
-                } else {
-                    stringResource(R.string.lobby_title)
-                }
-                Text(
-                    text = titleText,
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            IconButton(onClick = handleBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            val titleText = when (state.targetMode) {
+                "CONNECTED" -> stringResource(R.string.lobby_title_connected)
+                "AI_EXTENDED" -> "Lobby IA x IA (Mesa Estendida)"
+                else -> stringResource(R.string.lobby_title)
+            }
+            Text(
+                text = titleText,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
 
-            // Chip com Nome do Jogador
-            Surface(
-                color = Color(0xFF1E293B),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.clickable {
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Linha 2: Card / Chip com Nome do Dispositivo / Jogador com largura total
+        Surface(
+            color = Color(0xFF1E293B),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, Color(0x3300E5FF)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
                     nameInput = state.selfPlayerName
                     showNameDialog = true
                 }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = state.selfPlayerName.ifBlank { "Jogador" },
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF94A3B8), modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "SEU DISPOSITIVO / JOGADOR",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = state.selfPlayerName.ifBlank { "Jogador" },
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Editar",
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
 
@@ -824,10 +856,10 @@ private fun GuestLobbyView(
                                         table.name
                                     }
                                     Text(title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                                    val modeLabel = if (table.mode == "CONNECTED") {
-                                        stringResource(R.string.menu_mode_connected)
-                                    } else {
-                                        stringResource(R.string.menu_mode_extended)
+                                    val modeLabel = when (table.mode) {
+                                        "CONNECTED" -> stringResource(R.string.menu_mode_connected)
+                                        "AI_EXTENDED" -> stringResource(R.string.menu_mode_ai_vs_ai)
+                                        else -> stringResource(R.string.menu_mode_extended)
                                     }
                                     Text("${table.hostIp} • $modeLabel", color = Color(0xFF64748B), fontSize = 12.sp)
                                 }

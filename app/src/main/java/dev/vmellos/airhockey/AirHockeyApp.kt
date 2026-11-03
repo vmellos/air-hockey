@@ -7,6 +7,7 @@ import dev.vmellos.airhockey.core.audio.GameAudioEngine
 import dev.vmellos.airhockey.core.database.AppDatabase
 import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
 import dev.vmellos.airhockey.feature.leaderboard.LeaderboardRepository
+import dev.vmellos.airhockey.feature.stage.StageRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +31,9 @@ class AirHockeyApp : Application() {
     lateinit var leaderboardRepository: LeaderboardRepository
         private set
 
+    lateinit var stageRepository: StageRepository
+        private set
+
     lateinit var billingManager: BillingManager
         private set
 
@@ -46,10 +50,15 @@ class AirHockeyApp : Application() {
         audioEngine = GameAudioEngine(this)
         database = AppDatabase.getInstance(this)
         leaderboardRepository = LeaderboardRepository(database.leaderboardDao())
+        stageRepository = StageRepository(database.stageProgressDao())
         billingManager = BillingManager(this)
         billingManager.startConnection()
         adManager = AdManager(this, billingManager)
         inAppUpdateEngine = dev.vmellos.airhockey.core.update.PlayInAppUpdateEngine(this)
+
+        applicationScope.launch {
+            stageRepository.ensureStagesInitialized()
+        }
 
         applicationScope.launch {
             preferencesRepository.userPreferencesFlow.collectLatest { prefs ->

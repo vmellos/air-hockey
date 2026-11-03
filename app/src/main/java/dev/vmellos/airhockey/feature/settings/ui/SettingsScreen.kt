@@ -665,6 +665,45 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_target_score),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val scores = listOf(3, 5, 7, 10)
+                    for (score in scores) {
+                        val isSelected = prefs.targetScore == score
+                        Card(
+                            onClick = { scope.launch { preferencesRepo.setTargetScore(score) } },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) Color(0xFF00E5FF) else Color(0xFF334155)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "$score",
+                                    color = if (isSelected) Color(0xFF0A0E1A) else Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 

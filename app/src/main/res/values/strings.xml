@@ -5,8 +5,13 @@
     <!-- Menu Principal -->
     <string name="menu_mode_connected">Connected Table</string>
     <string name="menu_mode_connected_desc">2 devices over Wi-Fi with full arena view on each screen</string>
-    <string name="menu_mode_solo">Solo Mode</string>
-    <string name="menu_mode_solo_desc">Play against AI with selectable difficulty</string>
+    <string name="menu_mode_solo">Stage Mode</string>
+    <string name="menu_mode_solo_desc">100 levels with progressive difficulty and star ratings</string>
+    <string name="stage_title">Stages</string>
+    <string name="stage_level">Level %d</string>
+    <string name="stage_locked">Locked</string>
+    <string name="stage_back">Back</string>
+    <string name="stage_failed">Stage Failed</string>
     <string name="menu_mode_split">Split Table</string>
     <string name="menu_mode_split_desc">2 players on the same device</string>
     <string name="menu_mode_extended">Extended Table</string>
@@ -166,4 +171,17 @@
     <string name="visual_effects_balanced_desc">Smooth kinetic trail and light shockwaves without heavy sparks</string>
     <string name="visual_effects_off">Performance (Clean)</string>
     <string name="visual_effects_off_desc">Zero trails or particles for maximum FPS on entry devices</string>
+
+    <!-- Target Score HUD & AI vs AI Dialog -->
+    <string name="target_score_hud">TARGET: %1$d</string>
+    <string name="ai_vs_ai_title">AI vs AI MODE</string>
+    <string name="ai_vs_ai_subtitle">Autonomous duel between bots</string>
+    <string name="table_layout">TABLE LAYOUT</string>
+    <string name="layout_local">Local (1 Screen)</string>
+    <string name="layout_extended">Extended (2 Screens)</string>
+    <string name="bot_1_cyan">BOT 1 (CYAN)</string>
+    <string name="bot_2_orange">BOT 2 (ORANGE)</string>
+    <string name="start_showdown">START SHOWDOWN</string>
+    <string name="spectator_mode">SPECTATOR MODE</string>
+    <string name="close">Close</string>
 </resources>

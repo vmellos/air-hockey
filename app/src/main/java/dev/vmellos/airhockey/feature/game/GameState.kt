@@ -11,7 +11,9 @@ enum class GameMode {
     CONNECTED_HOST,
     CONNECTED_GUEST,
     AI_VS_AI_LOCAL,
-    AI_VS_AI_EXTENDED
+    AI_VS_AI_EXTENDED,
+    AI_VS_AI_EXTENDED_HOST,
+    AI_VS_AI_EXTENDED_GUEST
 }
 
 enum class MatchStatus {
@@ -33,9 +35,24 @@ data class MatchState(
     val countdownNumber: Int = 3,
     val lastScorer: Int = 0, // 1 ou 2
     val winner: Int = 0, // 1 ou 2
-    val remainingTimeSeconds: Int = 180,
+    val remainingTimeSeconds: Int = 0,
     val isHost: Boolean = true,
     val peerExited: Boolean = false,
     val player1Name: String = "P1",
-    val player2Name: String = "P2"
-)
+    val player2Name: String = "P2",
+    val currentStage: Int = 1,
+    val starsEarned: Int = 0
+) {
+    val isSpectator: Boolean
+        get() = mode == GameMode.AI_VS_AI_LOCAL ||
+                mode == GameMode.AI_VS_AI_EXTENDED ||
+                mode == GameMode.AI_VS_AI_EXTENDED_HOST ||
+                mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+
+    val isExtendedMode: Boolean
+        get() = mode == GameMode.EXTENDED_HOST ||
+                mode == GameMode.EXTENDED_GUEST ||
+                mode == GameMode.AI_VS_AI_EXTENDED ||
+                mode == GameMode.AI_VS_AI_EXTENDED_HOST ||
+                mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+}

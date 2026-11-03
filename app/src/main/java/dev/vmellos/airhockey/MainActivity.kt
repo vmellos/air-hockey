@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,6 +38,7 @@ import dev.vmellos.airhockey.feature.lobby.LobbyViewModel
 import dev.vmellos.airhockey.feature.lobby.ui.BezelCalibrationScreen
 import dev.vmellos.airhockey.feature.lobby.ui.LobbyScreen
 import dev.vmellos.airhockey.feature.menu.ui.MainMenuScreen
+import dev.vmellos.airhockey.feature.stage.ui.StageSelectionScreen
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.settings.ui.SettingsScreen
 import dev.vmellos.airhockey.ui.theme.AirHockeyTheme
@@ -114,6 +116,8 @@ fun AirHockeyAppNavigation(
     val navController = rememberNavController()
     val gameViewModel: GameViewModel = viewModel()
     val lobbyViewModel: LobbyViewModel = viewModel()
+    var aiExtendedDiff1 by rememberSaveable { mutableStateOf(dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM) }
+    var aiExtendedDiff2 by rememberSaveable { mutableStateOf(dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM) }
 
     // Processa Deep Link (ex: câmera nativa lendo QR code airhockey://connect)
     LaunchedEffect(deepLinkUri) {
@@ -134,29 +138,7 @@ fun AirHockeyAppNavigation(
         composable("menu") {
             MainMenuScreen(
                 onStartSolo = {
-                    val p1 = userPrefs.playerName.ifBlank { "Você" }
-                    val diff = when (userPrefs.aiDifficulty) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
-                    }
-                    val puckPreset = when (userPrefs.aiDifficulty) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
-                    }
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.SOLO,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        aiDifficulty = userPrefs.aiDifficulty,
-                        puckMaxSpeed = puckPreset.maxSpeed,
-                        airFriction = puckPreset.airFriction,
-                        player1Name = p1,
-                        player2Name = "IA ($diff)"
-                    )
-                    navController.navigate("game/SOLO")
+                    navController.navigate("stages")
                 },
                 onStartSplit = {
                     val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
@@ -211,8 +193,10 @@ fun AirHockeyAppNavigation(
                     )
                     navController.navigate("game/AI_VS_AI_LOCAL")
                 },
-                onStartAiVsAiExtended = { _, _ ->
-                    lobbyViewModel.setTargetMode("EXTENDED")
+                onStartAiVsAiExtended = { diff1, diff2 ->
+                    aiExtendedDiff1 = diff1
+                    aiExtendedDiff2 = diff2
+                    lobbyViewModel.setTargetMode("AI_EXTENDED")
                     navController.navigate("lobby")
                 },
                 onOpenLeaderboard = {
@@ -267,7 +251,7 @@ fun AirHockeyAppNavigation(
 
             // Para Mesa Estendida: navega o convidado automaticamente quando o anfitrião avança para a calibração
             LaunchedEffect(lobbyState.navigateToCalibrationTrigger) {
-                if (lobbyState.navigateToCalibrationTrigger > 0L && lobbyState.targetMode == "EXTENDED") {
+                if (lobbyState.navigateToCalibrationTrigger > 0L && (lobbyState.targetMode == "EXTENDED" || lobbyState.targetMode == "AI_EXTENDED")) {
                     lobbyViewModel.consumeCalibrationTrigger()
                     navController.navigate("calibration")
                 }
@@ -288,7 +272,13 @@ fun AirHockeyAppNavigation(
         composable("calibration") {
             val lobbyState by lobbyViewModel.state.collectAsState()
             val isHost = lobbyState.role == LobbyRole.HOST
-            val gameMode = if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
+            val isAiExtended = lobbyState.targetMode == "AI_EXTENDED"
+            val gameMode = when {
+                isAiExtended && isHost -> GameMode.AI_VS_AI_EXTENDED_HOST
+                isAiExtended && !isHost -> GameMode.AI_VS_AI_EXTENDED_GUEST
+                isHost -> GameMode.EXTENDED_HOST
+                else -> GameMode.EXTENDED_GUEST
+            }
 
             // Largada Sincronizada: quando o gatilho de largada é acionado, ambos iniciam no mesmo instante
             LaunchedEffect(lobbyState.startMatchTrigger) {
@@ -305,17 +295,23 @@ fun AirHockeyAppNavigation(
                         lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
                     }
 
+                    val p1Label = if (isAiExtended) "Bot 1 ($aiExtendedDiff1)" else p1Name
+                    val p2Label = if (isAiExtended) "Bot 2 ($aiExtendedDiff2)" else p2Name
+
                     lobbyViewModel.consumeStartMatchTrigger()
 
                     gameViewModel.initializeMatch(
                         mode = gameMode,
                         bezelGapMm = lobbyState.calibratedGapMm,
                         targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        matchTimeSeconds = 0,
+                        aiDifficulty = aiExtendedDiff1,
+                        aiDifficultyPlayer1 = aiExtendedDiff1,
+                        aiDifficultyPlayer2 = aiExtendedDiff2,
                         puckMaxSpeed = effectivePuckSpeed,
                         airFriction = userPrefs.puckSpeed.airFriction,
-                        player1Name = p1Name,
-                        player2Name = p2Name
+                        player1Name = p1Label,
+                        player2Name = p2Label
                     )
 
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
@@ -346,6 +342,25 @@ fun AirHockeyAppNavigation(
             )
         }
 
+        composable("stages") {
+            StageSelectionScreen(
+                onSelectStage = { stageNum ->
+                    val p1 = userPrefs.playerName.ifBlank { "Você" }
+                    gameViewModel.initializeMatch(
+                        mode = GameMode.SOLO,
+                        bezelGapMm = userPrefs.bezelGapMm,
+                        player1Name = p1,
+                        player2Name = "IA",
+                        stageNumber = stageNum
+                    )
+                    navController.navigate("game/SOLO")
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable(
             route = "game/{mode}",
             arguments = listOf(navArgument("mode") { type = NavType.StringType })
@@ -367,6 +382,22 @@ fun AirHockeyAppNavigation(
                     navController.navigate("menu") {
                         popUpTo("menu") { inclusive = true }
                     }
+                },
+                onExitToStages = {
+                    gameViewModel.stopMatch()
+                    navController.navigate("stages") {
+                        popUpTo("stages") { inclusive = true }
+                    }
+                },
+                onStartNextStage = { nextStage ->
+                    val p1 = userPrefs.playerName.ifBlank { "Você" }
+                    gameViewModel.initializeMatch(
+                        mode = GameMode.SOLO,
+                        bezelGapMm = userPrefs.bezelGapMm,
+                        player1Name = p1,
+                        player2Name = "IA",
+                        stageNumber = nextStage
+                    )
                 }
             )
         }

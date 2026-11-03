@@ -5,7 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,22 +95,42 @@ fun ScoreBoardOverlay(
             )
         }
 
-        // Cronômetro central
-        Surface(
-            color = Color(0x44000000),
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF))
+        // Insígnia central de Pontuação Alvo e Modo Espectador
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val minutes = matchState.remainingTimeSeconds / 60
-            val seconds = matchState.remainingTimeSeconds % 60
-            Text(
-                text = String.format("%02d:%02d", minutes, seconds),
-                color = Color(0xFFE2E8F0),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-            )
+            Surface(
+                color = Color(0x550A0F1D),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x4400E5FF))
+            ) {
+                Text(
+                    text = stringResource(R.string.target_score_hud, matchState.targetScore),
+                    color = Color(0xFFE2E8F0),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+            if (matchState.isSpectator) {
+                Surface(
+                    color = Color(0x33A855F7),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x66A855F7))
+                ) {
+                    Text(
+                        text = stringResource(R.string.spectator_mode),
+                        color = Color(0xFFD8B4FE),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+            }
         }
 
         // Placar P2 (Orange) e Botão Pausa isolado à direita
@@ -529,6 +555,171 @@ fun GameOverDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.game_exit_to_menu))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StageResultDialog(
+    stageNumber: Int,
+    starsEarned: Int,
+    isWon: Boolean,
+    scorePlayer: Int,
+    scoreAi: Int,
+    onSelectStages: () -> Unit,
+    onRetry: () -> Unit,
+    onNextStage: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xE6070B14)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(28.dp)
+        ) {
+            // Level Title
+            Text(
+                text = "LEVEL $stageNumber",
+                color = Color.White,
+                fontSize = 34.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.SansSerif,
+                letterSpacing = 3.sp
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Neon Glowing Card
+            val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF2A6D)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF0F172A), RoundedCornerShape(24.dp))
+                    .border(3.dp, accentColor, RoundedCornerShape(24.dp))
+                    .padding(vertical = 28.dp, horizontal = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Header Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF070B14),
+                        border = BorderStroke(2.dp, accentColor),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = if (isWon) "YOU WIN" else "FASE NAO CONCLUIDA",
+                            color = accentColor,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // 3 Stars Container
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFF1E293B),
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            for (i in 1..3) {
+                                val isEarned = isWon && i <= starsEarned
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = if (isEarned) Color(0xFFFFB800) else Color(0xFF475569),
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Final Score
+                    Text(
+                        text = "$scorePlayer - $scoreAi",
+                        color = Color.White,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Action Buttons Row (Square Rounded Neon Buttons)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Button 1: Stages List (Neon Green)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(Color(0x1F00E676), RoundedCornerShape(18.dp))
+                        .border(2.dp, Color(0xFF00E676), RoundedCornerShape(18.dp))
+                        .clickable(onClick = onSelectStages),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Lista de Fases",
+                        tint = Color(0xFF00E676),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Button 2: Retry (Neon Magenta)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(Color(0x1FE040FB), RoundedCornerShape(18.dp))
+                        .border(2.dp, Color(0xFFE040FB), RoundedCornerShape(18.dp))
+                        .clickable(onClick = onRetry),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reiniciar",
+                        tint = Color(0xFFE040FB),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // Button 3: Next Stage (Neon Orange) - displayed if won and stageNumber < 100
+                if (isWon && stageNumber < 100) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(Color(0x1FFF9100), RoundedCornerShape(18.dp))
+                            .border(2.dp, Color(0xFFFF9100), RoundedCornerShape(18.dp))
+                            .clickable(onClick = onNextStage),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FastForward,
+                            contentDescription = "Proxima Fase",
+                            tint = Color(0xFFFF9100),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
         }

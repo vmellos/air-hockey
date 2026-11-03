@@ -5,8 +5,13 @@
     <!-- Menu Principal -->
     <string name="menu_mode_connected">Mesa Conectada</string>
     <string name="menu_mode_connected_desc">2 aparelhos via Wi-Fi com visão completa da arena em cada tela</string>
-    <string name="menu_mode_solo">Modo Solo</string>
-    <string name="menu_mode_solo_desc">Jogue contra o computador com inteligência ajustável</string>
+    <string name="menu_mode_solo">Modo Fases</string>
+    <string name="menu_mode_solo_desc">100 fases com dificuldade progressiva e estrelas</string>
+    <string name="stage_title">Fases</string>
+    <string name="stage_level">Fase %d</string>
+    <string name="stage_locked">Bloqueada</string>
+    <string name="stage_back">Voltar</string>
+    <string name="stage_failed">Fase Nao Concluida</string>
     <string name="menu_mode_split">Mesa Dividida</string>
     <string name="menu_mode_split_desc">2 jogadores no mesmo aparelho com tela compartilhada</string>
     <string name="menu_mode_extended">Mesa Estendida</string>
@@ -166,4 +171,17 @@
     <string name="visual_effects_balanced_desc">Rastro cinético suave e ondas de choque leves sem chuva de faíscas</string>
     <string name="visual_effects_off">Desempenho (Mínimo)</string>
     <string name="visual_effects_off_desc">Sem rastros ou partículas para máxima fluidez em celulares de entrada</string>
+
+    <!-- Placar Alvo no HUD & Diálogo IA x IA -->
+    <string name="target_score_hud">ALVO: %1$d</string>
+    <string name="ai_vs_ai_title">MODO IA x IA</string>
+    <string name="ai_vs_ai_subtitle">Duelo autônomo entre bots</string>
+    <string name="table_layout">DISPOSIÇÃO DA MESA</string>
+    <string name="layout_local">Local (1 Tela)</string>
+    <string name="layout_extended">Estendida (2 Telas)</string>
+    <string name="bot_1_cyan">BOT 1 (CIANO)</string>
+    <string name="bot_2_orange">BOT 2 (LARANJA)</string>
+    <string name="start_showdown">INICIAR CONFRONTO</string>
+    <string name="spectator_mode">MODO ESPECTADOR</string>
+    <string name="close">Fechar</string>
 </resources>

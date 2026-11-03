@@ -23,9 +23,9 @@ class TableProjection(
     val dimensions: TableDimensions,
     val mode: GameMode = GameMode.SOLO
 ) {
-    val isExtendedHost: Boolean = mode == GameMode.EXTENDED_HOST
-    val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST
-    val isExtended: Boolean = isExtendedHost || isExtendedGuest
+    val isExtendedHost: Boolean = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
+    val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isExtended: Boolean = isExtendedHost || isExtendedGuest || mode == GameMode.AI_VS_AI_EXTENDED
 
     val isConnectedHost: Boolean = mode == GameMode.CONNECTED_HOST
     val isConnectedGuest: Boolean = mode == GameMode.CONNECTED_GUEST

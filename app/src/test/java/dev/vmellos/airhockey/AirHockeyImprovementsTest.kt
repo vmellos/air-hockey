@@ -313,4 +313,30 @@ class AirHockeyImprovementsTest {
         // IA deve sair da defesa e avançar até próximo à linha central para desempacar
         assertTrue("IA deve avançar até a linha de centro para quebrar o desempate", engine.player2Mallet.targetY > 500f)
     }
+
+    @Test
+    fun testAiVsAiModesAreSpectator() {
+        val stateLocal = dev.vmellos.airhockey.feature.game.MatchState(mode = GameMode.AI_VS_AI_LOCAL)
+        assertTrue("AI_VS_AI_LOCAL deve ser modo espectador", stateLocal.isSpectator)
+
+        val stateExtHost = dev.vmellos.airhockey.feature.game.MatchState(mode = GameMode.AI_VS_AI_EXTENDED_HOST)
+        assertTrue("AI_VS_AI_EXTENDED_HOST deve ser modo espectador", stateExtHost.isSpectator)
+
+        val stateExtGuest = dev.vmellos.airhockey.feature.game.MatchState(mode = GameMode.AI_VS_AI_EXTENDED_GUEST)
+        assertTrue("AI_VS_AI_EXTENDED_GUEST deve ser modo espectador", stateExtGuest.isSpectator)
+
+        val stateSolo = dev.vmellos.airhockey.feature.game.MatchState(mode = GameMode.SOLO)
+        assertTrue("SOLO não deve ser modo espectador", !stateSolo.isSpectator)
+    }
+
+    @Test
+    fun testTableProjectionExtendedModes() {
+        val projExtHost = TableProjection(dimensions, GameMode.AI_VS_AI_EXTENDED_HOST)
+        assertTrue(projExtHost.isExtendedHost)
+        assertTrue(projExtHost.isExtended)
+
+        val projExtGuest = TableProjection(dimensions, GameMode.AI_VS_AI_EXTENDED_GUEST)
+        assertTrue(projExtGuest.isExtendedGuest)
+        assertTrue(projExtGuest.isExtended)
+    }
 }
