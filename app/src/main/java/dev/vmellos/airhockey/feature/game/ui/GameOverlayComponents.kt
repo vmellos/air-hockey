@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -282,6 +284,8 @@ fun PeerExitedDialog(
 fun PauseDialog(
     isSoundEnabled: Boolean = true,
     onToggleSound: () -> Unit = {},
+    isMusicEnabled: Boolean = true,
+    onToggleMusic: () -> Unit = {},
     visualEffectsProfile: dev.vmellos.airhockey.core.preferences.VisualEffectsProfile = dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL,
     onChangeVisualEffects: (dev.vmellos.airhockey.core.preferences.VisualEffectsProfile) -> Unit = {},
     onResume: () -> Unit,
@@ -317,7 +321,7 @@ fun PauseDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)
                 ) {
-                    Text(text = "Efeitos Sonoros", color = Color.White, fontSize = 15.sp)
+                    Text(text = stringResource(R.string.settings_sound_effects), color = Color.White, fontSize = 15.sp)
                     IconButton(
                         onClick = onToggleSound,
                         modifier = Modifier
@@ -328,6 +332,27 @@ fun PauseDialog(
                             imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                             contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
                             tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Text(text = stringResource(R.string.settings_music), color = Color.White, fontSize = 15.sp)
+                    IconButton(
+                        onClick = onToggleMusic,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(if (isMusicEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = if (isMusicEnabled) Icons.Default.MusicNote else Icons.Default.MusicOff,
+                            contentDescription = if (isMusicEnabled) "Silenciar música" else "Tocar música",
+                            tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
                             modifier = Modifier.size(22.dp)
                         )
                     }

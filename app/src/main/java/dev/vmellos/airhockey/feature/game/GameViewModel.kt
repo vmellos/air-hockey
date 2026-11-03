@@ -30,6 +30,10 @@ class GameViewModel : ViewModel() {
         .map { it.soundEnabled }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val musicEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
+        .map { it.musicEnabled }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     private val _matchState = MutableStateFlow(MatchState())
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
 
@@ -453,6 +457,13 @@ class GameViewModel : ViewModel() {
         val repo = AirHockeyApp.instance.preferencesRepository
         viewModelScope.launch {
             repo.setSoundEnabled(!soundEnabled.value)
+        }
+    }
+
+    fun toggleMusic() {
+        val repo = AirHockeyApp.instance.preferencesRepository
+        viewModelScope.launch {
+            repo.setMusicEnabled(!musicEnabled.value)
         }
     }
 

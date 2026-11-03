@@ -24,6 +24,8 @@ class UserPreferencesRepository(private val context: Context) {
         val APP_LANGUAGE = stringPreferencesKey("app_language")
         val SOUND_ENABLED = booleanPreferencesKey("sound_enabled")
         val SOUND_VOLUME = floatPreferencesKey("sound_volume")
+        val MUSIC_ENABLED = booleanPreferencesKey("music_enabled")
+        val MUSIC_VOLUME = floatPreferencesKey("music_volume")
         val HAPTICS_ENABLED = booleanPreferencesKey("haptics_enabled")
         val AI_DIFFICULTY = stringPreferencesKey("ai_difficulty")
         val BEZEL_GAP_MM = floatPreferencesKey("bezel_gap_mm")
@@ -64,6 +66,8 @@ class UserPreferencesRepository(private val context: Context) {
             val lang = preferences[PreferencesKeys.APP_LANGUAGE] ?: LocaleHelper.SYSTEM_DEFAULT
             val soundEnabled = preferences[PreferencesKeys.SOUND_ENABLED] ?: true
             val soundVolume = preferences[PreferencesKeys.SOUND_VOLUME] ?: 0.8f
+            val musicEnabled = preferences[PreferencesKeys.MUSIC_ENABLED] ?: true
+            val musicVolume = preferences[PreferencesKeys.MUSIC_VOLUME] ?: 0.6f
             val hapticsEnabled = preferences[PreferencesKeys.HAPTICS_ENABLED] ?: true
             val difficultyStr = preferences[PreferencesKeys.AI_DIFFICULTY] ?: AiDifficulty.MEDIUM.name
             val difficulty = try {
@@ -100,6 +104,8 @@ class UserPreferencesRepository(private val context: Context) {
                 appLanguage = lang,
                 soundEnabled = soundEnabled,
                 soundVolume = soundVolume,
+                musicEnabled = musicEnabled,
+                musicVolume = musicVolume,
                 hapticsEnabled = hapticsEnabled,
                 aiDifficulty = difficulty,
                 bezelGapMm = bezelGapMm,
@@ -146,6 +152,18 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setSoundVolume(volume: Float) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.SOUND_VOLUME] = volume.coerceIn(0f, 1f)
+        }
+    }
+
+    suspend fun setMusicEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MUSIC_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setMusicVolume(volume: Float) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MUSIC_VOLUME] = volume.coerceIn(0f, 1f)
         }
     }
 

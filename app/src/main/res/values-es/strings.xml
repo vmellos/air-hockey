@@ -74,7 +74,9 @@
     <string name="settings_language_system">Predeterminado del Sistema</string>
     <string name="settings_audio_haptics">Audio y Vibración</string>
     <string name="settings_sound_effects">Efectos de Sonido</string>
-    <string name="settings_sound_volume">Volumen del Sonido</string>
+    <string name="settings_sound_volume">Volumen de Efectos</string>
+    <string name="settings_music">Música del Juego</string>
+    <string name="settings_music_volume">Volumen de la Música</string>
     <string name="settings_haptics">Vibración Háptica</string>
     <string name="settings_gameplay">Reglas de Juego</string>
     <string name="settings_ai_difficulty">Dificultad de IA</string>

@@ -55,6 +55,8 @@ class AirHockeyApp : Application() {
             preferencesRepository.userPreferencesFlow.collectLatest { prefs ->
                 audioEngine.isSoundEnabled = prefs.soundEnabled
                 audioEngine.volume = prefs.soundVolume
+                audioEngine.isMusicEnabled = prefs.musicEnabled
+                audioEngine.musicVolume = prefs.musicVolume
                 audioEngine.isHapticsEnabled = prefs.hapticsEnabled
             }
         }
