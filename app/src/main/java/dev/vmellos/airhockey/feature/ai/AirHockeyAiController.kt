@@ -101,13 +101,20 @@ class AirHockeyAiController(
         } else {
             when (difficulty) {
                 AiDifficulty.EASY -> {
+                    val isDeadlockBreak = idleTimer > 1.2f && puckY in (homeY + 20f)..(dimensions.centerLineY + 20f)
+                    val canStrikeServe = isStationaryPuck && isPuckInAiHalf && puckY > malletY + 15f
+
                     if (isPuckBehindMallet) {
                         desiredX = homeX
                         desiredY = homeY
+                    } else if (canStrikeServe || isDeadlockBreak) {
+                        // Saque de Início da IA ou Desempace suave no nível Fácil
+                        desiredX = (puck.x + aimingErrorX).coerceIn(mallet.radius, dimensions.width - mallet.radius)
+                        desiredY = (puckY + 45f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.3f)
                     } else if (perceivedPuckY <= dimensions.centerLineY + 20f) {
                         desiredX = perceivedPuckX + aimingErrorX
                         desiredY = if (perceivedPuckY > homeY + 20f) {
-                            (perceivedPuckY + if (isStationaryPuck) 40f else -20f).coerceAtMost(dimensions.centerLineY - mallet.radius)
+                            (perceivedPuckY - 35f).coerceIn(homeY, dimensions.centerLineY - mallet.radius)
                         } else {
                             homeY
                         }
@@ -246,7 +253,9 @@ class AirHockeyAiController(
         val dx = clampedDesiredX - mallet.targetX
         val dy = clampedDesiredY - mallet.targetY
         val dist = sqrt(dx * dx + dy * dy)
-        val step = maxSpeed * dt
+        val isEasyDeadlock = difficulty == AiDifficulty.EASY && (idleTimer > 1.2f && puckY in (homeY + 20f)..(dimensions.centerLineY + 20f))
+        val effectiveMaxSpeed = if (isEasyDeadlock) 650f else maxSpeed
+        val step = effectiveMaxSpeed * dt
 
         if (dist > step && dist > 0.001f) {
             mallet.targetX += (dx / dist) * step

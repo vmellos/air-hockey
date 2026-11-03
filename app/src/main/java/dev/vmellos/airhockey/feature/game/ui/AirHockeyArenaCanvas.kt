@@ -48,6 +48,8 @@ fun AirHockeyArenaCanvas(
     val particlePool = remember { ParticlePool(maxSparks = 50, maxShockwaves = 8) }
     val puckTrail = remember { ArrayDeque<Offset>(16) }
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(12) }
+    var activePointerP1 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
+    var activePointerP2 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
 
     // Limpa o rastro de energia nas pausas de gol, contagem regressiva e reposicionamento
     androidx.compose.runtime.LaunchedEffect(matchState.status, matchState.lastScorer) {
@@ -56,7 +58,17 @@ fun AirHockeyArenaCanvas(
         }
     }
 
+    // Higienização de Ponteiros de Toque: redefine ponteiros quando fora do estado PLAYING
+    LaunchedEffect(matchState.status) {
+        if (matchState.status != MatchStatus.PLAYING) {
+            activePointerP1 = null
+            activePointerP2 = null
+        }
+    }
+
     DisposableEffect(engine) {
+        activePointerP1 = null
+        activePointerP2 = null
         val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
             synchronized(pendingCollisions) {
                 if (pendingCollisions.size < 12) {
@@ -66,6 +78,8 @@ fun AirHockeyArenaCanvas(
         }
         engine.onVisualCollisionListener = listener
         onDispose {
+            activePointerP1 = null
+            activePointerP2 = null
             if (engine.onVisualCollisionListener === listener) {
                 engine.onVisualCollisionListener = null
             }
@@ -84,19 +98,23 @@ fun AirHockeyArenaCanvas(
         }
     }
 
-    var activePointerP1 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
-    var activePointerP2 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
-
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(TableBgDark)
-            .pointerInput(mode, projection, touchOffset) {
+            .pointerInput(engine, mode, projection, touchOffset, matchState.currentStage) {
+                activePointerP1 = null
+                activePointerP2 = null
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
+
+                        if (event.changes.none { it.pressed }) {
+                            activePointerP1 = null
+                            activePointerP2 = null
+                        }
 
                         if (matchState.isSpectator) {
                             // No modo espectador IA x IA, os toques não interferem nos rebatedores
