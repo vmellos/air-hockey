@@ -170,6 +170,14 @@ _Avoid_: Pacote de som, broadcast de áudio, sync de áudio
 
 ## Interface e Apresentação
 
+**Ícone de Mesa Estendida**:
+A representação gráfica oficial do aplicativo na loja e no lançador exibindo dois dispositivos móveis dispostos lado a lado com o disco flamejante cruzando o vão físico eletrizado, adotada como licença visual comercial para maximizar a proporção quadrada 1:1.
+_Avoid_: Ícone simples, logo padrão, ícone genérico
+
+**Título Arcade Volumétrico**:
+O letreiro visual oficial do jogo estilizado em chanfro metálico cromado, labaredas de plasma em "AIR", raios elétricos ciano em "HOCKEY" e o subtítulo "ULTIMATE CHAMPIONSHIP", renderizado como cabeçalho gráfico no menu principal.
+_Avoid_: Título em texto puro, texto do menu, logo estático
+
 **Miniatura da Mesa**:
 A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
 _Avoid_: Ícone de campo, desenho do modo, preview da mesa
