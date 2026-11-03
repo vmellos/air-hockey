@@ -44,6 +44,10 @@ _Avoid_: Touch offset, finger offset, margem de dedo, folga de toque
 A zona circular de tolerância ao redor do centro do rebatedor que condiciona o início do controle por toque, bloqueando saltos e deslocamentos anômalos disparados por cliques em áreas distantes da mesa.
 _Avoid_: Grab radius, margem de toque, gatilho de clique, toque solto
 
+**Higienização de Ponteiros de Toque**:
+O mecanismo de segurança no controle da arena que redefine incondicionalmente os identificadores de toque retidos no motor gráfico sempre que a partida transita para fora do estado ativo de jogo (pausa, contagem regressiva, celebração de ponto ou encerramento) ou quando a aplicação perde o foco do sistema operacional, prevenindo o congelamento dos rebatedores por referência a ponteiros órfãos.
+_Avoid_: Limpeza de toque, reset de dedo, touch unfreeze, desbloqueio manual
+
 **Jogada Lateral**:
 O golpe angular aplicado no disco contra as bordas laterais da mesa com o objetivo de produzir ricochete veloz em direção à meta oposta.
 _Avoid_: Bank shot, tabela, jogada de canto, ricochete intencional
