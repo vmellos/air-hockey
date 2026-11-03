@@ -18,11 +18,18 @@
     <string name="menu_mode_extended_desc">2 dispositivos frente a frente formando una mesa continua</string>
     <string name="menu_mode_ai_vs_ai">Modo IA vs IA</string>
     <string name="menu_mode_ai_vs_ai_desc">Duelo autónomo entre inteligencias artificiales</string>
+    <string name="menu_mode_network_centralized">Jugar en 2 Celulares</string>
+    <string name="menu_mode_network_centralized_desc">Mesa Extendida, Mesa Conectada o Duelo IA vs IA vía Wi-Fi</string>
     <string name="menu_settings">Ajustes</string>
 
     <!-- Lobby Mesa Estendida e Conectada -->
-    <string name="lobby_title">Lobby de Mesa Extendida</string>
+    <string name="lobby_title">Lobby Multijugador</string>
+    <string name="lobby_title_extended">Lobby de Mesa Extendida</string>
     <string name="lobby_title_connected">Lobby de Mesa Conectada</string>
+    <string name="lobby_select_host_mode_title">CREAR MESA MULTIJUGADOR</string>
+    <string name="lobby_select_host_mode_subtitle">Elige la modalidad de juego en 2 dispositivos:</string>
+    <string name="lobby_host_ai_vs_ai_local_btn">Ver en este celular (1 Pantalla)</string>
+    <string name="lobby_host_ai_vs_ai_extended_btn">Crear Mesa en 2 Celulares</string>
     <string name="lobby_btn_start_match">Comenzar Partida</string>
     <string name="lobby_role_host">Crear Mesa</string>
     <string name="lobby_role_host_desc">Anunciar en la red local y generar código / QR</string>

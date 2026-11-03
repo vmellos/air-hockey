@@ -18,11 +18,18 @@
     <string name="menu_mode_extended_desc">2 devices top-to-top forming one single extended table</string>
     <string name="menu_mode_ai_vs_ai">AI vs AI Mode</string>
     <string name="menu_mode_ai_vs_ai_desc">Autonomous duel between artificial intelligences</string>
+    <string name="menu_mode_network_centralized">Play on 2 Devices</string>
+    <string name="menu_mode_network_centralized_desc">Extended Table, Connected Table or AI vs AI duel over Wi-Fi</string>
     <string name="menu_settings">Settings</string>
 
     <!-- Lobby Mesa Estendida e Conectada -->
-    <string name="lobby_title">Extended Table Lobby</string>
+    <string name="lobby_title">Multiplayer Lobby</string>
+    <string name="lobby_title_extended">Extended Table Lobby</string>
     <string name="lobby_title_connected">Connected Table Lobby</string>
+    <string name="lobby_select_host_mode_title">CREATE MULTIPLAYER TABLE</string>
+    <string name="lobby_select_host_mode_subtitle">Choose how you want to play on 2 devices:</string>
+    <string name="lobby_host_ai_vs_ai_local_btn">Watch on this device (1 Screen)</string>
+    <string name="lobby_host_ai_vs_ai_extended_btn">Create Table on 2 Devices</string>
     <string name="lobby_btn_start_match">Start Match</string>
     <string name="lobby_role_host">Host Table</string>
     <string name="lobby_role_host_desc">Broadcast presence and generate pairing code / QR</string>

@@ -124,7 +124,7 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun startAsHost(mode: String = _state.value.targetMode) {
+    fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "") {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress(context)
         val selfName = _state.value.selfPlayerName.ifBlank {
@@ -140,6 +140,8 @@ class LobbyViewModel : ViewModel() {
                 role = LobbyRole.HOST,
                 connectionStatus = ConnectionStatus.BROADCASTING,
                 targetMode = mode,
+                aiDifficulty1 = aiDiff1,
+                aiDifficulty2 = aiDiff2,
                 tableCode = code,
                 hostIp = ip,
                 qrContent = qr,
@@ -193,7 +195,13 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "") {
-        coordinator?.startMatch(gapMm, maxSpeed, aiDiff1, aiDiff2)
+        val d1 = if (aiDiff1.isNotBlank()) aiDiff1 else _state.value.aiDifficulty1
+        val d2 = if (aiDiff2.isNotBlank()) aiDiff2 else _state.value.aiDifficulty2
+        coordinator?.startMatch(gapMm, maxSpeed, d1, d2)
+    }
+
+    fun resetToRoleSelection() {
+        stopAll()
     }
 
     fun sendControlMessage(message: String) {

@@ -39,6 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -48,6 +49,8 @@ import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -94,6 +97,7 @@ fun LobbyScreen(
     onBackToMenu: () -> Unit,
     onStartHostMatch: (() -> Unit)? = null,
     onNavigateToCalibration: () -> Unit = {},
+    onStartAiVsAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
@@ -102,6 +106,7 @@ fun LobbyScreen(
     var inputCode by remember { mutableStateOf("") }
     var showNameDialog by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf("") }
+    var showCreateHostDialog by remember { mutableStateOf(false) }
 
     if (showNameDialog) {
         AlertDialog(
@@ -286,10 +291,11 @@ fun LobbyScreen(
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 val titleText = when {
-                    state.role == LobbyRole.GUEST -> "LOBBY MULTIJOGADOR"
+                    state.role == LobbyRole.NONE -> stringResource(R.string.menu_mode_network_centralized).uppercase()
+                    state.role == LobbyRole.GUEST -> stringResource(R.string.lobby_title).uppercase()
                     state.targetMode == "CONNECTED" -> stringResource(R.string.lobby_title_connected)
                     state.targetMode == "AI_EXTENDED" -> "LOBBY IA x IA (MESA ESTENDIDA)"
-                    else -> stringResource(R.string.lobby_title)
+                    else -> stringResource(R.string.lobby_title_extended)
                 }
                 Text(
                     text = titleText,
@@ -364,7 +370,7 @@ fun LobbyScreen(
             if (state.role == LobbyRole.NONE) {
                 // Seleção de Papel (Anfitrião vs Convidado)
                 RoleSelectionCards(
-                    onSelectHost = { viewModel.startAsHost() },
+                    onSelectHost = { showCreateHostDialog = true },
                     onSelectGuest = { viewModel.startAsGuest() }
                 )
             } else if (state.role == LobbyRole.HOST) {
@@ -372,6 +378,7 @@ fun LobbyScreen(
                 // Tela do Dispositivo Anfitrião
                 HostLobbyView(
                     state = state,
+                    onChangeMode = { showCreateHostDialog = true },
                     onProceed = {
                         if (onStartHostMatch != null) {
                             onStartHostMatch()
@@ -401,6 +408,32 @@ fun LobbyScreen(
                     }
                 )
             }
+        }
+
+        if (showCreateHostDialog) {
+            val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+            HostCreateModeDialog(
+                initialDifficulty = userPrefs.aiDifficulty,
+                onDismiss = { showCreateHostDialog = false },
+                onSelectExtended = {
+                    showCreateHostDialog = false
+                    viewModel.startAsHost("EXTENDED")
+                },
+                onSelectConnected = {
+                    showCreateHostDialog = false
+                    viewModel.startAsHost("CONNECTED")
+                },
+                onSelectAiExtended = { d1, d2 ->
+                    showCreateHostDialog = false
+                    viewModel.startAsHost("AI_EXTENDED", d1.name, d2.name)
+                },
+                onSelectAiLocal = onStartAiVsAiLocal?.let { callback ->
+                    { d1, d2 ->
+                        showCreateHostDialog = false
+                        callback(d1, d2)
+                    }
+                }
+            )
         }
     }
 }
@@ -549,6 +582,7 @@ private fun RoleSelectionCards(
 @Composable
 private fun HostLobbyView(
     state: dev.vmellos.airhockey.feature.lobby.LobbyState,
+    onChangeMode: (() -> Unit)? = null,
     onProceed: () -> Unit
 ) {
     val context = LocalContext.current
@@ -566,7 +600,10 @@ private fun HostLobbyView(
         Surface(
             color = hostModeColor.copy(alpha = 0.15f),
             shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, hostModeColor.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, hostModeColor.copy(alpha = 0.5f)),
+            modifier = Modifier.then(
+                if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
+            )
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -581,6 +618,14 @@ private fun HostLobbyView(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
+                if (onChangeMode != null) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Alterar Modalidade",
+                        tint = hostModeColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
             }
         }
 
@@ -1079,6 +1124,339 @@ private fun GuestLobbyView(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HostCreateModeDialog(
+    initialDifficulty: dev.vmellos.airhockey.core.preferences.AiDifficulty,
+    onDismiss: () -> Unit,
+    onSelectExtended: () -> Unit,
+    onSelectConnected: () -> Unit,
+    onSelectAiExtended: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit,
+    onSelectAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null
+) {
+    var showAiConfig by remember { mutableStateOf(false) }
+    var diffBot1 by remember { mutableStateOf(initialDifficulty) }
+    var diffBot2 by remember { mutableStateOf(initialDifficulty) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            color = Color(0xF20B0F1C),
+            shape = CutCornerShape(20.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFF00E5FF),
+                        Color(0xFF818CF8),
+                        Color(0xFFA855F7)
+                    )
+                )
+            ),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header com Botão Fechar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.lobby_select_host_mode_title),
+                            color = Color(0xFF00E5FF),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.8.sp
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (showAiConfig) "Configure os bots do confronto" else stringResource(R.string.lobby_select_host_mode_subtitle),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color(0xFF94A3B8))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (!showAiConfig) {
+                    // Opção 1: Mesa Estendida
+                    HostModeOptionCard(
+                        title = stringResource(R.string.menu_mode_extended),
+                        description = stringResource(R.string.menu_mode_extended_desc),
+                        icon = Icons.Default.PhoneAndroid,
+                        accentColor = Color(0xFF818CF8),
+                        onClick = onSelectExtended
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Opção 2: Mesa Conectada
+                    HostModeOptionCard(
+                        title = stringResource(R.string.menu_mode_connected),
+                        description = stringResource(R.string.menu_mode_connected_desc),
+                        icon = Icons.Default.Wifi,
+                        accentColor = Color(0xFF00E5FF),
+                        onClick = onSelectConnected
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Opção 3: Duelo IA x IA
+                    HostModeOptionCard(
+                        title = stringResource(R.string.menu_mode_ai_vs_ai),
+                        description = stringResource(R.string.menu_mode_ai_vs_ai_desc),
+                        icon = Icons.Default.SmartToy,
+                        accentColor = Color(0xFFA855F7),
+                        onClick = { showAiConfig = true }
+                    )
+                } else {
+                    // Painel de Configuração dos Bots
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { showAiConfig = false },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color(0xFF00E5FF))
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "DIFICULDADE DOS BOTS",
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Bot 1 (Ciano)
+                    Text(
+                        text = stringResource(R.string.bot_1_cyan),
+                        color = Color(0xFF00E5FF),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    DifficultySelectorRow(
+                        selected = diffBot1,
+                        activeColor = Color(0xFF00E5FF),
+                        onSelect = { diffBot1 = it }
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Bot 2 (Laranja)
+                    Text(
+                        text = stringResource(R.string.bot_2_orange),
+                        color = Color(0xFFFF5722),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    DifficultySelectorRow(
+                        selected = diffBot2,
+                        activeColor = Color(0xFFFF5722),
+                        onSelect = { diffBot2 = it }
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Botão Primário: Criar Mesa em 2 Celulares
+                    Button(
+                        onClick = { onSelectAiExtended(diffBot1, diffBot2) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA855F7)),
+                        shape = CutCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.lobby_host_ai_vs_ai_extended_btn).uppercase(),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 13.sp,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+
+                    if (onSelectAiLocal != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextButton(
+                            onClick = { onSelectAiLocal(diffBot1, diffBot2) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(R.string.lobby_host_ai_vs_ai_local_btn),
+                                color = Color(0xFF00E5FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HostModeOptionCard(
+    title: String,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    val cardShape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp, topEnd = 4.dp, bottomStart = 4.dp)
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+        shape = cardShape,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.2.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        accentColor.copy(alpha = 0.85f),
+                        accentColor.copy(alpha = 0.25f)
+                    )
+                ),
+                shape = cardShape
+            )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(3.5.dp)
+                    .height(36.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(accentColor, accentColor.copy(alpha = 0.35f))
+                        ),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title.uppercase(),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.6.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = description,
+                    color = Color(0xFF94A3B8),
+                    fontSize = 11.5.sp,
+                    lineHeight = 15.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = accentColor.copy(alpha = 0.70f),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DifficultySelectorRow(
+    selected: dev.vmellos.airhockey.core.preferences.AiDifficulty,
+    activeColor: Color,
+    onSelect: (dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.forEach { diff ->
+            val isSelected = diff == selected
+            val label = when (diff) {
+                dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> stringResource(R.string.settings_ai_easy)
+                dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> stringResource(R.string.settings_ai_medium)
+                dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> stringResource(R.string.settings_ai_hard)
+            }
+            Surface(
+                color = if (isSelected) activeColor.copy(alpha = 0.22f) else Color(0x331E293B),
+                shape = CutCornerShape(6.dp),
+                border = BorderStroke(
+                    width = if (isSelected) 1.2.dp else 1.dp,
+                    color = if (isSelected) activeColor else Color(0x3364748B)
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onSelect(diff) }
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = label.uppercase(),
+                        color = if (isSelected) activeColor else Color(0xFF94A3B8),
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                        letterSpacing = 0.5.sp
+                    )
                 }
             }
         }

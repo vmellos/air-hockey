@@ -153,49 +153,8 @@ fun AirHockeyAppNavigation(
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
-                onStartConnected = {
-                    lobbyViewModel.setTargetMode("CONNECTED")
-                    navController.navigate("lobby")
-                },
-                onStartExtended = {
-                    lobbyViewModel.setTargetMode("EXTENDED")
-                    navController.navigate("lobby")
-                },
-                onStartAiVsAiLocal = { diff1, diff2 ->
-                    val puckPreset = when (diff1) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
-                    }
-                    val d1Str = when (diff1) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
-                    }
-                    val d2Str = when (diff2) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
-                    }
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.AI_VS_AI_LOCAL,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        aiDifficulty = diff1,
-                        aiDifficultyPlayer1 = diff1,
-                        aiDifficultyPlayer2 = diff2,
-                        puckMaxSpeed = puckPreset.maxSpeed,
-                        airFriction = puckPreset.airFriction,
-                        player1Name = "Bot 1 ($d1Str)",
-                        player2Name = "Bot 2 ($d2Str)"
-                    )
-                    navController.navigate("game/AI_VS_AI_LOCAL")
-                },
-                onStartAiVsAiExtended = { diff1, diff2 ->
-                    aiExtendedDiff1 = diff1
-                    aiExtendedDiff2 = diff2
-                    lobbyViewModel.startAsHost("AI_EXTENDED")
+                onStartNetwork = {
+                    lobbyViewModel.resetToRoleSelection()
                     navController.navigate("lobby")
                 },
                 onOpenLeaderboard = {
@@ -236,11 +195,19 @@ fun AirHockeyAppNavigation(
                         lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
                     }
 
-                    val effectiveAiDiff1 = if (isHost) aiExtendedDiff1 else (
+                    val effectiveAiDiff1 = if (isHost) {
+                        if (lobbyState.aiDifficulty1.isNotBlank()) {
+                            dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: aiExtendedDiff1
+                        } else aiExtendedDiff1
+                    } else (
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) }
                             ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
                     )
-                    val effectiveAiDiff2 = if (isHost) aiExtendedDiff2 else (
+                    val effectiveAiDiff2 = if (isHost) {
+                        if (lobbyState.aiDifficulty2.isNotBlank()) {
+                            dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) } ?: aiExtendedDiff2
+                        } else aiExtendedDiff2
+                    } else (
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) }
                             ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
                     )
@@ -280,13 +247,50 @@ fun AirHockeyAppNavigation(
                 viewModel = lobbyViewModel,
                 onStartHostMatch = {
                     val gap = if (lobbyState.targetMode == "CONNECTED") 0f else userPrefs.bezelGapMm
-                    val d1 = if (lobbyState.targetMode == "AI_EXTENDED") aiExtendedDiff1.name else ""
-                    val d2 = if (lobbyState.targetMode == "AI_EXTENDED") aiExtendedDiff2.name else ""
+                    val d1 = if (lobbyState.targetMode == "AI_EXTENDED") {
+                        if (lobbyState.aiDifficulty1.isNotBlank()) lobbyState.aiDifficulty1 else aiExtendedDiff1.name
+                    } else ""
+                    val d2 = if (lobbyState.targetMode == "AI_EXTENDED") {
+                        if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
+                    } else ""
                     lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2)
                 },
                 onBackToMenu = {
                     lobbyViewModel.stopAll()
                     navController.popBackStack()
+                },
+                onStartAiVsAiLocal = { diff1, diff2 ->
+                    val puckPreset = when (diff1) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
+                    }
+                    val d1Str = when (diff1) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                    }
+                    val d2Str = when (diff2) {
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
+                    }
+                    gameViewModel.initializeMatch(
+                        mode = GameMode.AI_VS_AI_LOCAL,
+                        bezelGapMm = userPrefs.bezelGapMm,
+                        targetScore = userPrefs.targetScore,
+                        matchTimeSeconds = userPrefs.matchTimeSeconds,
+                        aiDifficulty = diff1,
+                        aiDifficultyPlayer1 = diff1,
+                        aiDifficultyPlayer2 = diff2,
+                        puckMaxSpeed = puckPreset.maxSpeed,
+                        airFriction = puckPreset.airFriction,
+                        player1Name = "Bot 1 ($d1Str)",
+                        player2Name = "Bot 2 ($d2Str)"
+                    )
+                    navController.navigate("game/AI_VS_AI_LOCAL") {
+                        popUpTo("menu")
+                    }
                 }
             )
         }

@@ -72,12 +72,13 @@ import dev.vmellos.airhockey.core.util.findActivity
 fun MainMenuScreen(
     onStartSolo: () -> Unit,
     onStartSplit: () -> Unit,
-    onStartExtended: () -> Unit,
-    onStartConnected: () -> Unit,
-    onStartAiVsAiLocal: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
-    onStartAiVsAiExtended: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
+    onStartNetwork: () -> Unit = {},
     onOpenLeaderboard: () -> Unit,
     onOpenSettings: () -> Unit,
+    onStartExtended: () -> Unit = onStartNetwork,
+    onStartConnected: () -> Unit = onStartNetwork,
+    onStartAiVsAiLocal: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
+    onStartAiVsAiExtended: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var showAiVsAiDialog by remember { mutableStateOf(false) }
@@ -237,9 +238,9 @@ fun MainMenuScreen(
                 )
             }
 
-            // Cartões dos 5 Modos de Jogo no Padrão Arcade Glassmorphism
+            // Cartões dos 3 Modos de Jogo no Padrão Arcade Glassmorphism
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false)
@@ -254,22 +255,6 @@ fun MainMenuScreen(
                 )
 
                 MenuModeCard(
-                    title = stringResource(R.string.menu_mode_connected),
-                    description = stringResource(R.string.menu_mode_connected_desc),
-                    accentColor = Color(0xFF00E5FF),
-                    hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = onStartConnected
-                )
-
-                MenuModeCard(
-                    title = stringResource(R.string.menu_mode_extended),
-                    description = stringResource(R.string.menu_mode_extended_desc),
-                    accentColor = Color(0xFF818CF8),
-                    hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = onStartExtended
-                )
-
-                MenuModeCard(
                     title = stringResource(R.string.menu_mode_split),
                     description = stringResource(R.string.menu_mode_split_desc),
                     accentColor = Color(0xFFFF5722),
@@ -278,30 +263,11 @@ fun MainMenuScreen(
                 )
 
                 MenuModeCard(
-                    title = stringResource(R.string.menu_mode_ai_vs_ai),
-                    description = stringResource(R.string.menu_mode_ai_vs_ai_desc),
-                    accentColor = Color(0xFFA855F7),
+                    title = stringResource(R.string.menu_mode_network_centralized),
+                    description = stringResource(R.string.menu_mode_network_centralized_desc),
+                    accentColor = Color(0xFF00E5FF),
                     hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = { showAiVsAiDialog = true }
-                )
-            }
-
-            if (showAiVsAiDialog) {
-                AiVsAiConfigDialog(
-                    initialDifficulty = prefs.aiDifficulty,
-                    onDismiss = { showAiVsAiDialog = false },
-                    onStartLocal = { d1, d2 ->
-                        showAiVsAiDialog = false
-                        onStartAiVsAiLocal(d1, d2)
-                    },
-                    onStartExtended = { d1, d2 ->
-                        showAiVsAiDialog = false
-                        onStartAiVsAiExtended(d1, d2)
-                    },
-                    onJoinAsGuest = {
-                        showAiVsAiDialog = false
-                        onStartExtended()
-                    }
+                    onClick = onStartNetwork
                 )
             }
 
