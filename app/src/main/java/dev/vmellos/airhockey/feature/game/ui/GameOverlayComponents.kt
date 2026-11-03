@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -62,117 +63,78 @@ fun ScoreBoardOverlay(
     matchState: MatchState,
     isSoundEnabled: Boolean = true,
     onToggleSound: () -> Unit = {},
-    onPauseClick: () -> Unit,
+    onPauseClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
+    val isExtended = matchState.mode == GameMode.EXTENDED_HOST ||
+            matchState.mode == GameMode.EXTENDED_GUEST ||
+            matchState.mode == GameMode.AI_VS_AI_EXTENDED_HOST ||
+            matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+
+    val isExtendedGuest = matchState.mode == GameMode.EXTENDED_GUEST ||
+            matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+
+    Box(
         modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxSize()
+            .safeDrawingPadding()
     ) {
-        // Placar P1 (Cyan)
-        Column(
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier.widthIn(min = 60.dp, max = 110.dp)
-        ) {
-            Text(
-                text = matchState.player1Name,
-                color = Color(0xFF00E5FF),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            Text(
-                text = "${matchState.scorePlayer1}",
-                color = Color(0xFF00E5FF),
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace
-            )
-        }
-
-        // Insígnia central de Pontuação Alvo e Modo Espectador
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Surface(
-                color = Color(0x550A0F1D),
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x4400E5FF))
-            ) {
-                Text(
-                    text = stringResource(R.string.target_score_hud, matchState.targetScore),
-                    color = Color(0xFFE2E8F0),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
-            }
-            if (matchState.isSpectator) {
-                Surface(
-                    color = Color(0x33A855F7),
-                    shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x66A855F7))
-                ) {
-                    Text(
-                        text = stringResource(R.string.spectator_mode),
-                        color = Color(0xFFD8B4FE),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.8.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                    )
-                }
-            }
-        }
-
-        // Placar P2 (Orange) e Botão Pausa isolado à direita
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+        // Placar Lateral Numérico na lateral direita
+        Surface(
+            color = Color(0x33000000),
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x22FFFFFF)),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 8.dp)
         ) {
             Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.widthIn(min = 60.dp, max = 110.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = matchState.player2Name,
-                    color = Color(0xFFFF5722),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${matchState.scorePlayer2}",
-                    color = Color(0xFFFF5722),
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            IconButton(
-                onClick = onPauseClick,
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(Color(0x33FFFFFF), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Pause,
-                    contentDescription = stringResource(R.string.game_paused),
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (isExtended) {
+                    // Na Mesa Estendida, cada aparelho exibe o dígito de sua respectiva metade
+                    if (isExtendedGuest) {
+                        Text(
+                            text = "${matchState.scorePlayer2}",
+                            color = Color(0xFFFF5722),
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    } else {
+                        Text(
+                            text = "${matchState.scorePlayer1}",
+                            color = Color(0xFF00E5FF),
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                } else {
+                    // Modos de 1 Tela ou Mesa Conectada: P2 no topo (Laranja), Divisor, P1 na base (Ciano)
+                    Text(
+                        text = "${matchState.scorePlayer2}",
+                        color = Color(0xFFFF5722),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(22.dp)
+                            .height(1.5.dp)
+                            .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
+                    )
+                    Text(
+                        text = "${matchState.scorePlayer1}",
+                        color = Color(0xFF00E5FF),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
             }
         }
     }
@@ -245,7 +207,7 @@ fun GoalBannerOverlay(
                 border = androidx.compose.foundation.BorderStroke(1.5.dp, glowColor.copy(alpha = 0.80f))
             ) {
                 Text(
-                    text = "+1 PONTO",
+                    text = stringResource(R.string.game_goal_point_banner),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
@@ -277,7 +239,7 @@ fun PeerExitedDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Partida Encerrada",
+                    text = stringResource(R.string.game_peer_exited_title),
                     color = Color(0xFFFF5722),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -286,7 +248,7 @@ fun PeerExitedDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "O adversário saiu da partida.",
+                    text = stringResource(R.string.game_peer_exited_desc),
                     color = Color(0xFF94A3B8),
                     fontSize = 15.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center

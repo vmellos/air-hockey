@@ -196,4 +196,23 @@
     <string name="lobby_mode_badge_connected">Connected Table</string>
     <string name="spectator_mode">SPECTATOR MODE</string>
     <string name="close">Close</string>
+
+    <!-- Lobby & Match Strings -->
+    <string name="lobby_device_player_title">YOUR DEVICE / PLAYER</string>
+    <string name="lobby_configure_bots_subtitle">Configure the bots for this matchup</string>
+    <string name="lobby_bots_difficulty_title">BOT DIFFICULTY</string>
+    <string name="lobby_table_ip_label">Table IP: </string>
+    <string name="lobby_table_private_badge">Private</string>
+    <string name="lobby_code_or_ip_placeholder">Code (4 digits) or Host IP</string>
+    <string name="lobby_refresh_btn">Refresh</string>
+    <string name="game_peer_exited_title">Match Ended</string>
+    <string name="game_peer_exited_desc">The opponent left the match.</string>
+    <string name="game_goal_point_banner">+1 POINT</string>
+    <string name="bot_name_with_difficulty">%1$s (%2$s)</string>
+    <string name="bot_1_label">Bot 1</string>
+    <string name="bot_2_label">Bot 2</string>
+    <string name="player_you">You</string>
+    <string name="player_ai">AI</string>
+    <string name="player_1_default">Player 1</string>
+    <string name="player_2_default">Player 2</string>
 </resources>

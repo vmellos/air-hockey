@@ -60,6 +60,10 @@ _Avoid_: Tie, draw, igualdade, sem vencedor, tempo esgotado
 A meta quantitativa de pontos definida para a partida (3, 5, 7 ou 10 pontos) cuja conquista pelo primeiro jogador encerra o confronto e declara o vencedor imediato e definitivo de forma soberana, sem interferência de cronômetro ou tempo limite.
 _Avoid_: Placar final, limite de gols, meta de gols, target score
 
+**Placar Lateral**:
+A representação visual e minimalista da contagem de pontos posicionada na borda lateral da mesa na altura da linha central divisória, apresentando exclusivamente os dígitos dos participantes em tipografia neon de alto contraste (Ciano e Laranja) separados por divisor sutil em todos os modos de jogo, desobstruindo as áreas de movimento dos rebatedores.
+_Avoid_: Scoreboard do topo, placar superior, painel de pontos, score hud
+
 **Modo Espectador**:
 O estado operacional da interface e dos controles acionado durante o Modo IA x IA no qual o toque manual sobre a mesa é desativado em favor da simulação autônoma dos robôs, permitindo ao usuário acompanhar o duelo e interagir apenas através do menu de pausa.
 _Avoid_: Tela travada, modo observador, bot view

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Wifi
@@ -67,12 +68,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -340,14 +343,14 @@ fun LobbyScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "SEU DISPOSITIVO / JOGADOR",
+                                text = stringResource(R.string.lobby_device_player_title),
                                 color = Color(0xFF94A3B8),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 letterSpacing = 1.sp
                             )
                             Text(
-                                text = state.selfPlayerName.ifBlank { "Jogador" },
+                                text = state.selfPlayerName.ifBlank { stringResource(R.string.player_1_default) },
                                 color = Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
@@ -375,11 +378,8 @@ fun LobbyScreen(
                 )
             } else if (state.role == LobbyRole.HOST) {
                 val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-                // Tela do Dispositivo Anfitrião
-                HostLobbyView(
-                    state = state,
-                    onChangeMode = { showCreateHostDialog = true },
-                    onProceed = {
+                val proceedAction = remember(state.targetMode, userPrefs.bezelGapMm, userPrefs.puckSpeed.maxSpeed, onStartHostMatch) {
+                    {
                         if (onStartHostMatch != null) {
                             onStartHostMatch()
                         } else {
@@ -387,6 +387,23 @@ fun LobbyScreen(
                             viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed)
                         }
                     }
+                }
+
+                // Início automático e direto assim que o convidado conecta e valida o handshake
+                LaunchedEffect(state.role, state.connectionStatus) {
+                    if (state.role == LobbyRole.HOST && state.connectionStatus == ConnectionStatus.CONNECTED) {
+                        delay(350)
+                        if (state.role == LobbyRole.HOST && state.connectionStatus == ConnectionStatus.CONNECTED) {
+                            proceedAction()
+                        }
+                    }
+                }
+
+                // Tela do Dispositivo Anfitrião
+                HostLobbyView(
+                    state = state,
+                    onChangeMode = { showCreateHostDialog = true },
+                    onProceed = proceedAction
                 )
             } else if (state.role == LobbyRole.GUEST) {
                 // Tela do Dispositivo Convidado
@@ -396,6 +413,7 @@ fun LobbyScreen(
                     onInputCodeChange = { inputCode = it },
                     onConnectCode = { viewModel.connectByCode(inputCode) },
                     onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code, table.mode) },
+                    onRefreshDiscovery = { viewModel.refreshDiscovery() },
                     onScanQrClick = {
                         val hasPerm = ContextCompat.checkSelfPermission(
                             context, Manifest.permission.CAMERA
@@ -673,7 +691,7 @@ private fun HostLobbyView(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "IP da Mesa: ",
+                    text = stringResource(R.string.lobby_table_ip_label),
                     color = Color(0xFF94A3B8),
                     fontSize = 13.sp
                 )
@@ -809,6 +827,7 @@ private fun GuestLobbyView(
     onInputCodeChange: (String) -> Unit,
     onConnectCode: () -> Unit,
     onConnectTable: (dev.vmellos.airhockey.feature.network.DiscoveredTable, String) -> Unit,
+    onRefreshDiscovery: () -> Unit = {},
     onScanQrClick: () -> Unit
 ) {
     var selectedTableForPin by remember { mutableStateOf<dev.vmellos.airhockey.feature.network.DiscoveredTable?>(null) }
@@ -998,7 +1017,7 @@ private fun GuestLobbyView(
             OutlinedTextField(
                 value = inputCode,
                 onValueChange = onInputCodeChange,
-                placeholder = { Text("Código (4 dígitos) ou IP do Host", color = Color(0xFF64748B), fontSize = 13.sp) },
+                placeholder = { Text(stringResource(R.string.lobby_code_or_ip_placeholder), color = Color(0xFF64748B), fontSize = 13.sp) },
                 singleLine = true,
                 shape = CutCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -1022,12 +1041,29 @@ private fun GuestLobbyView(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = stringResource(R.string.lobby_discovered_tables),
-            color = Color(0xFF94A3B8),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.lobby_discovered_tables),
+                color = Color(0xFF94A3B8),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            IconButton(
+                onClick = onRefreshDiscovery,
+                modifier = Modifier.size(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = stringResource(R.string.lobby_refresh_btn),
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -1113,10 +1149,10 @@ private fun GuestLobbyView(
                                 }
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Lock, contentDescription = "Privada", tint = Color(0xFFFF5722), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Lock, contentDescription = stringResource(R.string.lobby_table_private_badge), tint = Color(0xFFFF5722), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Privada",
+                                    text = stringResource(R.string.lobby_table_private_badge),
                                     color = Color(0xFFFF5722),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
@@ -1187,7 +1223,7 @@ fun HostCreateModeDialog(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = if (showAiConfig) "Configure os bots do confronto" else stringResource(R.string.lobby_select_host_mode_subtitle),
+                            text = if (showAiConfig) stringResource(R.string.lobby_configure_bots_subtitle) else stringResource(R.string.lobby_select_host_mode_subtitle),
                             color = Color(0xFF94A3B8),
                             fontSize = 12.sp
                         )
@@ -1244,7 +1280,7 @@ fun HostCreateModeDialog(
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "DIFICULDADE DOS BOTS",
+                            text = stringResource(R.string.lobby_bots_difficulty_title),
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
