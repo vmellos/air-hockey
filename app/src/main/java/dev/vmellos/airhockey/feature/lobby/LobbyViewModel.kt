@@ -60,6 +60,8 @@ data class LobbyState(
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 6800f,
+    val aiDifficulty1: String = "",
+    val aiDifficulty2: String = "",
     val errorMessage: String? = null,
     val peerPlayerName: String = "",
     val selfPlayerName: String = ""
@@ -89,16 +91,13 @@ class LobbyViewModel : ViewModel() {
 
         viewModelScope.launch {
             nsdManager.discoveredTables.collect { tables ->
-                val currentTarget = _state.value.targetMode
-                val filtered = tables.filter { it.mode.isBlank() || it.mode.equals(currentTarget, ignoreCase = true) }
-                _state.update { it.copy(discoveredTables = filtered) }
+                _state.update { it.copy(discoveredTables = tables) }
             }
         }
     }
 
     fun setTargetMode(mode: String) {
-        val filtered = nsdManager.discoveredTables.value.filter { it.mode.isBlank() || it.mode.equals(mode, ignoreCase = true) }
-        _state.update { it.copy(targetMode = mode, discoveredTables = filtered) }
+        _state.update { it.copy(targetMode = mode, discoveredTables = nsdManager.discoveredTables.value) }
     }
 
     @Suppress("DEPRECATION")
@@ -193,8 +192,8 @@ class LobbyViewModel : ViewModel() {
         coordinator?.signalCalibrationReady(gapMm)
     }
 
-    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f) {
-        coordinator?.startMatch(gapMm, maxSpeed)
+    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "") {
+        coordinator?.startMatch(gapMm, maxSpeed, aiDiff1, aiDiff2)
     }
 
     fun sendControlMessage(message: String) {
@@ -203,13 +202,14 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun connectToTable(hostIp: String, code: String = "") {
+    fun connectToTable(hostIp: String, code: String = "", tableMode: String = "") {
         val selfName = _state.value.selfPlayerName.ifBlank {
             dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(context)
         }
-        val mode = _state.value.targetMode
+        val mode = if (tableMode.isNotBlank()) tableMode else _state.value.targetMode
         _state.update {
             it.copy(
+                targetMode = mode,
                 hostIp = hostIp,
                 tableCode = code,
                 connectionStatus = ConnectionStatus.CONNECTING,
@@ -240,6 +240,9 @@ class LobbyViewModel : ViewModel() {
             coord.state.collect { cState ->
                 _state.update {
                     it.copy(
+                        targetMode = if (cState.mode.isNotBlank()) cState.mode else it.targetMode,
+                        aiDifficulty1 = cState.aiDifficulty1,
+                        aiDifficulty2 = cState.aiDifficulty2,
                         isPeerReady = cState.isPeerReady,
                         isSelfReady = cState.isSelfReady,
                         startMatchTrigger = cState.startMatchTrigger,
@@ -287,7 +290,7 @@ class LobbyViewModel : ViewModel() {
         // 2. Busca entre as mesas já descobertas via NSD / UDP
         val table = _state.value.discoveredTables.find { it.tableCode == cleanCode }
         if (table != null) {
-            connectToTable(table.hostIp, cleanCode)
+            connectToTable(table.hostIp, cleanCode, table.mode)
             return
         }
 

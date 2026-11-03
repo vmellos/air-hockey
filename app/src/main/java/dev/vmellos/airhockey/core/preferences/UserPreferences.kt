@@ -29,7 +29,7 @@ data class UserPreferences(
     val soundEnabled: Boolean = true,
     val soundVolume: Float = 0.8f,
     val musicEnabled: Boolean = true,
-    val musicVolume: Float = 0.15f,
+    val musicVolume: Float = 0.10f,
     val hapticsEnabled: Boolean = false,
     val aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
     val bezelGapMm: Float = 8.0f,

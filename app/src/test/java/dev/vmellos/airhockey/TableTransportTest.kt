@@ -104,6 +104,29 @@ class TableTransportTest {
     }
 
     @Test
+    fun testStartEventWithAiDifficultiesSerialization() {
+        val startEvent = TableControlEvent.Start(10.5f, 7200f, "EASY", "HARD")
+        val wire = startEvent.toWireString()
+        assertEquals("START:10.5:7200.0:EASY:HARD", wire)
+
+        val parsed = TableControlEvent.fromWireString(wire) as TableControlEvent.Start
+        assertEquals(10.5f, parsed.gapMm, 0.01f)
+        assertEquals(7200f, parsed.maxSpeed, 0.01f)
+        assertEquals("EASY", parsed.aiDiff1)
+        assertEquals("HARD", parsed.aiDiff2)
+    }
+
+    @Test
+    fun testStartEventBackwardCompatibilityWithoutAiDifficulties() {
+        val wireLegacy = "START:8.0:6800.0"
+        val parsed = TableControlEvent.fromWireString(wireLegacy) as TableControlEvent.Start
+        assertEquals(8.0f, parsed.gapMm, 0.01f)
+        assertEquals(6800f, parsed.maxSpeed, 0.01f)
+        assertEquals("", parsed.aiDiff1)
+        assertEquals("", parsed.aiDiff2)
+    }
+
+    @Test
     fun testTelemetryFallbackWireRoundTrip() {
         val event = TableControlEvent.TelemetryFallback(
             HostTelemetryPacket(

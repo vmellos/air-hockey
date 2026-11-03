@@ -16,7 +16,12 @@ sealed class TableControlEvent {
     data class HandshakeReject(val reason: String) : TableControlEvent()
     object NavigateCalibration : TableControlEvent()
     object Ready : TableControlEvent()
-    data class Start(val gapMm: Float, val maxSpeed: Float = 6800f) : TableControlEvent()
+    data class Start(
+        val gapMm: Float,
+        val maxSpeed: Float = 6800f,
+        val aiDiff1: String = "",
+        val aiDiff2: String = ""
+    ) : TableControlEvent()
     data class StateSync(val state: ControlMessages.RemoteMatchState) : TableControlEvent()
     data class TelemetryFallback(val packet: HostTelemetryPacket) : TableControlEvent()
     data class GuestInputFallback(val packet: GuestInputPacket) : TableControlEvent()
@@ -34,7 +39,11 @@ sealed class TableControlEvent {
             is HandshakeReject -> "HANDSHAKE_REJECT:$reason"
             NavigateCalibration -> "NAVIGATE_CALIBRATION"
             Ready -> ControlMessages.READY
-            is Start -> "${ControlMessages.START}:$gapMm:$maxSpeed"
+            is Start -> if (aiDiff1.isNotBlank() || aiDiff2.isNotBlank()) {
+                "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2"
+            } else {
+                "${ControlMessages.START}:$gapMm:$maxSpeed"
+            }
             is StateSync -> ControlMessages.encodeState(state)
             is TelemetryFallback -> "TELEM:${packet.sequenceNumber},${packet.puckX},${packet.puckY},${packet.puckVx},${packet.puckVy},${packet.hostMalletX},${packet.hostMalletY},${packet.guestMalletX},${packet.guestMalletY},${packet.collisionEvent},${packet.collisionIntensity},${packet.puckLastHitBy}"
             is GuestInputFallback -> "GINPUT:${packet.sequenceNumber},${packet.guestTargetX},${packet.guestTargetY}"
@@ -74,7 +83,9 @@ sealed class TableControlEvent {
                     val parts = line.removePrefix(ControlMessages.START).removePrefix(":").split(":")
                     val gap = parts.getOrNull(0)?.toFloatOrNull() ?: 8.0f
                     val speed = parts.getOrNull(1)?.toFloatOrNull() ?: 6800f
-                    Start(gap, speed)
+                    val d1 = parts.getOrNull(2) ?: ""
+                    val d2 = parts.getOrNull(3) ?: ""
+                    Start(gap, speed, d1, d2)
                 }
                 line.startsWith("TELEM:") -> {
                     val parts = line.removePrefix("TELEM:").split(",")
