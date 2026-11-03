@@ -246,9 +246,9 @@ _Avoid_: Propaganda, banner ad, anúncio de rodapé
 O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão.
 _Avoid_: Pop-up, interstitial, comercial pós-jogo
 
-**Anúncio Recompensado**:
-O vídeo publicitário assistido por decisão ativa do jogador em troca de benefícios tangíveis, como 2 horas de supressão completa de anúncios ou desbloqueio de estilos cosméticos.
-_Avoid_: Rewarded ad, propaganda premiada, vídeo de bônus
+**Anúncio Recompensado** (Pausado na Interface Principal):
+O formato publicitário assistido por decisão do usuário em troca de recompensas temporárias, descontinuado temporariamente da interface inicial enquanto a loja de customizações e skins está em desenvolvimento.
+_Avoid_: Pop-up, anúncio invasivo, propaganda fixa
 
 **Remoção Permanente de Anúncios**:
 O produto digital não consumível adquirido na Google Play Store que suprime em definitivo anúncios em banner e intersticiais na conta do jogador.

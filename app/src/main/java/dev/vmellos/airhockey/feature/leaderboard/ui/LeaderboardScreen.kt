@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.leaderboard.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -48,6 +51,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -94,152 +99,186 @@ fun LeaderboardScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF070B18))
-            .safeDrawingPadding()
+            .background(Color(0xFF070B14))
     ) {
-        // Top Bar
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Image(
+            painter = painterResource(id = R.drawable.bg_fiery_puck),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                    tint = Color.White
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0x88070B14),
+                            Color(0x66070B14),
+                            Color(0x99070B14)
+                        )
+                    )
                 )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.leaderboard_title),
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        )
 
-        // Card do Perfil Local
-        val rating = selfStats?.ratingElo ?: 1000
-        val wins = selfStats?.totalWins ?: 0
-        val matches = selfStats?.totalMatches ?: 0
-        val streak = selfStats?.currentWinStreak ?: 0
-        val winRate = if (matches > 0) ((wins.toDouble() / matches) * 100).toInt() else 0
-
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF10172A)),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .border(1.dp, Color(0xFF00E5FF), RoundedCornerShape(16.dp))
+                .fillMaxSize()
+                .safeDrawingPadding()
         ) {
+            // Top Bar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(Brush.linearGradient(listOf(Color(0xFF00E5FF), Color(0xFF0077B6)))),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Color(0xB3070D1A), CircleShape)
+                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back),
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.leaderboard_title),
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Card do Perfil Local
+            val rating = selfStats?.ratingElo ?: 1000
+            val wins = selfStats?.totalWins ?: 0
+            val matches = selfStats?.totalMatches ?: 0
+            val streak = selfStats?.currentWinStreak ?: 0
+            val winRate = if (matches > 0) ((wins.toDouble() / matches) * 100).toInt() else 0
+
+            val profileShape = CutCornerShape(14.dp)
+            Card(
+                shape = profileShape,
+                colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .border(1.dp, Color(0x6600E5FF), profileShape)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFF00E5FF), Color(0xFF0077B6)))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = selfName,
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.leaderboard_win_streak, streak),
+                                color = Color(0xFF94A3B8),
+                                fontSize = 12.sp
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = selfName,
-                            color = Color.White,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.leaderboard_elo_value, rating),
+                            color = Color(0xFFFFB800),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = stringResource(R.string.leaderboard_win_streak, streak),
-                            color = Color(0xFF94A3B8),
+                            text = stringResource(R.string.leaderboard_win_rate, wins, matches, winRate),
+                            color = Color(0xFF00E5FF),
                             fontSize = 12.sp
                         )
                     }
                 }
+            }
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = stringResource(R.string.leaderboard_elo_value, rating),
-                        color = Color(0xFFFFB800),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Tabs
+            ScrollableTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color(0xD9080E1A),
+                contentColor = Color(0xFF00E5FF),
+                edgePadding = 16.dp,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        color = Color(0xFF00E5FF)
                     )
-                    Text(
-                        text = stringResource(R.string.leaderboard_win_rate, wins, matches, winRate),
-                        color = Color(0xFF00E5FF),
-                        fontSize = 12.sp
+                }
+            ) {
+                tabs.forEachIndexed { index, tabItem ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = tabItem.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                                )
+                                Text(
+                                    text = stringResource(tabItem.titleRes),
+                                    fontSize = 13.sp,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                                )
+                            }
+                        }
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Tabs
-        ScrollableTabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = Color(0xFF0B1021),
-            contentColor = Color(0xFF00E5FF),
-            edgePadding = 16.dp,
-            indicator = { tabPositions ->
-                TabRowDefaults.SecondaryIndicator(
-                    modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                    color = Color(0xFF00E5FF)
-                )
+            // Tab Content
+            when (selectedTabIndex) {
+                0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
+                1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
+                2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
+                3 -> RecentMatchesContent(matches = recentMatches)
             }
-        ) {
-            tabs.forEachIndexed { index, tabItem ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = tabItem.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
-                            )
-                            Text(
-                                text = stringResource(tabItem.titleRes),
-                                fontSize = 13.sp,
-                                fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
-                            )
-                        }
-                    }
-                )
-            }
-        }
-
-        // Tab Content
-        when (selectedTabIndex) {
-            0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
-            1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
-            2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
-            3 -> RecentMatchesContent(matches = recentMatches)
         }
     }
 }
@@ -292,16 +331,17 @@ private fun PlayerRankCard(
     }
 
     val medalTextColor = if (rank <= 3) Color(0xFF0F172A) else Color(0xFF94A3B8)
+    val cardShape = CutCornerShape(12.dp)
 
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1426)),
+        shape = cardShape,
+        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = if (rank <= 3) 1.dp else 0.5.dp,
-                color = if (rank <= 3) medalColor else Color(0xFF1E293B),
-                shape = RoundedCornerShape(12.dp)
+                width = if (rank <= 3) 1.2.dp else 0.8.dp,
+                color = if (rank <= 3) medalColor else Color(0x3300E5FF),
+                shape = cardShape
             )
     ) {
         Row(
@@ -400,12 +440,13 @@ private fun RecentMatchesContent(
         modifier = Modifier.fillMaxSize()
     ) {
         items(matches) { match ->
+            val matchShape = CutCornerShape(12.dp)
             Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1426)),
+                shape = matchShape,
+                colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(0.5.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0x3300E5FF), matchShape)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
