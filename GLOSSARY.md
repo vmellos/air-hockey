@@ -178,9 +178,13 @@ _Avoid_: Ícone simples, logo padrão, ícone genérico
 O letreiro visual oficial do jogo estilizado em chanfro metálico cromado, labaredas de plasma em "AIR", raios elétricos ciano em "HOCKEY" e o subtítulo "ULTIMATE CHAMPIONSHIP", renderizado como cabeçalho gráfico no menu principal.
 _Avoid_: Título em texto puro, texto do menu, logo estático
 
-**Miniatura da Mesa**:
-A representação esquemática reduzida da arena desenhada nos cartões do menu principal para ilustrar a disposição física de cada modo de jogo.
+**Miniatura da Mesa** (Descontinuado no Menu Inicial):
+A antiga representação esquemática da arena desenhada em Canvas nos cartões do menu principal, descontinuada no redesenho para eliminar poluição visual e priorizar a legibilidade tipográfica dos modos de jogo e a visibilidade do Disco Flamejante.
 _Avoid_: Ícone de campo, desenho do modo, preview da mesa
+
+**Cartão de Modo de Jogo**:
+O componente interativo translúcido no menu inicial com bordas chanfradas neon que apresenta o título destacado e a descrição sucinta de cada modalidade esportiva (Modo Fases, Mesa Conectada, Mesa Estendida, Mesa Dividida e Modo IA x IA), projetado com perfil rebaixado e glassmorphism escuro para preservar a visibilidade do Disco Flamejante ao fundo.
+_Avoid_: Botão comum, card opaco, menu tile, lista padrão
 
 **Bordas Chanfradas Neon**:
 O traçado perimetral da mesa com cantos angulados em 45 graus e gradiente luminoso em neon ciano e laranja, substituindo cantos arredondados simples.
