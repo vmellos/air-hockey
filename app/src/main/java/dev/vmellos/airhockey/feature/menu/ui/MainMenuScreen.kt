@@ -289,7 +289,7 @@ fun MainMenuScreen(
 
             // Rodapé elegante
             Text(
-                text = "AIR HOCKEY ARCADE • v1.2",
+                text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
                 color = Color(0xFF475569),
                 fontSize = 11.sp,
                 letterSpacing = 1.sp,
