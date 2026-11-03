@@ -21,7 +21,6 @@ enum class PuckSpeedPreset(val maxSpeed: Float, val airFriction: Float = 0.40f) 
 
 enum class VisualEffectsProfile {
     FULL,
-    BALANCED,
     OFF
 }
 

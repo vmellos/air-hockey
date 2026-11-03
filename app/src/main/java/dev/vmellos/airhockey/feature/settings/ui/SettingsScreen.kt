@@ -772,65 +772,41 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_visual_effects_desc),
-                    color = Color(0xFF94A3B8),
-                    fontSize = 13.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                for (profile in dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.values()) {
-                    val isSelected = prefs.visualEffectsProfile == profile
-                    val (title, desc) = when (profile) {
-                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL ->
-                            Pair(stringResource(R.string.visual_effects_full), stringResource(R.string.visual_effects_full_desc))
-                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED ->
-                            Pair(stringResource(R.string.visual_effects_balanced), stringResource(R.string.visual_effects_balanced_desc))
-                        dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF ->
-                            Pair(stringResource(R.string.visual_effects_off), stringResource(R.string.visual_effects_off_desc))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = stringResource(R.string.visual_effects_full),
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.settings_visual_effects_desc),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
                     }
-
-                    Card(
-                        onClick = { scope.launch { preferencesRepo.setVisualEffectsProfile(profile) } },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) Color(0xFF142038) else Color(0xFF243247)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .then(
-                                if (isSelected) Modifier.border(1.5.dp, Color(0xFF00E5FF), RoundedCornerShape(12.dp))
-                                else Modifier
-                            )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(12.dp)
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = { scope.launch { preferencesRepo.setVisualEffectsProfile(profile) } },
-                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF00E5FF))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = title,
-                                    color = if (isSelected) Color(0xFF00E5FF) else Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = desc,
-                                    color = Color(0xFF94A3B8),
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp
+                    Switch(
+                        checked = prefs.visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL,
+                        onCheckedChange = { isEnabled ->
+                            scope.launch {
+                                preferencesRepo.setVisualEffectsProfile(
+                                    if (isEnabled) dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL
+                                    else dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF
                                 )
                             }
-                        }
-                    }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF00E5FF),
+                            checkedTrackColor = Color(0x6600E5FF)
+                        )
+                    )
                 }
             }
         }

@@ -92,10 +92,9 @@ class UserPreferencesRepository(private val context: Context) {
                 PuckSpeedPreset.NORMAL
             }
             val fxProfileStr = preferences[PreferencesKeys.VISUAL_EFFECTS_PROFILE] ?: VisualEffectsProfile.FULL.name
-            val fxProfile = try {
-                VisualEffectsProfile.valueOf(fxProfileStr)
-            } catch (_: Exception) {
-                VisualEffectsProfile.FULL
+            val fxProfile = when (fxProfileStr) {
+                VisualEffectsProfile.OFF.name -> VisualEffectsProfile.OFF
+                else -> VisualEffectsProfile.FULL // Mapeia FULL, BALANCED legado ou desconhecido para FULL
             }
             val storedName = preferences[PreferencesKeys.PLAYER_NAME]
             val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)

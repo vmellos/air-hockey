@@ -164,12 +164,10 @@
 
     <!-- Perfil de Efeitos Visuais -->
     <string name="settings_visual_effects">Efeitos Visuais</string>
-    <string name="settings_visual_effects_desc">Fidelidade gráfica e densidade de partículas</string>
-    <string name="visual_effects_full">Completo (Arcade Neon)</string>
+    <string name="settings_visual_effects_desc">Rastro de plasma do disco, vórtice de contagem e faíscas incandescentes</string>
+    <string name="visual_effects_full">Efeitos Arcade Neon</string>
     <string name="visual_effects_full_desc">Rastro de fogo de plasma, faíscas incandescentes, vórtice de contagem e celebração explosiva</string>
-    <string name="visual_effects_balanced">Econômico (Economia de Bateria)</string>
-    <string name="visual_effects_balanced_desc">Rastro cinético suave e ondas de choque leves sem chuva de faíscas</string>
-    <string name="visual_effects_off">Desempenho (Mínimo)</string>
+    <string name="visual_effects_off">Modo Desempenho (Mínimo)</string>
     <string name="visual_effects_off_desc">Sem rastros ou partículas para máxima fluidez em celulares de entrada</string>
 
     <!-- Placar Alvo no HUD & Diálogo IA x IA -->
