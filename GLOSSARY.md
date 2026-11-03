@@ -195,8 +195,8 @@ O efeito visual luminoso em formato de anel com feixes de plasma expansivos e ra
 _Avoid_: Onda de impacto, explosão de gol, círculo com raios, choque neon
 
 **Perfil de Efeitos Visuais**:
-A configuração gráfica ajustável pelo usuário que calibra a densidade de partículas, o volume do rastro de plasma e o detalhamento das animações para equilibrar fidelidade visual e consumo energético.
-_Avoid_: Gráficos, qualidade gráfica, resolução, modo batata
+A configuração gráfica ajustável pelo usuário nas configurações que ativa ou desativa o rastro de plasma do disco, o vórtice de contagem regressiva e as faíscas incandescentes, permitindo alternar entre a fidelidade visual arcade completa e a renderização limpa para máxima fluidez e economia de bateria.
+_Avoid_: Gráficos, qualidade gráfica, resolução, modo batata, modos de desempenho
 
 **Música de Fundo Arcade**:
 A trilha sonora temática instrumental em estilo synthwave sintetizada proceduralmente e reproduzida em loop contínuo durante as partidas, com controle independente de volume em relação aos efeitos sonoros.

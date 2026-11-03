@@ -164,12 +164,10 @@
 
     <!-- Visual Effects Profile -->
     <string name="settings_visual_effects">Visual Effects</string>
-    <string name="settings_visual_effects_desc">Graphics fidelity and particle density</string>
-    <string name="visual_effects_full">Full (Arcade Neon)</string>
+    <string name="settings_visual_effects_desc">Puck plasma trail, countdown vortex, and incandescent sparks</string>
+    <string name="visual_effects_full">Arcade Neon Effects</string>
     <string name="visual_effects_full_desc">Plasma flame trail, incandescent sparks, vortex countdown and celebration shockwaves</string>
-    <string name="visual_effects_balanced">Balanced (Battery Saver)</string>
-    <string name="visual_effects_balanced_desc">Smooth kinetic trail and light shockwaves without heavy sparks</string>
-    <string name="visual_effects_off">Performance (Clean)</string>
+    <string name="visual_effects_off">Performance Mode (Clean)</string>
     <string name="visual_effects_off_desc">Zero trails or particles for maximum FPS on entry devices</string>
 
     <!-- Target Score HUD & AI vs AI Dialog -->

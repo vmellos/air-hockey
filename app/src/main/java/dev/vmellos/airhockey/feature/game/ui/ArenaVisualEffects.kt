@@ -655,7 +655,6 @@ fun DrawScope.drawDynamicEnergyTrail(
     val pulseSec = (framePulse / 1_000_000_000.0).toFloat()
 
     // Desenha fita de plasma conectando os pontos históricos com oscilação ondulada
-    val isBalanced = profile == VisualEffectsProfile.BALANCED
     val outerPath = Path()
     val corePath = Path()
 
@@ -668,11 +667,7 @@ fun DrawScope.drawDynamicEnergyTrail(
         val segRadius = (puckRadius * (1f - fraction * 0.65f))
 
         // Adiciona ondulação transversal de chama de plasma
-        val waveOffset = if (!isBalanced) {
-            sin(pulseSec * 18f + i * 1.1f) * (8f * scale * (1f - fraction))
-        } else {
-            0f
-        }
+        val waveOffset = sin(pulseSec * 18f + i * 1.1f) * (8f * scale * (1f - fraction))
 
         // Círculo externo de plasma
         drawCircle(

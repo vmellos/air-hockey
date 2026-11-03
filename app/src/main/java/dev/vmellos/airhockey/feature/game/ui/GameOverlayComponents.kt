@@ -312,8 +312,6 @@ fun PauseDialog(
     onToggleSound: () -> Unit = {},
     isMusicEnabled: Boolean = true,
     onToggleMusic: () -> Unit = {},
-    visualEffectsProfile: dev.vmellos.airhockey.core.preferences.VisualEffectsProfile = dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL,
-    onChangeVisualEffects: (dev.vmellos.airhockey.core.preferences.VisualEffectsProfile) -> Unit = {},
     onResume: () -> Unit,
     onRestart: () -> Unit,
     onExit: () -> Unit
@@ -381,79 +379,6 @@ fun PauseDialog(
                             tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
                             modifier = Modifier.size(22.dp)
                         )
-                    }
-                }
-
-                // Seletor Rápido de Efeitos Visuais
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_visual_effects),
-                        color = Color.White,
-                        fontSize = 15.sp
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val full = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL
-                        val balanced = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED
-                        val off = visualEffectsProfile == dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF
-
-                        Surface(
-                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.FULL) },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (full) Color(0x3300E5FF) else Color(0xFF0F172A),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (full) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Completo",
-                                color = if (full) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
-                                fontWeight = if (full) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-
-                        Surface(
-                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.BALANCED) },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (balanced) Color(0x3300E5FF) else Color(0xFF0F172A),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (balanced) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Econômico",
-                                color = if (balanced) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
-                                fontWeight = if (balanced) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-
-                        Surface(
-                            onClick = { onChangeVisualEffects(dev.vmellos.airhockey.core.preferences.VisualEffectsProfile.OFF) },
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (off) Color(0x3300E5FF) else Color(0xFF0F172A),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, if (off) Color(0xFF00E5FF) else Color(0x33FFFFFF)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Mínimo",
-                                color = if (off) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
-                                fontWeight = if (off) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
                     }
                 }
 

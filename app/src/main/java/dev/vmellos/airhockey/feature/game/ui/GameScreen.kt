@@ -144,12 +144,6 @@ fun GameScreen(
                 onToggleSound = { viewModel.toggleSound() },
                 isMusicEnabled = isMusicEnabled,
                 onToggleMusic = { viewModel.toggleMusic() },
-                visualEffectsProfile = prefs.visualEffectsProfile,
-                onChangeVisualEffects = { profile ->
-                    scope.launch {
-                        AirHockeyApp.instance.preferencesRepository.setVisualEffectsProfile(profile)
-                    }
-                },
                 onResume = { viewModel.resumeMatch() },
                 onRestart = { viewModel.restartMatch() },
                 onExit = {

@@ -322,9 +322,9 @@ fun AirHockeyArenaCanvas(
                 // Atualiza histórico do rastro de plasma (higienizado fora do estado PLAYING)
                 if (matchState.status != MatchStatus.PLAYING) {
                     puckTrail.clear()
-                } else if (spd > 220f && prefs.visualEffectsProfile != VisualEffectsProfile.OFF) {
+                } else if (spd > 220f && prefs.visualEffectsProfile == VisualEffectsProfile.FULL) {
                     puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
-                    val maxPoints = if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL) 14 else 7
+                    val maxPoints = 14
                     if (puckTrail.size > maxPoints) puckTrail.removeLast()
 
                     // Em velocidade ultra-alta, emite micro-faíscas incandescentes da cauda de fogo
