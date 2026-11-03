@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,6 +79,7 @@ class LobbyViewModel : ViewModel() {
     var coordinator: MultiplayerMatchCoordinator? = null
         private set
     private var coordinatorJob: Job? = null
+    private var discoveryPeriodicJob: Job? = null
 
     var onRemoteStateReceived: ((ControlMessages.RemoteMatchState) -> Unit)? = null
     var onControlMessageReceived: ((String) -> Unit)? = null
@@ -184,6 +186,17 @@ class LobbyViewModel : ViewModel() {
             )
         }
         nsdManager.startDiscovery()
+        discoveryPeriodicJob?.cancel()
+        discoveryPeriodicJob = viewModelScope.launch {
+            while (isActive && _state.value.role == LobbyRole.GUEST && _state.value.connectionStatus == ConnectionStatus.DISCOVERING) {
+                delay(2500)
+                nsdManager.sendDirectedDiscoveryProbe()
+            }
+        }
+    }
+
+    fun refreshDiscovery() {
+        nsdManager.sendDirectedDiscoveryProbe()
     }
 
     fun notifyNavigateToCalibration() {
@@ -229,6 +242,8 @@ class LobbyViewModel : ViewModel() {
                 peerPlayerName = ""
             )
         }
+        discoveryPeriodicJob?.cancel()
+        discoveryPeriodicJob = null
         nsdManager.stopDiscovery()
         val transport = HybridSocketTransportAdapter(isHost = false, targetHostIp = hostIp)
         val coord = MultiplayerMatchCoordinator(
@@ -433,6 +448,8 @@ class LobbyViewModel : ViewModel() {
         val currentSelfName = _state.value.selfPlayerName
         coordinatorJob?.cancel()
         coordinatorJob = null
+        discoveryPeriodicJob?.cancel()
+        discoveryPeriodicJob = null
         coordinator?.terminateSession()
         coordinator = null
         nsdManager.stopBroadcast()

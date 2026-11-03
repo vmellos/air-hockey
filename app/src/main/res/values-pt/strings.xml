@@ -196,4 +196,23 @@
     <string name="lobby_mode_badge_connected">Mesa Conectada</string>
     <string name="spectator_mode">MODO ESPECTADOR</string>
     <string name="close">Fechar</string>
+
+    <!-- Lobby & Match Strings -->
+    <string name="lobby_device_player_title">SEU DISPOSITIVO / JOGADOR</string>
+    <string name="lobby_configure_bots_subtitle">Configure os bots do confronto</string>
+    <string name="lobby_bots_difficulty_title">DIFICULDADE DOS BOTS</string>
+    <string name="lobby_table_ip_label">IP da Mesa: </string>
+    <string name="lobby_table_private_badge">Privada</string>
+    <string name="lobby_code_or_ip_placeholder">Código (4 dígitos) ou IP do Anfitrião</string>
+    <string name="lobby_refresh_btn">Atualizar</string>
+    <string name="game_peer_exited_title">Partida Encerrada</string>
+    <string name="game_peer_exited_desc">O adversário saiu da partida.</string>
+    <string name="game_goal_point_banner">+1 PONTO</string>
+    <string name="bot_name_with_difficulty">%1$s (%2$s)</string>
+    <string name="bot_1_label">Bot 1</string>
+    <string name="bot_2_label">Bot 2</string>
+    <string name="player_you">Você</string>
+    <string name="player_ai">IA</string>
+    <string name="player_1_default">Jogador 1</string>
+    <string name="player_2_default">Jogador 2</string>
 </resources>

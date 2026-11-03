@@ -590,8 +590,11 @@ class GameViewModel : ViewModel() {
     private val MatchState.statusName: String
         get() = status.name
 
+    private val MatchState.isGuestMode: Boolean
+        get() = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+
     fun pauseMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
+        if (_matchState.value.isGuestMode) {
             onGuestSendControl?.invoke(ControlMessages.PAUSE)
             return
         }
@@ -609,7 +612,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun resumeMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
+        if (_matchState.value.isGuestMode) {
             onGuestSendControl?.invoke(ControlMessages.RESUME)
             return
         }
@@ -627,7 +630,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun restartMatch() {
-        if (_matchState.value.mode == GameMode.EXTENDED_GUEST || _matchState.value.mode == GameMode.CONNECTED_GUEST) {
+        if (_matchState.value.isGuestMode) {
             onGuestSendControl?.invoke(ControlMessages.RESTART)
             return
         }

@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -113,10 +114,19 @@ fun AirHockeyAppNavigation(
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
     val gameViewModel: GameViewModel = viewModel()
     val lobbyViewModel: LobbyViewModel = viewModel()
     var aiExtendedDiff1 by rememberSaveable { mutableStateOf(dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM) }
     var aiExtendedDiff2 by rememberSaveable { mutableStateOf(dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM) }
+
+    fun getAiDiffLabel(diff: dev.vmellos.airhockey.core.preferences.AiDifficulty): String {
+        return when (diff) {
+            dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> context.getString(R.string.settings_ai_easy)
+            dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> context.getString(R.string.settings_ai_medium)
+            dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> context.getString(R.string.settings_ai_hard)
+        }
+    }
 
     // Processa Deep Link (ex: câmera nativa lendo QR code airhockey://connect)
     LaunchedEffect(deepLinkUri) {
@@ -148,8 +158,8 @@ fun AirHockeyAppNavigation(
                         matchTimeSeconds = userPrefs.matchTimeSeconds,
                         puckMaxSpeed = puckPreset.maxSpeed,
                         airFriction = puckPreset.airFriction,
-                        player1Name = "Jogador 1",
-                        player2Name = "Jogador 2"
+                        player1Name = context.getString(R.string.player_1_default),
+                        player2Name = context.getString(R.string.player_2_default)
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
@@ -212,8 +222,8 @@ fun AirHockeyAppNavigation(
                             ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
                     )
 
-                    val p1Label = if (isAiExtended) "Bot 1 (${effectiveAiDiff1.name})" else p1Name
-                    val p2Label = if (isAiExtended) "Bot 2 (${effectiveAiDiff2.name})" else p2Name
+                    val p1Label = if (isAiExtended) context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), getAiDiffLabel(effectiveAiDiff1)) else p1Name
+                    val p2Label = if (isAiExtended) context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), getAiDiffLabel(effectiveAiDiff2)) else p2Name
 
                     val effectiveGapMm = if (isConnected) 0f else (
                         if (isHost) userPrefs.bezelGapMm else (if (lobbyState.calibratedGapMm > 0f) lobbyState.calibratedGapMm else userPrefs.bezelGapMm)
@@ -265,16 +275,8 @@ fun AirHockeyAppNavigation(
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
                     }
-                    val d1Str = when (diff1) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
-                    }
-                    val d2Str = when (diff2) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> "Fácil"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> "Médio"
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> "Difícil"
-                    }
+                    val d1Str = getAiDiffLabel(diff1)
+                    val d2Str = getAiDiffLabel(diff2)
                     gameViewModel.initializeMatch(
                         mode = GameMode.AI_VS_AI_LOCAL,
                         bezelGapMm = userPrefs.bezelGapMm,
@@ -285,8 +287,8 @@ fun AirHockeyAppNavigation(
                         aiDifficultyPlayer2 = diff2,
                         puckMaxSpeed = puckPreset.maxSpeed,
                         airFriction = puckPreset.airFriction,
-                        player1Name = "Bot 1 ($d1Str)",
-                        player2Name = "Bot 2 ($d2Str)"
+                        player1Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), d1Str),
+                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str)
                     )
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
@@ -305,12 +307,12 @@ fun AirHockeyAppNavigation(
         composable("stages") {
             StageSelectionScreen(
                 onSelectStage = { stageNum ->
-                    val p1 = userPrefs.playerName.ifBlank { "Você" }
+                    val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
-                        player2Name = "IA",
+                        player2Name = context.getString(R.string.player_ai),
                         stageNumber = stageNum
                     )
                     navController.navigate("game/SOLO")
@@ -350,12 +352,12 @@ fun AirHockeyAppNavigation(
                     }
                 },
                 onStartNextStage = { nextStage ->
-                    val p1 = userPrefs.playerName.ifBlank { "Você" }
+                    val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
-                        player2Name = "IA",
+                        player2Name = context.getString(R.string.player_ai),
                         stageNumber = nextStage
                     )
                 }

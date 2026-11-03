@@ -160,7 +160,8 @@ class NsdDiscoveryManager(private val context: Context) {
                                 socket.send(replyPacket)
                             }
                         } catch (_: Exception) {
-                            break
+                            if (!isActive || socket.isClosed) break
+                            delay(100)
                         }
                     }
                 }
@@ -301,7 +302,8 @@ class NsdDiscoveryManager(private val context: Context) {
                                 }
                             }
                         } catch (_: Exception) {
-                            break
+                            if (!isActive || socket.isClosed) break
+                            delay(100)
                         }
                     }
                 }
