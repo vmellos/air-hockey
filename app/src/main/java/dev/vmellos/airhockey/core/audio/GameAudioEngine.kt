@@ -44,7 +44,7 @@ class GameAudioEngine(private val context: Context) {
             }
         }
 
-    var musicVolume: Float = 0.6f
+    var musicVolume: Float = 0.10f
         set(value) {
             field = value.coerceIn(0f, 1f)
             try {
@@ -169,7 +169,7 @@ class GameAudioEngine(private val context: Context) {
         if (!isMusicEnabled) return
         try {
             if (bgmPlayer == null) {
-                val file = bgmFile ?: File(context.cacheDir, "bgm_arcade_loop.wav").also { bgmFile = it }
+                val file = bgmFile ?: File(context.cacheDir, "bgm_arcade_loop_v2.wav").also { bgmFile = it }
                 if (!file.exists() || file.length() == 0L) {
                     generateBgmArcadeLoopWav(file)
                 }
@@ -324,7 +324,7 @@ class GameAudioEngine(private val context: Context) {
             val leadWave = sin(leadPhase) + 0.25 * sin(leadPhase * 3.0)
             val leadSample = leadWave * leadEnv * 0.18
 
-            var mixed = kickSample + snareSample + hatSample + bassSample + leadSample
+            var mixed = (kickSample + snareSample + hatSample + bassSample + leadSample) * 0.45
 
             // Crossfade suave nos limites de início e fim para garantir loop contínuo sem estalos
             val fadeSamples = (0.015 * sampleRate).toInt()

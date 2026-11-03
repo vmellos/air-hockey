@@ -25,8 +25,8 @@ A demarcação no piso da mesa em frente à meta que delimita visualmente o arco
 _Avoid_: Pequena área, grande área, goal crease, área de gol
 
 **Vão Físico**:
-O intervalo físico de separação correspondente às molduras e bordas dos dois aparelhos colocados em contato.
-_Avoid_: Bezel, bezel gap, borda plástica, gap
+O intervalo físico de separação correspondente às molduras e bordas dos dois aparelhos colocados em contato na Mesa Estendida, configurado com valor padrão padronizado (8,0 mm) sem requerer calibração manual em tela intermediária.
+_Avoid_: Bezel, bezel gap, borda plástica, gap, tela de calibração
 
 **Ponto**:
 A unidade de contagem de pontuação concedida quando o disco cruza integralmente a meta adversária.
@@ -149,8 +149,8 @@ O início de uma partida em Mesa Estendida, comandado pelo dispositivo anfitriã
 _Avoid_: Start, início automático, kickoff
 
 **Sessão Multijogador**:
-O ciclo de vida unificado de uma partida multijogador em rede local (Mesa Estendida ou Mesa Conectada) que abrange o anúncio de presença, pareamento com validação de modalidade, calibração de vão físico (quando aplicável), largada sincronizada, transmissão contínua de telemetria e encerramento coordenado da conexão entre os dispositivos.
-_Avoid_: Room, partida online, socket session
+O ciclo de vida unificado de uma partida multijogador em rede local (Mesa Estendida ou Mesa Conectada) que abrange o anúncio de presença, pareamento com validação de modalidade, largada sincronizada direta a partir do lobby com vão físico padrão, transmissão contínua de telemetria e encerramento coordenado da conexão entre os dispositivos.
+_Avoid_: Room, partida online, socket session, tela de calibração manual
 
 **Descoberta Unificada de Mesas**:
 O mecanismo de escaneamento local (via mDNS/NSD e beacon UDP) no qual o dispositivo convidado visualiza todas as mesas ativas na rede local com seus respectivos selos de modalidade (Mesa Estendida, Mesa Conectada ou Modo IA x IA), adaptando automaticamente sua interface, calibração e fluxo de entrada às regras estabelecidas pelo dispositivo anfitrião.
