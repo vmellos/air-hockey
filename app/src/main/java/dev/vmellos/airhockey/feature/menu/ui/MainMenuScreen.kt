@@ -185,29 +185,6 @@ fun MainMenuScreen(
                         }
                     }
 
-                    if (!isAdsRemovedPermanently && !isAdFreeTemporarily && isRewardedLoaded && activity != null) {
-                        IconButton(
-                            onClick = {
-                                adManager.showRewarded(
-                                    activity = activity,
-                                    onRewardGranted = {},
-                                    onDismiss = {}
-                                )
-                            },
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(Color(0xB3070D1A), CircleShape)
-                                .border(1.2.dp, Color(0x66FF2A6D), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Redeem,
-                                contentDescription = stringResource(R.string.ad_reward_button_desc),
-                                tint = Color(0xFFFF2A6D),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
                     IconButton(
                         onClick = onOpenSettings,
                         modifier = Modifier
@@ -498,7 +475,7 @@ fun AiVsAiConfigDialog(
     ) {
         Surface(
             color = Color(0xF20B0F1C),
-            shape = RoundedCornerShape(26.dp),
+            shape = CutCornerShape(20.dp),
             border = androidx.compose.foundation.BorderStroke(
                 1.5.dp,
                 Brush.linearGradient(
@@ -605,7 +582,7 @@ fun AiVsAiConfigDialog(
                 ) {
                     Surface(
                         onClick = { isExtendedSelected = false },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = CutCornerShape(10.dp),
                         color = if (!isExtendedSelected) Color(0x33A855F7) else Color(0xFF131A2A),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
@@ -625,7 +602,7 @@ fun AiVsAiConfigDialog(
 
                     Surface(
                         onClick = { isExtendedSelected = true },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = CutCornerShape(10.dp),
                         color = if (isExtendedSelected) Color(0x33A855F7) else Color(0xFF131A2A),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
@@ -649,7 +626,7 @@ fun AiVsAiConfigDialog(
                 // Card Bot 1 (Ciano)
                 Surface(
                     color = Color(0x1200E5FF),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CutCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x4400E5FF)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -683,7 +660,7 @@ fun AiVsAiConfigDialog(
                                 val selected = diffBot1 == d
                                 Surface(
                                     onClick = { diffBot1 = d },
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = CutCornerShape(6.dp),
                                     color = if (selected) Color(0xFF00E5FF) else Color(0x440B132B),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
@@ -714,7 +691,7 @@ fun AiVsAiConfigDialog(
                 // Card Bot 2 (Laranja)
                 Surface(
                     color = Color(0x12FF5722),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CutCornerShape(12.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FF5722)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -748,7 +725,7 @@ fun AiVsAiConfigDialog(
                                 val selected = diffBot2 == d
                                 Surface(
                                     onClick = { diffBot2 = d },
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = CutCornerShape(6.dp),
                                     color = if (selected) Color(0xFFFF5722) else Color(0x440B132B),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
@@ -787,7 +764,7 @@ fun AiVsAiConfigDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = CutCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
@@ -799,7 +776,7 @@ fun AiVsAiConfigDialog(
                                     Color(0xFFFF5722)
                                 )
                             ),
-                            shape = RoundedCornerShape(14.dp)
+                            shape = CutCornerShape(12.dp)
                         )
                 ) {
                     Row(

@@ -29,6 +29,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -229,136 +236,174 @@ fun LobbyScreen(
         return
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0E1A))
-            .safeDrawingPadding()
-            .padding(20.dp)
+            .background(Color(0xFF070B14))
     ) {
-        // Linha 1: Botão Voltar e Título da Tela
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = handleBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            val titleText = when (state.targetMode) {
-                "CONNECTED" -> stringResource(R.string.lobby_title_connected)
-                "AI_EXTENDED" -> "Lobby IA x IA (Mesa Estendida)"
-                else -> stringResource(R.string.lobby_title)
-            }
-            Text(
-                text = titleText,
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Image(
+            painter = painterResource(id = R.drawable.bg_fiery_puck),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Linha 2: Card / Chip com Nome do Dispositivo / Jogador com largura total
-        Surface(
-            color = Color(0xFF1E293B),
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, Color(0x3300E5FF)),
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    nameInput = state.selfPlayerName
-                    showNameDialog = true
-                }
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0x88070B14),
+                            Color(0x66070B14),
+                            Color(0x99070B14)
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(20.dp)
         ) {
+            // Linha 1: Botão Voltar e Título da Tela
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                IconButton(
+                    onClick = handleBack,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Color(0xB3070D1A), CircleShape)
+                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
                 ) {
                     Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar",
                         tint = Color(0xFF00E5FF),
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "SEU DISPOSITIVO / JOGADOR",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text = state.selfPlayerName.ifBlank { "Jogador" },
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
                 }
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Editar",
-                    tint = Color(0xFF00E5FF),
-                    modifier = Modifier.size(18.dp)
+                Spacer(modifier = Modifier.width(12.dp))
+                val titleText = when (state.targetMode) {
+                    "CONNECTED" -> stringResource(R.string.lobby_title_connected)
+                    "AI_EXTENDED" -> "LOBBY IA x IA (MESA ESTENDIDA)"
+                    else -> stringResource(R.string.lobby_title)
+                }
+                Text(
+                    text = titleText,
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        if (state.role == LobbyRole.NONE) {
-            // Seleção de Papel (Anfitrião vs Convidado)
-            RoleSelectionCards(
-                onSelectHost = { viewModel.startAsHost() },
-                onSelectGuest = { viewModel.startAsGuest() }
-            )
-        } else if (state.role == LobbyRole.HOST) {
-            val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-            // Tela do Dispositivo Anfitrião
-            HostLobbyView(
-                state = state,
-                onProceed = {
-                    if (state.targetMode == "CONNECTED") {
-                        viewModel.startHostMatch(0f, userPrefs.puckSpeed.maxSpeed)
-                    } else {
-                        viewModel.notifyNavigateToCalibration()
-                        onNavigateToCalibration()
+            // Linha 2: Card / Chip com Nome do Dispositivo / Jogador com largura total
+            Surface(
+                color = Color(0xD9080E1A),
+                shape = CutCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0x4400E5FF)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        nameInput = state.selfPlayerName
+                        showNameDialog = true
                     }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "SEU DISPOSITIVO / JOGADOR",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.sp
+                            )
+                            Text(
+                                text = state.selfPlayerName.ifBlank { "Jogador" },
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Editar",
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-            )
-        } else if (state.role == LobbyRole.GUEST) {
-            // Tela do Dispositivo Convidado
-            GuestLobbyView(
-                state = state,
-                inputCode = inputCode,
-                onInputCodeChange = { inputCode = it },
-                onConnectCode = { viewModel.connectByCode(inputCode) },
-                onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code) },
-                onScanQrClick = {
-                    val hasPerm = ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.CAMERA
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (hasPerm) {
-                        viewModel.setScanningQr(true)
-                    } else {
-                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            if (state.role == LobbyRole.NONE) {
+                // Seleção de Papel (Anfitrião vs Convidado)
+                RoleSelectionCards(
+                    onSelectHost = { viewModel.startAsHost() },
+                    onSelectGuest = { viewModel.startAsGuest() }
+                )
+            } else if (state.role == LobbyRole.HOST) {
+                val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+                // Tela do Dispositivo Anfitrião
+                HostLobbyView(
+                    state = state,
+                    onProceed = {
+                        if (state.targetMode == "CONNECTED") {
+                            viewModel.startHostMatch(0f, userPrefs.puckSpeed.maxSpeed)
+                        } else {
+                            viewModel.notifyNavigateToCalibration()
+                            onNavigateToCalibration()
+                        }
                     }
-                },
-                onProceed = onNavigateToCalibration
-            )
+                )
+            } else if (state.role == LobbyRole.GUEST) {
+                // Tela do Dispositivo Convidado
+                GuestLobbyView(
+                    state = state,
+                    inputCode = inputCode,
+                    onInputCodeChange = { inputCode = it },
+                    onConnectCode = { viewModel.connectByCode(inputCode) },
+                    onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code) },
+                    onScanQrClick = {
+                        val hasPerm = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (hasPerm) {
+                            viewModel.setScanningQr(true)
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    onProceed = onNavigateToCalibration
+                )
+            }
         }
     }
 }
@@ -368,48 +413,137 @@ private fun RoleSelectionCards(
     onSelectHost: () -> Unit,
     onSelectGuest: () -> Unit
 ) {
+    val hostShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
+    val guestShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
+
     Card(
         onClick = onSelectHost,
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.lobby_role_host),
-                color = Color(0xFF00E5FF),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+        shape = hostShape,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.2.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF00E5FF).copy(alpha = 0.90f),
+                        Color(0xFF00E5FF).copy(alpha = 0.35f)
+                    )
+                ),
+                shape = hostShape
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.lobby_role_host_desc),
-                color = Color(0xFF94A3B8),
-                fontSize = 14.sp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(3.5.dp)
+                    .height(36.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(Color(0xFF00E5FF), Color(0xFF00E5FF).copy(alpha = 0.35f))
+                        ),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.lobby_role_host).uppercase(),
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.8.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.lobby_role_host_desc),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 12.5.sp,
+                    lineHeight = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = Color(0xFF00E5FF).copy(alpha = 0.70f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(12.dp))
 
     Card(
         onClick = onSelectGuest,
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.lobby_role_guest),
-                color = Color(0xFFFF5722),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+        shape = guestShape,
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.2.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFFFF5722).copy(alpha = 0.90f),
+                        Color(0xFFFF5722).copy(alpha = 0.35f)
+                    )
+                ),
+                shape = guestShape
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.lobby_role_guest_desc),
-                color = Color(0xFF94A3B8),
-                fontSize = 14.sp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(3.5.dp)
+                    .height(36.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(Color(0xFFFF5722), Color(0xFFFF5722).copy(alpha = 0.35f))
+                        ),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.lobby_role_guest).uppercase(),
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.8.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.lobby_role_guest_desc),
+                    color = Color(0xFF94A3B8),
+                    fontSize = 12.5.sp,
+                    lineHeight = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = Color(0xFFFF5722).copy(alpha = 0.70f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -485,10 +619,13 @@ private fun HostLobbyView(
         Spacer(modifier = Modifier.height(12.dp))
 
         // Card de Instruções e Status da Rede Wi-Fi
+        val wifiCardShape = CutCornerShape(12.dp)
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
+            colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+            shape = wifiCardShape,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, Color(0x3300E5FF), wifiCardShape)
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -541,7 +678,8 @@ private fun HostLobbyView(
                             } catch (_: Exception) {}
                         }
                     },
-                    shape = RoundedCornerShape(8.dp),
+                    shape = CutCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Color(0x6600E5FF)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
@@ -554,7 +692,8 @@ private fun HostLobbyView(
                     Text(
                         text = stringResource(R.string.lobby_network_open_hotspot),
                         color = Color(0xFF00E5FF),
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -573,6 +712,7 @@ private fun HostLobbyView(
             Button(
                 onClick = onProceed,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                shape = CutCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val buttonText = if (state.targetMode == "CONNECTED") {
@@ -611,8 +751,11 @@ private fun GuestLobbyView(
 
     val tableForPin = selectedTableForPin
     if (tableForPin != null) {
+        val dialogShape = CutCornerShape(16.dp)
         AlertDialog(
             onDismissRequest = { selectedTableForPin = null },
+            shape = dialogShape,
+            modifier = Modifier.border(1.dp, Color(0x6600E5FF), dialogShape),
             title = {
                 Text(
                     text = stringResource(R.string.lobby_pin_dialog_title),
@@ -641,6 +784,7 @@ private fun GuestLobbyView(
                         onValueChange = { if (it.length <= 6) pinDialogInput = it },
                         placeholder = { Text(stringResource(R.string.lobby_pin_dialog_hint), color = Color(0xFF64748B)) },
                         singleLine = true,
+                        shape = CutCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
@@ -661,6 +805,7 @@ private fun GuestLobbyView(
                         }
                     },
                     enabled = pinDialogInput.length >= 4,
+                    shape = CutCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
                 ) {
                     Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
@@ -671,16 +816,19 @@ private fun GuestLobbyView(
                     Text("Cancelar", color = Color(0xFF94A3B8))
                 }
             },
-            containerColor = Color(0xFF1E293B)
+            containerColor = Color(0xF2080E1A)
         )
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         if (state.connectionStatus == ConnectionStatus.CONNECTED) {
+            val connectedShape = CutCornerShape(14.dp)
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                colors = CardDefaults.cardColors(containerColor = Color(0xD9064E3B)),
+                shape = connectedShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color(0x6634D399), connectedShape)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -716,6 +864,7 @@ private fun GuestLobbyView(
                         Button(
                             onClick = onProceed,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                            shape = CutCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Avançar para Calibração", color = Color.White, fontWeight = FontWeight.Bold)
@@ -727,10 +876,14 @@ private fun GuestLobbyView(
         }
 
         if (state.errorMessage != null) {
+            val errorShape = CutCornerShape(12.dp)
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF3B1E1E)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)
+                colors = CardDefaults.cardColors(containerColor = Color(0xD93B1E1E)),
+                shape = errorShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 14.dp)
+                    .border(1.dp, Color(0x66FF5252), errorShape)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -744,10 +897,14 @@ private fun GuestLobbyView(
         }
 
         if (state.connectionStatus == ConnectionStatus.CONNECTING) {
+            val connectingShape = CutCornerShape(12.dp)
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+                shape = connectingShape,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .border(1.dp, Color(0x66FF5722), connectingShape)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -769,7 +926,7 @@ private fun GuestLobbyView(
         Button(
             onClick = onScanQrClick,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
-            shape = RoundedCornerShape(12.dp),
+            shape = CutCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
@@ -789,12 +946,20 @@ private fun GuestLobbyView(
                 onValueChange = onInputCodeChange,
                 placeholder = { Text("Código (4 dígitos) ou IP do Host", color = Color(0xFF64748B), fontSize = 13.sp) },
                 singleLine = true,
+                shape = CutCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color(0xFF00E5FF),
+                    unfocusedBorderColor = Color(0xFF475569)
+                ),
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(10.dp))
             Button(
                 onClick = onConnectCode,
                 enabled = inputCode.length >= 4,
+                shape = CutCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
             ) {
                 Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
@@ -828,16 +993,18 @@ private fun GuestLobbyView(
         } else {
             LazyColumn {
                 items(state.discoveredTables) { table ->
+                    val tableShape = CutCornerShape(12.dp)
                     Card(
                         onClick = {
                             pinDialogInput = ""
                             selectedTableForPin = table
                         },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+                        shape = tableShape,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
+                            .border(1.dp, Color(0x3300E5FF), tableShape)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

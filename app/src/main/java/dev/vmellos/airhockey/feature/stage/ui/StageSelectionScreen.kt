@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.stage.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,10 +22,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -35,9 +36,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,12 +63,35 @@ fun StageSelectionScreen(
             .fillMaxSize()
             .background(Color(0xFF070B14))
     ) {
+        // Imagem de Fundo com o Disco Flamejante
+        Image(
+            painter = painterResource(id = R.drawable.bg_fiery_puck),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // Camada de Contraste para legibilidade da grade
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0x88070B14),
+                            Color(0x55070B14),
+                            Color(0x99070B14)
+                        )
+                    )
+                )
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
         ) {
-            // Top Bar
+            // Top Bar com HUD Arcade
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -73,72 +99,62 @@ fun StageSelectionScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back Button (Blue circle)
+                // Botão Voltar HUD
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
                         .size(44.dp)
-                        .background(Color(0xFF007AFF), CircleShape)
+                        .background(Color(0xB3070D1A), CircleShape)
+                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.stage_back),
-                        tint = Color.White
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                // Center Pill with Total Stars
+                // Cápsula Central com Total de Estrelas
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.White,
+                    shape = CutCornerShape(10.dp),
+                    color = Color(0xD9080E1A),
+                    border = BorderStroke(1.2.dp, Color(0x66FFB800)),
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
-                            tint = Color(0xFFFF9500),
-                            modifier = Modifier.size(22.dp)
+                            tint = Color(0xFFFFB800),
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "$totalStars",
-                            color = Color(0xFFFF9500),
+                            color = Color(0xFFFFB800),
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp
                         )
                     }
                 }
 
-                // Info / Info Icon (Cyan circle)
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFF00C7BE),
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                // Espaçador para manter o contador de estrelas perfeitamente centralizado
+                Spacer(modifier = Modifier.size(44.dp))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // 3-Column Stage Grid
+            // Grade de 3 Colunas dos 100 Níveis
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(
@@ -167,19 +183,25 @@ fun StageCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val cardShape = CutCornerShape(12.dp)
+
     if (stage.isUnlocked) {
-        // Unlocked Card
         val isCompleted = stage.starsEarned > 0
-        val cardBg = if (isCompleted) Color(0xFFFFFFFF) else Color(0xFFE2E8F0)
+        val accentColor = if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
 
         Box(
             modifier = modifier
-                .aspectRatio(0.72f)
-                .background(cardBg, RoundedCornerShape(16.dp))
+                .aspectRatio(0.74f)
+                .background(Color(0xD9080E1A), cardShape)
                 .border(
-                    width = 2.dp,
-                    color = if (isCompleted) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                    shape = RoundedCornerShape(16.dp)
+                    width = 1.2.dp,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            accentColor.copy(alpha = 0.90f),
+                            accentColor.copy(alpha = 0.35f)
+                        )
+                    ),
+                    shape = cardShape
                 )
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
@@ -191,16 +213,17 @@ fun StageCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Header Pill with 3 Stars
+                // Cápsula Superior de 3 Estrelas
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF334155),
+                    shape = CutCornerShape(6.dp),
+                    color = Color(0x660B132B),
+                    border = BorderStroke(0.8.dp, accentColor.copy(alpha = 0.35f)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 4.dp),
+                        modifier = Modifier.padding(vertical = 3.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -209,38 +232,39 @@ fun StageCard(
                             Icon(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = null,
-                                tint = if (isEarned) Color(0xFFFFB800) else Color(0xFF64748B),
-                                modifier = Modifier.size(14.dp)
+                                tint = if (isEarned) Color(0xFFFFB800) else Color(0xFF475569),
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
                 }
 
-                // Stage Number
+                // Número da Fase
                 Text(
                     text = "${stage.stageNumber}",
-                    color = Color(0xFF0F172A),
-                    fontSize = 28.sp,
+                    color = Color.White,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.SansSerif
+                    letterSpacing = 0.5.sp
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
             }
         }
     } else {
-        // Locked Card
+        // Cartão Bloqueado
         Box(
             modifier = modifier
-                .aspectRatio(0.72f)
-                .background(Color(0xFF64748B), RoundedCornerShape(16.dp)),
+                .aspectRatio(0.74f)
+                .background(Color(0x99080E1A), cardShape)
+                .border(1.dp, Color(0x22FFFFFF), cardShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Lock,
                 contentDescription = stringResource(R.string.stage_locked),
-                tint = Color(0xFF0F172A),
-                modifier = Modifier.size(38.dp)
+                tint = Color(0xFF475569),
+                modifier = Modifier.size(32.dp)
             )
         }
     }
