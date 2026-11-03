@@ -14,9 +14,11 @@ import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -74,28 +77,58 @@ fun ScoreBoardOverlay(
     val isExtendedGuest = matchState.mode == GameMode.EXTENDED_GUEST ||
             matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .safeDrawingPadding()
     ) {
-        // Placar Lateral Numérico na lateral direita
-        Surface(
-            color = Color(0x33000000),
-            shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x22FFFFFF)),
+        val screenW = constraints.maxWidth.toFloat()
+        val screenH = constraints.maxHeight.toFloat()
+        // Projeção virtual padrão da arena (largura 1000f, altura 2000f)
+        val scale = kotlin.math.min(screenW / 1000f, screenH / 2000f)
+        val tableWidthDp = with(LocalDensity.current) { (1000f * scale).toDp() }
+
+        Box(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 8.dp)
+                .width(tableWidthDp)
+                .fillMaxHeight()
+                .align(Alignment.Center)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+            // Placar Lateral Numérico na lateral direita da Mesa
+            Surface(
+                color = Color(0x33000000),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x22FFFFFF)),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 8.dp)
             ) {
-                if (isExtended) {
-                    // Na Mesa Estendida, cada aparelho exibe o dígito de sua respectiva metade
-                    if (isExtendedGuest) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                ) {
+                    if (isExtended) {
+                        // Na Mesa Estendida, cada aparelho exibe o dígito de sua respectiva metade
+                        if (isExtendedGuest) {
+                            Text(
+                                text = "${matchState.scorePlayer2}",
+                                color = Color(0xFFFF5722),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        } else {
+                            Text(
+                                text = "${matchState.scorePlayer1}",
+                                color = Color(0xFF00E5FF),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    } else {
+                        // Modos de 1 Tela ou Mesa Conectada: P2 no topo (Laranja), Divisor, P1 na base (Ciano)
                         Text(
                             text = "${matchState.scorePlayer2}",
                             color = Color(0xFFFF5722),
@@ -103,7 +136,12 @@ fun ScoreBoardOverlay(
                             fontWeight = FontWeight.Black,
                             fontFamily = FontFamily.Monospace
                         )
-                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(22.dp)
+                                .height(1.5.dp)
+                                .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
+                        )
                         Text(
                             text = "${matchState.scorePlayer1}",
                             color = Color(0xFF00E5FF),
@@ -112,28 +150,6 @@ fun ScoreBoardOverlay(
                             fontFamily = FontFamily.Monospace
                         )
                     }
-                } else {
-                    // Modos de 1 Tela ou Mesa Conectada: P2 no topo (Laranja), Divisor, P1 na base (Ciano)
-                    Text(
-                        text = "${matchState.scorePlayer2}",
-                        color = Color(0xFFFF5722),
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(22.dp)
-                            .height(1.5.dp)
-                            .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
-                    )
-                    Text(
-                        text = "${matchState.scorePlayer1}",
-                        color = Color(0xFF00E5FF),
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace
-                    )
                 }
             }
         }
@@ -567,7 +583,7 @@ fun StageResultDialog(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Lista de Fases",
+                        contentDescription = stringResource(R.string.content_desc_stage_list),
                         tint = Color(0xFF00E676),
                         modifier = Modifier.size(32.dp)
                     )
@@ -584,7 +600,7 @@ fun StageResultDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Reiniciar",
+                        contentDescription = stringResource(R.string.content_desc_restart),
                         tint = Color(0xFFE040FB),
                         modifier = Modifier.size(32.dp)
                     )
@@ -602,7 +618,7 @@ fun StageResultDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.FastForward,
-                            contentDescription = "Proxima Fase",
+                            contentDescription = stringResource(R.string.content_desc_next_stage),
                             tint = Color(0xFFFF9100),
                             modifier = Modifier.size(32.dp)
                         )

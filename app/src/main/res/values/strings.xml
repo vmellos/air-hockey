@@ -215,4 +215,23 @@
     <string name="player_ai">AI</string>
     <string name="player_1_default">Player 1</string>
     <string name="player_2_default">Player 2</string>
+
+    <!-- Lobby Errors and System Messages -->
+    <string name="lobby_error_connection_lost">Connection lost or could not be established with host.</string>
+    <string name="lobby_error_invalid_code">Incorrect code! Check the 4 digits on the host screen.</string>
+    <string name="lobby_error_incompatible_mode">Game mode incompatible with this table.</string>
+    <string name="lobby_error_table_not_found">Table not found with code %1$s. Make sure both devices are on the same Wi-Fi or enter host IP directly.</string>
+    <string name="lobby_error_invalid_qr">Invalid or unreadable QR code.</string>
+    <string name="lobby_title_ai_extended">AI vs AI (Extended Table)</string>
+    <string name="qr_scanner_instruction">Frame the host code inside the target</string>
+    <string name="in_app_update_ready_title">Update Ready</string>
+    <string name="in_app_update_ready_desc">Restart to apply the new version</string>
+    <string name="in_app_update_restart_btn">Restart</string>
+    <string name="settings_player_name_placeholder">e.g. Player 1</string>
+    <string name="content_desc_stage_list">Stage List</string>
+    <string name="content_desc_restart">Restart</string>
+    <string name="content_desc_next_stage">Next Stage</string>
+    <string name="content_desc_qr_code">Table QR Code</string>
+    <string name="content_desc_change_mode">Change Game Mode</string>
+    <string name="ad_reward_active">Active Reward: 2h Ad-Free!</string>
 </resources>

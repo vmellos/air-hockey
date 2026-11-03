@@ -31,7 +31,8 @@ data class DiscoveredTable(
     val port: Int,
     val tableCode: String,
     val mode: String = "EXTENDED",
-    val hostName: String = ""
+    val hostName: String = "",
+    val lastSeenMs: Long = System.currentTimeMillis()
 )
 
 class NsdDiscoveryManager(private val context: Context) {
@@ -45,6 +46,8 @@ class NsdDiscoveryManager(private val context: Context) {
 
     private var isBroadcasting = false
     private var isDiscovering = false
+    private var activeBroadcastTableCode: String? = null
+    private var activeBroadcastHostIp: String? = null
 
     private var udpBroadcastJob: Job? = null
     private var udpDiscoveryJob: Job? = null
@@ -95,6 +98,8 @@ class NsdDiscoveryManager(private val context: Context) {
         acquireMulticastLock()
 
         val hostIp = getLocalIpAddress(context)
+        activeBroadcastTableCode = tableCode
+        activeBroadcastHostIp = hostIp
 
         // 1. Canal NSD / mDNS
         val serviceInfo = NsdServiceInfo().apply {
@@ -192,6 +197,30 @@ class NsdDiscoveryManager(private val context: Context) {
     }
 
     fun stopBroadcast() {
+        val closedCode = activeBroadcastTableCode
+        val closedIp = activeBroadcastHostIp ?: ""
+        if (closedCode != null) {
+            scope.launch {
+                try {
+                    val msg = "AIRHOCKEY_TABLE_CLOSED:$closedCode:$closedIp".toByteArray()
+                    val socket = DatagramSocket().apply { broadcast = true }
+                    repeat(3) {
+                        try {
+                            val pGlobal = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), NetworkConstants.DISCOVERY_UDP_PORT)
+                            socket.send(pGlobal)
+                            for (b in getAllBroadcastAddresses()) {
+                                socket.send(DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT))
+                            }
+                        } catch (_: Exception) {}
+                        delay(25)
+                    }
+                    socket.close()
+                } catch (_: Exception) {}
+            }
+        }
+        activeBroadcastTableCode = null
+        activeBroadcastHostIp = null
+
         isBroadcasting = false
         udpBroadcastJob?.cancel()
         udpBroadcastJob = null
@@ -270,7 +299,16 @@ class NsdDiscoveryManager(private val context: Context) {
                             val packet = DatagramPacket(buf, buf.size)
                             socket.receive(packet)
                             val text = String(packet.data, packet.offset, packet.length).trim()
-                            if (text.startsWith("AIRHOCKEY_TABLE:")) {
+                            if (text.startsWith("AIRHOCKEY_TABLE_CLOSED:")) {
+                                val parts = text.split(":")
+                                if (parts.size >= 2) {
+                                    val code = parts[1]
+                                    val ip = if (parts.size >= 3) parts[2] else ""
+                                    _discoveredTables.update { current ->
+                                        current.filter { !(it.tableCode == code || (ip.isNotBlank() && it.hostIp == ip)) }
+                                    }
+                                }
+                            } else if (text.startsWith("AIRHOCKEY_TABLE:")) {
                                 val parts = text.split(":")
                                 if (parts.size >= 4) {
                                     val code = parts[1]
@@ -283,17 +321,19 @@ class NsdDiscoveryManager(private val context: Context) {
                                     val mode = if (parts.size >= 5 && parts[4].isNotBlank()) parts[4] else "EXTENDED"
                                     val hostName = if (parts.size >= 6) parts.subList(5, parts.size).joinToString(":") else ""
                                     if (ip.isNotBlank()) {
+                                        val now = System.currentTimeMillis()
                                         val table = DiscoveredTable(
                                             name = "${NetworkConstants.SERVICE_NAME_PREFIX}$code",
                                             hostIp = ip,
                                             port = port,
                                             tableCode = code,
                                             mode = mode,
-                                            hostName = hostName
+                                            hostName = hostName,
+                                            lastSeenMs = now
                                         )
                                         _discoveredTables.update { current ->
                                             if (current.any { it.hostIp == ip && it.tableCode == code }) {
-                                                current
+                                                current.map { if (it.hostIp == ip && it.tableCode == code) table else it }
                                             } else {
                                                 current.filter { it.hostIp != ip } + table
                                             }
@@ -334,6 +374,13 @@ class NsdDiscoveryManager(private val context: Context) {
                             val pGateway = DatagramPacket(msg, msg.size, InetAddress.getByName(gatewayIp), NetworkConstants.DISCOVERY_UDP_PORT)
                             socket.send(pGateway)
                         } catch (_: Exception) {}
+                    }
+
+                    // Limpeza periódica por TTL (expira mesas inativas sem beacon há mais de 3,5s)
+                    val now = System.currentTimeMillis()
+                    val ttlThreshold = 3500L
+                    _discoveredTables.update { current ->
+                        current.filter { now - it.lastSeenMs < ttlThreshold }
                     }
 
                     delay(1200)
@@ -445,7 +492,8 @@ class NsdDiscoveryManager(private val context: Context) {
                     port = port,
                     tableCode = code,
                     mode = mode,
-                    hostName = hostName
+                    hostName = hostName,
+                    lastSeenMs = System.currentTimeMillis()
                 )
 
                 _discoveredTables.update { current ->

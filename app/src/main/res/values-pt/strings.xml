@@ -215,4 +215,23 @@
     <string name="player_ai">IA</string>
     <string name="player_1_default">Jogador 1</string>
     <string name="player_2_default">Jogador 2</string>
+
+    <!-- Lobby Errors and System Messages -->
+    <string name="lobby_error_connection_lost">Conexão perdida ou não estabelecida com o anfitrião.</string>
+    <string name="lobby_error_invalid_code">Código incorreto! Confira os 4 dígitos na tela do anfitrião.</string>
+    <string name="lobby_error_incompatible_mode">Modo de jogo incompatível com esta mesa.</string>
+    <string name="lobby_error_table_not_found">Mesa não encontrada com o código %1$s. Verifique se ambos estão no mesmo Wi-Fi ou digite o IP do anfitrião.</string>
+    <string name="lobby_error_invalid_qr">Código QR inválido ou ilegível.</string>
+    <string name="lobby_title_ai_extended">IA x IA (Mesa Estendida)</string>
+    <string name="qr_scanner_instruction">Enquadre o código do anfitrião dentro da mira</string>
+    <string name="in_app_update_ready_title">Atualização Pronta</string>
+    <string name="in_app_update_ready_desc">Reinicie para aplicar a nova versão</string>
+    <string name="in_app_update_restart_btn">Reiniciar</string>
+    <string name="settings_player_name_placeholder">Ex: Jogador 1</string>
+    <string name="content_desc_stage_list">Lista de Fases</string>
+    <string name="content_desc_restart">Reiniciar</string>
+    <string name="content_desc_next_stage">Próxima Fase</string>
+    <string name="content_desc_qr_code">Código QR da Mesa</string>
+    <string name="content_desc_change_mode">Alterar Modalidade</string>
+    <string name="ad_reward_active">Recompensa Ativa: 2h Sem Anúncios!</string>
 </resources>

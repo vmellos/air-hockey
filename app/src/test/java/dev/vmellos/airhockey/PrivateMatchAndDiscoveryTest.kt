@@ -188,5 +188,45 @@ class PrivateMatchAndDiscoveryTest {
         )
         assertEquals("CONNECTED", table.mode)
         assertEquals("S24+ de Vinicius", table.hostName)
+        assertTrue(table.lastSeenMs > 0L)
+    }
+
+    @Test
+    fun testDiscoveredTableTtlExpiry() {
+        val now = 100_000L
+        val freshTable = DiscoveredTable(
+            name = "AirHockeyTable_1111",
+            hostIp = "192.168.1.10",
+            port = 8888,
+            tableCode = "1111",
+            lastSeenMs = now - 1000L // 1s ago -> fresh
+        )
+        val staleTable = DiscoveredTable(
+            name = "AirHockeyTable_2222",
+            hostIp = "192.168.1.20",
+            port = 8888,
+            tableCode = "2222",
+            lastSeenMs = now - 4000L // 4s ago -> expired (> 3.5s)
+        )
+        val tables = listOf(freshTable, staleTable)
+        val ttl = 3500L
+        val activeTables = tables.filter { now - it.lastSeenMs < ttl }
+
+        assertEquals(1, activeTables.size)
+        assertEquals("1111", activeTables.first().tableCode)
+    }
+
+    @Test
+    fun testTableClosedRemoval() {
+        val table1 = DiscoveredTable("AirHockeyTable_1111", "192.168.1.10", 8888, "1111")
+        val table2 = DiscoveredTable("AirHockeyTable_2222", "192.168.1.20", 8888, "2222")
+        var tables = listOf(table1, table2)
+
+        val closedCode = "1111"
+        val closedIp = "192.168.1.10"
+        tables = tables.filter { !(it.tableCode == closedCode || (closedIp.isNotBlank() && it.hostIp == closedIp)) }
+
+        assertEquals(1, tables.size)
+        assertEquals("2222", tables.first().tableCode)
     }
 }
