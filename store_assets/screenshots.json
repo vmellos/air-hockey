@@ -1,0 +1,106 @@
+{
+  "default_language": "en",
+  "languages": ["pt", "en", "es"],
+  "screens": [
+    {
+      "id": "01_extended_table",
+      "file": "01_extended_table.png",
+      "description": "Mesa Estendida em dois celulares topo-a-topo via Wi-Fi local",
+      "accent": "#00E5FF",
+      "translations": {
+        "pt": {
+          "title": "MESA ESTENDIDA",
+          "sub": "Junte 2 celulares em uma única mesa via Wi-Fi"
+        },
+        "en": {
+          "title": "EXTENDED TABLE",
+          "sub": "Connect 2 phones into 1 giant table via Wi-Fi"
+        },
+        "es": {
+          "title": "MESA EXTENDIDA",
+          "sub": "Une 2 celulares en una sola mesa por Wi-Fi"
+        }
+      }
+    },
+    {
+      "id": "02_split_screen",
+      "file": "02_split_screen.png",
+      "description": "Mesa Dividida para 2 jogadores no mesmo aparelho",
+      "accent": "#FF2A6D",
+      "translations": {
+        "pt": {
+          "title": "MESA DIVIDIDA",
+          "sub": "2 jogadores frente a frente no mesmo celular"
+        },
+        "en": {
+          "title": "SPLIT SCREEN DUEL",
+          "sub": "2 players face-to-face on a single device"
+        },
+        "es": {
+          "title": "PANTALLA DIVIDIDA",
+          "sub": "2 jugadores cara a cara en un solo dispositivo"
+        }
+      }
+    },
+    {
+      "id": "03_solo_game",
+      "file": "03_solo_game.png",
+      "description": "Partida individual contra Inteligência Artificial com 100 fases",
+      "accent": "#FFB400",
+      "translations": {
+        "pt": {
+          "title": "SOLO CONTRA A IA",
+          "sub": "Física realista, jogadas de tabela e IA esperta"
+        },
+        "en": {
+          "title": "SOLO VS SMART AI",
+          "sub": "Realistic physics, ricochets & adaptive AI"
+        },
+        "es": {
+          "title": "MODO SOLO VS IA",
+          "sub": "Física realista, rebotes y dificultad adaptable"
+        }
+      }
+    },
+    {
+      "id": "04_leaderboard",
+      "file": "04_leaderboard.png",
+      "description": "Tela de ranking ELO e estatísticas de vitória",
+      "accent": "#00E5FF",
+      "translations": {
+        "pt": {
+          "title": "RANKING ELO",
+          "sub": "Acompanhe seu nível, vitórias e estatísticas"
+        },
+        "en": {
+          "title": "ELO LEADERBOARD",
+          "sub": "Track skill rating, win streaks & match stats"
+        },
+        "es": {
+          "title": "RANKING ELO",
+          "sub": "Sigue tu nivel, victorias y estadísticas"
+        }
+      }
+    },
+    {
+      "id": "05_settings",
+      "file": "05_settings.png",
+      "description": "Configurações ergonômicas, touch offset e zero anúncios",
+      "accent": "#FF2A6D",
+      "translations": {
+        "pt": {
+          "title": "CONTROLE ERGONÔMICO",
+          "sub": "Deslocamento de toque, velocidade e sem anúncios"
+        },
+        "en": {
+          "title": "PRECISION CONTROLS",
+          "sub": "Touch offset, puck speed and zero ads"
+        },
+        "es": {
+          "title": "CONTROL ERGONÓMICO",
+          "sub": "Desplazamiento táctil, velocidad y sin anuncios"
+        }
+      }
+    }
+  ]
+}
