@@ -196,7 +196,7 @@ fun AirHockeyAppNavigation(
                 onStartAiVsAiExtended = { diff1, diff2 ->
                     aiExtendedDiff1 = diff1
                     aiExtendedDiff2 = diff2
-                    lobbyViewModel.setTargetMode("AI_EXTENDED")
+                    lobbyViewModel.startAsHost("AI_EXTENDED")
                     navController.navigate("lobby")
                 },
                 onOpenLeaderboard = {
@@ -295,8 +295,17 @@ fun AirHockeyAppNavigation(
                         lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
                     }
 
-                    val p1Label = if (isAiExtended) "Bot 1 ($aiExtendedDiff1)" else p1Name
-                    val p2Label = if (isAiExtended) "Bot 2 ($aiExtendedDiff2)" else p2Name
+                    val effectiveAiDiff1 = if (isHost) aiExtendedDiff1 else (
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) }
+                            ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
+                    )
+                    val effectiveAiDiff2 = if (isHost) aiExtendedDiff2 else (
+                        dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) }
+                            ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
+                    )
+
+                    val p1Label = if (isAiExtended) "Bot 1 (${effectiveAiDiff1.name})" else p1Name
+                    val p2Label = if (isAiExtended) "Bot 2 (${effectiveAiDiff2.name})" else p2Name
 
                     lobbyViewModel.consumeStartMatchTrigger()
 
@@ -305,9 +314,9 @@ fun AirHockeyAppNavigation(
                         bezelGapMm = lobbyState.calibratedGapMm,
                         targetScore = userPrefs.targetScore,
                         matchTimeSeconds = 0,
-                        aiDifficulty = aiExtendedDiff1,
-                        aiDifficultyPlayer1 = aiExtendedDiff1,
-                        aiDifficultyPlayer2 = aiExtendedDiff2,
+                        aiDifficulty = effectiveAiDiff1,
+                        aiDifficultyPlayer1 = effectiveAiDiff1,
+                        aiDifficultyPlayer2 = effectiveAiDiff2,
                         puckMaxSpeed = effectivePuckSpeed,
                         airFriction = userPrefs.puckSpeed.airFriction,
                         player1Name = p1Label,
@@ -329,7 +338,9 @@ fun AirHockeyAppNavigation(
                 isSelfReady = lobbyState.isSelfReady,
                 onReadyClick = { gapMm ->
                     if (isHost) {
-                        lobbyViewModel.startHostMatch(gapMm, userPrefs.puckSpeed.maxSpeed)
+                        val d1 = if (isAiExtended) aiExtendedDiff1.name else ""
+                        val d2 = if (isAiExtended) aiExtendedDiff2.name else ""
+                        lobbyViewModel.startHostMatch(gapMm, userPrefs.puckSpeed.maxSpeed, d1, d2)
                     } else {
                         lobbyViewModel.setGuestReady(gapMm)
                     }

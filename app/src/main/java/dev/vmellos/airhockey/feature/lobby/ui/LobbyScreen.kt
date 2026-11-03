@@ -288,9 +288,10 @@ fun LobbyScreen(
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                val titleText = when (state.targetMode) {
-                    "CONNECTED" -> stringResource(R.string.lobby_title_connected)
-                    "AI_EXTENDED" -> "LOBBY IA x IA (MESA ESTENDIDA)"
+                val titleText = when {
+                    state.role == LobbyRole.GUEST -> "LOBBY MULTIJOGADOR"
+                    state.targetMode == "CONNECTED" -> stringResource(R.string.lobby_title_connected)
+                    state.targetMode == "AI_EXTENDED" -> "LOBBY IA x IA (MESA ESTENDIDA)"
                     else -> stringResource(R.string.lobby_title)
                 }
                 Text(
@@ -390,7 +391,7 @@ fun LobbyScreen(
                     inputCode = inputCode,
                     onInputCodeChange = { inputCode = it },
                     onConnectCode = { viewModel.connectByCode(inputCode) },
-                    onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code) },
+                    onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code, table.mode) },
                     onScanQrClick = {
                         val hasPerm = ContextCompat.checkSelfPermission(
                             context, Manifest.permission.CAMERA
@@ -560,6 +561,35 @@ private fun HostLobbyView(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
     ) {
+        val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
+            "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
+            "AI_EXTENDED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
+            else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.Devices)
+        }
+
+        Surface(
+            color = hostModeColor.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, hostModeColor.copy(alpha = 0.5f))
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Icon(hostModeIcon, contentDescription = null, tint = hostModeColor, modifier = Modifier.size(16.dp))
+                Text(
+                    text = hostModeLabel.uppercase(),
+                    color = hostModeColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         Text(
             text = stringResource(R.string.lobby_host_table_code),
             color = Color(0xFF94A3B8),
@@ -993,6 +1023,11 @@ private fun GuestLobbyView(
         } else {
             LazyColumn {
                 items(state.discoveredTables) { table ->
+                    val (modeColor, modeLabel, modeIcon) = when (table.mode) {
+                        "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
+                        "AI_EXTENDED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
+                        else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.Devices)
+                    }
                     val tableShape = CutCornerShape(12.dp)
                     Card(
                         onClick = {
@@ -1004,17 +1039,26 @@ private fun GuestLobbyView(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .border(1.dp, Color(0x3300E5FF), tableShape)
+                            .border(1.dp, modeColor.copy(alpha = 0.5f), tableShape)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(14.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                Icon(Icons.Default.Wifi, contentDescription = null, tint = Color(0xFF00E5FF))
+                                Surface(
+                                    color = modeColor.copy(alpha = 0.15f),
+                                    shape = CircleShape,
+                                    border = BorderStroke(1.dp, modeColor.copy(alpha = 0.4f)),
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(modeIcon, contentDescription = null, tint = modeColor, modifier = Modifier.size(20.dp))
+                                    }
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     val title = if (table.hostName.isNotBlank()) {
@@ -1023,12 +1067,25 @@ private fun GuestLobbyView(
                                         table.name
                                     }
                                     Text(title, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                                    val modeLabel = when (table.mode) {
-                                        "CONNECTED" -> stringResource(R.string.menu_mode_connected)
-                                        "AI_EXTENDED" -> stringResource(R.string.menu_mode_ai_vs_ai)
-                                        else -> stringResource(R.string.menu_mode_extended)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Surface(
+                                            color = modeColor.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = modeLabel.uppercase(),
+                                                color = modeColor,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Black,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Text(table.hostIp, color = Color(0xFF64748B), fontSize = 11.sp)
                                     }
-                                    Text("${table.hostIp} • $modeLabel", color = Color(0xFF64748B), fontSize = 12.sp)
                                 }
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {

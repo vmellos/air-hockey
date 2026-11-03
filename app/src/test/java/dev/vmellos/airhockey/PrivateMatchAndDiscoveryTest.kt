@@ -127,6 +127,56 @@ class PrivateMatchAndDiscoveryTest {
     }
 
     @Test
+    fun testHandshakeAcceptedBetweenAiExtendedHostAndExtendedGuest() = runBlocking {
+        val (hostTransport, guestTransport) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+
+        val hostCoord = MultiplayerMatchCoordinator(
+            transport = hostTransport,
+            isHost = true,
+            expectedTableCode = "5544",
+            selfPlayerName = "HostAI",
+            selfMode = "AI_EXTENDED"
+        )
+        val guestCoord = MultiplayerMatchCoordinator(
+            transport = guestTransport,
+            isHost = false,
+            expectedTableCode = "5544",
+            selfPlayerName = "GuestSpectator",
+            selfMode = "EXTENDED"
+        )
+
+        delay(80)
+
+        assertFalse("Handshake entre AI_EXTENDED e EXTENDED não deve ser rejeitado", guestCoord.state.value.isHandshakeRejected)
+        assertEquals("HostAI", guestCoord.state.value.peerPlayerName)
+        assertEquals("GuestSpectator", hostCoord.state.value.peerPlayerName)
+        assertEquals("AI_EXTENDED", guestCoord.state.value.mode)
+
+        // Sincronização de Start com IAs
+        hostCoord.startMatch(11.0f, 7000f, "EASY", "HARD")
+        delay(50)
+
+        assertEquals("EASY", guestCoord.state.value.aiDifficulty1)
+        assertEquals("HARD", guestCoord.state.value.aiDifficulty2)
+        assertEquals(11.0f, guestCoord.state.value.calibratedGapMm, 0.01f)
+
+        hostCoord.terminateSession()
+        guestCoord.terminateSession()
+    }
+
+    @Test
+    fun testCompatibleModeLogic() {
+        assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("AI_EXTENDED", "EXTENDED"))
+        assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("EXTENDED", "AI_EXTENDED"))
+        assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("CONNECTED", "CONNECTED"))
+        assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("EXTENDED", "EXTENDED"))
+        assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("CONNECTED", "ANY"))
+        assertFalse(MultiplayerMatchCoordinator.isCompatibleMode("CONNECTED", "EXTENDED"))
+        assertFalse(MultiplayerMatchCoordinator.isCompatibleMode("CONNECTED", "AI_EXTENDED"))
+        assertFalse(MultiplayerMatchCoordinator.isCompatibleMode("AI_EXTENDED", "CONNECTED"))
+    }
+
+    @Test
     fun testDiscoveredTableModeAndHostName() {
         val table = DiscoveredTable(
             name = "AirHockeyTable_1234",

@@ -295,6 +295,10 @@ fun MainMenuScreen(
                     onStartExtended = { d1, d2 ->
                         showAiVsAiDialog = false
                         onStartAiVsAiExtended(d1, d2)
+                    },
+                    onJoinAsGuest = {
+                        showAiVsAiDialog = false
+                        onStartExtended()
                     }
                 )
             }
@@ -463,7 +467,8 @@ fun AiVsAiConfigDialog(
     initialDifficulty: dev.vmellos.airhockey.core.preferences.AiDifficulty,
     onDismiss: () -> Unit,
     onStartLocal: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit,
-    onStartExtended: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit
+    onStartExtended: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit,
+    onJoinAsGuest: () -> Unit
 ) {
     var isExtendedSelected by remember { mutableStateOf(false) }
     var diffBot1 by remember { mutableStateOf(initialDifficulty) }
@@ -790,12 +795,49 @@ fun AiVsAiConfigDialog(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = stringResource(R.string.start_showdown),
+                            text = if (isExtendedSelected) {
+                                stringResource(R.string.create_extended_table_host)
+                            } else {
+                                stringResource(R.string.start_showdown_local)
+                            },
                             color = Color.White,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Black,
-                            letterSpacing = 1.5.sp
+                            letterSpacing = 1.2.sp
                         )
+                    }
+                }
+
+                if (isExtendedSelected) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.extended_ai_guest_hint),
+                        color = Color(0xFF94A3B8),
+                        fontSize = 11.5.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TextButton(
+                        onClick = onJoinAsGuest,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCode,
+                                contentDescription = null,
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.join_existing_as_guest),
+                                color = Color(0xFF00E5FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

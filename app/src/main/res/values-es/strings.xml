@@ -180,6 +180,13 @@
     <string name="bot_1_cyan">BOT 1 (CIAN)</string>
     <string name="bot_2_orange">BOT 2 (NARANJA)</string>
     <string name="start_showdown">INICIAR CONFRONTACIÓN</string>
+    <string name="start_showdown_local">INICIAR DUELO LOCAL</string>
+    <string name="create_extended_table_host">CREAR MESA EXTENDIDA (ANFITRIÓN)</string>
+    <string name="join_existing_as_guest">Unirse a mesa existente como Invitado</string>
+    <string name="extended_ai_guest_hint">El 2º dispositivo se conecta como Invitado sin configurar bots</string>
+    <string name="lobby_mode_badge_ai">IA vs IA</string>
+    <string name="lobby_mode_badge_extended">Mesa Extendida</string>
+    <string name="lobby_mode_badge_connected">Mesa Conectada</string>
     <string name="spectator_mode">MODO ESPECTADOR</string>
     <string name="close">Cerrar</string>
 </resources>

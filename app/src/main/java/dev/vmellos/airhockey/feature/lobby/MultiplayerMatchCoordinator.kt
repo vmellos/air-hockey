@@ -28,6 +28,9 @@ data class MultiplayerSessionState(
     val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 6800f,
+    val aiDifficulty1: String = "",
+    val aiDifficulty2: String = "",
+    val mode: String = "",
     val peerExited: Boolean = false,
     val remoteMatchState: ControlMessages.RemoteMatchState? = null,
     val peerPlayerName: String = "",
@@ -99,7 +102,7 @@ class MultiplayerMatchCoordinator(
             is TableControlEvent.HandshakeRequest -> {
                 if (isHost) {
                     val codeMatches = expectedTableCode.isBlank() || event.code == expectedTableCode
-                    val modeMatches = selfMode.isBlank() || event.mode.equals(selfMode, ignoreCase = true)
+                    val modeMatches = isCompatibleMode(selfMode, event.mode)
                     if (!codeMatches) {
                         scope.launch {
                             transport.sendControl(TableControlEvent.HandshakeReject("INVALID_CODE"))
@@ -124,7 +127,12 @@ class MultiplayerMatchCoordinator(
             }
             is TableControlEvent.HandshakeOk -> {
                 if (!isHost) {
-                    _state.update { it.copy(peerPlayerName = event.hostName) }
+                    _state.update {
+                        it.copy(
+                            peerPlayerName = event.hostName,
+                            mode = if (event.mode.isNotBlank()) event.mode else it.mode
+                        )
+                    }
                 }
             }
             is TableControlEvent.HandshakeReject -> {
@@ -150,6 +158,8 @@ class MultiplayerMatchCoordinator(
                     it.copy(
                         calibratedGapMm = event.gapMm,
                         synchronizedPuckSpeed = event.maxSpeed,
+                        aiDifficulty1 = event.aiDiff1,
+                        aiDifficulty2 = event.aiDiff2,
                         startMatchTrigger = System.currentTimeMillis()
                     )
                 }
@@ -188,16 +198,28 @@ class MultiplayerMatchCoordinator(
         }
     }
 
-    fun startMatch(gapMm: Float, maxSpeed: Float = 6800f) {
+    fun startMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "") {
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,
                 synchronizedPuckSpeed = maxSpeed,
+                aiDifficulty1 = aiDiff1,
+                aiDifficulty2 = aiDiff2,
                 startMatchTrigger = System.currentTimeMillis()
             )
         }
         scope.launch {
-            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed))
+            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2))
+        }
+    }
+
+    companion object {
+        fun isCompatibleMode(hostMode: String, guestMode: String): Boolean {
+            if (hostMode.isBlank() || guestMode.isBlank() || guestMode.equals("ANY", ignoreCase = true)) return true
+            if (hostMode.equals(guestMode, ignoreCase = true)) return true
+            val isHostExt = hostMode.equals("EXTENDED", ignoreCase = true) || hostMode.equals("AI_EXTENDED", ignoreCase = true)
+            val isGuestExt = guestMode.equals("EXTENDED", ignoreCase = true) || guestMode.equals("AI_EXTENDED", ignoreCase = true)
+            return isHostExt && isGuestExt
         }
     }
 
