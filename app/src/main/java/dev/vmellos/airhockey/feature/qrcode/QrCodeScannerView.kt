@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import dev.vmellos.airhockey.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -212,7 +214,7 @@ fun QrCodeScannerView(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Enquadre o código do anfitrião dentro da mira",
+                text = stringResource(R.string.qr_scanner_instruction),
                 color = Color(0xFF94A3B8),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center

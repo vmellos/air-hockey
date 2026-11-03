@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
@@ -138,31 +140,37 @@ fun SettingsScreen(
                 )
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
-                .verticalScroll(rememberScrollState())
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 560.dp)
+                    .fillMaxWidth()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(Color(0xB3070D1A), CircleShape)
-                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = stringResource(R.string.settings_title),
@@ -209,7 +217,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Fechar",
+                                contentDescription = stringResource(R.string.close),
                                 tint = Color(0xFF94A3B8),
                                 modifier = Modifier.size(16.dp)
                             )
@@ -392,7 +400,7 @@ fun SettingsScreen(
                         },
                         singleLine = true,
                         placeholder = {
-                            Text(text = "Ex: Jogador 1", color = Color(0xFF64748B))
+                            Text(text = stringResource(R.string.settings_player_name_placeholder), color = Color(0xFF64748B))
                         },
                         shape = CutCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -888,4 +896,5 @@ fun SettingsScreen(
             )
         }
     }
+}
 }

@@ -61,7 +61,7 @@ A meta quantitativa de pontos definida para a partida (3, 5, 7 ou 10 pontos) cuj
 _Avoid_: Placar final, limite de gols, meta de gols, target score
 
 **Placar Lateral**:
-A representação visual e minimalista da contagem de pontos posicionada na borda lateral da mesa na altura da linha central divisória, apresentando exclusivamente os dígitos dos participantes em tipografia neon de alto contraste (Ciano e Laranja) separados por divisor sutil em todos os modos de jogo, desobstruindo as áreas de movimento dos rebatedores.
+A representação visual e minimalista da contagem de pontos posicionada na borda lateral da mesa na altura da linha central divisória (ancorada adjacente ao trilho direito da arena virtual, mantendo proximidade à mesa mesmo em telas largas de tablets e dobráveis), apresentando exclusivamente os dígitos dos participantes em tipografia neon de alto contraste (Ciano e Laranja) separados por divisor sutil em todos os modos de jogo, desobstruindo as áreas de movimento dos rebatedores.
 _Avoid_: Scoreboard do topo, placar superior, painel de pontos, score hud
 
 **Modo Espectador**:
@@ -160,6 +160,14 @@ _Avoid_: Room, partida online, socket session, tela de calibração manual
 O mecanismo de escaneamento local (via mDNS/NSD e beacon UDP) no qual o dispositivo convidado visualiza todas as mesas ativas na rede local com seus respectivos selos de modalidade (Mesa Estendida, Mesa Conectada ou Modo IA x IA), adaptando automaticamente sua interface, calibração e fluxo de entrada às regras estabelecidas pelo dispositivo anfitrião.
 _Avoid_: Busca por modo restrito, filtro cego de lobby, salas isoladas por tela
 
+**Expiração de Mesas Descobertas**:
+O mecanismo de higienização contínua executado no dispositivo convidado que remove automaticamente mesas da lista do lobby caso nenhum beacon periódico seja recebido dentro da janela de tolerância (TTL de 3,5 segundos), prevenindo a exibição de salas inativas decorrentes de encerramento abrupto ou oscilações de sinal.
+_Avoid_: Mesa fantasma, lista estática, salas órfãs, cache infinito de mesas
+
+**Aviso de Encerramento de Mesa**:
+A mensagem em broadcast UDP disparada imediatamente pelo dispositivo anfitrião ao cancelar a criação da mesa ou fechar a aplicação, notificando os dispositivos convidados no lobby para que expurguem a entrada correspondente de forma instantânea sem aguardar a expiração por tempo limite.
+_Avoid_: Goodbye packet, tombstone, pacote de cancelamento, sinal de saída
+
 **Ponto de Acesso Móvel**:
 O recurso sem fio do dispositivo anfitrião que emite uma rede Wi-Fi local direta para conexão do dispositivo convidado sem requerer roteador externo.
 _Avoid_: Roteador do telefone, hotspot pessoal, ancoragem, tethering
@@ -193,6 +201,10 @@ _Avoid_: Ícone de campo, desenho do modo, preview da mesa
 **Cartão de Modo de Jogo**:
 O componente interativo translúcido no menu inicial com bordas chanfradas neon que apresenta o título destacado e a descrição sucinta de cada modalidade esportiva (Modo Fases, Mesa Conectada, Mesa Estendida, Mesa Dividida e Modo IA x IA), projetado com perfil rebaixado e glassmorphism escuro para preservar a visibilidade do Disco Flamejante ao fundo.
 _Avoid_: Botão comum, card opaco, menu tile, lista padrão
+
+**Contêiner Responsivo de Menus**:
+O envoltório de layout centralizado aplicado às telas de navegação (Menu Principal, Lobby, Configurações, Fases e Placar de Líderes) que impõe um limite de largura máxima ergonômico (até 520 dp), preservando a estética de painel arcade e evitando o estiramento horizontal excessivo de cartões e botões em tablets e dispositivos dobráveis abertos (Galaxy Fold).
+_Avoid_: Layout esticado, tela cheia em tablet, cards estendidos sem limite
 
 **Bordas Chanfradas Neon**:
 O traçado perimetral da mesa com cantos angulados em 45 graus e gradiente luminoso em neon ciano e laranja, substituindo cantos arredondados simples.

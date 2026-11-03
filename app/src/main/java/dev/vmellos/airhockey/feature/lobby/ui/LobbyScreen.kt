@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.border
@@ -235,7 +237,7 @@ fun LobbyScreen(
                     .padding(24.dp)
                     .background(Color(0x88000000), RoundedCornerShape(12.dp))
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = Color.White)
             }
         }
         return
@@ -267,39 +269,45 @@ fun LobbyScreen(
                 )
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(20.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Linha 1: Botão Voltar e Título da Tela
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 560.dp)
+                    .fillMaxWidth()
+                    .safeDrawingPadding()
+                    .padding(20.dp)
             ) {
-                IconButton(
-                    onClick = handleBack,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(Color(0xB3070D1A), CircleShape)
-                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                // Linha 1: Botão Voltar e Título da Tela
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                val titleText = when {
-                    state.role == LobbyRole.NONE -> stringResource(R.string.menu_mode_network_centralized).uppercase()
-                    state.role == LobbyRole.GUEST -> stringResource(R.string.lobby_title).uppercase()
-                    state.targetMode == "CONNECTED" -> stringResource(R.string.lobby_title_connected)
-                    state.targetMode == "AI_EXTENDED" -> "LOBBY IA x IA (MESA ESTENDIDA)"
-                    else -> stringResource(R.string.lobby_title_extended)
-                }
+                    IconButton(
+                        onClick = handleBack,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    val titleText = when {
+                        state.role == LobbyRole.NONE -> stringResource(R.string.menu_mode_network_centralized).uppercase()
+                        state.role == LobbyRole.GUEST -> stringResource(R.string.lobby_title).uppercase()
+                        state.targetMode == "CONNECTED" -> stringResource(R.string.lobby_title_connected)
+                        state.targetMode == "AI_EXTENDED" -> stringResource(R.string.lobby_title_ai_extended).uppercase()
+                        else -> stringResource(R.string.lobby_title_extended)
+                    }
                 Text(
                     text = titleText,
                     color = Color.White,
@@ -361,7 +369,7 @@ fun LobbyScreen(
                     }
                     Icon(
                         Icons.Default.Edit,
-                        contentDescription = "Editar",
+                        contentDescription = stringResource(R.string.lobby_edit_name),
                         tint = Color(0xFF00E5FF),
                         modifier = Modifier.size(18.dp)
                     )
@@ -454,6 +462,7 @@ fun LobbyScreen(
             )
         }
     }
+}
 }
 
 @Composable
@@ -639,7 +648,7 @@ private fun HostLobbyView(
                 if (onChangeMode != null) {
                     Icon(
                         Icons.Default.Edit,
-                        contentDescription = "Alterar Modalidade",
+                        contentDescription = stringResource(R.string.content_desc_change_mode),
                         tint = hostModeColor.copy(alpha = 0.7f),
                         modifier = Modifier.size(12.dp)
                     )
@@ -678,7 +687,7 @@ private fun HostLobbyView(
             ) {
                 Image(
                     bitmap = qrBitmap,
-                    contentDescription = "Código QR da Mesa",
+                    contentDescription = stringResource(R.string.content_desc_qr_code),
                     modifier = Modifier.fillMaxSize().padding(12.dp)
                 )
             }
@@ -897,7 +906,7 @@ private fun GuestLobbyView(
             },
             dismissButton = {
                 TextButton(onClick = { selectedTableForPin = null }) {
-                    Text("Cancelar", color = Color(0xFF94A3B8))
+                    Text(stringResource(R.string.cancel), color = Color(0xFF94A3B8))
                 }
             },
             containerColor = Color(0xF2080E1A)
@@ -948,7 +957,19 @@ private fun GuestLobbyView(
             return
         }
 
-        if (state.errorMessage != null) {
+        val displayErrorText = when {
+            state.errorMessageRes != null -> {
+                if (state.errorMessageArgs.isNotEmpty()) {
+                    stringResource(state.errorMessageRes, *state.errorMessageArgs.toTypedArray())
+                } else {
+                    stringResource(state.errorMessageRes)
+                }
+            }
+            state.errorMessage != null -> state.errorMessage
+            else -> null
+        }
+
+        if (displayErrorText != null) {
             val errorShape = CutCornerShape(12.dp)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xD93B1E1E)),
@@ -964,7 +985,7 @@ private fun GuestLobbyView(
                 ) {
                     Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF5252), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = state.errorMessage, color = Color(0xFFFFCDD2), fontSize = 13.sp)
+                    Text(text = displayErrorText, color = Color(0xFFFFCDD2), fontSize = 13.sp)
                 }
             }
         }
@@ -1229,7 +1250,7 @@ fun HostCreateModeDialog(
                         )
                     }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color(0xFF94A3B8))
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close), tint = Color(0xFF94A3B8))
                     }
                 }
 
@@ -1276,7 +1297,7 @@ fun HostCreateModeDialog(
                             onClick = { showAiConfig = false },
                             modifier = Modifier.size(28.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color(0xFF00E5FF))
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = Color(0xFF00E5FF))
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(

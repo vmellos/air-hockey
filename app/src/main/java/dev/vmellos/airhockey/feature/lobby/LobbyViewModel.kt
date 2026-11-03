@@ -64,6 +64,8 @@ data class LobbyState(
     val aiDifficulty1: String = "",
     val aiDifficulty2: String = "",
     val errorMessage: String? = null,
+    val errorMessageRes: Int? = null,
+    val errorMessageArgs: List<String> = emptyList(),
     val peerPlayerName: String = "",
     val selfPlayerName: String = ""
 )
@@ -150,6 +152,8 @@ class LobbyViewModel : ViewModel() {
                 wifiSsid = ssid,
                 isWifiConnected = wifiConnected,
                 errorMessage = null,
+                errorMessageRes = null,
+                errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
                 navigateToCalibrationTrigger = 0L,
                 isPeerReady = false,
@@ -178,6 +182,8 @@ class LobbyViewModel : ViewModel() {
                 connectionStatus = ConnectionStatus.DISCOVERING,
                 targetMode = mode,
                 errorMessage = null,
+                errorMessageRes = null,
+                errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
                 navigateToCalibrationTrigger = 0L,
                 isPeerReady = false,
@@ -235,6 +241,8 @@ class LobbyViewModel : ViewModel() {
                 tableCode = code,
                 connectionStatus = ConnectionStatus.CONNECTING,
                 errorMessage = null,
+                errorMessageRes = null,
+                errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
                 navigateToCalibrationTrigger = 0L,
                 isPeerReady = false,
@@ -280,18 +288,23 @@ class LobbyViewModel : ViewModel() {
                             TransportConnectionState.IDLE -> it.connectionStatus
                         },
                         isReadyToPlay = (cState.connectionState == TransportConnectionState.CONNECTED && !cState.isHandshakeRejected),
-                        errorMessage = when {
+                        errorMessage = null,
+                        errorMessageRes = when {
                             cState.isHandshakeRejected -> {
                                 if (cState.rejectReason == "INVALID_CODE") {
-                                    "Código incorreto! Confira os 4 dígitos na tela do anfitrião."
+                                    dev.vmellos.airhockey.R.string.lobby_error_invalid_code
                                 } else {
-                                    "Modo de jogo incompatível com esta mesa."
+                                    dev.vmellos.airhockey.R.string.lobby_error_incompatible_mode
                                 }
                             }
-                            cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessage == null -> {
-                                "Conexão perdida ou não estabelecida com o anfitrião."
+                            cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessageRes == null && it.errorMessage == null -> {
+                                dev.vmellos.airhockey.R.string.lobby_error_connection_lost
                             }
-                            else -> it.errorMessage
+                            else -> it.errorMessageRes
+                        },
+                        errorMessageArgs = when {
+                            cState.isHandshakeRejected || (cState.connectionState == TransportConnectionState.DISCONNECTED && it.errorMessageRes == null) -> emptyList()
+                            else -> it.errorMessageArgs
                         }
                     )
                 }
@@ -318,7 +331,14 @@ class LobbyViewModel : ViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            _state.update { it.copy(connectionStatus = ConnectionStatus.CONNECTING, errorMessage = null) }
+            _state.update {
+                it.copy(
+                    connectionStatus = ConnectionStatus.CONNECTING,
+                    errorMessage = null,
+                    errorMessageRes = null,
+                    errorMessageArgs = emptyList()
+                )
+            }
 
             // 3. Emite sondagem ativa dirigida
             nsdManager.sendDirectedDiscoveryProbe()
@@ -361,7 +381,9 @@ class LobbyViewModel : ViewModel() {
                 _state.update {
                     it.copy(
                         connectionStatus = ConnectionStatus.DISCONNECTED,
-                        errorMessage = "Mesa não encontrada com o código $cleanCode. Verifique se ambos estão no mesmo Wi-Fi ou digite o IP do anfitrião."
+                        errorMessage = null,
+                        errorMessageRes = dev.vmellos.airhockey.R.string.lobby_error_table_not_found,
+                        errorMessageArgs = listOf(cleanCode)
                     )
                 }
             }
@@ -426,7 +448,11 @@ class LobbyViewModel : ViewModel() {
             connectToTable(targetIp, targetCode)
         } else {
             _state.update {
-                it.copy(errorMessage = "Código QR inválido ou ilegível.")
+                it.copy(
+                    errorMessage = null,
+                    errorMessageRes = dev.vmellos.airhockey.R.string.lobby_error_invalid_qr,
+                    errorMessageArgs = emptyList()
+                )
             }
         }
     }

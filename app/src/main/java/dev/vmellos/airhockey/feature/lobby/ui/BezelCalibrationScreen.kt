@@ -99,7 +99,7 @@ fun BezelCalibrationScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = onBackToLobby) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = Color.White)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(

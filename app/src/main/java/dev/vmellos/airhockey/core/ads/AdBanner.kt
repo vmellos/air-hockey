@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.res.stringResource
+import dev.vmellos.airhockey.R
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -46,7 +48,7 @@ fun AdBanner(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Recompensa Ativa: 2h Sem Anúncios!",
+                text = stringResource(R.string.ad_reward_active),
                 color = Color(0xFF00E5FF),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,

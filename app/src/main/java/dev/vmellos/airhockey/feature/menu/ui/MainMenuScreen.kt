@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -136,14 +139,20 @@ fun MainMenuScreen(
                 )
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 520.dp)
+                    .fillMaxWidth()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
             // Cabeçalho com Placar, Loja/Remover Anúncios, Recompensas e Configurações
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -216,8 +225,9 @@ fun MainMenuScreen(
                     painter = painterResource(id = R.drawable.title_banner_championship),
                     contentDescription = stringResource(R.string.app_name),
                     modifier = Modifier
-                        .fillMaxWidth(0.88f)
-                        .height(64.dp),
+                        .fillMaxWidth(0.85f)
+                        .widthIn(max = 380.dp)
+                        .aspectRatio(800f / 341f),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.height(2.dp))
@@ -287,6 +297,7 @@ fun MainMenuScreen(
             )
         }
     }
+}
 }
 
 @Composable
@@ -406,13 +417,13 @@ fun InAppUpdateDownloadedBanner(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Atualização Pronta",
+                    text = stringResource(R.string.in_app_update_ready_title),
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "Reinicie para aplicar a nova versão",
+                    text = stringResource(R.string.in_app_update_ready_desc),
                     color = Color(0xFFCBD5E1),
                     fontSize = 12.sp
                 )
@@ -424,7 +435,7 @@ fun InAppUpdateDownloadedBanner(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Reiniciar", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.in_app_update_restart_btn), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
