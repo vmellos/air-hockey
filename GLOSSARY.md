@@ -149,8 +149,12 @@ O início de uma partida em Mesa Estendida, comandado pelo dispositivo anfitriã
 _Avoid_: Start, início automático, kickoff
 
 **Sessão Multijogador**:
-O ciclo de vida unificado de uma partida em Mesa Estendida que abrange o pareamento, calibração do vão físico, largada sincronizada, transmissão contínua de telemetria e encerramento coordenado da conexão entre os dispositivos.
+O ciclo de vida unificado de uma partida multijogador em rede local (Mesa Estendida ou Mesa Conectada) que abrange o anúncio de presença, pareamento com validação de modalidade, calibração de vão físico (quando aplicável), largada sincronizada, transmissão contínua de telemetria e encerramento coordenado da conexão entre os dispositivos.
 _Avoid_: Room, partida online, socket session
+
+**Descoberta Unificada de Mesas**:
+O mecanismo de escaneamento local (via mDNS/NSD e beacon UDP) no qual o dispositivo convidado visualiza todas as mesas ativas na rede local com seus respectivos selos de modalidade (Mesa Estendida, Mesa Conectada ou Modo IA x IA), adaptando automaticamente sua interface, calibração e fluxo de entrada às regras estabelecidas pelo dispositivo anfitrião.
+_Avoid_: Busca por modo restrito, filtro cego de lobby, salas isoladas por tela
 
 **Ponto de Acesso Móvel**:
 O recurso sem fio do dispositivo anfitrião que emite uma rede Wi-Fi local direta para conexão do dispositivo convidado sem requerer roteador externo.
