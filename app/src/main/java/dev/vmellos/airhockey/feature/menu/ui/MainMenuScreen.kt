@@ -243,9 +243,9 @@ fun MainMenuScreen(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.app_tagline),
-                    color = Color(0xFF94A3B8),
+                    color = Color(0xFFE2E8F0),
                     fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.sp
                 )
             }
@@ -414,9 +414,9 @@ private fun MenuModeCard(
                 Text(
                     text = description,
                     color = Color(0xFF94A3B8),
-                    fontSize = 11.5.sp,
-                    lineHeight = 15.sp,
-                    maxLines = 1,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
