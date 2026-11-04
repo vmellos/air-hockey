@@ -9,9 +9,14 @@
     <string name="menu_mode_solo_desc">100 fases com dificuldade progressiva e estrelas</string>
     <string name="stage_title">Fases</string>
     <string name="stage_level">Fase %d</string>
+    <string name="stage_level_header">FASE %1$d</string>
     <string name="stage_locked">Bloqueada</string>
     <string name="stage_back">Voltar</string>
-    <string name="stage_failed">Fase Nao Concluida</string>
+    <string name="stage_win">FASE CONCLUÍDA</string>
+    <string name="stage_failed">FASE NÃO CONCLUÍDA</string>
+    <string name="stage_next_btn">Próxima Fase</string>
+    <string name="stage_retry_btn">Tentar Novamente</string>
+    <string name="stage_list_btn">Fases</string>
     <string name="menu_mode_split">Mesa Dividida</string>
     <string name="menu_mode_split_desc">2 jogadores no mesmo aparelho com tela compartilhada</string>
     <string name="menu_mode_extended">Mesa Estendida</string>
@@ -78,6 +83,7 @@
     <string name="game_winner_player2">Jogador 2 Venceu!</string>
     <string name="game_winner_you">Você Venceu!</string>
     <string name="game_winner_opponent">Oponente Venceu!</string>
+    <string name="game_winner_named">%1$s Venceu!</string>
     <string name="game_play_again">Jogar Novamente</string>
 
     <!-- Configurações -->

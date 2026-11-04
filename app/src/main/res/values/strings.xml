@@ -9,9 +9,14 @@
     <string name="menu_mode_solo_desc">100 levels with progressive difficulty and star ratings</string>
     <string name="stage_title">Stages</string>
     <string name="stage_level">Level %d</string>
+    <string name="stage_level_header">LEVEL %1$d</string>
     <string name="stage_locked">Locked</string>
     <string name="stage_back">Back</string>
-    <string name="stage_failed">Stage Failed</string>
+    <string name="stage_win">STAGE CLEARED</string>
+    <string name="stage_failed">STAGE FAILED</string>
+    <string name="stage_next_btn">Next Stage</string>
+    <string name="stage_retry_btn">Retry</string>
+    <string name="stage_list_btn">Stages</string>
     <string name="menu_mode_split">Split Table</string>
     <string name="menu_mode_split_desc">2 players on the same device</string>
     <string name="menu_mode_extended">Extended Table</string>
@@ -78,6 +83,7 @@
     <string name="game_winner_player2">Player 2 Wins!</string>
     <string name="game_winner_you">You Win!</string>
     <string name="game_winner_opponent">Opponent Wins!</string>
+    <string name="game_winner_named">%1$s Wins!</string>
     <string name="game_play_again">Play Again</string>
 
     <!-- Configurações -->

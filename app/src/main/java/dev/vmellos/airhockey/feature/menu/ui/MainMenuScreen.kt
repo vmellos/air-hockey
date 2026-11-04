@@ -400,10 +400,21 @@ fun InAppUpdateDownloadedBanner(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bannerShape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp, topEnd = 4.dp, bottomStart = 4.dp)
+    val accentColor = Color(0xFF10B981)
+
     Surface(
-        color = Color(0xFF1E1B4B),
-        shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(1.2.dp, Color(0xFF818CF8)),
+        color = Color(0xD9080E1A),
+        shape = bannerShape,
+        border = androidx.compose.foundation.BorderStroke(
+            1.2.dp,
+            Brush.horizontalGradient(
+                listOf(
+                    accentColor.copy(alpha = 0.90f),
+                    accentColor.copy(alpha = 0.35f)
+                )
+            )
+        ),
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
@@ -411,31 +422,68 @@ fun InAppUpdateDownloadedBanner(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Indicador luminoso neon vertical esmeralda
+            Box(
+                modifier = Modifier
+                    .width(3.5.dp)
+                    .height(28.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                accentColor,
+                                accentColor.copy(alpha = 0.35f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = stringResource(R.string.in_app_update_ready_title),
+                    text = stringResource(R.string.in_app_update_ready_title).uppercase(),
                     color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontWeight = FontWeight.Black,
+                    fontSize = 13.sp,
+                    letterSpacing = 0.8.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = stringResource(R.string.in_app_update_ready_desc),
-                    color = Color(0xFFCBD5E1),
-                    fontSize = 12.sp
+                    color = Color(0xFF94A3B8),
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Surface(
                 onClick = onRestart,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF818CF8)),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(10.dp)
+                shape = CutCornerShape(8.dp),
+                color = accentColor,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF34D399)),
+                modifier = Modifier.height(34.dp)
             ) {
-                Text(stringResource(R.string.in_app_update_restart_btn), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.in_app_update_restart_btn).uppercase(),
+                        color = Color(0xFF070B14),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
         }
     }

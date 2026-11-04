@@ -102,9 +102,9 @@ _Avoid_: Modo campanha, stage mode, levels, fases infinitas
 A classificação de 1 a 3 estrelas concedida ao concluir uma fase no Modo Fases, avaliando a eficiência defensiva do jogador pelo número de pontos cedidos ao adversário.
 _Avoid_: Stars, rating de fase, nota da fase
 
-**Tela de Vitória da Fase**:
-A interface de encerramento exibida após superar uma fase no Modo Fases, destacando as estrelas conquistadas e os controles de avanço direto (Lista de Fases, Reiniciar e Próxima Fase).
-_Avoid_: Win screen, tela de parabéns, resultado da fase
+**Tela de Desfecho da Fase**:
+A interface modal translúcida com bordas chanfradas neon exibida ao término de uma fase no Modo Fases, destacando as estrelas conquistadas e os controles de avanço em caso de vitória, ou a opção de nova tentativa imediata em caso de derrota.
+_Avoid_: Win screen, tela de parabéns, resultado da fase, tela de vitória da fase, lose screen
 
 **Disco Flamejante**:
 O elemento gráfico e animado de destaque na tela inicial, apresentando o disco metálico envolto por labaredas de plasma posicionado como plano de fundo atrás dos modos de jogo.
@@ -205,6 +205,18 @@ _Avoid_: Ícone de campo, desenho do modo, preview da mesa
 **Cartão de Modo de Jogo**:
 O componente interativo translúcido no menu inicial com bordas chanfradas neon que apresenta o título destacado e a descrição sucinta de cada modalidade esportiva (Modo Fases, Mesa Conectada, Mesa Estendida, Mesa Dividida e Modo IA x IA), projetado com perfil rebaixado e glassmorphism escuro para preservar a visibilidade do Disco Flamejante ao fundo.
 _Avoid_: Botão comum, card opaco, menu tile, lista padrão
+
+**Aviso de Reinício para Atualização**:
+O cartão interativo no menu principal estilizado em vidro escuro com indicador luminoso verde esmeralda e cantos chanfrados que notifica o jogador sobre o download concluído de uma nova versão do aplicativo pronta para instalação imediata.
+_Avoid_: Card de update, banner de reinício, update snackbar, restart card
+
+**Menu de Pausa da Arena**:
+O painel modal translúcido com bordas chanfradas neon acionado durante a partida para suspender temporariamente a disputa, alternar ajustes rápidos de áudio e música, reiniciar o confronto ou retornar ao menu principal.
+_Avoid_: Pause menu, tela de pausa, popup de pause, pause dialog
+
+**Diálogo de Fim de Partida**:
+A interface modal translúcida com bordas chanfradas neon exibida ao término de confrontos individuais ou multijogador, apresentando o participante vencedor, o placar final e opções de revanche ou saída para o menu.
+_Avoid_: Game over, tela de vencedor, match end popup, fim de jogo
 
 **Contêiner Responsivo de Menus**:
 O envoltório de layout centralizado aplicado às telas de navegação (Menu Principal, Lobby, Configurações, Fases e Placar de Líderes) que impõe um limite de largura máxima ergonômico (até 520 dp), preservando a estética de painel arcade e evitando o estiramento horizontal excessivo de cartões e botões em tablets e dispositivos dobráveis abertos (Galaxy Fold).

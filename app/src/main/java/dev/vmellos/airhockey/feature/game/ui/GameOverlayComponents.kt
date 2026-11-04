@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
@@ -49,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -236,49 +238,147 @@ fun GoalBannerOverlay(
 }
 
 @Composable
+private fun ArcadePrimaryButton(
+    text: String,
+    containerColor: Color,
+    textColor: Color = Color(0xFF070B14),
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = CutCornerShape(10.dp),
+        color = containerColor,
+        border = BorderStroke(1.2.dp, containerColor.copy(alpha = 0.90f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(46.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = text,
+                color = textColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArcadeSecondaryButton(
+    text: String,
+    accentColor: Color = Color(0xFF00E5FF),
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = CutCornerShape(10.dp),
+        color = Color(0xD9080E1A),
+        border = BorderStroke(1.2.dp, accentColor.copy(alpha = 0.40f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(46.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor.copy(alpha = 0.85f),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = text,
+                color = Color(0xFFE2E8F0),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+        }
+    }
+}
+
+@Composable
 fun PeerExitedDialog(
     onExit: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xAA000000)),
+            .background(Color(0xD9000000)),
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = Color(0xFF1E293B),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.padding(32.dp)
+            color = Color(0xF20B0F1C),
+            shape = CutCornerShape(20.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFFFF5722),
+                        Color(0xFFFF2A6D)
+                    )
+                )
+            ),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.90f)
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(R.string.game_peer_exited_title),
+                    text = stringResource(R.string.game_peer_exited_title).uppercase(),
                     color = Color(0xFFFF5722),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.2.sp
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = stringResource(R.string.game_peer_exited_desc),
                     color = Color(0xFF94A3B8),
-                    fontSize = 15.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    fontSize = 14.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 20.sp
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
-                    onClick = onExit,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_exit_to_menu), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
-                }
+                ArcadePrimaryButton(
+                    text = stringResource(R.string.game_exit_to_menu).uppercase(),
+                    containerColor = Color(0xFF00E5FF),
+                    onClick = onExit
+                )
             }
         }
     }
@@ -297,96 +397,152 @@ fun PauseDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xAA000000)),
+            .background(Color(0xD9000000)),
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = Color(0xFF1E293B),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.padding(32.dp)
+            color = Color(0xF20B0F1C),
+            shape = CutCornerShape(20.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFF00E5FF),
+                        Color(0xFF38BDF8),
+                        Color(0xFF00E5FF)
+                    )
+                )
+            ),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.90f)
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Header Título Arcade
                 Text(
-                    text = stringResource(R.string.game_paused),
+                    text = stringResource(R.string.game_paused).uppercase(),
                     color = Color.White,
                     fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)
+                // Controles de Áudio HUD Arcade
+                Surface(
+                    color = Color(0xD9080E1A),
+                    shape = CutCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0x3300E5FF)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = stringResource(R.string.settings_sound_effects), color = Color.White, fontSize = 15.sp)
-                    IconButton(
-                        onClick = onToggleSound,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(if (isSoundEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
+                    Column(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                            contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
-                            tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
-                            modifier = Modifier.size(22.dp)
+                        // Sound Effects
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_sound_effects),
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Surface(
+                                onClick = onToggleSound,
+                                shape = CutCornerShape(8.dp),
+                                color = if (isSoundEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
+                                border = BorderStroke(1.dp, if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                                        contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
+                                        tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Divisor sutil
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color(0x1AFFFFFF))
                         )
+
+                        // Game Music
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_music),
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Surface(
+                                onClick = onToggleMusic,
+                                shape = CutCornerShape(8.dp),
+                                color = if (isMusicEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
+                                border = BorderStroke(1.dp, if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = if (isMusicEnabled) Icons.Default.MusicNote else Icons.Default.MusicOff,
+                                        contentDescription = if (isMusicEnabled) "Silenciar música" else "Tocar música",
+                                        tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)
-                ) {
-                    Text(text = stringResource(R.string.settings_music), color = Color.White, fontSize = 15.sp)
-                    IconButton(
-                        onClick = onToggleMusic,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(if (isMusicEnabled) Color(0x3300E5FF) else Color(0x33EF4444), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = if (isMusicEnabled) Icons.Default.MusicNote else Icons.Default.MusicOff,
-                            contentDescription = if (isMusicEnabled) "Silenciar música" else "Tocar música",
-                            tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
+                Spacer(modifier = Modifier.height(20.dp))
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = onResume,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_resume), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
-                }
+                // Botão Primário: Retomar (Ciano Neon)
+                ArcadePrimaryButton(
+                    text = stringResource(R.string.game_resume).uppercase(),
+                    containerColor = Color(0xFF00E5FF),
+                    icon = Icons.Default.PlayArrow,
+                    onClick = onResume
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                FilledTonalButton(
-                    onClick = onRestart,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_restart))
-                }
+                // Botão Secundário: Reiniciar
+                ArcadeSecondaryButton(
+                    text = stringResource(R.string.game_restart).uppercase(),
+                    accentColor = Color(0xFF00E5FF),
+                    icon = Icons.Default.Refresh,
+                    onClick = onRestart
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                FilledTonalButton(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_exit_to_menu))
-                }
+                // Botão Terciário: Sair para o Menu
+                ArcadeSecondaryButton(
+                    text = stringResource(R.string.game_exit_to_menu).uppercase(),
+                    accentColor = Color(0xFF94A3B8),
+                    onClick = onExit
+                )
             }
         }
     }
@@ -398,67 +554,89 @@ fun GameOverDialog(
     onPlayAgain: () -> Unit,
     onExit: () -> Unit
 ) {
+    val isDraw = matchState.winner == 0
+    val winnerColor = if (isDraw) Color(0xFFE2E8F0) else if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
+    val winnerTitle = if (isDraw) {
+        stringResource(R.string.game_draw)
+    } else if (matchState.mode == GameMode.SOLO) {
+        if (matchState.winner == 1) stringResource(R.string.game_winner_you) else stringResource(R.string.game_winner_opponent)
+    } else {
+        val winnerName = if (matchState.winner == 1) matchState.player1Name else matchState.player2Name
+        stringResource(R.string.game_winner_named, winnerName)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xCC000000)),
+            .background(Color(0xD9000000)),
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = Color(0xFF1E293B),
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier.padding(32.dp)
+            color = Color(0xF20B0F1C),
+            shape = CutCornerShape(20.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        winnerColor,
+                        winnerColor.copy(alpha = 0.45f)
+                    )
+                )
+            ),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.90f)
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val isDraw = matchState.winner == 0
-                val winnerColor = if (isDraw) Color(0xFFE2E8F0) else if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
-                val winnerTitle = if (isDraw) {
-                    stringResource(R.string.game_draw)
-                } else if (matchState.mode == GameMode.SOLO) {
-                    if (matchState.winner == 1) stringResource(R.string.game_winner_you) else stringResource(R.string.game_winner_opponent)
-                } else {
-                    val winnerName = if (matchState.winner == 1) matchState.player1Name else matchState.player2Name
-                    "$winnerName Venceu!"
-                }
-
                 Text(
-                    text = winnerTitle,
+                    text = winnerTitle.uppercase(),
                     color = winnerColor,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Black
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.2.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Text(
-                    text = "${matchState.scorePlayer1} - ${matchState.scorePlayer2}",
-                    color = Color.White,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+                // Placar Final Arcade
+                Surface(
+                    color = Color(0xD9080E1A),
+                    shape = CutCornerShape(10.dp),
+                    border = BorderStroke(1.dp, winnerColor.copy(alpha = 0.35f)),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "${matchState.scorePlayer1} - ${matchState.scorePlayer2}",
+                        color = Color.White,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
-                    onClick = onPlayAgain,
-                    colors = ButtonDefaults.buttonColors(containerColor = winnerColor),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_play_again), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
-                }
+                ArcadePrimaryButton(
+                    text = stringResource(R.string.game_play_again).uppercase(),
+                    containerColor = winnerColor,
+                    icon = Icons.Default.Refresh,
+                    onClick = onPlayAgain
+                )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                FilledTonalButton(
-                    onClick = onExit,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.game_exit_to_menu))
-                }
+                ArcadeSecondaryButton(
+                    text = stringResource(R.string.game_exit_to_menu).uppercase(),
+                    accentColor = Color(0xFF94A3B8),
+                    onClick = onExit
+                )
             }
         }
     }
@@ -475,154 +653,172 @@ fun StageResultDialog(
     onRetry: () -> Unit,
     onNextStage: () -> Unit
 ) {
+    val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF2A6D)
+    val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFFF5722)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xE6070B14)),
+            .background(Color(0xD9000000)),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(28.dp)
+        Surface(
+            color = Color(0xF20B0F1C),
+            shape = CutCornerShape(20.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        accentColor,
+                        glowColor.copy(alpha = 0.70f),
+                        accentColor
+                    )
+                )
+            ),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.90f)
+                .padding(16.dp)
         ) {
-            // Level Title
-            Text(
-                text = "LEVEL $stageNumber",
-                color = Color.White,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.SansSerif,
-                letterSpacing = 3.sp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Neon Glowing Card
-            val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF2A6D)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF0F172A), RoundedCornerShape(24.dp))
-                    .border(3.dp, accentColor, RoundedCornerShape(24.dp))
-                    .padding(vertical = 28.dp, horizontal = 20.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.padding(22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // Header: Level Number
+                Text(
+                    text = stringResource(R.string.stage_level_header, stageNumber).uppercase(),
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.SansSerif,
+                    letterSpacing = 2.5.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Badge de Status (Vitória / Derrota)
+                Surface(
+                    shape = CutCornerShape(8.dp),
+                    color = accentColor.copy(alpha = 0.15f),
+                    border = BorderStroke(1.2.dp, accentColor),
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
-                    // Header Badge
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF070B14),
-                        border = BorderStroke(2.dp, accentColor),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (isWon) "YOU WIN" else "FASE NAO CONCLUIDA",
-                            color = accentColor,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                        )
-                    }
+                    Text(
+                        text = stringResource(if (isWon) R.string.stage_win else R.string.stage_failed).uppercase(),
+                        color = accentColor,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp)
+                    )
+                }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                    // 3 Stars Container
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFF1E293B),
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                // Cápsula das 3 Estrelas de Desempenho
+                Surface(
+                    shape = CutCornerShape(10.dp),
+                    color = Color(0xD9080E1A),
+                    border = BorderStroke(1.dp, if (isWon) Color(0x66FFB800) else Color(0x33475569)),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (i in 1..3) {
-                                val isEarned = isWon && i <= starsEarned
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = if (isEarned) Color(0xFFFFB800) else Color(0xFF475569),
-                                    modifier = Modifier.size(40.dp)
-                                )
-                            }
+                        for (i in 1..3) {
+                            val isEarned = isWon && i <= starsEarned
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (isEarned) Color(0xFFFFB800) else Color(0xFF334155),
+                                modifier = Modifier.size(36.dp)
+                            )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Final Score
-                    Text(
-                        text = "$scorePlayer - $scoreAi",
-                        color = Color.White,
-                        fontSize = 38.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Action Buttons Row (Square Rounded Neon Buttons)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Button 1: Stages List (Neon Green)
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(Color(0x1F00E676), RoundedCornerShape(18.dp))
-                        .border(2.dp, Color(0xFF00E676), RoundedCornerShape(18.dp))
-                        .clickable(onClick = onSelectStages),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = stringResource(R.string.content_desc_stage_list),
-                        tint = Color(0xFF00E676),
-                        modifier = Modifier.size(32.dp)
-                    )
                 }
 
-                // Button 2: Retry (Neon Magenta)
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(Color(0x1FE040FB), RoundedCornerShape(18.dp))
-                        .border(2.dp, Color(0xFFE040FB), RoundedCornerShape(18.dp))
-                        .clickable(onClick = onRetry),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.content_desc_restart),
-                        tint = Color(0xFFE040FB),
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Button 3: Next Stage (Neon Orange) - displayed if won and stageNumber < 100
+                // Placar Final
+                Text(
+                    text = "$scorePlayer - $scoreAi",
+                    color = Color.White,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace
+                )
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Botões de Ação Integrados ao Card
                 if (isWon && stageNumber < 100) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(Color(0x1FFF9100), RoundedCornerShape(18.dp))
-                            .border(2.dp, Color(0xFFFF9100), RoundedCornerShape(18.dp))
-                            .clickable(onClick = onNextStage),
-                        contentAlignment = Alignment.Center
+                    // Vitória: Próxima Fase (Primário Ciano)
+                    ArcadePrimaryButton(
+                        text = stringResource(R.string.stage_next_btn).uppercase(),
+                        containerColor = Color(0xFF00E5FF),
+                        icon = Icons.Default.FastForward,
+                        onClick = onNextStage
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.FastForward,
-                            contentDescription = stringResource(R.string.content_desc_next_stage),
-                            tint = Color(0xFFFF9100),
-                            modifier = Modifier.size(32.dp)
+                        ArcadeSecondaryButton(
+                            text = stringResource(R.string.stage_list_btn).uppercase(),
+                            icon = Icons.AutoMirrored.Filled.List,
+                            accentColor = Color(0xFF94A3B8),
+                            onClick = onSelectStages,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ArcadeSecondaryButton(
+                            text = stringResource(R.string.stage_retry_btn).uppercase(),
+                            icon = Icons.Default.Refresh,
+                            accentColor = Color(0xFF00E5FF),
+                            onClick = onRetry,
+                            modifier = Modifier.weight(1f)
                         )
                     }
+                } else if (isWon) {
+                    // Fase 100 Concluída (Campanha Finalizada)
+                    ArcadePrimaryButton(
+                        text = stringResource(R.string.stage_list_btn).uppercase(),
+                        containerColor = Color(0xFFFFB800),
+                        icon = Icons.AutoMirrored.Filled.List,
+                        onClick = onSelectStages
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    ArcadeSecondaryButton(
+                        text = stringResource(R.string.stage_retry_btn).uppercase(),
+                        icon = Icons.Default.Refresh,
+                        accentColor = Color(0xFF00E5FF),
+                        onClick = onRetry
+                    )
+                } else {
+                    // Derrota: Tentar Novamente (Primário Magenta)
+                    ArcadePrimaryButton(
+                        text = stringResource(R.string.stage_retry_btn).uppercase(),
+                        containerColor = Color(0xFFFF2A6D),
+                        textColor = Color.White,
+                        icon = Icons.Default.Refresh,
+                        onClick = onRetry
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    ArcadeSecondaryButton(
+                        text = stringResource(R.string.stage_list_btn).uppercase(),
+                        icon = Icons.AutoMirrored.Filled.List,
+                        accentColor = Color(0xFF94A3B8),
+                        onClick = onSelectStages
+                    )
                 }
             }
         }
