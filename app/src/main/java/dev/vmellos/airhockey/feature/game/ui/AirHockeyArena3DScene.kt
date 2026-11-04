@@ -150,13 +150,13 @@ fun AirHockeyArena3DScene(
     val coroutineScope = rememberCoroutineScope()
     val presentationAnim = remember { Animatable(0f) }
 
-    // Apresentação de Abertura da Mesa 3D (Cinemática fluida desacoplada da recomposição do Compose)
+    // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone ao redor da mesa)
     LaunchedEffect(Unit) {
         try {
             presentationAnim.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
-                    durationMillis = 2600,
+                    durationMillis = 4800,
                     easing = FastOutSlowInEasing
                 )
             ) {
@@ -402,28 +402,35 @@ fun AirHockeyArena3DScene(
             onFrame = { _ ->
                 val p = sceneState.presentationProgress
                 if (p < 1f) {
-                    // Sobrevoo Cinemático Dinâmico (Flyover)
-                    val eased = FastOutSlowInEasing.transform(p)
-                    val angleRad = (1f - eased) * Math.PI.toFloat() // de PI (180°) até 0°
-                    val sideArch = kotlin.math.sin(eased * Math.PI.toFloat())
+                    // Voo panorâmico cinematográfico estilo drone (2 giros de 360° ao redor da arena = 720°)
+                    // Interpolação quintica (Smootherstep) para decolagem e aterrissagem ultra-suaves sem solavancos
+                    val t = (p * p * p * (p * (p * 6f - 15f) + 10f)).coerceIn(0f, 1f)
+                    val totalAngleRad = 4f * Math.PI.toFloat() // 720 graus (2 voltas completas)
+                    val currentAngleRad = (1f - t) * totalAngleRad
 
-                    val x = sideArch * 1.55f
-                    val z = kotlin.math.cos(angleRad) * (targetPreset.position.z * (1.15f - 0.15f * eased))
-                    val y = targetPreset.position.y * (1.20f - 0.20f * eased) - 0.35f * sideArch
+                    // Altitude aérea suave: inicia em plano panorâmico elevado (3.50m) e desce suavemente para a perspectiva de jogo
+                    val y = 3.50f * (1f - t) + targetPreset.position.y * t
 
-                    val pitchRad = -kotlin.math.atan2(y, kotlin.math.abs(z).coerceAtLeast(0.5f))
-                    val pitchDeg = Math.toDegrees(pitchRad.toDouble()).toFloat()
-                    val effectivePitch = pitchDeg * (1f - eased) + targetPreset.rotation.x * eased
-                    val effectiveYaw = Math.toDegrees(angleRad.toDouble()).toFloat()
+                    // Trajetória elíptica que acompanha proporcionalmente o formato retangular da arena
+                    val rx = 2.60f * (1f - t) + 1.60f * t
+                    val rz = 3.30f * (1f - t) + targetPreset.position.z * t
+
+                    val x = rx * kotlin.math.sin(currentAngleRad)
+                    val z = rz * kotlin.math.cos(currentAngleRad)
+
+                    // Foco contínuo: câmera do drone trava o foco no centro da arena e ancora perfeitamente na mira do jogador
+                    val finalFocusZ = targetPreset.position.z - (targetPreset.position.y / kotlin.math.tan(Math.toRadians(-targetPreset.rotation.x.toDouble()).toFloat()))
+                    val focusZ = finalFocusZ * t
+                    val focusY = 0.05f * (1f - t)
+
+                    cameraNode.position = Float3(x, y, z)
+                    cameraNode.lookAt(Float3(0f, focusY, focusZ))
 
                     sceneState.camX = x
                     sceneState.camY = y
                     sceneState.camZ = z
-                    sceneState.camPitch = effectivePitch
-                    sceneState.camYaw = effectiveYaw
-
-                    cameraNode.position = Float3(x, y, z)
-                    cameraNode.rotation = Float3(effectivePitch, effectiveYaw, 0f)
+                    sceneState.camPitch = cameraNode.rotation.x
+                    sceneState.camYaw = cameraNode.rotation.y
                 } else {
                     // Transição suave contínua entre Níveis de Enquadramento 3D sem recomposição
                     sceneState.camX += (targetPreset.position.x - sceneState.camX) * 0.15f
