@@ -564,10 +564,11 @@ class GameViewModel : ViewModel() {
         } else if (newStatus == MatchStatus.GOAL_PAUSE && prev.status != MatchStatus.GOAL_PAUSE) {
             val isGuestScored = (remote.lastScorer == 2)
             val score = if (isGuestScored) remote.scorePlayer2 else remote.scorePlayer1
+            val target = _matchState.value.targetScore
             if (isGuestScored) {
-                audioEngine.playGoalScored(score, remote.targetScore)
+                audioEngine.playGoalScored(score, target)
             } else {
-                audioEngine.playGoalConceded(score, remote.targetScore)
+                audioEngine.playGoalConceded(score, target)
             }
         }
     }
