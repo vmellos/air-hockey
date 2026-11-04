@@ -26,11 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.ShoppingBag
@@ -76,22 +74,13 @@ import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.billing.BillingEvent
 import dev.vmellos.airhockey.core.localization.LocaleHelper
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
-import dev.vmellos.airhockey.core.preferences.MalletSkin
-import dev.vmellos.airhockey.core.preferences.PuckSkin
-import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.util.findActivity
-import dev.vmellos.airhockey.feature.game.ui.NeonAmber
-import dev.vmellos.airhockey.feature.game.ui.NeonCyan
-import dev.vmellos.airhockey.feature.game.ui.NeonEmerald
-import dev.vmellos.airhockey.feature.game.ui.NeonOrange
-import dev.vmellos.airhockey.feature.game.ui.NeonRuby
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onOpenCustomization: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -163,8 +152,13 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .safeDrawingPadding()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .verticalScroll(rememberScrollState())
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -588,98 +582,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Seção Áudio e Vibração
-            Text(
-                text = stringResource(R.string.settings_audio_haptics),
-                color = Color(0xFF00E5FF),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
-                shape = cardShape,
-                border = cardBorder,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = stringResource(R.string.settings_sound_effects), color = Color.White, fontSize = 15.sp)
-                        Switch(
-                            checked = prefs.soundEnabled,
-                            onCheckedChange = { scope.launch { preferencesRepo.setSoundEnabled(it) } },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
-                        )
-                    }
-
-                    if (prefs.soundEnabled) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.settings_sound_volume),
-                            color = Color(0xFF94A3B8),
-                            fontSize = 13.sp
-                        )
-                        Slider(
-                            value = prefs.soundVolume,
-                            onValueChange = { scope.launch { preferencesRepo.setSoundVolume(it) } },
-                            colors = SliderDefaults.colors(thumbColor = Color(0xFF00E5FF), activeTrackColor = Color(0xFF00E5FF))
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = stringResource(R.string.settings_music), color = Color.White, fontSize = 15.sp)
-                        Switch(
-                            checked = prefs.musicEnabled,
-                            onCheckedChange = { scope.launch { preferencesRepo.setMusicEnabled(it) } },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
-                        )
-                    }
-
-                    if (prefs.musicEnabled) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.settings_music_volume),
-                            color = Color(0xFF94A3B8),
-                            fontSize = 13.sp
-                        )
-                        Slider(
-                            value = prefs.musicVolume,
-                            onValueChange = { scope.launch { preferencesRepo.setMusicVolume(it) } },
-                            colors = SliderDefaults.colors(thumbColor = Color(0xFF00E5FF), activeTrackColor = Color(0xFF00E5FF))
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = stringResource(R.string.settings_haptics), color = Color.White, fontSize = 15.sp)
-                        Switch(
-                            checked = prefs.hapticsEnabled,
-                            onCheckedChange = { scope.launch { preferencesRepo.setHapticsEnabled(it) } },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Seção Regras de Jogo / IA
             Text(
                 text = stringResource(R.string.settings_gameplay),
@@ -844,76 +746,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Seção Temas & Estilo da Arena (Acesso à Tela Dedicada)
-            Text(
-                text = stringResource(R.string.settings_arena_theme_title),
-                color = Color(0xFF00E5FF),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                shape = cardShape,
-                border = cardBorder,
-                colors = CardDefaults.cardColors(containerColor = Color(0xCC070D1A)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpenCustomization() }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(Color(0x3300E5FF), CutCornerShape(8.dp))
-                            .border(1.dp, Color(0x6600E5FF), CutCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = null,
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.customization_screen_title),
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.settings_arena_theme_desc),
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Seção Efeitos Visuais e Desempenho
             Text(
                 text = stringResource(R.string.settings_visual_effects),
@@ -971,12 +803,15 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            AdBanner(
-                adManager = AirHockeyApp.instance.adManager,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        AdBanner(
+            adManager = AirHockeyApp.instance.adManager,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
     }
+}
 }
 }
