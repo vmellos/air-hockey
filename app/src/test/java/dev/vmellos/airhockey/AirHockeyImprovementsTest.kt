@@ -339,4 +339,42 @@ class AirHockeyImprovementsTest {
         assertTrue(projExtGuest.isExtendedGuest)
         assertTrue(projExtGuest.isExtended)
     }
+
+    @Test
+    fun testAiPlayer1DefensivePredictionInExtendedMode() {
+        val extDims = TableDimensions(width = 1000f, viewportHeight = 2000f, bezelGapUnits = 100f, isExtendedMode = true)
+        val extEngine = AirHockeyPhysicsEngine(extDims, maxSpeed = 6800f, airFrictionPerSec = 0.40f)
+        val aiP1 = AirHockeyAiController(AiDifficulty.HARD, isPlayer1 = true)
+
+        // Disco vem em direção ao Jogador 1 (Anfitrião) em alta velocidade com ângulo
+        extEngine.puck.x = 400f
+        extEngine.puck.y = 2500f
+        extEngine.puck.vx = 2000f
+        extEngine.puck.vy = 4000f
+
+        extEngine.player1Mallet.x = 500f
+        extEngine.player1Mallet.y = extDims.totalHeight - 250f
+        extEngine.player1Mallet.targetX = 500f
+        extEngine.player1Mallet.targetY = extDims.totalHeight - 250f
+
+        for (i in 0 until 6) {
+            aiP1.update(extEngine, 1f / 60f)
+        }
+
+        // O Jogador 1 deve ter calculado a interceptação futura com ricochete (targetX > 550f)
+        assertTrue("IA do Jogador 1 deve calcular interceptação preditiva futura", extEngine.player1Mallet.targetX > 550f)
+    }
+
+    @Test
+    fun testMultiplayerMatchCoordinatorPreservesInitialAiDifficulties() {
+        val (transport, _) = dev.vmellos.airhockey.feature.network.InMemoryLoopbackTransportAdapter.createConnectedPair()
+        val coord = dev.vmellos.airhockey.feature.lobby.MultiplayerMatchCoordinator(
+            transport = transport,
+            isHost = true,
+            initialAiDiff1 = "HARD",
+            initialAiDiff2 = "HARD"
+        )
+        assertEquals("HARD", coord.state.value.aiDifficulty1)
+        assertEquals("HARD", coord.state.value.aiDifficulty2)
+    }
 }

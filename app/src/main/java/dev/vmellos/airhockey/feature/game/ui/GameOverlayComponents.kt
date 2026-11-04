@@ -110,48 +110,27 @@ fun ScoreBoardOverlay(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
                 ) {
-                    if (isExtended) {
-                        // Na Mesa Estendida, cada aparelho exibe o dígito de sua respectiva metade
-                        if (isExtendedGuest) {
-                            Text(
-                                text = "${matchState.scorePlayer2}",
-                                color = Color(0xFFFF5722),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        } else {
-                            Text(
-                                text = "${matchState.scorePlayer1}",
-                                color = Color(0xFF00E5FF),
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    } else {
-                        // Modos de 1 Tela ou Mesa Conectada: P2 no topo (Laranja), Divisor, P1 na base (Ciano)
-                        Text(
-                            text = "${matchState.scorePlayer2}",
-                            color = Color(0xFFFF5722),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Box(
-                            modifier = Modifier
-                                .width(22.dp)
-                                .height(1.5.dp)
-                                .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
-                        )
-                        Text(
-                            text = "${matchState.scorePlayer1}",
-                            color = Color(0xFF00E5FF),
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                    // Placar Lateral Numérico: P2 no topo (Laranja), Divisor, P1 na base (Ciano) em todos os modos
+                    Text(
+                        text = "${matchState.scorePlayer2}",
+                        color = Color(0xFFFF5722),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(22.dp)
+                            .height(1.5.dp)
+                            .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
+                    )
+                    Text(
+                        text = "${matchState.scorePlayer1}",
+                        color = Color(0xFF00E5FF),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
                 }
             }
         }

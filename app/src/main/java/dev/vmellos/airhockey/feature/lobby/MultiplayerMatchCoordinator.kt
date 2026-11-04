@@ -51,13 +51,17 @@ class MultiplayerMatchCoordinator(
     val selfPlayerName: String = "",
     val selfMode: String = "EXTENDED",
     initialGapMm: Float = 8.0f,
+    val initialAiDiff1: String = "",
+    val initialAiDiff2: String = "",
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
 
     private val _state = MutableStateFlow(
         MultiplayerSessionState(
             isHost = isHost,
-            calibratedGapMm = initialGapMm
+            calibratedGapMm = initialGapMm,
+            aiDifficulty1 = initialAiDiff1,
+            aiDifficulty2 = initialAiDiff2
         )
     )
     val state: StateFlow<MultiplayerSessionState> = _state.asStateFlow()

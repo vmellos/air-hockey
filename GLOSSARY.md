@@ -116,7 +116,7 @@ _Avoid_: Modo local compartilhado, tela dividida, pass-and-play
 
 **Mesa Estendida**:
 Partida para dois jogadores em dois dispositivos físicos dispostos em Disposição Topo-a-Topo, formando uma única mesa contínua onde o disco transita entre as telas.
-_Avoid_: Dual screen, tela dupla, big board
+_Avoid_: Dual screen, tela dupla, big board, mesa dividida
 
 **Mesa Conectada**:
 Partida para dois jogadores em dois dispositivos físicos pareados via rede sem fio, na qual cada aparelho projeta a mesa inteira e sincroniza os movimentos em tempo real.

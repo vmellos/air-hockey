@@ -168,7 +168,9 @@ class LobbyViewModel : ViewModel() {
             isHost = true,
             expectedTableCode = code,
             selfPlayerName = selfName,
-            selfMode = mode
+            selfMode = mode,
+            initialAiDiff1 = aiDiff1,
+            initialAiDiff2 = aiDiff2
         )
         coordinator = coord
         bindCoordinator(coord)
@@ -272,8 +274,8 @@ class LobbyViewModel : ViewModel() {
                 _state.update {
                     it.copy(
                         targetMode = if (cState.mode.isNotBlank()) cState.mode else it.targetMode,
-                        aiDifficulty1 = cState.aiDifficulty1,
-                        aiDifficulty2 = cState.aiDifficulty2,
+                        aiDifficulty1 = if (cState.aiDifficulty1.isNotBlank()) cState.aiDifficulty1 else it.aiDifficulty1,
+                        aiDifficulty2 = if (cState.aiDifficulty2.isNotBlank()) cState.aiDifficulty2 else it.aiDifficulty2,
                         isPeerReady = cState.isPeerReady,
                         isSelfReady = cState.isSelfReady,
                         startMatchTrigger = cState.startMatchTrigger,
