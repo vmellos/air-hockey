@@ -288,6 +288,41 @@ class UserPreferencesRepository(private val context: Context) {
                     preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPIKE_EMITTER.name
                     preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPIKE_EMITTER.name
                 }
+                TableTheme.GRIDIRON_FOOTBALL -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GRIDIRON_FOOTBALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.LINEBACKER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.LINEBACKER_STRIKER.name
+                }
+                TableTheme.CYBER_BASEBALL -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CYBER_BASEBALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SLUGGER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SLUGGER_STRIKER.name
+                }
+                TableTheme.WASTELAND_APOCALYPSE -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SAWBLADE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.RIPPER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.RIPPER_STRIKER.name
+                }
+                TableTheme.RETRO_SYNTHWAVE -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SYNTH_DISC.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.OUTRUN_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.OUTRUN_STRIKER.name
+                }
+                TableTheme.TOKAMAK_REACTOR -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.ATOMIC_CORE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.MAGNETIC_COIL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.MAGNETIC_COIL.name
+                }
+                TableTheme.CYBER_PONG -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.PONG_SQUARE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.PONG_PADDLE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.PONG_PADDLE.name
+                }
+                TableTheme.CYBER_COLOSSEUM -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GLADIATOR_SHIELD.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPARTAN_AEGIS.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPARTAN_AEGIS.name
+                }
             }
         }
     }

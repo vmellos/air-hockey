@@ -867,6 +867,27 @@ fun SettingsScreen(
                 prefs.tableTheme == TableTheme.GRAVITY_VOLLEY &&
                         prefs.puckSkin == PuckSkin.GRAVITY_VOLLEY &&
                         prefs.player1MalletSkin == MalletSkin.SPIKE_EMITTER -> stringResource(R.string.theme_preset_gravity_volley)
+                prefs.tableTheme == TableTheme.GRIDIRON_FOOTBALL &&
+                        prefs.puckSkin == PuckSkin.GRIDIRON_FOOTBALL &&
+                        prefs.player1MalletSkin == MalletSkin.LINEBACKER_STRIKER -> stringResource(R.string.theme_preset_gridiron)
+                prefs.tableTheme == TableTheme.CYBER_BASEBALL &&
+                        prefs.puckSkin == PuckSkin.CYBER_BASEBALL &&
+                        prefs.player1MalletSkin == MalletSkin.SLUGGER_STRIKER -> stringResource(R.string.theme_preset_baseball)
+                prefs.tableTheme == TableTheme.WASTELAND_APOCALYPSE &&
+                        prefs.puckSkin == PuckSkin.SAWBLADE &&
+                        prefs.player1MalletSkin == MalletSkin.RIPPER_STRIKER -> stringResource(R.string.theme_preset_wasteland)
+                prefs.tableTheme == TableTheme.RETRO_SYNTHWAVE &&
+                        prefs.puckSkin == PuckSkin.SYNTH_DISC &&
+                        prefs.player1MalletSkin == MalletSkin.OUTRUN_STRIKER -> stringResource(R.string.theme_preset_synthwave)
+                prefs.tableTheme == TableTheme.TOKAMAK_REACTOR &&
+                        prefs.puckSkin == PuckSkin.ATOMIC_CORE &&
+                        prefs.player1MalletSkin == MalletSkin.MAGNETIC_COIL -> stringResource(R.string.theme_preset_tokamak)
+                prefs.tableTheme == TableTheme.CYBER_PONG &&
+                        prefs.puckSkin == PuckSkin.PONG_SQUARE &&
+                        prefs.player1MalletSkin == MalletSkin.PONG_PADDLE -> stringResource(R.string.theme_preset_pong)
+                prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
+                        prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
+                        prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
                 else -> stringResource(R.string.customization_custom_preset)
             }
 

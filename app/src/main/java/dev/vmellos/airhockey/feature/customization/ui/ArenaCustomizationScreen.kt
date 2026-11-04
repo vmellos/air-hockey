@@ -32,8 +32,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsEsports
@@ -41,8 +43,10 @@ import androidx.compose.material.icons.filled.SportsFootball
 import androidx.compose.material.icons.filled.SportsHockey
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsVolleyball
+import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -82,40 +86,7 @@ import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
-import dev.vmellos.airhockey.feature.game.ui.CourtDark
-import dev.vmellos.airhockey.feature.game.ui.CyberTurfDark
-import dev.vmellos.airhockey.feature.game.ui.NeonAmber
-import dev.vmellos.airhockey.feature.game.ui.NeonAmberBright
-import dev.vmellos.airhockey.feature.game.ui.NeonCyan
-import dev.vmellos.airhockey.feature.game.ui.NeonCyanBright
-import dev.vmellos.airhockey.feature.game.ui.NeonEmerald
-import dev.vmellos.airhockey.feature.game.ui.NeonEmeraldBright
-import dev.vmellos.airhockey.feature.game.ui.NeonMagenta
-import dev.vmellos.airhockey.feature.game.ui.NeonMagentaBright
-import dev.vmellos.airhockey.feature.game.ui.NeonOrange
-import dev.vmellos.airhockey.feature.game.ui.NeonOrangeBright
-import dev.vmellos.airhockey.feature.game.ui.NeonRuby
-import dev.vmellos.airhockey.feature.game.ui.NeonRubyBright
-import dev.vmellos.airhockey.feature.game.ui.NeonViolet
-import dev.vmellos.airhockey.feature.game.ui.NeonVioletBright
-import dev.vmellos.airhockey.feature.game.ui.TableBgDark
-import dev.vmellos.airhockey.feature.game.ui.VolleySpaceDark
-import dev.vmellos.airhockey.feature.game.ui.drawAngledGoal
-import dev.vmellos.airhockey.feature.game.ui.drawBasketballGoal
-import dev.vmellos.airhockey.feature.game.ui.drawChamferedTable
-import dev.vmellos.airhockey.feature.game.ui.drawCyberSoccerGoal
-import dev.vmellos.airhockey.feature.game.ui.drawCyberSoccerPuck
-import dev.vmellos.airhockey.feature.game.ui.drawCyberSoccerTable
-import dev.vmellos.airhockey.feature.game.ui.drawCyberStrikerMallet
-import dev.vmellos.airhockey.feature.game.ui.drawDunkStrikerMallet
-import dev.vmellos.airhockey.feature.game.ui.drawEnergyRingPuck
-import dev.vmellos.airhockey.feature.game.ui.drawGravityVolleyPuck
-import dev.vmellos.airhockey.feature.game.ui.drawGravityVolleyTable
-import dev.vmellos.airhockey.feature.game.ui.drawNeoBasketballPuck
-import dev.vmellos.airhockey.feature.game.ui.drawNeoBasketballTable
-import dev.vmellos.airhockey.feature.game.ui.drawPseudo3DMallet
-import dev.vmellos.airhockey.feature.game.ui.drawSpikeEmitterMallet
-import dev.vmellos.airhockey.feature.game.ui.drawVolleyGoal
+import dev.vmellos.airhockey.feature.game.ui.*
 import kotlinx.coroutines.launch
 
 private data class ThemeBundleItem(
@@ -227,123 +198,129 @@ fun ArenaCustomizationScreen(
             ),
             ThemeBundleItem(
                 id = "gridiron_football",
-                titleRes = R.string.customization_custom_preset,
-                descRes = R.string.customization_custom_preset,
+                titleRes = R.string.theme_preset_gridiron,
+                descRes = R.string.theme_preset_gridiron_desc,
                 icon = Icons.Default.SportsFootball,
-                primaryColor = Color(0xFF00E5FF),
-                secondaryColor = Color(0xFFFFB300),
-                tableTheme = TableTheme.CLASSIC_NEON,
-                puckSkin = PuckSkin.CLASSIC_PLASMA,
-                malletSkin = MalletSkin.CLASSIC_NEON,
-                isComingSoon = true
+                primaryColor = GridironCyan,
+                secondaryColor = GridironGold,
+                tableTheme = TableTheme.GRIDIRON_FOOTBALL,
+                puckSkin = PuckSkin.GRIDIRON_FOOTBALL,
+                malletSkin = MalletSkin.LINEBACKER_STRIKER
             ),
             ThemeBundleItem(
                 id = "cyber_baseball",
-                titleRes = R.string.customization_custom_preset,
-                descRes = R.string.customization_custom_preset,
+                titleRes = R.string.theme_preset_baseball,
+                descRes = R.string.theme_preset_baseball_desc,
                 icon = Icons.Default.SportsBaseball,
-                primaryColor = Color(0xFFE040FB),
-                secondaryColor = Color(0xFF00E676),
-                tableTheme = TableTheme.CLASSIC_NEON,
-                puckSkin = PuckSkin.CLASSIC_PLASMA,
-                malletSkin = MalletSkin.CLASSIC_NEON,
-                isComingSoon = true
+                primaryColor = BaseballRed,
+                secondaryColor = BaseballCyan,
+                tableTheme = TableTheme.CYBER_BASEBALL,
+                puckSkin = PuckSkin.CYBER_BASEBALL,
+                malletSkin = MalletSkin.SLUGGER_STRIKER
+            ),
+            ThemeBundleItem(
+                id = "wasteland",
+                titleRes = R.string.theme_preset_wasteland,
+                descRes = R.string.theme_preset_wasteland_desc,
+                icon = Icons.Default.Whatshot,
+                primaryColor = WastelandFlame,
+                secondaryColor = WastelandHazardYellow,
+                tableTheme = TableTheme.WASTELAND_APOCALYPSE,
+                puckSkin = PuckSkin.SAWBLADE,
+                malletSkin = MalletSkin.RIPPER_STRIKER
+            ),
+            ThemeBundleItem(
+                id = "synthwave",
+                titleRes = R.string.theme_preset_synthwave,
+                descRes = R.string.theme_preset_synthwave_desc,
+                icon = Icons.Default.WbSunny,
+                primaryColor = SynthPink,
+                secondaryColor = SynthCyan,
+                tableTheme = TableTheme.RETRO_SYNTHWAVE,
+                puckSkin = PuckSkin.SYNTH_DISC,
+                malletSkin = MalletSkin.OUTRUN_STRIKER
+            ),
+            ThemeBundleItem(
+                id = "tokamak",
+                titleRes = R.string.theme_preset_tokamak,
+                descRes = R.string.theme_preset_tokamak_desc,
+                icon = Icons.Default.Bolt,
+                primaryColor = TokamakRadiation,
+                secondaryColor = TokamakPlasma,
+                tableTheme = TableTheme.TOKAMAK_REACTOR,
+                puckSkin = PuckSkin.ATOMIC_CORE,
+                malletSkin = MalletSkin.MAGNETIC_COIL
+            ),
+            ThemeBundleItem(
+                id = "cyber_pong",
+                titleRes = R.string.theme_preset_pong,
+                descRes = R.string.theme_preset_pong_desc,
+                icon = Icons.Default.VideogameAsset,
+                primaryColor = PongGreen,
+                secondaryColor = PongAmber,
+                tableTheme = TableTheme.CYBER_PONG,
+                puckSkin = PuckSkin.PONG_SQUARE,
+                malletSkin = MalletSkin.PONG_PADDLE
+            ),
+            ThemeBundleItem(
+                id = "colosseum",
+                titleRes = R.string.theme_preset_colosseum,
+                descRes = R.string.theme_preset_colosseum_desc,
+                icon = Icons.Default.Shield,
+                primaryColor = ColosseumGold,
+                secondaryColor = ColosseumCrimson,
+                tableTheme = TableTheme.CYBER_COLOSSEUM,
+                puckSkin = PuckSkin.GLADIATOR_SHIELD,
+                malletSkin = MalletSkin.SPARTAN_AEGIS
             )
         )
     }
 
     val tableItems = remember {
         listOf(
-            TableItem(
-                theme = TableTheme.CLASSIC_NEON,
-                titleRes = R.string.theme_preset_classic,
-                descRes = R.string.theme_preset_classic_desc,
-                icon = Icons.Default.SportsHockey,
-                primaryColor = NeonCyan,
-                secondaryColor = NeonOrange
-            ),
-            TableItem(
-                theme = TableTheme.CYBER_SOCCER,
-                titleRes = R.string.theme_preset_cyber_soccer,
-                descRes = R.string.theme_preset_cyber_soccer_desc,
-                icon = Icons.Default.SportsSoccer,
-                primaryColor = NeonEmerald,
-                secondaryColor = NeonRuby
-            ),
-            TableItem(
-                theme = TableTheme.NEO_BASKETBALL,
-                titleRes = R.string.theme_preset_neo_basketball,
-                descRes = R.string.theme_preset_neo_basketball_desc,
-                icon = Icons.Default.SportsBasketball,
-                primaryColor = NeonAmber,
-                secondaryColor = NeonCyan
-            ),
-            TableItem(
-                theme = TableTheme.GRAVITY_VOLLEY,
-                titleRes = R.string.theme_preset_gravity_volley,
-                descRes = R.string.theme_preset_gravity_volley_desc,
-                icon = Icons.Default.SportsVolleyball,
-                primaryColor = NeonViolet,
-                secondaryColor = NeonMagenta
-            )
+            TableItem(TableTheme.CLASSIC_NEON, R.string.theme_preset_classic, R.string.theme_preset_classic_desc, Icons.Default.SportsHockey, NeonCyan, NeonOrange),
+            TableItem(TableTheme.CYBER_SOCCER, R.string.theme_preset_cyber_soccer, R.string.theme_preset_cyber_soccer_desc, Icons.Default.SportsSoccer, NeonEmerald, NeonRuby),
+            TableItem(TableTheme.NEO_BASKETBALL, R.string.theme_preset_neo_basketball, R.string.theme_preset_neo_basketball_desc, Icons.Default.SportsBasketball, NeonAmber, NeonCyan),
+            TableItem(TableTheme.GRAVITY_VOLLEY, R.string.theme_preset_gravity_volley, R.string.theme_preset_gravity_volley_desc, Icons.Default.SportsVolleyball, NeonViolet, NeonMagenta),
+            TableItem(TableTheme.GRIDIRON_FOOTBALL, R.string.theme_preset_gridiron, R.string.theme_preset_gridiron_desc, Icons.Default.SportsFootball, GridironCyan, GridironGold),
+            TableItem(TableTheme.CYBER_BASEBALL, R.string.theme_preset_baseball, R.string.theme_preset_baseball_desc, Icons.Default.SportsBaseball, BaseballRed, BaseballCyan),
+            TableItem(TableTheme.WASTELAND_APOCALYPSE, R.string.theme_preset_wasteland, R.string.theme_preset_wasteland_desc, Icons.Default.Whatshot, WastelandFlame, WastelandHazardYellow),
+            TableItem(TableTheme.RETRO_SYNTHWAVE, R.string.theme_preset_synthwave, R.string.theme_preset_synthwave_desc, Icons.Default.WbSunny, SynthPink, SynthCyan),
+            TableItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, R.string.theme_preset_tokamak_desc, Icons.Default.Bolt, TokamakRadiation, TokamakPlasma),
+            TableItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, R.string.theme_preset_pong_desc, Icons.Default.VideogameAsset, PongGreen, PongAmber),
+            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson)
         )
     }
 
     val puckItems = remember {
         listOf(
-            PuckItem(
-                skin = PuckSkin.CLASSIC_PLASMA,
-                titleRes = R.string.skin_puck_classic,
-                icon = Icons.Default.SportsHockey,
-                primaryColor = NeonCyan
-            ),
-            PuckItem(
-                skin = PuckSkin.CYBER_SOCCER_BALL,
-                titleRes = R.string.skin_puck_soccer,
-                icon = Icons.Default.SportsSoccer,
-                primaryColor = NeonEmerald
-            ),
-            PuckItem(
-                skin = PuckSkin.NEO_BASKETBALL,
-                titleRes = R.string.skin_puck_basketball,
-                icon = Icons.Default.SportsBasketball,
-                primaryColor = NeonAmber
-            ),
-            PuckItem(
-                skin = PuckSkin.GRAVITY_VOLLEY,
-                titleRes = R.string.skin_puck_volley,
-                icon = Icons.Default.SportsVolleyball,
-                primaryColor = NeonViolet
-            )
+            PuckItem(PuckSkin.CLASSIC_PLASMA, R.string.skin_puck_classic, Icons.Default.SportsHockey, NeonCyan),
+            PuckItem(PuckSkin.CYBER_SOCCER_BALL, R.string.skin_puck_soccer, Icons.Default.SportsSoccer, NeonEmerald),
+            PuckItem(PuckSkin.NEO_BASKETBALL, R.string.skin_puck_basketball, Icons.Default.SportsBasketball, NeonAmber),
+            PuckItem(PuckSkin.GRAVITY_VOLLEY, R.string.skin_puck_volley, Icons.Default.SportsVolleyball, NeonViolet),
+            PuckItem(PuckSkin.GRIDIRON_FOOTBALL, R.string.skin_puck_gridiron, Icons.Default.SportsFootball, GridironCyan),
+            PuckItem(PuckSkin.CYBER_BASEBALL, R.string.skin_puck_baseball, Icons.Default.SportsBaseball, BaseballRed),
+            PuckItem(PuckSkin.SAWBLADE, R.string.skin_puck_wasteland, Icons.Default.Whatshot, WastelandFlame),
+            PuckItem(PuckSkin.SYNTH_DISC, R.string.skin_puck_synthwave, Icons.Default.WbSunny, SynthPink),
+            PuckItem(PuckSkin.ATOMIC_CORE, R.string.skin_puck_tokamak, Icons.Default.Bolt, TokamakRadiation),
+            PuckItem(PuckSkin.PONG_SQUARE, R.string.skin_puck_pong, Icons.Default.VideogameAsset, PongGreen),
+            PuckItem(PuckSkin.GLADIATOR_SHIELD, R.string.skin_puck_colosseum, Icons.Default.Shield, ColosseumGold)
         )
     }
 
     val malletItems = remember {
         listOf(
-            MalletItem(
-                skin = MalletSkin.CLASSIC_NEON,
-                titleRes = R.string.skin_mallet_classic,
-                icon = Icons.Default.SportsHockey,
-                primaryColor = NeonCyan
-            ),
-            MalletItem(
-                skin = MalletSkin.MAGNETIC_STRIKER,
-                titleRes = R.string.skin_mallet_soccer,
-                icon = Icons.Default.SportsSoccer,
-                primaryColor = NeonEmerald
-            ),
-            MalletItem(
-                skin = MalletSkin.DUNK_STRIKER,
-                titleRes = R.string.skin_mallet_basketball,
-                icon = Icons.Default.SportsBasketball,
-                primaryColor = NeonAmber
-            ),
-            MalletItem(
-                skin = MalletSkin.SPIKE_EMITTER,
-                titleRes = R.string.skin_mallet_volley,
-                icon = Icons.Default.SportsVolleyball,
-                primaryColor = NeonViolet
-            )
+            MalletItem(MalletSkin.CLASSIC_NEON, R.string.skin_mallet_classic, Icons.Default.SportsHockey, NeonCyan),
+            MalletItem(MalletSkin.MAGNETIC_STRIKER, R.string.skin_mallet_soccer, Icons.Default.SportsSoccer, NeonEmerald),
+            MalletItem(MalletSkin.DUNK_STRIKER, R.string.skin_mallet_basketball, Icons.Default.SportsBasketball, NeonAmber),
+            MalletItem(MalletSkin.SPIKE_EMITTER, R.string.skin_mallet_volley, Icons.Default.SportsVolleyball, NeonViolet),
+            MalletItem(MalletSkin.LINEBACKER_STRIKER, R.string.skin_mallet_gridiron, Icons.Default.SportsFootball, GridironCyan),
+            MalletItem(MalletSkin.SLUGGER_STRIKER, R.string.skin_mallet_baseball, Icons.Default.SportsBaseball, BaseballRed),
+            MalletItem(MalletSkin.RIPPER_STRIKER, R.string.skin_mallet_wasteland, Icons.Default.Whatshot, WastelandFlame),
+            MalletItem(MalletSkin.OUTRUN_STRIKER, R.string.skin_mallet_synthwave, Icons.Default.WbSunny, SynthPink),
+            MalletItem(MalletSkin.MAGNETIC_COIL, R.string.skin_mallet_tokamak, Icons.Default.Bolt, TokamakRadiation),
+            MalletItem(MalletSkin.PONG_PADDLE, R.string.skin_mallet_pong, Icons.Default.VideogameAsset, PongGreen),
+            MalletItem(MalletSkin.SPARTAN_AEGIS, R.string.skin_mallet_colosseum, Icons.Default.Shield, ColosseumGold)
         )
     }
 
@@ -361,6 +338,27 @@ fun ArenaCustomizationScreen(
         prefs.tableTheme == TableTheme.GRAVITY_VOLLEY &&
                 prefs.puckSkin == PuckSkin.GRAVITY_VOLLEY &&
                 prefs.player1MalletSkin == MalletSkin.SPIKE_EMITTER -> stringResource(R.string.theme_preset_gravity_volley)
+        prefs.tableTheme == TableTheme.GRIDIRON_FOOTBALL &&
+                prefs.puckSkin == PuckSkin.GRIDIRON_FOOTBALL &&
+                prefs.player1MalletSkin == MalletSkin.LINEBACKER_STRIKER -> stringResource(R.string.theme_preset_gridiron)
+        prefs.tableTheme == TableTheme.CYBER_BASEBALL &&
+                prefs.puckSkin == PuckSkin.CYBER_BASEBALL &&
+                prefs.player1MalletSkin == MalletSkin.SLUGGER_STRIKER -> stringResource(R.string.theme_preset_baseball)
+        prefs.tableTheme == TableTheme.WASTELAND_APOCALYPSE &&
+                prefs.puckSkin == PuckSkin.SAWBLADE &&
+                prefs.player1MalletSkin == MalletSkin.RIPPER_STRIKER -> stringResource(R.string.theme_preset_wasteland)
+        prefs.tableTheme == TableTheme.RETRO_SYNTHWAVE &&
+                prefs.puckSkin == PuckSkin.SYNTH_DISC &&
+                prefs.player1MalletSkin == MalletSkin.OUTRUN_STRIKER -> stringResource(R.string.theme_preset_synthwave)
+        prefs.tableTheme == TableTheme.TOKAMAK_REACTOR &&
+                prefs.puckSkin == PuckSkin.ATOMIC_CORE &&
+                prefs.player1MalletSkin == MalletSkin.MAGNETIC_COIL -> stringResource(R.string.theme_preset_tokamak)
+        prefs.tableTheme == TableTheme.CYBER_PONG &&
+                prefs.puckSkin == PuckSkin.PONG_SQUARE &&
+                prefs.player1MalletSkin == MalletSkin.PONG_PADDLE -> stringResource(R.string.theme_preset_pong)
+        prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
+                prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
+                prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
         else -> stringResource(R.string.customization_custom_preset)
     }
 
@@ -528,8 +526,7 @@ fun ArenaCustomizationScreen(
                 0 -> {
                     // Categoria: CONJUNTOS COMPLETOS
                     items(bundleItems, key = { it.id }) { bundle ->
-                        val isEquipped = !bundle.isComingSoon &&
-                                prefs.tableTheme == bundle.tableTheme &&
+                        val isEquipped = prefs.tableTheme == bundle.tableTheme &&
                                 prefs.puckSkin == bundle.puckSkin &&
                                 prefs.player1MalletSkin == bundle.malletSkin
 
@@ -537,21 +534,17 @@ fun ArenaCustomizationScreen(
                             bundle = bundle,
                             isEquipped = isEquipped,
                             onPreview = {
-                                if (!bundle.isComingSoon) {
-                                    previewTableTheme = bundle.tableTheme
-                                    previewPuckSkin = bundle.puckSkin
-                                    previewMalletSkin = bundle.malletSkin
-                                }
+                                previewTableTheme = bundle.tableTheme
+                                previewPuckSkin = bundle.puckSkin
+                                previewMalletSkin = bundle.malletSkin
                             },
                             onEquip = {
-                                if (!bundle.isComingSoon) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    previewTableTheme = bundle.tableTheme
-                                    previewPuckSkin = bundle.puckSkin
-                                    previewMalletSkin = bundle.malletSkin
-                                    coroutineScope.launch {
-                                        preferencesRepo.applyThemePreset(bundle.tableTheme)
-                                    }
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                previewTableTheme = bundle.tableTheme
+                                previewPuckSkin = bundle.puckSkin
+                                previewMalletSkin = bundle.malletSkin
+                                coroutineScope.launch {
+                                    preferencesRepo.applyThemePreset(bundle.tableTheme)
                                 }
                             }
                         )
@@ -663,6 +656,13 @@ private fun ArenaLivePreview(
         TableTheme.CYBER_SOCCER -> CyberTurfDark
         TableTheme.NEO_BASKETBALL -> CourtDark
         TableTheme.GRAVITY_VOLLEY -> VolleySpaceDark
+        TableTheme.GRIDIRON_FOOTBALL -> GridironDark
+        TableTheme.CYBER_BASEBALL -> BaseballDark
+        TableTheme.WASTELAND_APOCALYPSE -> WastelandDark
+        TableTheme.RETRO_SYNTHWAVE -> SynthDark
+        TableTheme.TOKAMAK_REACTOR -> TokamakDark
+        TableTheme.CYBER_PONG -> PongDark
+        TableTheme.CYBER_COLOSSEUM -> ColosseumDark
         TableTheme.CLASSIC_NEON -> TableBgDark
     }
 
@@ -670,6 +670,13 @@ private fun ArenaLivePreview(
         MalletSkin.MAGNETIC_STRIKER -> Pair(NeonEmerald, NeonEmeraldBright)
         MalletSkin.DUNK_STRIKER -> Pair(NeonAmber, NeonAmberBright)
         MalletSkin.SPIKE_EMITTER -> Pair(NeonViolet, NeonVioletBright)
+        MalletSkin.LINEBACKER_STRIKER -> Pair(GridironCyan, GridironGold)
+        MalletSkin.SLUGGER_STRIKER -> Pair(BaseballRed, BaseballRedBright)
+        MalletSkin.RIPPER_STRIKER -> Pair(WastelandFlame, WastelandFlameBright)
+        MalletSkin.OUTRUN_STRIKER -> Pair(SynthPink, SynthPinkBright)
+        MalletSkin.MAGNETIC_COIL -> Pair(TokamakRadiation, TokamakRadiationBright)
+        MalletSkin.PONG_PADDLE -> Pair(PongGreen, PongGreenBright)
+        MalletSkin.SPARTAN_AEGIS -> Pair(ColosseumGold, ColosseumGoldBright)
         MalletSkin.CLASSIC_NEON -> Pair(NeonCyan, NeonCyanBright)
     }
 
@@ -677,6 +684,13 @@ private fun ArenaLivePreview(
         MalletSkin.MAGNETIC_STRIKER -> Pair(NeonRuby, NeonRubyBright)
         MalletSkin.DUNK_STRIKER -> Pair(NeonCyan, NeonCyanBright)
         MalletSkin.SPIKE_EMITTER -> Pair(NeonMagenta, NeonMagentaBright)
+        MalletSkin.LINEBACKER_STRIKER -> Pair(GridironGold, GridironCyan)
+        MalletSkin.SLUGGER_STRIKER -> Pair(BaseballCyan, BaseballCyanBright)
+        MalletSkin.RIPPER_STRIKER -> Pair(WastelandFlameBright, WastelandFlame)
+        MalletSkin.OUTRUN_STRIKER -> Pair(SynthCyan, SynthCyanBright)
+        MalletSkin.MAGNETIC_COIL -> Pair(TokamakPlasma, TokamakPlasmaBright)
+        MalletSkin.PONG_PADDLE -> Pair(PongGreenBright, PongGreen)
+        MalletSkin.SPARTAN_AEGIS -> Pair(ColosseumCrimson, ColosseumGold)
         MalletSkin.CLASSIC_NEON -> Pair(NeonOrange, NeonOrangeBright)
     }
 
@@ -684,6 +698,13 @@ private fun ArenaLivePreview(
         PuckSkin.CYBER_SOCCER_BALL -> NeonEmerald
         PuckSkin.NEO_BASKETBALL -> NeonAmber
         PuckSkin.GRAVITY_VOLLEY -> NeonViolet
+        PuckSkin.GRIDIRON_FOOTBALL -> GridironCyan
+        PuckSkin.CYBER_BASEBALL -> BaseballRed
+        PuckSkin.SAWBLADE -> WastelandFlame
+        PuckSkin.SYNTH_DISC -> SynthPink
+        PuckSkin.ATOMIC_CORE -> TokamakRadiation
+        PuckSkin.PONG_SQUARE -> PongGreen
+        PuckSkin.GLADIATOR_SHIELD -> ColosseumGold
         PuckSkin.CLASSIC_PLASMA -> NeonCyan
     }
 
@@ -709,48 +730,19 @@ private fun ArenaLivePreview(
             val goalW = 320f * scale
             val goalLeft = left + (tableW - goalW) / 2f
 
-            // 1. Desenha a mesa
+            // 1. Desenha a mesa completa
             when (tableTheme) {
-                TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(
-                    left = left,
-                    top = top,
-                    width = tableW,
-                    height = tableH,
-                    scale = scale,
-                    isExtendedHost = false,
-                    isExtendedGuest = false,
-                    isConnectedGuest = false
-                )
-                TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(
-                    left = left,
-                    top = top,
-                    width = tableW,
-                    height = tableH,
-                    scale = scale,
-                    isExtendedHost = false,
-                    isExtendedGuest = false,
-                    isConnectedGuest = false
-                )
-                TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(
-                    left = left,
-                    top = top,
-                    width = tableW,
-                    height = tableH,
-                    scale = scale,
-                    isExtendedHost = false,
-                    isExtendedGuest = false,
-                    isConnectedGuest = false
-                )
-                TableTheme.CLASSIC_NEON -> drawChamferedTable(
-                    left = left,
-                    top = top,
-                    width = tableW,
-                    height = tableH,
-                    scale = scale,
-                    isExtendedHost = false,
-                    isExtendedGuest = false,
-                    isConnectedGuest = false
-                )
+                TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.GRIDIRON_FOOTBALL -> drawGridironTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.CYBER_BASEBALL -> drawCyberBaseballTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.WASTELAND_APOCALYPSE -> drawWastelandTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.RETRO_SYNTHWAVE -> drawRetroSynthwaveTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.CYBER_PONG -> drawCyberPongTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.CLASSIC_NEON -> drawChamferedTable(left, top, tableW, tableH, scale, false, false, false)
             }
 
             // 2. Desenha as metas
@@ -767,6 +759,34 @@ private fun ArenaLivePreview(
                     drawVolleyGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
                     drawVolleyGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
                 }
+                TableTheme.GRIDIRON_FOOTBALL -> {
+                    drawGridironGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawGridironGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.CYBER_BASEBALL -> {
+                    drawBaseballGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawBaseballGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.WASTELAND_APOCALYPSE -> {
+                    drawWastelandGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawWastelandGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.RETRO_SYNTHWAVE -> {
+                    drawSynthwaveGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawSynthwaveGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.TOKAMAK_REACTOR -> {
+                    drawTokamakGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawTokamakGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.CYBER_PONG -> {
+                    drawPongGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawPongGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
+                TableTheme.CYBER_COLOSSEUM -> {
+                    drawColosseumGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
+                    drawColosseumGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
+                }
                 TableTheme.CLASSIC_NEON -> {
                     drawAngledGoal(goalLeft, goalW, top + tableH, scale, NeonCyan, isTop = false)
                     drawAngledGoal(goalLeft, goalW, top, scale, NeonOrange, isTop = true)
@@ -781,6 +801,13 @@ private fun ArenaLivePreview(
                 MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
                 MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
                 MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
                 MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
             }
 
@@ -791,6 +818,13 @@ private fun ArenaLivePreview(
                 MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
                 MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
                 MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
                 MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
             }
 
@@ -802,6 +836,13 @@ private fun ArenaLivePreview(
                 PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.SAWBLADE -> drawSawbladePuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.SYNTH_DISC -> drawSynthwavePuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.PONG_SQUARE -> drawPongPuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(puckX, puckY, puckRadius, puckAccent, scale)
             }
         }
@@ -828,7 +869,7 @@ private fun BundleCard(
         colors = CardDefaults.cardColors(containerColor = containerBg),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = !bundle.isComingSoon, onClick = onPreview)
+            .clickable(onClick = onPreview)
     ) {
         Row(
             modifier = Modifier
@@ -861,44 +902,17 @@ private fun BundleCard(
 
             // Textos informativos
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = if (bundle.isComingSoon) {
-                            if (bundle.id == "gridiron_football") "Gridiron Sci-Fi" else "Cyber Diamond"
-                        } else {
-                            stringResource(bundle.titleRes)
-                        },
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (bundle.isComingSoon) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "EM BREVE",
-                            color = Color(0xFFFFB800),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .background(Color(0x33FFB800), RoundedCornerShape(4.dp))
-                                .border(0.8.dp, Color(0x66FFB800), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = stringResource(bundle.titleRes),
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = if (bundle.isComingSoon) {
-                        if (bundle.id == "gridiron_football") {
-                            "Arena de futebol americano com jardas neon e puck oval de precisão"
-                        } else {
-                            "Diamante holográfico de beisebol com bases dinâmicas e rebatedores slugger"
-                        }
-                    } else {
-                        stringResource(bundle.descRes)
-                    },
+                    text = stringResource(bundle.descRes),
                     color = Color(0xFF94A3B8),
                     fontSize = 11.sp,
                     maxLines = 2,
@@ -909,14 +923,7 @@ private fun BundleCard(
             Spacer(modifier = Modifier.width(10.dp))
 
             // Ação: Botão Equipado / Equipar
-            if (bundle.isComingSoon) {
-                Text(
-                    text = "---",
-                    color = Color(0xFF475569),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            } else if (isEquipped) {
+            if (isEquipped) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
