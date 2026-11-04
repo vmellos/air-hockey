@@ -131,6 +131,21 @@ fun ScoreBoardOverlay(
                         fontWeight = FontWeight.Black,
                         fontFamily = FontFamily.Monospace
                     )
+                    if (matchState.targetScore > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(1.dp)
+                                .background(Color(0x22FFFFFF), RoundedCornerShape(1.dp))
+                        )
+                        Text(
+                            text = stringResource(R.string.scoreboard_target, matchState.targetScore),
+                            color = Color(0x99FFFFFF),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
         }

@@ -415,12 +415,11 @@ class GameViewModel : ViewModel() {
     fun onTouchPlayer1(x: Float, y: Float) {
         if (!::engine.isInitialized || !isInputAllowed()) return
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            val (cx, cy) = engine.clampPositionAgainstFrozenPuck(x, y, engine.player1Mallet.radius)
+            val (cx, cy) = engine.clampPreparatoryPosition(x, y, engine.player1Mallet.radius, isPlayer1 = true)
             engine.player1Mallet.targetX = cx
             engine.player1Mallet.targetY = cy
             engine.player1Mallet.x = cx
             engine.player1Mallet.y = cy
-            engine.clampMalletAgainstFrozenPuck(engine.player1Mallet)
         } else {
             engine.player1Mallet.targetX = x
             engine.player1Mallet.targetY = y
@@ -430,12 +429,11 @@ class GameViewModel : ViewModel() {
     fun onTouchPlayer2(x: Float, y: Float) {
         if (!::engine.isInitialized || !isInputAllowed()) return
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            val (cx, cy) = engine.clampPositionAgainstFrozenPuck(x, y, engine.player2Mallet.radius)
+            val (cx, cy) = engine.clampPreparatoryPosition(x, y, engine.player2Mallet.radius, isPlayer1 = false)
             engine.player2Mallet.targetX = cx
             engine.player2Mallet.targetY = cy
             engine.player2Mallet.x = cx
             engine.player2Mallet.y = cy
-            engine.clampMalletAgainstFrozenPuck(engine.player2Mallet)
         } else {
             engine.player2Mallet.targetX = x
             engine.player2Mallet.targetY = y

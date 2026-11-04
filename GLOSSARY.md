@@ -65,7 +65,7 @@ A meta quantitativa de pontos definida para a partida (3, 5, 7 ou 10 pontos) cuj
 _Avoid_: Placar final, limite de gols, meta de gols, target score
 
 **Placar Lateral**:
-A representação visual e minimalista da contagem de pontos posicionada na borda lateral da mesa na altura da linha central divisória (ancorada adjacente ao trilho direito da arena virtual, mantendo proximidade à mesa mesmo em telas largas de tablets e dobráveis), apresentando exclusivamente os dígitos dos participantes em tipografia neon de alto contraste (Ciano e Laranja) separados por divisor sutil em todos os modos de jogo, desobstruindo as áreas de movimento dos rebatedores.
+A representação visual e minimalista da contagem de pontos posicionada na borda lateral da mesa na altura da linha central divisória (ancorada adjacente ao trilho direito da arena virtual, mantendo proximidade à mesa mesmo em telas largas de tablets e dobráveis), apresentando os dígitos dos participantes em tipografia neon de alto contraste (Ciano e Laranja) acompanhados pelo indicador da Pontuação Alvo da partida, desobstruindo as áreas de movimento dos rebatedores.
 _Avoid_: Scoreboard do topo, placar superior, painel de pontos, score hud
 
 **Modo Espectador**:
@@ -77,7 +77,7 @@ O intervalo preparatório de 3 segundos disparado ao despausar a partida antes d
 _Avoid_: Unpause countdown, re-start, contagem de despause
 
 **Posicionamento Preparatório**:
-A movimentação tática livre do rebatedor permitida aos participantes em seu próprio meio-campo durante a contagem regressiva enquanto o disco permanece imóvel na saída.
+A movimentação tática livre do rebatedor permitida aos participantes estritamente em seu próprio meio-campo durante a contagem regressiva enquanto o disco permanece imóvel na saída, bloqueando qualquer travessia da linha central divisória.
 _Avoid_: Pre-match movement, warm-up move, ajuste pré-jogo
 
 **Saque de Início**:
@@ -99,7 +99,7 @@ A modalidade de progressão do Modo Solo estruturada em uma jornada de 100 níve
 _Avoid_: Modo campanha, stage mode, levels, fases infinitas
 
 **Estrelas de Desempenho**:
-A classificação de 1 a 3 estrelas concedida ao concluir uma fase no Modo Fases, avaliando a eficiência defensiva do jogador pelo número de pontos cedidos ao adversário.
+A classificação de 1 a 3 estrelas concedida ao concluir uma fase no Modo Fases, avaliando a eficiência defensiva do jogador pelo número de pontos cedidos ao adversário sob escala proporcional à Pontuação Alvo da fase (Alvo 3: 0 pontos cedidos para 3⭐; Alvo 5: até 1 ponto; Alvo 7: até 2 pontos; Alvo 10: até 3 pontos).
 _Avoid_: Stars, rating de fase, nota da fase
 
 **Tela de Desfecho da Fase**:

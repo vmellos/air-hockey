@@ -109,8 +109,21 @@ class StageProgressionTest {
         assertEquals(3, repository.calculateStars(25, scorePlayer = 5, scoreAi = 0))
         assertEquals(3, repository.calculateStars(25, scorePlayer = 5, scoreAi = 1))
         assertEquals(2, repository.calculateStars(25, scorePlayer = 5, scoreAi = 2))
+        assertEquals(2, repository.calculateStars(25, scorePlayer = 5, scoreAi = 3))
         assertEquals(1, repository.calculateStars(25, scorePlayer = 5, scoreAi = 4))
         assertEquals(0, repository.calculateStars(25, scorePlayer = 4, scoreAi = 5))
+
+        // Stage 65: target 7
+        assertEquals(3, repository.calculateStars(65, scorePlayer = 7, scoreAi = 2))
+        assertEquals(2, repository.calculateStars(65, scorePlayer = 7, scoreAi = 4))
+        assertEquals(1, repository.calculateStars(65, scorePlayer = 7, scoreAi = 6))
+        assertEquals(0, repository.calculateStars(65, scorePlayer = 6, scoreAi = 7))
+
+        // Stage 95: target 10
+        assertEquals(3, repository.calculateStars(95, scorePlayer = 10, scoreAi = 3))
+        assertEquals(2, repository.calculateStars(95, scorePlayer = 10, scoreAi = 6))
+        assertEquals(1, repository.calculateStars(95, scorePlayer = 10, scoreAi = 9))
+        assertEquals(0, repository.calculateStars(95, scorePlayer = 9, scoreAi = 10))
     }
 
     @Test

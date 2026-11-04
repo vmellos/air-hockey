@@ -17,6 +17,8 @@
     <string name="stage_next_btn">Next Stage</string>
     <string name="stage_retry_btn">Retry</string>
     <string name="stage_list_btn">Stages</string>
+    <string name="stage_target_pts">TARGET: %1$d</string>
+    <string name="scoreboard_target">TARGET: %1$d</string>
     <string name="menu_mode_split">Split Table</string>
     <string name="menu_mode_split_desc">2 players on the same device</string>
     <string name="menu_mode_extended">Extended Table</string>
