@@ -140,7 +140,8 @@ class GameViewModel : ViewModel() {
         airFriction: Float = 0.40f,
         player1Name: String = "Jogador 1",
         player2Name: String = "Jogador 2",
-        stageNumber: Int = 1
+        stageNumber: Int = 1,
+        hasIntroPresentation: Boolean = false
     ) {
         val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
                 mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
@@ -211,6 +212,14 @@ class GameViewModel : ViewModel() {
 
         if (!isGuest) {
             broadcastState()
+            if (!hasIntroPresentation) {
+                startCountdown()
+            }
+        }
+    }
+
+    fun startCountdownAfterPresentation() {
+        if (_matchState.value.status == MatchStatus.COUNTDOWN && countdownJob?.isActive != true) {
             startCountdown()
         }
     }

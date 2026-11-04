@@ -19,6 +19,7 @@ playServicesAds = "23.6.0"
 userMessagingPlatform = "3.1.0"
 billing = "8.0.0"
 playAppUpdate = "2.1.0"
+sceneview = "2.2.1"
 
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -52,6 +53,7 @@ user-messaging-platform = { group = "com.google.android.ump", name = "user-messa
 play-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "playAppUpdate" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
+sceneview = { group = "io.github.sceneview", name = "sceneview", version.ref = "sceneview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

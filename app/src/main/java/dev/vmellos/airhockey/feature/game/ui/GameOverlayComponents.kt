@@ -162,7 +162,7 @@ fun ScoreBoardOverlay(
             TokamakPlasma,
             FontFamily.SansSerif
         )
-        TableTheme.CLASSIC_NEON -> SixTuple(
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> SixTuple(
             RoundedCornerShape(12.dp),
             Color(0x33000000),
             BorderStroke(1.dp, Color(0x33FFFFFF)),
@@ -269,7 +269,7 @@ fun CountdownOverlay(
         TableTheme.WASTELAND_APOCALYPSE -> Triple(WastelandFlame, WastelandFlameBright, FontFamily.SansSerif)
         TableTheme.RETRO_SYNTHWAVE -> Triple(SynthPink, SynthCyanBright, FontFamily.SansSerif)
         TableTheme.TOKAMAK_REACTOR -> Triple(TokamakRadiation, TokamakPlasmaBright, FontFamily.SansSerif)
-        TableTheme.CLASSIC_NEON -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
     }
 
     val textColor = if (countdownNumber == 0) goColor else numberColor
@@ -303,7 +303,7 @@ fun GoalBannerOverlay(
     modifier: Modifier = Modifier
 ) {
     val (primaryColor, secondaryColor) = when (tableTheme) {
-        TableTheme.CLASSIC_NEON -> Pair(NeonCyan, NeonOrange)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Pair(NeonCyan, NeonOrange)
         TableTheme.CYBER_SOCCER -> Pair(NeonEmerald, NeonRuby)
         TableTheme.NEO_BASKETBALL -> Pair(NeonAmber, NeonCyan)
         TableTheme.GRAVITY_VOLLEY -> Pair(NeonViolet, NeonMagenta)
@@ -318,7 +318,7 @@ fun GoalBannerOverlay(
 
     val color = if (scorer == 1) primaryColor else secondaryColor
     val glowColor = when (tableTheme) {
-        TableTheme.CLASSIC_NEON -> if (scorer == 1) NeonCyanBright else NeonOrangeBright
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> if (scorer == 1) NeonCyanBright else NeonOrangeBright
         TableTheme.CYBER_SOCCER -> if (scorer == 1) NeonEmeraldBright else NeonRubyBright
         TableTheme.NEO_BASKETBALL -> if (scorer == 1) NeonAmberBright else NeonCyanBright
         TableTheme.GRAVITY_VOLLEY -> if (scorer == 1) NeonVioletBright else NeonMagentaBright
@@ -342,7 +342,7 @@ fun GoalBannerOverlay(
         TableTheme.NEO_BASKETBALL -> CutCornerShape(12.dp)
         TableTheme.TOKAMAK_REACTOR -> CutCornerShape(12.dp)
         TableTheme.CYBER_BASEBALL -> CutCornerShape(14.dp)
-        TableTheme.CLASSIC_NEON -> CutCornerShape(16.dp)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> CutCornerShape(16.dp)
     }
 
     val bannerBg = when (tableTheme) {
@@ -356,7 +356,7 @@ fun GoalBannerOverlay(
         TableTheme.RETRO_SYNTHWAVE -> Color(0xE61A081C)
         TableTheme.TOKAMAK_REACTOR -> Color(0xE607180A)
         TableTheme.CYBER_COLOSSEUM -> Color(0xE61C1408)
-        TableTheme.CLASSIC_NEON -> Color(0xD9080E1A)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xD9080E1A)
     }
 
     val bannerFont = when (tableTheme) {

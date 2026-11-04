@@ -273,6 +273,17 @@ fun ArenaCustomizationScreen(
                 tableTheme = TableTheme.CYBER_COLOSSEUM,
                 puckSkin = PuckSkin.GLADIATOR_SHIELD,
                 malletSkin = MalletSkin.SPARTAN_AEGIS
+            ),
+            ThemeBundleItem(
+                id = "arcade_3d",
+                titleRes = R.string.theme_preset_arcade_3d,
+                descRes = R.string.theme_preset_arcade_3d_desc,
+                icon = Icons.Default.Layers,
+                primaryColor = NeonCyan,
+                secondaryColor = NeonOrange,
+                tableTheme = TableTheme.ARCADE_3D,
+                puckSkin = PuckSkin.CLASSIC_PLASMA,
+                malletSkin = MalletSkin.CLASSIC_NEON
             )
         )
     }
@@ -289,7 +300,8 @@ fun ArenaCustomizationScreen(
             TableItem(TableTheme.RETRO_SYNTHWAVE, R.string.theme_preset_synthwave, R.string.theme_preset_synthwave_desc, Icons.Default.WbSunny, SynthPink, SynthCyan),
             TableItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, R.string.theme_preset_tokamak_desc, Icons.Default.Bolt, TokamakRadiation, TokamakPlasma),
             TableItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, R.string.theme_preset_pong_desc, Icons.Default.VideogameAsset, PongGreen, PongAmber),
-            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson)
+            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson),
+            TableItem(TableTheme.ARCADE_3D, R.string.theme_preset_arcade_3d, R.string.theme_preset_arcade_3d_desc, Icons.Default.Layers, NeonCyan, NeonOrange)
         )
     }
 
@@ -360,6 +372,9 @@ fun ArenaCustomizationScreen(
         prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
                 prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
                 prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
+        prefs.tableTheme == TableTheme.ARCADE_3D &&
+                prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
+                prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_arcade_3d)
         else -> stringResource(R.string.customization_custom_preset)
     }
 
@@ -651,7 +666,7 @@ private fun ArenaLivePreview(
         TableTheme.TOKAMAK_REACTOR -> TokamakDark
         TableTheme.CYBER_PONG -> PongDark
         TableTheme.CYBER_COLOSSEUM -> ColosseumDark
-        TableTheme.CLASSIC_NEON -> TableBgDark
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> TableBgDark
     }
 
     val (p1Color, p1Rim) = when (malletSkin) {
@@ -730,7 +745,7 @@ private fun ArenaLivePreview(
                 TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left, top, tableW, tableH, scale, false, false, false)
                 TableTheme.CYBER_PONG -> drawCyberPongTable(left, top, tableW, tableH, scale, false, false, false)
                 TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.CLASSIC_NEON -> drawChamferedTable(left, top, tableW, tableH, scale, false, false, false)
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left, top, tableW, tableH, scale, false, false, false)
             }
 
             // 2. Desenha as metas
@@ -775,7 +790,7 @@ private fun ArenaLivePreview(
                     drawColosseumGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
                     drawColosseumGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
                 }
-                TableTheme.CLASSIC_NEON -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
                     drawAngledGoal(goalLeft, goalW, top + tableH, scale, NeonCyan, isTop = false)
                     drawAngledGoal(goalLeft, goalW, top, scale, NeonOrange, isTop = true)
                 }

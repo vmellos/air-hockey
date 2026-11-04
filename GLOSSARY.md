@@ -88,6 +88,24 @@ _Avoid_: Tiro de saída, início parado, saque neutro
 A análise posicional contínua executada pela inteligência artificial sobre as coordenadas do rebatedor adversário para direcionar o golpe deliberadamente no lado desprotegido da meta rival.
 _Avoid_: Tiro mirado, mira automática, exploit de IA
 
+## Experiência Visual e Câmera 3D
+
+**Apresentação de Abertura da Mesa 3D**:
+O movimento orbital cinematográfico suave de 360 graus realizado pela câmera ao redor da mesa 3D antes do início da partida, ambientando a arena e aterrissando suavemente na perspectiva travada do Jogador 1. Pode ser pulada instantaneamente com um toque na tela ("Tap to Skip") e retém o Saque de Início até sua conclusão.
+_Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360
+
+**Níveis de Enquadramento 3D**:
+Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1 (Próximo, Padrão e Amplo), permitindo enquadrar integralmente a Meta do Jogador 1, a borda inferior e a meta adversária com folga ergonômica, alternáveis por controle no HUD e persistidos nas preferências do usuário.
+_Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto
+
+**Desprojeção em Perspectiva 3D**:
+O cálculo de interseção geométrica que projeta o raio do ponto de toque na tela diretamente sobre o plano da mesa de jogo (Y = 0), convertendo com precisão coordenadas de tela em coordenadas métricas do motor físico sob qualquer um dos Níveis de Enquadramento 3D para controle preciso dos rebatedores.
+_Avoid_: Raycast 2D, touch 3D aproximado, clique na tela, conversão ortográfica em 3D
+
+**Piso da Arena 3D**:
+O plano espacial perimetral posicionado abaixo e ao redor da mesa 3D estilizado com grade cibernética e balizadores de iluminação neon, servindo de âncora óptica fixa no mundo para evidenciar a cinemática de câmera durante a Apresentação de Abertura da Mesa 3D e ao longo da partida.
+_Avoid_: Chão escuro, fundo vazio, piso simples, arena vazia
+
 ## Modos de Jogo
 
 **Modo Solo**:

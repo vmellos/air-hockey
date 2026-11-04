@@ -268,6 +268,8 @@
     <string name="theme_preset_pong_desc">Diseño retro minimalista de fósforo verde CRT con scanlines y bloque de luz</string>
     <string name="theme_preset_colosseum">Coliseo Cibernético</string>
     <string name="theme_preset_colosseum_desc">Arena negra magnética con grecas romanas, corona de laureles y escudo gladiador</string>
+    <string name="theme_preset_arcade_3d">Arcade 3D Realista</string>
+    <string name="theme_preset_arcade_3d_desc">Mesa tridimensional fotorrealista con motor Filament PBR y perspectiva fija del Jugador 1</string>
     <string name="theme_table_label">Tema de la Mesa</string>
     <string name="theme_puck_label">Apariencia del Disco</string>
     <string name="theme_mallet_label">Apariencia del Rebatedor</string>
@@ -314,4 +316,8 @@
     <string name="quick_audio_music">Música de Fondo</string>
     <string name="quick_audio_haptics">Vibración</string>
     <string name="quick_audio_close">Listo</string>
+    <string name="camera_zoom_standard">Estándar (1.0x)</string>
+    <string name="camera_zoom_wide">Amplio (1.3x)</string>
+    <string name="camera_zoom_close">Cercano (0.8x)</string>
+    <string name="presentation_skip_hint">Toca para saltar</string>
 </resources>

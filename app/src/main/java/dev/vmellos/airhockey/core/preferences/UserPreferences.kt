@@ -24,6 +24,12 @@ enum class VisualEffectsProfile {
     OFF
 }
 
+enum class CameraZoom3D {
+    CLOSE,
+    STANDARD,
+    WIDE
+}
+
 enum class TableTheme {
     CLASSIC_NEON,
     CYBER_SOCCER,
@@ -35,7 +41,8 @@ enum class TableTheme {
     RETRO_SYNTHWAVE,
     TOKAMAK_REACTOR,
     CYBER_PONG,
-    CYBER_COLOSSEUM
+    CYBER_COLOSSEUM,
+    ARCADE_3D
 }
 
 enum class PuckSkin {
@@ -83,6 +90,8 @@ data class UserPreferences(
     val visualEffectsProfile: VisualEffectsProfile = VisualEffectsProfile.FULL,
     val playerName: String = "",
     val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
+    val is3dModeEnabled: Boolean = false,
+    val cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
     val puckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
     val player1MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON,
     val player2MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON

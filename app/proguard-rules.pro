@@ -53,3 +53,11 @@
 -keep class dev.vmellos.airhockey.feature.physics.PuckSnapshot { *; }
 -keep class dev.vmellos.airhockey.feature.physics.MalletSnapshot { *; }
 -keep class dev.vmellos.airhockey.core.preferences.UserPreferences { *; }
+
+# -------------------------------------------------------------------
+# 7. Sceneview & Google Filament 3D
+# -------------------------------------------------------------------
+-keep class io.github.sceneview.** { *; }
+-dontwarn io.github.sceneview.**
+-keep class com.google.android.filament.** { *; }
+-dontwarn com.google.android.filament.**
