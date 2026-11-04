@@ -854,43 +854,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val currentPresetName = when {
-                prefs.tableTheme == TableTheme.CLASSIC_NEON &&
-                        prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
-                        prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_classic)
-                prefs.tableTheme == TableTheme.CYBER_SOCCER &&
-                        prefs.puckSkin == PuckSkin.CYBER_SOCCER_BALL &&
-                        prefs.player1MalletSkin == MalletSkin.MAGNETIC_STRIKER -> stringResource(R.string.theme_preset_cyber_soccer)
-                prefs.tableTheme == TableTheme.NEO_BASKETBALL &&
-                        prefs.puckSkin == PuckSkin.NEO_BASKETBALL &&
-                        prefs.player1MalletSkin == MalletSkin.DUNK_STRIKER -> stringResource(R.string.theme_preset_neo_basketball)
-                prefs.tableTheme == TableTheme.GRAVITY_VOLLEY &&
-                        prefs.puckSkin == PuckSkin.GRAVITY_VOLLEY &&
-                        prefs.player1MalletSkin == MalletSkin.SPIKE_EMITTER -> stringResource(R.string.theme_preset_gravity_volley)
-                prefs.tableTheme == TableTheme.GRIDIRON_FOOTBALL &&
-                        prefs.puckSkin == PuckSkin.GRIDIRON_FOOTBALL &&
-                        prefs.player1MalletSkin == MalletSkin.LINEBACKER_STRIKER -> stringResource(R.string.theme_preset_gridiron)
-                prefs.tableTheme == TableTheme.CYBER_BASEBALL &&
-                        prefs.puckSkin == PuckSkin.CYBER_BASEBALL &&
-                        prefs.player1MalletSkin == MalletSkin.SLUGGER_STRIKER -> stringResource(R.string.theme_preset_baseball)
-                prefs.tableTheme == TableTheme.WASTELAND_APOCALYPSE &&
-                        prefs.puckSkin == PuckSkin.SAWBLADE &&
-                        prefs.player1MalletSkin == MalletSkin.RIPPER_STRIKER -> stringResource(R.string.theme_preset_wasteland)
-                prefs.tableTheme == TableTheme.RETRO_SYNTHWAVE &&
-                        prefs.puckSkin == PuckSkin.SYNTH_DISC &&
-                        prefs.player1MalletSkin == MalletSkin.OUTRUN_STRIKER -> stringResource(R.string.theme_preset_synthwave)
-                prefs.tableTheme == TableTheme.TOKAMAK_REACTOR &&
-                        prefs.puckSkin == PuckSkin.ATOMIC_CORE &&
-                        prefs.player1MalletSkin == MalletSkin.MAGNETIC_COIL -> stringResource(R.string.theme_preset_tokamak)
-                prefs.tableTheme == TableTheme.CYBER_PONG &&
-                        prefs.puckSkin == PuckSkin.PONG_SQUARE &&
-                        prefs.player1MalletSkin == MalletSkin.PONG_PADDLE -> stringResource(R.string.theme_preset_pong)
-                prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
-                        prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
-                        prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
-                else -> stringResource(R.string.customization_custom_preset)
-            }
-
             Card(
                 shape = cardShape,
                 border = cardBorder,
@@ -923,25 +886,12 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(14.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.customization_screen_title),
-                                color = Color.White,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = currentPresetName,
-                                color = Color(0xFF00E5FF),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier
-                                    .background(Color(0x2800E5FF), RoundedCornerShape(4.dp))
-                                    .border(0.8.dp, Color(0x6600E5FF), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.customization_screen_title),
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(R.string.settings_arena_theme_desc),

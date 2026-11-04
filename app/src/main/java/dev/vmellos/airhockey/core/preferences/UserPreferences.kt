@@ -76,7 +76,7 @@ data class UserPreferences(
     val aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
     val bezelGapMm: Float = 8.0f,
     val tableAlignment: TableAlignment = TableAlignment.TOP_TO_TOP,
-    val targetScore: Int = 7,
+    val targetScore: Int = 3,
     val matchTimeSeconds: Int = 180,
     val touchOffsetEnabled: Boolean = true,
     val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL,

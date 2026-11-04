@@ -67,6 +67,9 @@ class AirHockeyApp : Application() {
                 audioEngine.isMusicEnabled = prefs.musicEnabled
                 audioEngine.musicVolume = prefs.musicVolume
                 audioEngine.isHapticsEnabled = prefs.hapticsEnabled
+                audioEngine.currentTheme = prefs.tableTheme
+                audioEngine.currentMalletSkinP1 = prefs.player1MalletSkin
+                audioEngine.currentMalletSkinP2 = prefs.player2MalletSkin
             }
         }
     }

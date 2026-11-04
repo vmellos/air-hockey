@@ -332,3 +332,30 @@ _Avoid_: Site somente em português, landing page estática monolíngue
 O botão de chamada para ação (CTA) principal do Portal Oficial que direciona os jogadores à Google Play Store oficial (`dev.vmellos.airhockey`) com o logotipo vetorial de 4 cores do Google Play, suprimindo links manuais de APK e repositório GitHub.
 _Avoid_: Download de APK direto, link para GitHub, release button
 
+## Áudio Procedural e Acústica Temática
+
+**Síntese Procedural Temática**:
+O mecanismo matemático de geração contínua de áudio PCM mono (22.050 Hz, 16 bits) que sintetiza trilhas de fundo (BGM) e efeitos físicos (SFX) sem inclusão de arquivos estáticos pesados no APK, mantendo a pegada ultraleve da aplicação.
+_Avoid_: Arquivos MP3 pesados, áudio estático gravado, sound pack externo
+
+**Acústica Temática de Colisão**:
+O perfil sonoro individualizado para impactos do disco contra os rebatedores e contra as bordas perimetrais, adaptado aos materiais e identidade acústica de cada uma das 11 arenas temáticas (como estalos secos de taco, ressonância oca em piso de madeira, choques de escudo de bronze, desvios gravitacionais e ondas quadradas vintage).
+_Avoid_: Som genérico de colisão, mesmo bipe para todas as mesas
+
+**Progressão Harmônica de Pontuação**:
+O chime sonoro de celebração executado a cada gol com taxa de afinação (pitch scale) ascendentemente modulada em tempo real conforme a pontuação aproxima-se do alvo da partida (`targetScore`), gerando crescente clímax musical.
+_Avoid_: Tom fixo monótono de pontuação, bipe repetitivo
+
+**Fanfarra Temática de Ponto Pró**:
+O efeito sonoro triunfante e celebratório exclusivo sintetizado para cada arena quando o jogador marca um ponto na meta adversária.
+_Avoid_: Som de gol genérico, apito padrão
+
+**Alarme Temático de Ponto Contra**:
+O sinal sonoro descendente ou aviso de falha de contenção exclusivo sintetizado para cada arena quando o jogador sofre um gol em sua meta.
+_Avoid_: Buzzer padrão, som estático de derrota
+
+**Equipamento Direto em Toque Único**:
+O padrão de interação na tela de customização em que tocar em qualquer card de conjunto, mesa, disco ou rebatedor equipa e persiste a seleção instantaneamente com retorno tátil, suprimindo botões intermediários de confirmação e atualizando a moldura luminosa e indicador de seleção ativa em tempo real.
+_Avoid_: Botão de equipar separado, modal de confirmação de skin, clique duplo para equipar
+
+

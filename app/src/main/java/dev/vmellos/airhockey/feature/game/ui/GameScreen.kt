@@ -54,12 +54,12 @@ fun GameScreen(
         }
     }
 
-    // Controle dinâmico da música de fundo (BGM) conforme o ciclo de vida e estado do jogo
-    LaunchedEffect(matchState.status, isMusicEnabled) {
+    // Controle dinâmico da música de fundo (BGM) conforme o ciclo de vida, tema e estado do jogo
+    LaunchedEffect(matchState.status, isMusicEnabled, prefs.tableTheme) {
         when (matchState.status) {
             MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE -> {
                 if (isMusicEnabled) {
-                    AirHockeyApp.instance.audioEngine.playBgm()
+                    AirHockeyApp.instance.audioEngine.playBgm(prefs.tableTheme)
                 } else {
                     AirHockeyApp.instance.audioEngine.pauseBgm()
                 }
