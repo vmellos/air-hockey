@@ -17,6 +17,8 @@
     <string name="stage_next_btn">Próxima Fase</string>
     <string name="stage_retry_btn">Tentar Novamente</string>
     <string name="stage_list_btn">Fases</string>
+    <string name="stage_target_pts">ALVO: %1$d</string>
+    <string name="scoreboard_target">ALVO: %1$d</string>
     <string name="menu_mode_split">Mesa Dividida</string>
     <string name="menu_mode_split_desc">2 jogadores no mesmo aparelho com tela compartilhada</string>
     <string name="menu_mode_extended">Mesa Estendida</string>

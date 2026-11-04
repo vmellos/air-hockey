@@ -177,6 +177,27 @@ class AirHockeyPhysicsEngineTest {
     }
 
     @Test
+    fun testCountdownPreparatoryPositionClampedToHalf() {
+        engine.resetPositions()
+        val r = engine.player1Mallet.radius
+
+        // Tenta mover P1 para o meio-campo de P2 (y = 300f quando centro é 1000f)
+        val (p1x, p1y) = engine.clampPreparatoryPosition(500f, 300f, r, isPlayer1 = true)
+        assertTrue("P1 deve ficar no meio-campo inferior", p1y >= engine.dimensions.centerLineY + r)
+
+        // Tenta mover P2 para o meio-campo de P1 (y = 1700f)
+        val (p2x, p2y) = engine.clampPreparatoryPosition(500f, 1700f, r, isPlayer1 = false)
+        assertTrue("P2 deve ficar no meio-campo superior", p2y <= engine.dimensions.centerLineY - r)
+
+        // Verifica que tickMalletsOnly também preserva os limites de meio-campo
+        engine.player1Mallet.x = 500f
+        engine.player1Mallet.y = 400f // Forçado anômalo
+        engine.player1Mallet.targetY = 300f
+        engine.tickMalletsOnly(0.016f)
+        assertTrue("tickMalletsOnly deve conter P1 em seu meio-campo", engine.player1Mallet.y >= engine.dimensions.centerLineY + r)
+    }
+
+    @Test
     fun testAiControllerPlayer1Symmetry() {
         val aiPlayer1 = dev.vmellos.airhockey.feature.ai.AirHockeyAiController(
             difficulty = dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD,

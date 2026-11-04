@@ -87,16 +87,25 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
         val config = getStageConfig(stageNumber)
         if (scorePlayer < config.targetScore) return 0
 
-        return if (config.targetScore <= 3) {
-            when {
+        return when {
+            config.targetScore <= 3 -> when {
                 scoreAi == 0 -> 3
                 scoreAi == 1 -> 2
                 else -> 1
             }
-        } else {
-            when {
+            config.targetScore <= 5 -> when {
                 scoreAi <= 1 -> 3
-                scoreAi <= 2 -> 2
+                scoreAi <= 3 -> 2
+                else -> 1
+            }
+            config.targetScore <= 7 -> when {
+                scoreAi <= 2 -> 3
+                scoreAi <= 4 -> 2
+                else -> 1
+            }
+            else -> when {
+                scoreAi <= 3 -> 3
+                scoreAi <= 6 -> 2
                 else -> 1
             }
         }

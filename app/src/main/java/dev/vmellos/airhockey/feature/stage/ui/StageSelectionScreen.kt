@@ -257,7 +257,23 @@ fun StageCard(
                     letterSpacing = 0.5.sp
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                // Selo da Pontuação Alvo da Fase (Padrão Arcade)
+                val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(stage.stageNumber)
+                Surface(
+                    shape = CutCornerShape(4.dp),
+                    color = accentColor.copy(alpha = 0.12f),
+                    border = BorderStroke(0.7.dp, accentColor.copy(alpha = 0.40f)),
+                    modifier = Modifier.padding(bottom = 2.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.stage_target_pts, stageConfig.targetScore),
+                        color = Color(0xCCFFFFFF),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     } else {

@@ -87,7 +87,9 @@ class AirHockeyPhysicsEngine(
     fun tickMalletsOnly(dt: Float) {
         updateMalletPositions(dt)
         clampMalletAgainstFrozenPuck(player1Mallet)
+        clampMalletToHalf(player1Mallet, isPlayer1 = true)
         clampMalletAgainstFrozenPuck(player2Mallet)
+        clampMalletToHalf(player2Mallet, isPlayer1 = false)
     }
 
     /**
@@ -126,6 +128,16 @@ class AirHockeyPhysicsEngine(
         } else {
             Pair(tx, ty)
         }
+    }
+
+    /**
+     * Restringe a posição desejada estritamente ao respectivo meio-campo da mesa e previne sobreposição com o disco congelado.
+     */
+    fun clampPreparatoryPosition(tx: Float, ty: Float, malletRadius: Float, isPlayer1: Boolean): Pair<Float, Float> {
+        val halfClamped = projection.clampMallet(tx, ty, malletRadius, isPlayer1)
+        val (puckClampedX, puckClampedY) = clampPositionAgainstFrozenPuck(halfClamped.x, halfClamped.y, malletRadius)
+        val finalClamped = projection.clampMallet(puckClampedX, puckClampedY, malletRadius, isPlayer1)
+        return Pair(finalClamped.x, finalClamped.y)
     }
 
     private fun subTick(dt: Float) {
@@ -179,7 +191,7 @@ class AirHockeyPhysicsEngine(
         player2Mallet.vy = if (dt > 0) (player2Mallet.y - oldP2Y) / dt else 0f
     }
 
-    private fun clampMalletToHalf(mallet: Mallet, isPlayer1: Boolean) {
+    fun clampMalletToHalf(mallet: Mallet, isPlayer1: Boolean) {
         val clamped = projection.clampMallet(mallet.x, mallet.y, mallet.radius, isPlayer1)
         mallet.x = clamped.x
         mallet.y = clamped.y
