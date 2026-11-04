@@ -348,7 +348,14 @@ fun MainMenuScreen(
             )
         }
     }
-}
+
+        if (showQuickAudioDialog) {
+            QuickAudioDialog(
+                prefs = prefs,
+                onDismiss = { showQuickAudioDialog = false }
+            )
+        }
+    }
 }
 
 @Composable
@@ -536,13 +543,6 @@ fun InAppUpdateDownloadedBanner(
                     )
                 }
             }
-        }
-
-        if (showQuickAudioDialog) {
-            QuickAudioDialog(
-                prefs = prefs,
-                onDismiss = { showQuickAudioDialog = false }
-            )
         }
     }
 }
