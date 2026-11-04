@@ -47,8 +47,11 @@ class AirHockeyAiController(
         }
         val isStationaryPuck = puckSpeed < 35f
 
+        // Limite da metade de campo da IA (na Mesa Estendida, cada aparelho tem profundidade de viewportHeight)
+        val aiHalfBoundaryY = if (dimensions.isExtendedMode) dimensions.viewportHeight else dimensions.centerLineY
+
         // Se o disco estiver parado ou quase parado próximo ao meio de campo, expande a área de domínio para desempacar
-        val isPuckInAiHalf = puckY <= (dimensions.centerLineY + if (isStationaryPuck) 40f else 0f)
+        val isPuckInAiHalf = puckY <= (aiHalfBoundaryY + if (isStationaryPuck) 40f else 0f)
         val isPuckMovingTowardsAi = puckVy < -15f
 
         // Configuração de dinâmica e velocidades
@@ -101,7 +104,7 @@ class AirHockeyAiController(
         } else {
             when (difficulty) {
                 AiDifficulty.EASY -> {
-                    val isDeadlockBreak = idleTimer > 1.2f && puckY in (homeY + 20f)..(dimensions.centerLineY + 20f)
+                    val isDeadlockBreak = idleTimer > 1.2f && puckY in (homeY + 20f)..(aiHalfBoundaryY + 20f)
                     val canStrikeServe = isStationaryPuck && isPuckInAiHalf && puckY > malletY + 15f
 
                     if (isPuckBehindMallet) {
@@ -110,11 +113,11 @@ class AirHockeyAiController(
                     } else if (canStrikeServe || isDeadlockBreak) {
                         // Saque de Início da IA ou Desempace suave no nível Fácil
                         desiredX = (puck.x + aimingErrorX).coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                        desiredY = (puckY + 45f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.3f)
-                    } else if (perceivedPuckY <= dimensions.centerLineY + 20f) {
+                        desiredY = (puckY + 45f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.3f)
+                    } else if (perceivedPuckY <= aiHalfBoundaryY + 20f) {
                         desiredX = perceivedPuckX + aimingErrorX
                         desiredY = if (perceivedPuckY > homeY + 20f) {
-                            (perceivedPuckY - 35f).coerceIn(homeY, dimensions.centerLineY - mallet.radius)
+                            (perceivedPuckY - 35f).coerceIn(homeY, aiHalfBoundaryY - mallet.radius)
                         } else {
                             homeY
                         }
@@ -125,7 +128,7 @@ class AirHockeyAiController(
                 }
 
                 AiDifficulty.MEDIUM -> {
-                    val isDeadlockBreak = idleTimer > 1.0f && puckY in (dimensions.centerLineY - 250f)..(dimensions.centerLineY + 60f)
+                    val isDeadlockBreak = idleTimer > 1.0f && puckY in (aiHalfBoundaryY - 250f)..(aiHalfBoundaryY + 60f)
                     val canStrikeServe = isStationaryPuck && isPuckInAiHalf && puckY > malletY + 15f
 
                     if (canStrikeServe || isDeadlockBreak) {
@@ -140,22 +143,22 @@ class AirHockeyAiController(
                             isHard = false
                         )
                         desiredX = tactical.first.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                        desiredY = (puckY + 55f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.3f)
+                        desiredY = (puckY + 55f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.3f)
                     } else if (isPuckInAiHalf || (isPuckMovingTowardsAi && puckY < dimensions.totalHeight * 0.65f)) {
+                        val defenseBaselineY = homeY + 40f
                         var targetX = puck.x
-                        if (isPuckMovingTowardsAi && abs(puckVy) > 30f) {
-                            val interceptY = 250f
-                            val timeToIntercept = (puckY - interceptY) / abs(puckVy)
+                        if (isPuckMovingTowardsAi && abs(puckVy) > 30f && puckY > defenseBaselineY) {
+                            val timeToIntercept = (puckY - defenseBaselineY) / abs(puckVy)
                             targetX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
                         }
 
-                        val canAttack = isPuckInAiHalf && puckY > malletY + 25f && puckY <= dimensions.centerLineY
+                        val canAttack = isPuckInAiHalf && puckY > malletY + 25f && puckY <= aiHalfBoundaryY
 
                         if (canAttack) {
                             if (isBankShotActive) {
                                 val lateralOffset = bankShotDirection * (mallet.radius * 0.45f)
                                 desiredX = (targetX + lateralOffset).coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                                desiredY = (puckY + 45f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.3f)
+                                desiredY = (puckY + 45f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.3f)
                             } else {
                                 val tactical = calculateTacticalAttackTarget(
                                     puckX = targetX,
@@ -167,11 +170,11 @@ class AirHockeyAiController(
                                     isHard = false
                                 )
                                 desiredX = tactical.first.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                                desiredY = (puckY + 45f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.3f)
+                                desiredY = (puckY + 45f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.3f)
                             }
                         } else {
                             desiredX = targetX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                            desiredY = if (puckY in (homeY + 30f)..(dimensions.centerLineY - mallet.radius)) {
+                            desiredY = if (puckY in (homeY + 30f)..(aiHalfBoundaryY - mallet.radius)) {
                                 puckY + 35f
                             } else {
                                 homeY + 30f
@@ -184,7 +187,7 @@ class AirHockeyAiController(
                 }
 
                 AiDifficulty.HARD -> {
-                    val isDeadlockBreak = idleTimer > 0.8f && puckY in (dimensions.centerLineY - 280f)..(dimensions.centerLineY + 80f)
+                    val isDeadlockBreak = idleTimer > 0.8f && puckY in (aiHalfBoundaryY - 280f)..(aiHalfBoundaryY + 80f)
                     val canStrikeServe = isStationaryPuck && isPuckInAiHalf && puckY > malletY + 15f
 
                     if (canStrikeServe || isDeadlockBreak) {
@@ -199,22 +202,22 @@ class AirHockeyAiController(
                             isHard = true
                         )
                         desiredX = tactical.first.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                        desiredY = (puckY + 70f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.2f)
+                        desiredY = (puckY + 70f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.2f)
                     } else if (isPuckInAiHalf || isPuckMovingTowardsAi) {
-                        val interceptY = if (isPuckInAiHalf) puckY else 260f
+                        val defenseBaselineY = homeY + 40f
                         var predictedX = puck.x
-                        if (isPuckMovingTowardsAi && abs(puckVy) > 20f) {
-                            val timeToIntercept = (puckY - interceptY) / abs(puckVy)
+                        if (isPuckMovingTowardsAi && abs(puckVy) > 20f && puckY > defenseBaselineY) {
+                            val timeToIntercept = (puckY - defenseBaselineY) / abs(puckVy)
                             predictedX = predictXWithBounces(puck.x, puck.vx, timeToIntercept, dimensions.width, mallet.radius)
                         }
 
-                        val canAttack = isPuckInAiHalf && puckY > malletY + 20f && puckY <= dimensions.centerLineY
+                        val canAttack = isPuckInAiHalf && puckY > malletY + 20f && puckY <= aiHalfBoundaryY
 
                         if (canAttack) {
                             if (isBankShotActive) {
                                 val lateralOffset = bankShotDirection * (mallet.radius * 0.60f)
                                 desiredX = (puck.x + lateralOffset).coerceIn(mallet.radius + 20f, dimensions.width - mallet.radius - 20f)
-                                desiredY = (puckY + 65f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.2f)
+                                desiredY = (puckY + 65f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.2f)
                             } else {
                                 // Mira Tática Anti-Oponente de precisão máxima
                                 val tactical = calculateTacticalAttackTarget(
@@ -227,11 +230,11 @@ class AirHockeyAiController(
                                     isHard = true
                                 )
                                 desiredX = tactical.first.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                                desiredY = (puckY + 65f).coerceAtMost(dimensions.centerLineY - mallet.radius * 0.2f)
+                                desiredY = (puckY + 65f).coerceAtMost(aiHalfBoundaryY - mallet.radius * 0.2f)
                             }
                         } else {
                             desiredX = predictedX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
-                            desiredY = (homeY + 40f).coerceAtMost(dimensions.centerLineY - 120f)
+                            desiredY = (homeY + 40f).coerceAtMost(aiHalfBoundaryY - 120f)
                         }
                     } else {
                         // Posicionamento defensivo com leitura da linha de passe adversária
@@ -245,9 +248,11 @@ class AirHockeyAiController(
         // Restringe estritamente o alvo ao meio campo correspondente
         val clampedDesiredX = desiredX.coerceIn(mallet.radius, dimensions.width - mallet.radius)
         val clampedDesiredY = if (isPlayer1) {
-            (dimensions.totalHeight - desiredY).coerceIn(dimensions.centerLineY + mallet.radius, dimensions.totalHeight - mallet.radius)
+            val minY = if (dimensions.isExtendedMode) dimensions.guestHalfTopY + mallet.radius else (dimensions.centerLineY + mallet.radius)
+            (dimensions.totalHeight - desiredY).coerceIn(minY, dimensions.totalHeight - mallet.radius)
         } else {
-            desiredY.coerceIn(mallet.radius, dimensions.centerLineY - mallet.radius)
+            val maxY = if (dimensions.isExtendedMode) dimensions.hostHalfBottomY - mallet.radius else (dimensions.centerLineY - mallet.radius)
+            desiredY.coerceIn(mallet.radius, maxY)
         }
 
         val dx = clampedDesiredX - mallet.targetX

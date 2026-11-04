@@ -134,4 +134,10 @@ class StageProgressionTest {
         val updatedStage1 = dao.getStageDirect(1)
         assertEquals(3, updatedStage1?.starsEarned)
     }
+
+    @Test
+    fun testRoomMigration1To2Definition() {
+        assertEquals(1, dev.vmellos.airhockey.core.database.AppDatabase.MIGRATION_1_2.startVersion)
+        assertEquals(2, dev.vmellos.airhockey.core.database.AppDatabase.MIGRATION_1_2.endVersion)
+    }
 }
