@@ -36,6 +36,10 @@ class UserPreferencesRepository(private val context: Context) {
         val PUCK_SPEED = stringPreferencesKey("puck_speed")
         val VISUAL_EFFECTS_PROFILE = stringPreferencesKey("visual_effects_profile")
         val PLAYER_NAME = stringPreferencesKey("player_name")
+        val TABLE_THEME = stringPreferencesKey("table_theme")
+        val PUCK_SKIN = stringPreferencesKey("puck_skin")
+        val MALLET_SKIN_P1 = stringPreferencesKey("mallet_skin_p1")
+        val MALLET_SKIN_P2 = stringPreferencesKey("mallet_skin_p2")
     }
 
     companion object {
@@ -99,6 +103,18 @@ class UserPreferencesRepository(private val context: Context) {
             val storedName = preferences[PreferencesKeys.PLAYER_NAME]
             val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)
 
+            val tableThemeStr = preferences[PreferencesKeys.TABLE_THEME] ?: TableTheme.CLASSIC_NEON.name
+            val tableTheme = try { TableTheme.valueOf(tableThemeStr) } catch (_: Exception) { TableTheme.CLASSIC_NEON }
+
+            val puckSkinStr = preferences[PreferencesKeys.PUCK_SKIN] ?: PuckSkin.CLASSIC_PLASMA.name
+            val puckSkin = try { PuckSkin.valueOf(puckSkinStr) } catch (_: Exception) { PuckSkin.CLASSIC_PLASMA }
+
+            val malletP1Str = preferences[PreferencesKeys.MALLET_SKIN_P1] ?: MalletSkin.CLASSIC_NEON.name
+            val malletP1 = try { MalletSkin.valueOf(malletP1Str) } catch (_: Exception) { MalletSkin.CLASSIC_NEON }
+
+            val malletP2Str = preferences[PreferencesKeys.MALLET_SKIN_P2] ?: MalletSkin.CLASSIC_NEON.name
+            val malletP2 = try { MalletSkin.valueOf(malletP2Str) } catch (_: Exception) { MalletSkin.CLASSIC_NEON }
+
             UserPreferences(
                 appLanguage = lang,
                 soundEnabled = soundEnabled,
@@ -114,7 +130,11 @@ class UserPreferencesRepository(private val context: Context) {
                 touchOffsetEnabled = touchOffsetEnabled,
                 puckSpeed = puckSpeed,
                 visualEffectsProfile = fxProfile,
-                playerName = playerName
+                playerName = playerName,
+                tableTheme = tableTheme,
+                puckSkin = puckSkin,
+                player1MalletSkin = malletP1,
+                player2MalletSkin = malletP2
             )
         }
 
@@ -217,6 +237,93 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setVisualEffectsProfile(profile: VisualEffectsProfile) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.VISUAL_EFFECTS_PROFILE] = profile.name
+        }
+    }
+
+    suspend fun setTableTheme(theme: TableTheme) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TABLE_THEME] = theme.name
+        }
+    }
+
+    suspend fun setPuckSkin(skin: PuckSkin) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PUCK_SKIN] = skin.name
+        }
+    }
+
+    suspend fun setMalletSkinP1(skin: MalletSkin) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MALLET_SKIN_P1] = skin.name
+        }
+    }
+
+    suspend fun setMalletSkinP2(skin: MalletSkin) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MALLET_SKIN_P2] = skin.name
+        }
+    }
+
+    suspend fun applyThemePreset(theme: TableTheme) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TABLE_THEME] = theme.name
+            when (theme) {
+                TableTheme.CLASSIC_NEON -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CLASSIC_PLASMA.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.CLASSIC_NEON.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
+                }
+                TableTheme.CYBER_SOCCER -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CYBER_SOCCER_BALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.MAGNETIC_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.MAGNETIC_STRIKER.name
+                }
+                TableTheme.NEO_BASKETBALL -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.NEO_BASKETBALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.DUNK_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.DUNK_STRIKER.name
+                }
+                TableTheme.GRAVITY_VOLLEY -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GRAVITY_VOLLEY.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPIKE_EMITTER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPIKE_EMITTER.name
+                }
+                TableTheme.GRIDIRON_FOOTBALL -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GRIDIRON_FOOTBALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.LINEBACKER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.LINEBACKER_STRIKER.name
+                }
+                TableTheme.CYBER_BASEBALL -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CYBER_BASEBALL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SLUGGER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SLUGGER_STRIKER.name
+                }
+                TableTheme.WASTELAND_APOCALYPSE -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SAWBLADE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.RIPPER_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.RIPPER_STRIKER.name
+                }
+                TableTheme.RETRO_SYNTHWAVE -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SYNTH_DISC.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.OUTRUN_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.OUTRUN_STRIKER.name
+                }
+                TableTheme.TOKAMAK_REACTOR -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.ATOMIC_CORE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.MAGNETIC_COIL.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.MAGNETIC_COIL.name
+                }
+                TableTheme.CYBER_PONG -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.PONG_SQUARE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.PONG_PADDLE.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.PONG_PADDLE.name
+                }
+                TableTheme.CYBER_COLOSSEUM -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GLADIATOR_SHIELD.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPARTAN_AEGIS.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPARTAN_AEGIS.name
+                }
+            }
         }
     }
 }

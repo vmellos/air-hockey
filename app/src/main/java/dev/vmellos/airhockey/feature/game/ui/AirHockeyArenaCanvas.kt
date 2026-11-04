@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
 import dev.vmellos.airhockey.feature.game.GameMode
@@ -98,10 +101,24 @@ fun AirHockeyArenaCanvas(
         }
     }
 
+    val arenaBgColor = when (prefs.tableTheme) {
+        TableTheme.CYBER_SOCCER -> CyberTurfDark
+        TableTheme.NEO_BASKETBALL -> CourtDark
+        TableTheme.GRAVITY_VOLLEY -> VolleySpaceDark
+        TableTheme.GRIDIRON_FOOTBALL -> GridironDark
+        TableTheme.CYBER_BASEBALL -> BaseballDark
+        TableTheme.WASTELAND_APOCALYPSE -> WastelandDark
+        TableTheme.RETRO_SYNTHWAVE -> SynthDark
+        TableTheme.TOKAMAK_REACTOR -> TokamakDark
+        TableTheme.CYBER_PONG -> PongDark
+        TableTheme.CYBER_COLOSSEUM -> ColosseumDark
+        TableTheme.CLASSIC_NEON -> TableBgDark
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(TableBgDark)
+            .background(arenaBgColor)
             .pointerInput(engine, mode, projection, touchOffset, matchState.currentStage) {
                 activePointerP1 = null
                 activePointerP2 = null
@@ -230,16 +247,56 @@ fun AirHockeyArenaCanvas(
             lastFrameTime = framePulse
 
             // 1. Drena colisões pendentes e dispara efeitos visuais no pool de partículas
+            val p1ThemeColor = when (prefs.tableTheme) {
+                TableTheme.CYBER_SOCCER -> NeonEmerald
+                TableTheme.NEO_BASKETBALL -> NeonAmber
+                TableTheme.GRAVITY_VOLLEY -> NeonViolet
+                TableTheme.GRIDIRON_FOOTBALL -> GridironCyan
+                TableTheme.CYBER_BASEBALL -> BaseballRed
+                TableTheme.WASTELAND_APOCALYPSE -> WastelandFlame
+                TableTheme.RETRO_SYNTHWAVE -> SynthPink
+                TableTheme.TOKAMAK_REACTOR -> TokamakRadiation
+                TableTheme.CYBER_PONG -> PongGreen
+                TableTheme.CYBER_COLOSSEUM -> ColosseumGold
+                TableTheme.CLASSIC_NEON -> NeonCyan
+            }
+            val p2ThemeColor = when (prefs.tableTheme) {
+                TableTheme.CYBER_SOCCER -> NeonRuby
+                TableTheme.NEO_BASKETBALL -> NeonCyan
+                TableTheme.GRAVITY_VOLLEY -> NeonMagenta
+                TableTheme.GRIDIRON_FOOTBALL -> GridironGold
+                TableTheme.CYBER_BASEBALL -> BaseballCyan
+                TableTheme.WASTELAND_APOCALYPSE -> WastelandFlameBright
+                TableTheme.RETRO_SYNTHWAVE -> SynthCyan
+                TableTheme.TOKAMAK_REACTOR -> TokamakPlasma
+                TableTheme.CYBER_PONG -> PongGreenBright
+                TableTheme.CYBER_COLOSSEUM -> ColosseumCrimson
+                TableTheme.CLASSIC_NEON -> NeonOrange
+            }
+            val wallHitColor = when (prefs.tableTheme) {
+                TableTheme.CYBER_SOCCER -> CyberSoccerGold
+                TableTheme.NEO_BASKETBALL -> NeonAmberBright
+                TableTheme.GRAVITY_VOLLEY -> VolleyYellow
+                TableTheme.GRIDIRON_FOOTBALL -> GridironGoldBright
+                TableTheme.CYBER_BASEBALL -> BaseballRedBright
+                TableTheme.WASTELAND_APOCALYPSE -> WastelandHazardYellow
+                TableTheme.RETRO_SYNTHWAVE -> SynthSunYellow
+                TableTheme.TOKAMAK_REACTOR -> TokamakRadiationBright
+                TableTheme.CYBER_PONG -> PongGreenBright
+                TableTheme.CYBER_COLOSSEUM -> ColosseumGoldBright
+                TableTheme.CLASSIC_NEON -> Color(0xFFE2E8F0)
+            }
+
             synchronized(pendingCollisions) {
                 while (pendingCollisions.isNotEmpty()) {
                     val (tx, ty, evt) = pendingCollisions.removeFirst()
                     val sPt = projection.tableToScreen(tx, ty, screenW, screenH)
                     val color = when (evt) {
-                        CollisionEvent.PADDLE_HIT_P1 -> NeonCyan
-                        CollisionEvent.PADDLE_HIT_P2 -> NeonOrange
-                        CollisionEvent.GOAL_PLAYER1 -> NeonCyan
-                        CollisionEvent.GOAL_PLAYER2 -> NeonOrange
-                        else -> Color(0xFFE2E8F0)
+                        CollisionEvent.PADDLE_HIT_P1 -> p1ThemeColor
+                        CollisionEvent.PADDLE_HIT_P2 -> p2ThemeColor
+                        CollisionEvent.GOAL_PLAYER1 -> p1ThemeColor
+                        CollisionEvent.GOAL_PLAYER2 -> p2ThemeColor
+                        else -> wallHitColor
                     }
 
                     if (prefs.visualEffectsProfile != VisualEffectsProfile.OFF) {
@@ -259,34 +316,73 @@ fun AirHockeyArenaCanvas(
 
             particlePool.update(dt)
 
-            // 2. Desenha arena da mesa com Bordas Chanfradas Neon
-            drawChamferedTable(
-                left = offsetX,
-                top = offsetY,
-                width = vWidth * scale,
-                height = vHeight * scale,
-                scale = scale,
-                isExtendedHost = isExtendedHost,
-                isExtendedGuest = isExtendedGuest,
-                isConnectedGuest = isConnectedGuest
-            )
+            // 2. Desenha arena da mesa completa para todos os 11 temas
+            when (prefs.tableTheme) {
+                TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.GRIDIRON_FOOTBALL -> drawGridironTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.CYBER_BASEBALL -> drawCyberBaseballTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.WASTELAND_APOCALYPSE -> drawWastelandTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.RETRO_SYNTHWAVE -> drawRetroSynthwaveTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.CYBER_PONG -> drawCyberPongTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.CLASSIC_NEON -> drawChamferedTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+            }
 
-            // 3. Desenha metas trapezoidais anguladas
+            // 3. Desenha metas da mesa
             val goalW = dimensions.goalWidth * scale
             val goalLeft = offsetX + dimensions.goalLeft * scale
             val screenBottom = offsetY + vHeight * scale
+            val topGoalColor = if (isConnectedGuest || isExtendedGuest) p2ThemeColor else p2ThemeColor
+            val bottomGoalColor = if (isExtendedGuest) p2ThemeColor else p1ThemeColor
 
-            if (isConnectedGuest) {
-                drawAngledGoal(goalLeft, goalW, screenBottom, scale, NeonOrange, isTop = false)
-                drawAngledGoal(goalLeft, goalW, offsetY, scale, NeonCyan, isTop = true)
-            } else if (isExtendedGuest) {
-                drawAngledGoal(goalLeft, goalW, screenBottom, scale, NeonOrange, isTop = false)
-            } else if (isExtendedHost) {
-                drawAngledGoal(goalLeft, goalW, screenBottom, scale, NeonCyan, isTop = false)
-            } else {
-                // Modo Solo e Split
-                drawAngledGoal(goalLeft, goalW, screenBottom, scale, NeonCyan, isTop = false)
-                drawAngledGoal(goalLeft, goalW, offsetY, scale, NeonOrange, isTop = true)
+            when (prefs.tableTheme) {
+                TableTheme.CYBER_SOCCER -> {
+                    if (!isExtendedHost) drawCyberSoccerGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawCyberSoccerGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.NEO_BASKETBALL -> {
+                    if (!isExtendedHost) drawBasketballGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawBasketballGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.GRAVITY_VOLLEY -> {
+                    if (!isExtendedHost) drawVolleyGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawVolleyGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.GRIDIRON_FOOTBALL -> {
+                    if (!isExtendedHost) drawGridironGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawGridironGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.CYBER_BASEBALL -> {
+                    if (!isExtendedHost) drawBaseballGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawBaseballGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.WASTELAND_APOCALYPSE -> {
+                    if (!isExtendedHost) drawWastelandGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawWastelandGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.RETRO_SYNTHWAVE -> {
+                    if (!isExtendedHost) drawSynthwaveGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawSynthwaveGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.TOKAMAK_REACTOR -> {
+                    if (!isExtendedHost) drawTokamakGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawTokamakGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.CYBER_PONG -> {
+                    if (!isExtendedHost) drawPongGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawPongGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.CYBER_COLOSSEUM -> {
+                    if (!isExtendedHost) drawColosseumGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
+                    drawColosseumGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
+                TableTheme.CLASSIC_NEON -> {
+                    if (!isExtendedHost) drawAngledGoal(goalLeft, goalW, offsetY, scale, NeonOrange, isTop = true)
+                    drawAngledGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
+                }
             }
 
             // 4. Vórtice de Contagem Regressiva (Print 1)
@@ -310,29 +406,39 @@ fun AirHockeyArenaCanvas(
                 particlePool.drawSparks(this, scale)
             }
 
-            // 7. Desenha Rebatedor 1 (Jogador 1 - Ciano) com relevo pseudo-3D
+            // 7. Desenha Rebatedor 1 (Jogador 1)
             val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
-            drawPseudo3DMallet(
-                cx = p1Screen.x,
-                cy = p1Screen.y,
-                radius = engine.player1Mallet.radius * scale,
-                accentColor = NeonCyan,
-                rimColor = NeonCyanBright,
-                scale = scale
-            )
+            when (prefs.player1MalletSkin) {
+                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonEmerald, rimColor = NeonEmeraldBright, scale = scale)
+                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonAmber, rimColor = NeonAmberBright, scale = scale)
+                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonViolet, rimColor = NeonVioletBright, scale = scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = GridironCyan, rimColor = GridironGold, scale = scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = BaseballRed, rimColor = BaseballRedBright, scale = scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = WastelandFlame, rimColor = WastelandFlameBright, scale = scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = SynthPink, rimColor = SynthPinkBright, scale = scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = TokamakRadiation, rimColor = TokamakRadiationBright, scale = scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = PongGreen, rimColor = PongGreenBright, scale = scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = ColosseumGold, rimColor = ColosseumGoldBright, scale = scale)
+                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
+            }
 
-            // 8. Desenha Rebatedor 2 (Jogador 2 - Laranja) com relevo pseudo-3D
+            // 8. Desenha Rebatedor 2 (Jogador 2)
             val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
-            drawPseudo3DMallet(
-                cx = p2Screen.x,
-                cy = p2Screen.y,
-                radius = engine.player2Mallet.radius * scale,
-                accentColor = NeonOrange,
-                rimColor = NeonOrangeBright,
-                scale = scale
-            )
+            when (prefs.player2MalletSkin) {
+                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonRuby, rimColor = NeonRubyBright, scale = scale)
+                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
+                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonMagenta, rimColor = NeonMagentaBright, scale = scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = GridironGold, rimColor = GridironCyan, scale = scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = BaseballCyan, rimColor = BaseballCyanBright, scale = scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = WastelandFlameBright, rimColor = WastelandFlame, scale = scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = SynthCyan, rimColor = SynthCyanBright, scale = scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = TokamakPlasma, rimColor = TokamakPlasmaBright, scale = scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = PongGreenBright, rimColor = PongGreen, scale = scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = ColosseumCrimson, rimColor = ColosseumGold, scale = scale)
+                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonOrange, rimColor = NeonOrangeBright, scale = scale)
+            }
 
-            // 9. Desenha Disco em Anel Toroidal e Rastro de Energia (Prints 2 e 3)
+            // 9. Desenha Disco e Rastro de Energia (Prints 2 e 3)
             if (projection.isVisibleInViewport(engine.puck.x, engine.puck.y, engine.puck.radius)) {
                 val puckScreen = projection.tableToScreen(engine.puck.x, engine.puck.y, screenW, screenH)
                 val spd = engine.puck.speed()
@@ -347,7 +453,7 @@ fun AirHockeyArenaCanvas(
 
                     // Em velocidade ultra-alta, emite micro-faíscas incandescentes da cauda de fogo
                     if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL && spd > 2200f && (framePulse % 4L == 0L)) {
-                        val sparkColor = if (engine.puck.lastHitBy == 1) NeonCyan else if (engine.puck.lastHitBy == 2) NeonOrange else GoldSpark
+                        val sparkColor = if (engine.puck.lastHitBy == 1) p1ThemeColor else if (engine.puck.lastHitBy == 2) p2ThemeColor else wallHitColor
                         particlePool.spawnSparks(puckScreen.x, puckScreen.y, 2, sparkColor, spreadSpeed = 200f * scale, duration = 0.35f)
                     }
                 } else if (puckTrail.isNotEmpty()) {
@@ -355,10 +461,62 @@ fun AirHockeyArenaCanvas(
                 }
 
                 // Cor dinâmica do rastro e do disco conforme o último batedor
-                val (puckAccentColor, puckCoreColor) = when (engine.puck.lastHitBy) {
-                    1 -> Pair(NeonCyan, NeonCyanCore)
-                    2 -> Pair(NeonOrange, NeonOrangeCore)
-                    else -> Pair(NeonCyanBright, WhiteHot)
+                val (puckAccentColor, puckCoreColor) = when (prefs.puckSkin) {
+                    PuckSkin.CYBER_SOCCER_BALL -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(NeonEmerald, NeonEmeraldCore)
+                        2 -> Pair(NeonRuby, NeonRubyCore)
+                        else -> Pair(CyberSoccerGold, WhiteHot)
+                    }
+                    PuckSkin.NEO_BASKETBALL -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(NeonAmber, NeonAmberCore)
+                        2 -> Pair(NeonCyan, NeonCyanCore)
+                        else -> Pair(NeonAmberBright, WhiteHot)
+                    }
+                    PuckSkin.GRAVITY_VOLLEY -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(NeonViolet, NeonVioletCore)
+                        2 -> Pair(NeonMagenta, NeonMagentaCore)
+                        else -> Pair(VolleyYellow, WhiteHot)
+                    }
+                    PuckSkin.GRIDIRON_FOOTBALL -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(GridironCyan, GridironCyanCore)
+                        2 -> Pair(GridironGold, GridironGoldCore)
+                        else -> Pair(GridironGoldBright, WhiteHot)
+                    }
+                    PuckSkin.CYBER_BASEBALL -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(BaseballRed, BaseballRedCore)
+                        2 -> Pair(BaseballCyan, BaseballCyanCore)
+                        else -> Pair(BaseballRedBright, WhiteHot)
+                    }
+                    PuckSkin.SAWBLADE -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(WastelandFlame, WastelandFlameCore)
+                        2 -> Pair(WastelandFlameBright, WastelandFlameCore)
+                        else -> Pair(WastelandHazardYellow, WhiteHot)
+                    }
+                    PuckSkin.SYNTH_DISC -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(SynthPink, SynthPinkCore)
+                        2 -> Pair(SynthCyan, SynthCyanCore)
+                        else -> Pair(SynthSunYellow, WhiteHot)
+                    }
+                    PuckSkin.ATOMIC_CORE -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(TokamakRadiation, TokamakRadiationCore)
+                        2 -> Pair(TokamakPlasma, TokamakPlasmaCore)
+                        else -> Pair(TokamakRadiationBright, WhiteHot)
+                    }
+                    PuckSkin.PONG_SQUARE -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(PongGreen, PongGreenCore)
+                        2 -> Pair(PongGreenBright, PongGreenCore)
+                        else -> Pair(PongGreenBright, WhiteHot)
+                    }
+                    PuckSkin.GLADIATOR_SHIELD -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(ColosseumGold, ColosseumGoldCore)
+                        2 -> Pair(ColosseumCrimson, ColosseumCrimsonCore)
+                        else -> Pair(ColosseumGoldBright, WhiteHot)
+                    }
+                    PuckSkin.CLASSIC_PLASMA -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(NeonCyan, NeonCyanCore)
+                        2 -> Pair(NeonOrange, NeonOrangeCore)
+                        else -> Pair(NeonCyanBright, WhiteHot)
+                    }
                 }
 
                 // Desenha rastro fluido de plasma com ondulação de chamas
@@ -372,14 +530,20 @@ fun AirHockeyArenaCanvas(
                     scale = scale
                 )
 
-                // Desenha o disco anelar toroidal
-                drawEnergyRingPuck(
-                    cx = puckScreen.x,
-                    cy = puckScreen.y,
-                    radius = engine.puck.radius * scale,
-                    accentColor = puckAccentColor,
-                    scale = scale
-                )
+                // Desenha o disco de acordo com a skin ativa
+                when (prefs.puckSkin) {
+                    PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.SAWBLADE -> drawSawbladePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.SYNTH_DISC -> drawSynthwavePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.PONG_SQUARE -> drawPongPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                }
             }
         }
     }

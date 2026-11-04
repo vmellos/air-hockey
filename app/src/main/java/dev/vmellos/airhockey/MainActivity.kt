@@ -41,6 +41,7 @@ import dev.vmellos.airhockey.feature.menu.ui.MainMenuScreen
 import dev.vmellos.airhockey.feature.stage.ui.StageSelectionScreen
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.settings.ui.SettingsScreen
+import dev.vmellos.airhockey.feature.customization.ui.ArenaCustomizationScreen
 import dev.vmellos.airhockey.ui.theme.AirHockeyTheme
 
 class MainActivity : ComponentActivity() {
@@ -170,6 +171,9 @@ fun AirHockeyAppNavigation(
                 },
                 onOpenLeaderboard = {
                     navController.navigate("leaderboard")
+                },
+                onOpenCustomization = {
+                    navController.navigate("customization")
                 },
                 onOpenSettings = {
                     navController.navigate("settings")
@@ -373,6 +377,13 @@ fun AirHockeyAppNavigation(
 
         composable("settings") {
             SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCustomization = { navController.navigate("customization") }
+            )
+        }
+
+        composable("customization") {
+            ArenaCustomizationScreen(
                 onBack = { navController.popBackStack() }
             )
         }
