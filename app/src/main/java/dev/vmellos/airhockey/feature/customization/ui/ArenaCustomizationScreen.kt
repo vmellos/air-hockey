@@ -425,30 +425,6 @@ fun ArenaCustomizationScreen(
                 malletSkin = previewMalletSkin,
                 modifier = Modifier.fillMaxSize()
             )
-
-            // Distintivo "PRÉ-VISUALIZAÇÃO AO VIVO"
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .background(Color(0xCC070E1A), RoundedCornerShape(12.dp))
-                    .border(1.dp, Color(0x3300E5FF), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .background(Color(0xFF00E676), CircleShape)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = stringResource(R.string.customization_live_preview),
-                    color = Color(0xFFE2E8F0),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -491,20 +467,22 @@ fun ArenaCustomizationScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        modifier = Modifier.padding(horizontal = 2.dp)
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = if (isSelected) Color(0xFF00E5FF) else Color(0xFF64748B),
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = title,
                             color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

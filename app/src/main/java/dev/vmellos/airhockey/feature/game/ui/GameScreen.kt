@@ -118,23 +118,31 @@ fun GameScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Placar e Controles
+        // Placar e Controles estilizados pelo tema ativo
         ScoreBoardOverlay(
             matchState = matchState,
+            tableTheme = prefs.tableTheme,
             isSoundEnabled = isSoundEnabled,
             onToggleSound = { viewModel.toggleSound() },
             onPauseClick = { viewModel.pauseMatch() }
         )
 
-        // Overlay de Contagem Regressiva estilizado
+        // Overlay de Contagem Regressiva estilizado por tema
         if (matchState.status == MatchStatus.COUNTDOWN) {
-            CountdownOverlay(countdownNumber = matchState.countdownNumber)
+            CountdownOverlay(
+                countdownNumber = matchState.countdownNumber,
+                tableTheme = prefs.tableTheme
+            )
         }
 
-        // Overlay de Gol/Ponto
+        // Overlay de Gol/Ponto estilizado por tema
         if (matchState.status == MatchStatus.GOAL_PAUSE) {
             val scorerName = if (matchState.lastScorer == 1) matchState.player1Name else matchState.player2Name
-            GoalBannerOverlay(scorer = matchState.lastScorer, scorerName = scorerName)
+            GoalBannerOverlay(
+                scorer = matchState.lastScorer,
+                scorerName = scorerName,
+                tableTheme = prefs.tableTheme
+            )
         }
 
         // Diálogo de Pausa

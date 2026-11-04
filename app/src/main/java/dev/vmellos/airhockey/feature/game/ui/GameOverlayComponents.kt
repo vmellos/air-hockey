@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.MatchState
 import dev.vmellos.airhockey.feature.game.MatchStatus
@@ -66,6 +67,7 @@ import dev.vmellos.airhockey.feature.game.MatchStatus
 @Composable
 fun ScoreBoardOverlay(
     matchState: MatchState,
+    tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     isSoundEnabled: Boolean = true,
     onToggleSound: () -> Unit = {},
     onPauseClick: () -> Unit = {},
@@ -79,6 +81,97 @@ fun ScoreBoardOverlay(
     val isExtendedGuest = matchState.mode == GameMode.EXTENDED_GUEST ||
             matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
 
+    val (boardShape, boardBg, boardBorder, p1Color, p2Color, boardFont) = when (tableTheme) {
+        TableTheme.CYBER_PONG -> SixTuple(
+            CutCornerShape(0.dp),
+            Color(0xFF000000),
+            BorderStroke(1.5.dp, PongGreen),
+            PongGreen,
+            PongGreen,
+            FontFamily.Monospace
+        )
+        TableTheme.CYBER_COLOSSEUM -> SixTuple(
+            RoundedCornerShape(6.dp),
+            Color(0xDD1C1408),
+            BorderStroke(1.2.dp, ColosseumGold.copy(alpha = 0.7f)),
+            ColosseumGold,
+            ColosseumCrimson,
+            FontFamily.Serif
+        )
+        TableTheme.CYBER_SOCCER -> SixTuple(
+            RoundedCornerShape(12.dp),
+            Color(0xCC05180D),
+            BorderStroke(1.dp, NeonEmerald.copy(alpha = 0.6f)),
+            NeonEmerald,
+            NeonRuby,
+            FontFamily.SansSerif
+        )
+        TableTheme.NEO_BASKETBALL -> SixTuple(
+            CutCornerShape(8.dp),
+            Color(0xDD140E08),
+            BorderStroke(1.2.dp, NeonAmber.copy(alpha = 0.7f)),
+            NeonAmber,
+            NeonCyan,
+            FontFamily.SansSerif
+        )
+        TableTheme.GRAVITY_VOLLEY -> SixTuple(
+            RoundedCornerShape(16.dp),
+            Color(0xCC0E0A1E),
+            BorderStroke(1.dp, NeonViolet.copy(alpha = 0.6f)),
+            NeonViolet,
+            NeonMagenta,
+            FontFamily.SansSerif
+        )
+        TableTheme.GRIDIRON_FOOTBALL -> SixTuple(
+            CutCornerShape(6.dp),
+            Color(0xDD081420),
+            BorderStroke(1.5.dp, GridironCyan.copy(alpha = 0.7f)),
+            GridironCyan,
+            GridironGold,
+            FontFamily.SansSerif
+        )
+        TableTheme.CYBER_BASEBALL -> SixTuple(
+            CutCornerShape(12.dp),
+            Color(0xCC18080C),
+            BorderStroke(1.dp, BaseballRed.copy(alpha = 0.7f)),
+            BaseballRed,
+            BaseballCyan,
+            FontFamily.SansSerif
+        )
+        TableTheme.WASTELAND_APOCALYPSE -> SixTuple(
+            CutCornerShape(4.dp),
+            Color(0xEE160C06),
+            BorderStroke(1.5.dp, WastelandFlame.copy(alpha = 0.8f)),
+            WastelandFlame,
+            WastelandFlameBright,
+            FontFamily.SansSerif
+        )
+        TableTheme.RETRO_SYNTHWAVE -> SixTuple(
+            RoundedCornerShape(10.dp),
+            Color(0xDD1A0A1C),
+            BorderStroke(1.2.dp, SynthPink.copy(alpha = 0.7f)),
+            SynthPink,
+            SynthCyan,
+            FontFamily.SansSerif
+        )
+        TableTheme.TOKAMAK_REACTOR -> SixTuple(
+            CutCornerShape(10.dp),
+            Color(0xDD081608),
+            BorderStroke(1.2.dp, TokamakRadiation.copy(alpha = 0.7f)),
+            TokamakRadiation,
+            TokamakPlasma,
+            FontFamily.SansSerif
+        )
+        TableTheme.CLASSIC_NEON -> SixTuple(
+            RoundedCornerShape(12.dp),
+            Color(0x33000000),
+            BorderStroke(1.dp, Color(0x33FFFFFF)),
+            NeonCyan,
+            NeonOrange,
+            FontFamily.Monospace
+        )
+    }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -86,7 +179,6 @@ fun ScoreBoardOverlay(
     ) {
         val screenW = constraints.maxWidth.toFloat()
         val screenH = constraints.maxHeight.toFloat()
-        // Projeção virtual padrão da arena (largura 1000f, altura 2000f)
         val scale = kotlin.math.min(screenW / 1000f, screenH / 2000f)
         val tableWidthDp = with(LocalDensity.current) { (1000f * scale).toDp() }
 
@@ -96,11 +188,11 @@ fun ScoreBoardOverlay(
                 .fillMaxHeight()
                 .align(Alignment.Center)
         ) {
-            // Placar Lateral Numérico na lateral direita da Mesa
+            // Placar Lateral Numérico estilizado por tema na lateral direita da Mesa
             Surface(
-                color = Color(0x33000000),
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x22FFFFFF)),
+                color = boardBg,
+                shape = boardShape,
+                border = boardBorder,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = 8.dp)
@@ -110,26 +202,25 @@ fun ScoreBoardOverlay(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
                 ) {
-                    // Placar Lateral Numérico: P2 no topo (Laranja), Divisor, P1 na base (Ciano) em todos os modos
                     Text(
                         text = "${matchState.scorePlayer2}",
-                        color = Color(0xFFFF5722),
+                        color = p2Color,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = boardFont
                     )
                     Box(
                         modifier = Modifier
                             .width(22.dp)
                             .height(1.5.dp)
-                            .background(Color(0x44FFFFFF), RoundedCornerShape(1.dp))
+                            .background(boardBorder.brush ?: Brush.horizontalGradient(listOf(p2Color.copy(alpha = 0.5f), p1Color.copy(alpha = 0.5f))), RoundedCornerShape(1.dp))
                     )
                     Text(
                         text = "${matchState.scorePlayer1}",
-                        color = Color(0xFF00E5FF),
+                        color = p1Color,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace
+                        fontFamily = boardFont
                     )
                     if (matchState.targetScore > 0) {
                         Box(
@@ -155,6 +246,7 @@ fun ScoreBoardOverlay(
 @Composable
 fun CountdownOverlay(
     countdownNumber: Int,
+    tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     modifier: Modifier = Modifier
 ) {
     val displayText = when (countdownNumber) {
@@ -166,17 +258,39 @@ fun CountdownOverlay(
     }
     if (displayText.isEmpty()) return
 
+    val (numberColor, goColor, font) = when (tableTheme) {
+        TableTheme.CYBER_PONG -> Triple(PongGreen, PongGreenBright, FontFamily.Monospace)
+        TableTheme.CYBER_COLOSSEUM -> Triple(ColosseumGold, ColosseumGoldBright, FontFamily.Serif)
+        TableTheme.CYBER_SOCCER -> Triple(NeonEmerald, NeonEmeraldBright, FontFamily.SansSerif)
+        TableTheme.NEO_BASKETBALL -> Triple(NeonAmber, NeonAmberBright, FontFamily.SansSerif)
+        TableTheme.GRAVITY_VOLLEY -> Triple(NeonViolet, NeonMagentaBright, FontFamily.SansSerif)
+        TableTheme.GRIDIRON_FOOTBALL -> Triple(GridironCyan, GridironGold, FontFamily.SansSerif)
+        TableTheme.CYBER_BASEBALL -> Triple(BaseballRed, BaseballCyanBright, FontFamily.SansSerif)
+        TableTheme.WASTELAND_APOCALYPSE -> Triple(WastelandFlame, WastelandFlameBright, FontFamily.SansSerif)
+        TableTheme.RETRO_SYNTHWAVE -> Triple(SynthPink, SynthCyanBright, FontFamily.SansSerif)
+        TableTheme.TOKAMAK_REACTOR -> Triple(TokamakRadiation, TokamakPlasmaBright, FontFamily.SansSerif)
+        TableTheme.CLASSIC_NEON -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
+    }
+
+    val textColor = if (countdownNumber == 0) goColor else numberColor
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = displayText,
-            color = if (countdownNumber == 0) Color(0xFF10B981) else Color(0xFF00E5FF),
+            color = textColor,
             fontSize = if (countdownNumber == 0) 64.sp else 80.sp,
             fontWeight = FontWeight.Black,
-            fontFamily = FontFamily.SansSerif,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            fontFamily = font,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            style = androidx.compose.ui.text.TextStyle(
+                shadow = androidx.compose.ui.graphics.Shadow(
+                    color = textColor.copy(alpha = 0.85f),
+                    blurRadius = 30f
+                )
+            )
         )
     }
 }
@@ -185,10 +299,72 @@ fun CountdownOverlay(
 fun GoalBannerOverlay(
     scorer: Int,
     scorerName: String = "",
+    tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     modifier: Modifier = Modifier
 ) {
-    val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
-    val glowColor = if (scorer == 1) Color(0xFF80D8FF) else Color(0xFFFF9E80)
+    val (primaryColor, secondaryColor) = when (tableTheme) {
+        TableTheme.CLASSIC_NEON -> Pair(NeonCyan, NeonOrange)
+        TableTheme.CYBER_SOCCER -> Pair(NeonEmerald, NeonRuby)
+        TableTheme.NEO_BASKETBALL -> Pair(NeonAmber, NeonCyan)
+        TableTheme.GRAVITY_VOLLEY -> Pair(NeonViolet, NeonMagenta)
+        TableTheme.GRIDIRON_FOOTBALL -> Pair(GridironCyan, GridironGold)
+        TableTheme.CYBER_BASEBALL -> Pair(BaseballRed, BaseballCyan)
+        TableTheme.WASTELAND_APOCALYPSE -> Pair(WastelandFlame, WastelandFlameBright)
+        TableTheme.RETRO_SYNTHWAVE -> Pair(SynthPink, SynthCyan)
+        TableTheme.TOKAMAK_REACTOR -> Pair(TokamakRadiation, TokamakPlasma)
+        TableTheme.CYBER_PONG -> Pair(PongGreen, PongGreen)
+        TableTheme.CYBER_COLOSSEUM -> Pair(ColosseumGold, ColosseumCrimson)
+    }
+
+    val color = if (scorer == 1) primaryColor else secondaryColor
+    val glowColor = when (tableTheme) {
+        TableTheme.CLASSIC_NEON -> if (scorer == 1) NeonCyanBright else NeonOrangeBright
+        TableTheme.CYBER_SOCCER -> if (scorer == 1) NeonEmeraldBright else NeonRubyBright
+        TableTheme.NEO_BASKETBALL -> if (scorer == 1) NeonAmberBright else NeonCyanBright
+        TableTheme.GRAVITY_VOLLEY -> if (scorer == 1) NeonVioletBright else NeonMagentaBright
+        TableTheme.GRIDIRON_FOOTBALL -> if (scorer == 1) GridironCyan else GridironGold
+        TableTheme.CYBER_BASEBALL -> if (scorer == 1) BaseballRedBright else BaseballCyanBright
+        TableTheme.WASTELAND_APOCALYPSE -> WastelandFlameBright
+        TableTheme.RETRO_SYNTHWAVE -> if (scorer == 1) SynthPinkBright else SynthCyanBright
+        TableTheme.TOKAMAK_REACTOR -> if (scorer == 1) TokamakRadiationBright else TokamakPlasmaBright
+        TableTheme.CYBER_PONG -> PongGreenBright
+        TableTheme.CYBER_COLOSSEUM -> if (scorer == 1) ColosseumGoldBright else ColosseumCrimson
+    }
+
+    val bannerShape = when (tableTheme) {
+        TableTheme.CYBER_PONG -> CutCornerShape(0.dp)
+        TableTheme.WASTELAND_APOCALYPSE -> CutCornerShape(4.dp)
+        TableTheme.CYBER_COLOSSEUM -> RoundedCornerShape(8.dp)
+        TableTheme.GRAVITY_VOLLEY -> RoundedCornerShape(22.dp)
+        TableTheme.CYBER_SOCCER -> RoundedCornerShape(14.dp)
+        TableTheme.RETRO_SYNTHWAVE -> RoundedCornerShape(16.dp)
+        TableTheme.GRIDIRON_FOOTBALL -> CutCornerShape(8.dp)
+        TableTheme.NEO_BASKETBALL -> CutCornerShape(12.dp)
+        TableTheme.TOKAMAK_REACTOR -> CutCornerShape(12.dp)
+        TableTheme.CYBER_BASEBALL -> CutCornerShape(14.dp)
+        TableTheme.CLASSIC_NEON -> CutCornerShape(16.dp)
+    }
+
+    val bannerBg = when (tableTheme) {
+        TableTheme.CYBER_PONG -> Color(0xFF000000)
+        TableTheme.CYBER_SOCCER -> Color(0xE6051A0E)
+        TableTheme.NEO_BASKETBALL -> Color(0xE6140F08)
+        TableTheme.GRAVITY_VOLLEY -> Color(0xE6120822)
+        TableTheme.GRIDIRON_FOOTBALL -> Color(0xE6081422)
+        TableTheme.CYBER_BASEBALL -> Color(0xE61A0A0E)
+        TableTheme.WASTELAND_APOCALYPSE -> Color(0xF0180D07)
+        TableTheme.RETRO_SYNTHWAVE -> Color(0xE61A081C)
+        TableTheme.TOKAMAK_REACTOR -> Color(0xE607180A)
+        TableTheme.CYBER_COLOSSEUM -> Color(0xE61C1408)
+        TableTheme.CLASSIC_NEON -> Color(0xD9080E1A)
+    }
+
+    val bannerFont = when (tableTheme) {
+        TableTheme.CYBER_PONG -> FontFamily.Monospace
+        TableTheme.CYBER_COLOSSEUM -> FontFamily.Serif
+        else -> FontFamily.SansSerif
+    }
+
     val subtitleText = scorerName.ifEmpty {
         if (scorer == 1) stringResource(R.string.player_1_default) else stringResource(R.string.player_2_default)
     }
@@ -198,8 +374,8 @@ fun GoalBannerOverlay(
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            color = Color(0xD9080E1A),
-            shape = CutCornerShape(16.dp),
+            color = bannerBg,
+            shape = bannerShape,
             border = BorderStroke(
                 1.5.dp,
                 Brush.horizontalGradient(
@@ -222,8 +398,8 @@ fun GoalBannerOverlay(
                     color = color,
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 8.sp,
-                    fontFamily = FontFamily.SansSerif,
+                    letterSpacing = if (tableTheme == TableTheme.CYBER_PONG) 4.sp else 8.sp,
+                    fontFamily = bannerFont,
                     style = androidx.compose.ui.text.TextStyle(
                         shadow = androidx.compose.ui.graphics.Shadow(
                             color = glowColor.copy(alpha = 0.95f),
@@ -249,6 +425,7 @@ fun GoalBannerOverlay(
                         color = Color.White.copy(alpha = 0.92f),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
+                        fontFamily = bannerFont,
                         letterSpacing = 2.5.sp
                     )
                     Box(
@@ -262,6 +439,16 @@ fun GoalBannerOverlay(
         }
     }
 }
+
+// Estrutura de conveniência interna para estilização de placar
+private data class SixTuple<A, B, C, D, E, F>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E,
+    val sixth: F
+)
 
 @Composable
 private fun ArcadePrimaryButton(
