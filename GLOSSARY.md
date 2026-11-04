@@ -279,7 +279,7 @@ O formato publicitário retangular fixado na base dos menus e telas de configura
 _Avoid_: Propaganda, banner ad, anúncio de rodapé
 
 **Anúncio Intersticial de Pós-Partida**:
-O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão.
+O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão, com supressão estrita na revanche e no botão de nova tentativa imediata após derrota no Modo Fases para blindar a retenção do jogador contra interrupções frustrantes.
 _Avoid_: Pop-up, interstitial, comercial pós-jogo
 
 **Anúncio Recompensado** (Pausado na Interface Principal):

@@ -185,13 +185,8 @@ fun GameScreen(
                         }
                     },
                     onRetry = {
-                        if (activity != null) {
-                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
-                                viewModel.restartMatch()
-                            }
-                        } else {
-                            viewModel.restartMatch()
-                        }
+                        // Não exibe anúncio intersticial na revanche/retry imediato para preservar a retenção do jogador
+                        viewModel.restartMatch()
                     },
                     onNextStage = {
                         if (activity != null) {
@@ -209,13 +204,8 @@ fun GameScreen(
                 GameOverDialog(
                     matchState = matchState,
                     onPlayAgain = {
-                        if (activity != null) {
-                            AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
-                                viewModel.restartMatch()
-                            }
-                        } else {
-                            viewModel.restartMatch()
-                        }
+                        // Revanche imediata sem anúncio para fluidez contínua de jogo
+                        viewModel.restartMatch()
                     },
                     onExit = {
                         if (activity != null) {

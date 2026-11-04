@@ -114,10 +114,19 @@ class GameAudioEngine(private val context: Context) {
         }
     }
 
+    /**
+     * Converte o valor linear do controle de volume (0.0 a 1.0) para uma curva logarítmica/quadrática
+     * natural para a audição humana, permitindo volumes mínimos verdadeiramente suaves e sem piso artificial.
+     */
+    private fun calculateEffectiveVolume(baseMultiplier: Float = 1.0f): Float {
+        val normalized = volume.coerceIn(0f, 1f)
+        return (normalized * normalized * baseMultiplier).coerceIn(0f, 1f)
+    }
+
     fun playPaddleHit(intensity: Float = 1.0f) {
         if (isSoundEnabled && soundHitPaddleId != 0) {
-            val clampedVol = (volume * intensity.coerceIn(0.3f, 1.0f)).coerceIn(0.1f, 1.0f)
-            soundPool.play(soundHitPaddleId, clampedVol, clampedVol, 1, 0, 1.0f)
+            val effVol = calculateEffectiveVolume(intensity.coerceIn(0.25f, 1.0f))
+            soundPool.play(soundHitPaddleId, effVol, effVol, 1, 0, 1.0f)
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 15, amplitude = (intensity * 255).toInt().coerceIn(60, 255))
@@ -126,8 +135,8 @@ class GameAudioEngine(private val context: Context) {
 
     fun playWallHit() {
         if (isSoundEnabled && soundHitWallId != 0) {
-            val clampedVol = (volume * 0.7f).coerceIn(0.1f, 1.0f)
-            soundPool.play(soundHitWallId, clampedVol, clampedVol, 1, 0, 1.0f)
+            val effVol = calculateEffectiveVolume(0.7f)
+            soundPool.play(soundHitWallId, effVol, effVol, 1, 0, 1.0f)
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 10, amplitude = 50)
@@ -136,7 +145,8 @@ class GameAudioEngine(private val context: Context) {
 
     fun playGoal() {
         if (isSoundEnabled && soundGoalId != 0) {
-            soundPool.play(soundGoalId, volume, volume, 2, 0, 1.0f)
+            val effVol = calculateEffectiveVolume(1.0f)
+            soundPool.play(soundGoalId, effVol, effVol, 2, 0, 1.0f)
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 250, amplitude = 255)
@@ -152,7 +162,8 @@ class GameAudioEngine(private val context: Context) {
             else -> soundCountdownGoId
         }
         if (soundId != 0) {
-            soundPool.play(soundId, volume, volume, 1, 0, 1.0f)
+            val effVol = calculateEffectiveVolume(0.85f)
+            soundPool.play(soundId, effVol, effVol, 1, 0, 1.0f)
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = if (countdownNumber <= 0) 50 else 25, amplitude = 180)
@@ -353,7 +364,7 @@ class GameAudioEngine(private val context: Context) {
             val decay = kotlin.math.exp(-3.2 * (i.toDouble() / numSamples))
             val fundamental = sin(2.0 * Math.PI * frequency * time)
             val overtone = 0.25 * sin(4.0 * Math.PI * frequency * time)
-            val sample = ((fundamental + overtone) / 1.25 * decay * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            val sample = ((fundamental + overtone) / 1.25 * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
 
             val byteIndex = i * 2
             pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
@@ -374,7 +385,7 @@ class GameAudioEngine(private val context: Context) {
             val note1 = sin(2.0 * Math.PI * 1046.50 * time) // C6
             val note2 = 0.6 * sin(2.0 * Math.PI * 1318.51 * time) // E6
             val note3 = 0.4 * sin(2.0 * Math.PI * 1567.98 * time) // G6
-            val sample = ((note1 + note2 + note3) / 2.0 * decay * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            val sample = ((note1 + note2 + note3) / 2.0 * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
 
             val byteIndex = i * 2
             pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
@@ -403,7 +414,7 @@ class GameAudioEngine(private val context: Context) {
             val time = i.toDouble() / sampleRate
             val decay = if (isDecay) (1.0 - (i.toDouble() / numSamples)) else 1.0
             val angle = 2.0 * Math.PI * frequency * time
-            val sample = (sin(angle) * decay * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            val sample = (sin(angle) * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
 
             val byteIndex = i * 2
             pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
@@ -422,7 +433,7 @@ class GameAudioEngine(private val context: Context) {
             val time = i.toDouble() / sampleRate
             val freq = if (time < 0.15) 523.25 else if (time < 0.28) 659.25 else 783.99
             val decay = 1.0 - (i.toDouble() / numSamples)
-            val sample = (sin(2.0 * Math.PI * freq * time) * decay * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            val sample = (sin(2.0 * Math.PI * freq * time) * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
 
             val byteIndex = i * 2
             pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
