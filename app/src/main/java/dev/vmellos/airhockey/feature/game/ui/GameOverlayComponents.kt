@@ -189,43 +189,75 @@ fun GoalBannerOverlay(
 ) {
     val color = if (scorer == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
     val glowColor = if (scorer == 1) Color(0xFF80D8FF) else Color(0xFFFF9E80)
+    val subtitleText = scorerName.ifEmpty {
+        if (scorer == 1) stringResource(R.string.player_1_default) else stringResource(R.string.player_2_default)
+    }
 
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.game_goal),
-                color = color,
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 10.sp,
-                fontFamily = FontFamily.SansSerif,
-                style = androidx.compose.ui.text.TextStyle(
-                    shadow = androidx.compose.ui.graphics.Shadow(
-                        color = glowColor.copy(alpha = 0.95f),
-                        blurRadius = 36f
+        Surface(
+            color = Color(0xD9080E1A),
+            shape = CutCornerShape(16.dp),
+            border = BorderStroke(
+                1.5.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        color.copy(alpha = 0.25f),
+                        glowColor,
+                        color.copy(alpha = 0.25f)
                     )
                 )
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Surface(
-                color = color.copy(alpha = 0.22f),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, glowColor.copy(alpha = 0.80f))
+            ),
+            shadowElevation = 20.dp,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 36.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(R.string.game_goal_point_banner),
-                    color = Color.White,
-                    fontSize = 18.sp,
+                    text = stringResource(R.string.game_goal),
+                    color = color,
+                    fontSize = 56.sp,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 4.sp,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    letterSpacing = 8.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = glowColor.copy(alpha = 0.95f),
+                            blurRadius = 32f
+                        )
+                    )
                 )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(28.dp)
+                            .height(1.5.dp)
+                            .background(Brush.horizontalGradient(listOf(Color.Transparent, glowColor)))
+                    )
+                    Text(
+                        text = subtitleText.uppercase(),
+                        color = Color.White.copy(alpha = 0.92f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.5.sp
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(28.dp)
+                            .height(1.5.dp)
+                            .background(Brush.horizontalGradient(listOf(glowColor, Color.Transparent)))
+                    )
+                }
             }
         }
     }
@@ -334,7 +366,7 @@ fun PeerExitedDialog(
                 Brush.linearGradient(
                     listOf(
                         Color(0xFFFF5722),
-                        Color(0xFFFF2A6D)
+                        Color(0xFFFF3D00)
                     )
                 )
             ),
@@ -647,8 +679,8 @@ fun StageResultDialog(
     onRetry: () -> Unit,
     onNextStage: () -> Unit
 ) {
-    val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF2A6D)
-    val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFFF5722)
+    val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF5722)
+    val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFFF6D00)
 
     Box(
         modifier = Modifier
@@ -796,10 +828,10 @@ fun StageResultDialog(
                         onClick = onRetry
                     )
                 } else {
-                    // Derrota: Tentar Novamente (Primário Magenta)
+                    // Derrota: Tentar Novamente (Primário Laranja Neon)
                     ArcadePrimaryButton(
                         text = stringResource(R.string.stage_retry_btn).uppercase(),
-                        containerColor = Color(0xFFFF2A6D),
+                        containerColor = Color(0xFFFF5722),
                         textColor = Color.White,
                         icon = Icons.Default.Refresh,
                         onClick = onRetry

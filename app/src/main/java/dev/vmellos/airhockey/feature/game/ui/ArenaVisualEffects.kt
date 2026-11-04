@@ -768,19 +768,11 @@ fun DrawScope.drawRadiatingEnergyWave(
         center = Offset(centerX, centerY),
         style = Stroke(width = 4.2f * scale)
     )
-
-    // 5. Linha horizontal e retícula de mira estilizada (idêntica ao print)
-    val crossExtension = radius * 1.35f
-    drawLine(
-        color = color.copy(alpha = 0.50f * alpha),
-        start = Offset(centerX - crossExtension, centerY),
-        end = Offset(centerX + crossExtension, centerY),
-        strokeWidth = 2f * scale
-    )
 }
 
 /**
- * Desenha o Vórtice de Contagem Regressiva central radiante no início e retomada.
+ * Desenha o Vórtice de Contagem Regressiva central no início e retomada da partida.
+ * Composto por anéis concêntricos de plasma neon pulsantes e fluidos, conforme especificado no GLOSSARY.md.
  */
 fun DrawScope.drawCountdownVortex(
     centerX: Float,
@@ -791,18 +783,102 @@ fun DrawScope.drawCountdownVortex(
 ) {
     val timeSec = (framePulse / 1_000_000_000.0).toFloat()
     val vortexColor = if (countdownNumber == 0) Color(0xFF10B981) else NeonCyan
-    val pulse = (sin(timeSec * 8f) * 0.5f + 0.5f)
-    val baseRadius = (155f + pulse * 15f) * scale
+    val coreColor = if (countdownNumber == 0) Color(0xFFA7F3D0) else Color(0xFFE0F7FA)
 
-    drawRadiatingEnergyWave(
-        centerX = centerX,
-        centerY = centerY,
-        radius = baseRadius,
-        color = vortexColor,
-        timeSec = timeSec,
-        rayCount = 56,
-        scale = scale,
-        alpha = 1f
+    val pulseFast = (sin(timeSec * 7f) * 0.5f + 0.5f)
+    val pulseSlow = (sin(timeSec * 3.5f) * 0.5f + 0.5f)
+
+    val baseRadius = (130f + pulseFast * 12f) * scale
+    val innerRadius = baseRadius * 0.55f
+    val outerRadius = baseRadius * 1.25f
+
+    // 1. Halo suave de fundo em plasma neon
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                coreColor.copy(alpha = 0.22f),
+                vortexColor.copy(alpha = 0.12f),
+                vortexColor.copy(alpha = 0.03f),
+                Color.Transparent
+            ),
+            center = Offset(centerX, centerY),
+            radius = outerRadius * 1.2f
+        ),
+        radius = outerRadius * 1.2f,
+        center = Offset(centerX, centerY)
+    )
+
+    // 2. Anel interno de contenção pulsante
+    drawCircle(
+        color = coreColor.copy(alpha = 0.85f),
+        radius = innerRadius,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 2.5f * scale)
+    )
+
+    // 3. Anéis concêntricos intermediários com arcos neon rotativos
+    val rotationDeg = (timeSec * 45f) % 360f
+    val arcRadius = baseRadius * 0.88f
+    val arcRect = androidx.compose.ui.geometry.Rect(
+        centerX - arcRadius,
+        centerY - arcRadius,
+        centerX + arcRadius,
+        centerY + arcRadius
+    )
+
+    for (i in 0 until 4) {
+        val startAngle = rotationDeg + i * 90f + 10f
+        drawArc(
+            color = vortexColor.copy(alpha = 0.75f),
+            startAngle = startAngle,
+            sweepAngle = 65f,
+            useCenter = false,
+            topLeft = arcRect.topLeft,
+            size = arcRect.size,
+            style = Stroke(width = 3.2f * scale, cap = StrokeCap.Round)
+        )
+    }
+
+    // 4. Segundo anel orbital com rotação contrária
+    val counterRotationDeg = (-timeSec * 30f) % 360f
+    val outerArcRadius = outerRadius * 0.95f
+    val outerArcRect = androidx.compose.ui.geometry.Rect(
+        centerX - outerArcRadius,
+        centerY - outerArcRadius,
+        centerX + outerArcRadius,
+        centerY + outerArcRadius
+    )
+
+    for (i in 0 until 3) {
+        val startAngle = counterRotationDeg + i * 120f + 15f
+        drawArc(
+            color = vortexColor.copy(alpha = 0.45f),
+            startAngle = startAngle,
+            sweepAngle = 80f,
+            useCenter = false,
+            topLeft = outerArcRect.topLeft,
+            size = outerArcRect.size,
+            style = Stroke(width = 2.0f * scale, cap = StrokeCap.Round)
+        )
+    }
+
+    // 5. Anel externo perimetral fluido com expansão pulsante
+    drawCircle(
+        color = vortexColor.copy(alpha = 0.70f + 0.25f * pulseSlow),
+        radius = outerRadius,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 2.8f * scale)
+    )
+
+    // 6. Onda expansiva concêntrica periódica que viaja para fora
+    val waveProgress = (timeSec * 1.5f) % 1.0f
+    val expandingRadius = innerRadius + (outerRadius * 1.3f - innerRadius) * waveProgress
+    val waveAlpha = (1f - waveProgress).coerceIn(0f, 1f) * 0.5f
+    drawCircle(
+        color = vortexColor.copy(alpha = waveAlpha),
+        radius = expandingRadius,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 1.8f * scale)
     )
 }
 
