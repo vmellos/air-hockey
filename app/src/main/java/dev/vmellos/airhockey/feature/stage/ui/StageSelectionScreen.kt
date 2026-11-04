@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.database.StageProgressEntity
 
 @Composable
@@ -163,7 +164,9 @@ fun StageSelectionScreen(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) {
                 items(
                     items = if (stages.isNotEmpty()) stages else (1..100).map {
@@ -181,6 +184,15 @@ fun StageSelectionScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            AdBanner(
+                adManager = AirHockeyApp.instance.adManager,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
+            )
         }
     }
 }

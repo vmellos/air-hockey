@@ -1,6 +1,7 @@
 package dev.vmellos.airhockey.feature.lobby.ui
 
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.ads.AdBanner
 
 import android.Manifest
 import android.content.Intent
@@ -12,6 +13,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -378,62 +381,77 @@ fun LobbyScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (state.role == LobbyRole.NONE) {
-                // Seleção de Papel (Anfitrião vs Convidado)
-                RoleSelectionCards(
-                    onSelectHost = { showCreateHostDialog = true },
-                    onSelectGuest = { viewModel.startAsGuest() }
-                )
-            } else if (state.role == LobbyRole.HOST) {
-                val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-                val proceedAction = remember(state.targetMode, userPrefs.bezelGapMm, userPrefs.puckSpeed.maxSpeed, onStartHostMatch) {
-                    {
-                        if (onStartHostMatch != null) {
-                            onStartHostMatch()
-                        } else {
-                            val gap = if (state.targetMode == "CONNECTED") 0f else userPrefs.bezelGapMm
-                            viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                if (state.role == LobbyRole.NONE) {
+                    // Seleção de Papel (Anfitrião vs Convidado)
+                    RoleSelectionCards(
+                        onSelectHost = { showCreateHostDialog = true },
+                        onSelectGuest = { viewModel.startAsGuest() }
+                    )
+                } else if (state.role == LobbyRole.HOST) {
+                    val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+                    val proceedAction = remember(state.targetMode, userPrefs.bezelGapMm, userPrefs.puckSpeed.maxSpeed, onStartHostMatch) {
+                        {
+                            if (onStartHostMatch != null) {
+                                onStartHostMatch()
+                            } else {
+                                val gap = if (state.targetMode == "CONNECTED") 0f else userPrefs.bezelGapMm
+                                viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed)
+                            }
                         }
                     }
-                }
 
-                // Início automático e direto assim que o convidado conecta e valida o handshake
-                LaunchedEffect(state.role, state.connectionStatus) {
-                    if (state.role == LobbyRole.HOST && state.connectionStatus == ConnectionStatus.CONNECTED) {
-                        delay(350)
+                    // Início automático e direto assim que o convidado conecta e valida o handshake
+                    LaunchedEffect(state.role, state.connectionStatus) {
                         if (state.role == LobbyRole.HOST && state.connectionStatus == ConnectionStatus.CONNECTED) {
-                            proceedAction()
+                            delay(350)
+                            if (state.role == LobbyRole.HOST && state.connectionStatus == ConnectionStatus.CONNECTED) {
+                                proceedAction()
+                            }
                         }
                     }
-                }
 
-                // Tela do Dispositivo Anfitrião
-                HostLobbyView(
-                    state = state,
-                    onChangeMode = { showCreateHostDialog = true },
-                    onProceed = proceedAction
-                )
-            } else if (state.role == LobbyRole.GUEST) {
-                // Tela do Dispositivo Convidado
-                GuestLobbyView(
-                    state = state,
-                    inputCode = inputCode,
-                    onInputCodeChange = { inputCode = it },
-                    onConnectCode = { viewModel.connectByCode(inputCode) },
-                    onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code, table.mode) },
-                    onRefreshDiscovery = { viewModel.refreshDiscovery() },
-                    onScanQrClick = {
-                        val hasPerm = ContextCompat.checkSelfPermission(
-                            context, Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                        if (hasPerm) {
-                            viewModel.setScanningQr(true)
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    // Tela do Dispositivo Anfitrião
+                    HostLobbyView(
+                        state = state,
+                        onChangeMode = { showCreateHostDialog = true },
+                        onProceed = proceedAction
+                    )
+                } else if (state.role == LobbyRole.GUEST) {
+                    // Tela do Dispositivo Convidado
+                    GuestLobbyView(
+                        state = state,
+                        inputCode = inputCode,
+                        onInputCodeChange = { inputCode = it },
+                        onConnectCode = { viewModel.connectByCode(inputCode) },
+                        onConnectTable = { table, code -> viewModel.connectToTable(table.hostIp, code, table.mode) },
+                        onRefreshDiscovery = { viewModel.refreshDiscovery() },
+                        onScanQrClick = {
+                            val hasPerm = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPerm) {
+                                viewModel.setScanningQr(true)
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            AdBanner(
+                adManager = AirHockeyApp.instance.adManager,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
+            )
         }
 
         if (showCreateHostDialog) {
@@ -616,7 +634,9 @@ private fun HostLobbyView(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
     ) {
         val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
             "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
@@ -913,7 +933,7 @@ private fun GuestLobbyView(
         )
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxSize()) {
         if (state.connectionStatus == ConnectionStatus.CONNECTED) {
             val connectedShape = CutCornerShape(14.dp)
             Card(
@@ -1102,7 +1122,11 @@ private fun GuestLobbyView(
                 )
             }
         } else {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+            ) {
                 items(state.discoveredTables) { table ->
                     val (modeColor, modeLabel, modeIcon) = when (table.mode) {
                         "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)

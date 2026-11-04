@@ -293,8 +293,8 @@ _Avoid_: Histórico, log de jogo, match log, súmula
 ## Monetização e Infraestrutura Web
 
 **Anúncio em Banner**:
-O formato publicitário retangular fixado na base dos menus e telas de configuração, com supressão estrita durante a partida na arena.
-_Avoid_: Propaganda, banner ad, anúncio de rodapé
+O formato publicitário retangular ancorado de forma estática e fixa no rodapé de todas as telas de navegação (Menu Principal, Configurações, Placar de Líderes, Seleção de Fases, Customização e Lobby Multijogador), garantindo que nunca role junto com listas e conteúdos verticais, com supressão estrita durante a partida na arena e durante o escaneamento ativo de câmera no leitor QR.
+_Avoid_: Propaganda, banner ad, anúncio de rodapé rolante
 
 **Anúncio Intersticial de Pós-Partida**:
 O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão, com supressão estrita na revanche e no botão de nova tentativa imediata após derrota no Modo Fases para blindar a retenção do jogador contra interrupções frustrantes.
@@ -373,8 +373,12 @@ A moldura do mostrador de pontuação fixada na borda lateral direita da mesa, p
 _Avoid_: Placar fixo transparente genérico
 
 **Acesso Rápido de Áudio**:
-O diálogo modal acionado pelo botão de volume da tela inicial que permite alternar e ajustar instantaneamente os efeitos sonoros, música de fundo e resposta tátil sem necessidade de navegar até a tela de configurações completas.
-_Avoid_: Apenas alternar mudo, controle escondido em menus profundos
+O diálogo modal acionado pelo botão de volume do Menu Principal que centraliza com exclusividade a alternância e ajuste de volume dos efeitos sonoros, música de fundo e resposta tátil do aplicativo, eliminando duplicidade de controles na Tela de Configurações.
+_Avoid_: Apenas alternar mudo, controle escondido em menus profundos, áudio nas configurações
+
+**Tela de Configurações**:
+A interface de ajustes globais do sistema dedicada estritamente ao gerenciamento de conta e jogabilidade técnica (Remoção Permanente de Anúncios, Perfil do Jogador, Idioma, Regras de Jogo / IA, Ergonomia de Toque e Perfil de Efeitos Visuais), desacoplada das preferências cosméticas de temas e preferências sensoriais de áudio/vibração concentradas no Menu Principal.
+_Avoid_: Config, tela de opções geral, menu de temas
 
 **Nomenclatura Concisa de Abas de Customização**:
 O vocabulário padronizado para as abas na tela de personalização (`Kits`, `Mesas`, `Discos`, `Tacos` em PT e `Mazos` em ES), garantindo legibilidade em qualquer densidade de tela sem quebra ou compressão visual.

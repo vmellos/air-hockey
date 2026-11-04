@@ -377,8 +377,7 @@ fun AirHockeyAppNavigation(
 
         composable("settings") {
             SettingsScreen(
-                onBack = { navController.popBackStack() },
-                onOpenCustomization = { navController.navigate("customization") }
+                onBack = { navController.popBackStack() }
             )
         }
 

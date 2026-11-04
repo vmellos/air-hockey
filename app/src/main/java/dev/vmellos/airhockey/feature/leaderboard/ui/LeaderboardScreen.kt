@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.database.MatchRecordEntity
 import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
 import java.text.SimpleDateFormat
@@ -281,12 +282,27 @@ fun LeaderboardScreen(
             }
 
             // Tab Content
-            when (selectedTabIndex) {
-                0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
-                1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
-                2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
-                3 -> RecentMatchesContent(matches = recentMatches)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                when (selectedTabIndex) {
+                    0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
+                    1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
+                    2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
+                    3 -> RecentMatchesContent(matches = recentMatches)
+                }
             }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            AdBanner(
+                adManager = AirHockeyApp.instance.adManager,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            )
         }
     }
 }

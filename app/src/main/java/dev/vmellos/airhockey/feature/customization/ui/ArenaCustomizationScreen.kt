@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
@@ -606,6 +607,15 @@ fun ArenaCustomizationScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        AdBanner(
+            adManager = AirHockeyApp.instance.adManager,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        )
     }
 }
 
