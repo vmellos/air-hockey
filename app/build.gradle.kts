@@ -60,7 +60,7 @@ android {
             }
             val admobReleaseId = localProps.getProperty("ADMOB_APP_ID")
                 ?: System.getenv("ADMOB_APP_ID")
-                ?: "ca-app-pub-6935322996335458~6357365605"
+                ?: "ca-app-pub-6935322996335458~9861411597"
             manifestPlaceholders["admobAppId"] = admobReleaseId
 
             isMinifyEnabled = true
