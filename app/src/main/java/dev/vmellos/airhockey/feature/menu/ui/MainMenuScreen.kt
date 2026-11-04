@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Redeem
@@ -78,6 +79,7 @@ fun MainMenuScreen(
     onStartNetwork: () -> Unit = {},
     onOpenLeaderboard: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCustomization: () -> Unit = {},
     onStartExtended: () -> Unit = onStartNetwork,
     onStartConnected: () -> Unit = onStartNetwork,
     onStartAiVsAiLocal: (AiDifficulty, AiDifficulty) -> Unit = { _, _ -> },
@@ -195,6 +197,21 @@ fun MainMenuScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
+                    }
+
+                    IconButton(
+                        onClick = onOpenCustomization,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = stringResource(R.string.customization_menu_tooltip),
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
 
                     IconButton(

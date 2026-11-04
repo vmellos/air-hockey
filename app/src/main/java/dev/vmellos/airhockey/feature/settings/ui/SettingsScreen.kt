@@ -26,12 +26,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -73,13 +76,22 @@ import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.billing.BillingEvent
 import dev.vmellos.airhockey.core.localization.LocaleHelper
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.util.findActivity
+import dev.vmellos.airhockey.feature.game.ui.NeonAmber
+import dev.vmellos.airhockey.feature.game.ui.NeonCyan
+import dev.vmellos.airhockey.feature.game.ui.NeonEmerald
+import dev.vmellos.airhockey.feature.game.ui.NeonOrange
+import dev.vmellos.airhockey.feature.game.ui.NeonRuby
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenCustomization: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -827,6 +839,105 @@ fun SettingsScreen(
                             colors = SwitchDefaults.colors(checkedThumbColor = Color(0xFF00E5FF), checkedTrackColor = Color(0x6600E5FF))
                         )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Seção Temas & Estilo da Arena (Acesso à Tela Dedicada)
+            Text(
+                text = stringResource(R.string.settings_arena_theme_title),
+                color = Color(0xFF00E5FF),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val currentPresetName = when {
+                prefs.tableTheme == TableTheme.CLASSIC_NEON &&
+                        prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
+                        prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_classic)
+                prefs.tableTheme == TableTheme.CYBER_SOCCER &&
+                        prefs.puckSkin == PuckSkin.CYBER_SOCCER_BALL &&
+                        prefs.player1MalletSkin == MalletSkin.MAGNETIC_STRIKER -> stringResource(R.string.theme_preset_cyber_soccer)
+                prefs.tableTheme == TableTheme.NEO_BASKETBALL &&
+                        prefs.puckSkin == PuckSkin.NEO_BASKETBALL &&
+                        prefs.player1MalletSkin == MalletSkin.DUNK_STRIKER -> stringResource(R.string.theme_preset_neo_basketball)
+                prefs.tableTheme == TableTheme.GRAVITY_VOLLEY &&
+                        prefs.puckSkin == PuckSkin.GRAVITY_VOLLEY &&
+                        prefs.player1MalletSkin == MalletSkin.SPIKE_EMITTER -> stringResource(R.string.theme_preset_gravity_volley)
+                else -> stringResource(R.string.customization_custom_preset)
+            }
+
+            Card(
+                shape = cardShape,
+                border = cardBorder,
+                colors = CardDefaults.cardColors(containerColor = Color(0xCC070D1A)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenCustomization() }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .background(Color(0x3300E5FF), CutCornerShape(8.dp))
+                            .border(1.dp, Color(0x6600E5FF), CutCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = null,
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.customization_screen_title),
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = currentPresetName,
+                                color = Color(0xFF00E5FF),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier
+                                    .background(Color(0x2800E5FF), RoundedCornerShape(4.dp))
+                                    .border(0.8.dp, Color(0x6600E5FF), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.settings_arena_theme_desc),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 

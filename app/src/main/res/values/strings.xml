@@ -242,4 +242,43 @@
     <string name="content_desc_qr_code">Table QR Code</string>
     <string name="content_desc_change_mode">Change Game Mode</string>
     <string name="ad_reward_active">Active Reward: 2h Ad-Free!</string>
+
+    <!-- Temas e Customização da Arena -->
+    <string name="settings_arena_theme_title">Arena Themes &amp; Styles</string>
+    <string name="settings_arena_theme_desc">Customize table visuals, puck style and striker appearance</string>
+    <string name="theme_preset_classic">Classic Arcade</string>
+    <string name="theme_preset_classic_desc">Cyan &amp; Orange neon arena with toroidal energy ring puck</string>
+    <string name="theme_preset_cyber_soccer">Cyber Soccer</string>
+    <string name="theme_preset_cyber_soccer_desc">Holographic synthetic turf with cyber soccer ball &amp; magnetic strikers</string>
+    <string name="theme_preset_neo_basketball">Neo Basketball</string>
+    <string name="theme_preset_neo_basketball_desc">Carbon wood parquet court with 3-point lines &amp; dunk strikers</string>
+    <string name="theme_preset_gravity_volley">Gravity Volley</string>
+    <string name="theme_preset_gravity_volley_desc">Orbital zero-g court with violet-magenta nebula glow and spike emitters</string>
+    <string name="theme_table_label">Table Theme</string>
+    <string name="theme_puck_label">Puck Appearance</string>
+    <string name="theme_mallet_label">Striker Appearance</string>
+    <string name="skin_puck_classic">Plasma Ring</string>
+    <string name="skin_puck_soccer">Cyber Soccer Ball</string>
+    <string name="skin_puck_basketball">Neo Basketball</string>
+    <string name="skin_puck_volley">Gravity Volley Sphere</string>
+    <string name="skin_mallet_classic">Classic Neon</string>
+    <string name="skin_mallet_soccer">Magnetic Striker</string>
+    <string name="skin_mallet_basketball">Dunk Striker</string>
+    <string name="skin_mallet_volley">Spike Emitter</string>
+    <string name="settings_theme_equipped">EQUIPPED</string>
+    <string name="settings_theme_equip_action">EQUIP</string>
+    <string name="settings_theme_modular_title">Modular Customization</string>
+    <string name="settings_theme_modular_desc">Mix &amp; match your favorite table, puck, and striker</string>
+    <string name="settings_theme_tab_table">Table</string>
+    <string name="settings_theme_tab_puck">Puck</string>
+    <string name="settings_theme_tab_mallet">Striker</string>
+    <string name="settings_theme_active_indicator">Active Kit: %1$s</string>
+    <string name="customization_screen_title">Arena Customization</string>
+    <string name="customization_tab_bundles">Sets</string>
+    <string name="customization_tab_tables">Tables</string>
+    <string name="customization_tab_pucks">Pucks</string>
+    <string name="customization_tab_mallets">Strikers</string>
+    <string name="customization_live_preview">Live Arena Preview</string>
+    <string name="customization_custom_preset">Custom Kit</string>
+    <string name="customization_menu_tooltip">Arena &amp; Kits</string>
 </resources>

@@ -258,6 +258,24 @@ _Avoid_: Fullscreen comum, tela cheia simples, modo sem borda
 O antigo indicador na arena que exibia a taxa de quadros por segundo entregue pelo motor de renderização, removido na preparação para publicação na loja.
 _Avoid_: Frame counter, medidor de taxa, taxa de quadros, medidor de fps
 
+## Customização e Temas Visuais
+
+**Tema de Mesa**:
+A estilização visual, paleta cromática, iluminação de fundo e demarcações táticas aplicadas proceduralmente à arena retangular de jogo, preservando dimensões físicas e proporções de colisão.
+_Avoid_: Campo, skin de mesa, textura de chão, fundo de campo
+
+**Aparência de Disco**:
+A estilização visual do disco que define o relevo geométrico central, o anel de contenção de plasma e as partículas do rastro de energia emitido em alta velocidade.
+_Avoid_: Skin de bola, bola diferente, sprite de puck, skin de puck
+
+**Aparência de Rebatedor**:
+A composição cosmética e de relevo pseudo-3D do acessório de controle do jogador, incluindo manopla ergonômica, textura de aderência e halo luminoso de impacto.
+_Avoid_: Skin de batedor, skin de raquete, batedor customizado
+
+**Conjunto Temático Esportivo**:
+A coleção integrada pré-configurada que combina Tema de Mesa, Aparência de Disco e Aparência de Rebatedor sob uma mesma identidade esportiva retro-futurista (ex: Cyber Futebol, Neo-Tokyo Basquete, Vôlei Gravitacional, Gridiron Sci-Fi e Beisebol Cibernético).
+_Avoid_: Kit de time, pacote de skins, theme pack, bundle de campo
+
 ## Competição e Classificação
 
 **Placar de Líderes**:

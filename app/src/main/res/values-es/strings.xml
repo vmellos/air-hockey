@@ -242,4 +242,43 @@
     <string name="content_desc_qr_code">Código QR de la Mesa</string>
     <string name="content_desc_change_mode">Cambiar Modo de Juego</string>
     <string name="ad_reward_active">¡Recompensa activa: 2h sin anuncios!</string>
+
+    <!-- Temas e Customização da Arena -->
+    <string name="settings_arena_theme_title">Temas y Estilo de la Arena</string>
+    <string name="settings_arena_theme_desc">Personaliza el diseño de la mesa, disco y rebatedores</string>
+    <string name="theme_preset_classic">Clásico Arcade</string>
+    <string name="theme_preset_classic_desc">Arena de neón cian y naranja con disco toroidal de energía</string>
+    <string name="theme_preset_cyber_soccer">Cyber Fútbol</string>
+    <string name="theme_preset_cyber_soccer_desc">Césped sintético holográfico con balón cyber y rebatedores magnéticos</string>
+    <string name="theme_preset_neo_basketball">Neo Baloncesto</string>
+    <string name="theme_preset_neo_basketball_desc">Cancha de parqué de carbono con líneas de 3 puntos y rebatedores dunk</string>
+    <string name="theme_preset_gravity_volley">Voleibol Gravitacional</string>
+    <string name="theme_preset_gravity_volley_desc">Cancha orbital con gravedad cero, destellos violeta/magenta y emisores spike</string>
+    <string name="theme_table_label">Tema de la Mesa</string>
+    <string name="theme_puck_label">Apariencia del Disco</string>
+    <string name="theme_mallet_label">Apariencia del Rebatedor</string>
+    <string name="skin_puck_classic">Anillo de Plasma</string>
+    <string name="skin_puck_soccer">Esfera Cyber Fútbol</string>
+    <string name="skin_puck_basketball">Balón Neo Baloncesto</string>
+    <string name="skin_puck_volley">Esfera Voleibol Gravitacional</string>
+    <string name="skin_mallet_classic">Neón Clásico</string>
+    <string name="skin_mallet_soccer">Tiro Magnético</string>
+    <string name="skin_mallet_basketball">Dunk Striker</string>
+    <string name="skin_mallet_volley">Emisor Spike</string>
+    <string name="settings_theme_equipped">EQUIPADO</string>
+    <string name="settings_theme_equip_action">EQUIPAR</string>
+    <string name="settings_theme_modular_title">Personalización Modular</string>
+    <string name="settings_theme_modular_desc">Combina libremente la mesa, disco y rebatedor</string>
+    <string name="settings_theme_tab_table">Mesa</string>
+    <string name="settings_theme_tab_puck">Disco</string>
+    <string name="settings_theme_tab_mallet">Rebatedor</string>
+    <string name="settings_theme_active_indicator">Conjunto Activo: %1$s</string>
+    <string name="customization_screen_title">Personalización de la Arena</string>
+    <string name="customization_tab_bundles">Conjuntos</string>
+    <string name="customization_tab_tables">Mesas</string>
+    <string name="customization_tab_pucks">Discos</string>
+    <string name="customization_tab_mallets">Rebatedores</string>
+    <string name="customization_live_preview">Vista Previa de la Arena</string>
+    <string name="customization_custom_preset">Conjunto Personalizado</string>
+    <string name="customization_menu_tooltip">Arena y Equipamiento</string>
 </resources>

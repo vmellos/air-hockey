@@ -24,6 +24,27 @@ enum class VisualEffectsProfile {
     OFF
 }
 
+enum class TableTheme {
+    CLASSIC_NEON,
+    CYBER_SOCCER,
+    NEO_BASKETBALL,
+    GRAVITY_VOLLEY
+}
+
+enum class PuckSkin {
+    CLASSIC_PLASMA,
+    CYBER_SOCCER_BALL,
+    NEO_BASKETBALL,
+    GRAVITY_VOLLEY
+}
+
+enum class MalletSkin {
+    CLASSIC_NEON,
+    MAGNETIC_STRIKER,
+    DUNK_STRIKER,
+    SPIKE_EMITTER
+}
+
 data class UserPreferences(
     val appLanguage: String = LocaleHelper.SYSTEM_DEFAULT,
     val soundEnabled: Boolean = true,
@@ -39,5 +60,9 @@ data class UserPreferences(
     val touchOffsetEnabled: Boolean = true,
     val puckSpeed: PuckSpeedPreset = PuckSpeedPreset.NORMAL,
     val visualEffectsProfile: VisualEffectsProfile = VisualEffectsProfile.FULL,
-    val playerName: String = ""
+    val playerName: String = "",
+    val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
+    val puckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
+    val player1MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON,
+    val player2MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON
 )
