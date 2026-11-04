@@ -358,4 +358,27 @@ _Avoid_: Buzzer padrão, som estático de derrota
 O padrão de interação na tela de customização em que tocar em qualquer card de conjunto, mesa, disco ou rebatedor equipa e persiste a seleção instantaneamente com retorno tátil, suprimindo botões intermediários de confirmação e atualizando a moldura luminosa e indicador de seleção ativa em tempo real.
 _Avoid_: Botão de equipar separado, modal de confirmação de skin, clique duplo para equipar
 
+## Elementos Visuais em Jogo e Acesso Rápido
+
+**Painel de Ponto Marcado Temático**:
+O componente de sobreposição visual exibido no centro da mesa ao marcar um ponto, cujos formatos de moldura, paleta de cores, tipografia, brilho neon e efeitos gráficos adaptam-se dinamicamente à identidade visual da arena ativa.
+_Avoid_: Banner estático genérico, aviso de gol padrão sem tema
+
+**Contagem Regressiva Temática**:
+A composição gráfica e tipográfica dos números da contagem (3, 2, 1) e do comando inicial ("VAI" / "GO") estilizada com as cores primárias, brilho de contorno e sombras decorativas da arena selecionada.
+_Avoid_: Números simples monocromáticos sem estilo
+
+**Placar Lateral Temático**:
+A moldura do mostrador de pontuação fixada na borda lateral direita da mesa, personalizada com o acabamento de superfície, gradientes de borda e estilo numérico condizentes com o tema da arena ativa.
+_Avoid_: Placar fixo transparente genérico
+
+**Acesso Rápido de Áudio**:
+O diálogo modal acionado pelo botão de volume da tela inicial que permite alternar e ajustar instantaneamente os efeitos sonoros, música de fundo e resposta tátil sem necessidade de navegar até a tela de configurações completas.
+_Avoid_: Apenas alternar mudo, controle escondido em menus profundos
+
+**Nomenclatura Concisa de Abas de Customização**:
+O vocabulário padronizado para as abas na tela de personalização (`Kits`, `Mesas`, `Discos`, `Tacos` em PT e `Mazos` em ES), garantindo legibilidade em qualquer densidade de tela sem quebra ou compressão visual.
+_Avoid_: Rebatedores espremido, strings longas em abas fixas
+
+
 

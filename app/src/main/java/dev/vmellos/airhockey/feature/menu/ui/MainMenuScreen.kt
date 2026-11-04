@@ -24,8 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCode
@@ -33,6 +37,12 @@ import androidx.compose.material.icons.filled.Redeem
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -87,6 +97,8 @@ fun MainMenuScreen(
     modifier: Modifier = Modifier
 ) {
     var showAiVsAiDialog by remember { mutableStateOf(false) }
+    var showQuickAudioDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
     val inAppUpdateStatus by AirHockeyApp.instance.inAppUpdateEngine.status.collectAsState()
 
     val adManager = AirHockeyApp.instance.adManager
@@ -210,6 +222,28 @@ fun MainMenuScreen(
                             imageVector = Icons.Default.Palette,
                             contentDescription = stringResource(R.string.customization_menu_tooltip),
                             tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // Acesso Rápido de Áudio e Vibração
+                    IconButton(
+                        onClick = {
+                            if (prefs.hapticsEnabled) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                            showQuickAudioDialog = true
+                        },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    ) {
+                        val isAnyAudioOn = prefs.soundEnabled || prefs.musicEnabled
+                        Icon(
+                            imageVector = if (isAnyAudioOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = stringResource(R.string.quick_audio_title),
+                            tint = if (isAnyAudioOn) Color(0xFF00E5FF) else Color(0xFF94A3B8),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -499,6 +533,223 @@ fun InAppUpdateDownloadedBanner(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.5.sp
+                    )
+                }
+            }
+        }
+
+        if (showQuickAudioDialog) {
+            QuickAudioDialog(
+                prefs = prefs,
+                onDismiss = { showQuickAudioDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun QuickAudioDialog(
+    prefs: UserPreferences,
+    onDismiss: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val repo = AirHockeyApp.instance.preferencesRepository
+    val haptic = LocalHapticFeedback.current
+
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = CutCornerShape(16.dp),
+            color = Color(0xF50A1020),
+            border = BorderStroke(1.5.dp, Color(0xFF00E5FF)),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth(0.92f)
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Título
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.GraphicEq,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.quick_audio_title),
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 1. Efeitos Sonoros
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.quick_audio_sound),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "${(prefs.soundVolume * 100).toInt()}%",
+                            color = if (prefs.soundEnabled) Color(0xFF00E5FF) else Color(0xFF64748B),
+                            fontSize = 11.sp
+                        )
+                    }
+                    Switch(
+                        checked = prefs.soundEnabled,
+                        onCheckedChange = { checked ->
+                            if (prefs.hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            coroutineScope.launch { repo.setSoundEnabled(checked) }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF00E5FF),
+                            checkedTrackColor = Color(0x4D00E5FF),
+                            uncheckedThumbColor = Color(0xFF64748B),
+                            uncheckedTrackColor = Color(0x33334155)
+                        )
+                    )
+                }
+                if (prefs.soundEnabled) {
+                    Slider(
+                        value = prefs.soundVolume,
+                        onValueChange = { vol ->
+                            coroutineScope.launch { repo.setSoundVolume(vol) }
+                        },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFF00E5FF),
+                            activeTrackColor = Color(0xFF00E5FF),
+                            inactiveTrackColor = Color(0x33334155)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // 2. Música de Fundo
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.quick_audio_music),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "${(prefs.musicVolume * 100).toInt()}%",
+                            color = if (prefs.musicEnabled) Color(0xFF00E5FF) else Color(0xFF64748B),
+                            fontSize = 11.sp
+                        )
+                    }
+                    Switch(
+                        checked = prefs.musicEnabled,
+                        onCheckedChange = { checked ->
+                            if (prefs.hapticsEnabled) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            coroutineScope.launch { repo.setMusicEnabled(checked) }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF00E5FF),
+                            checkedTrackColor = Color(0x4D00E5FF),
+                            uncheckedThumbColor = Color(0xFF64748B),
+                            uncheckedTrackColor = Color(0x33334155)
+                        )
+                    )
+                }
+                if (prefs.musicEnabled) {
+                    Slider(
+                        value = prefs.musicVolume,
+                        onValueChange = { vol ->
+                            coroutineScope.launch { repo.setMusicVolume(vol) }
+                        },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFF00E5FF),
+                            activeTrackColor = Color(0xFF00E5FF),
+                            inactiveTrackColor = Color(0x33334155)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // 3. Vibração
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.quick_audio_haptics),
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Switch(
+                        checked = prefs.hapticsEnabled,
+                        onCheckedChange = { checked ->
+                            if (checked) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            coroutineScope.launch { repo.setHapticsEnabled(checked) }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF00E5FF),
+                            checkedTrackColor = Color(0x4D00E5FF),
+                            uncheckedThumbColor = Color(0xFF64748B),
+                            uncheckedTrackColor = Color(0x33334155)
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Botão Fechar / Pronto
+                Button(
+                    onClick = onDismiss,
+                    shape = CutCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.quick_audio_close),
+                        color = Color(0xFF070B14),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

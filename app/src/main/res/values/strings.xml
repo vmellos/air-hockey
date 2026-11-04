@@ -309,4 +309,9 @@
     <string name="customization_live_preview">Live Arena Preview</string>
     <string name="customization_custom_preset">Custom Kit</string>
     <string name="customization_menu_tooltip">Arena &amp; Kits</string>
+    <string name="quick_audio_title">Audio &amp; Vibration</string>
+    <string name="quick_audio_sound">Sound Effects</string>
+    <string name="quick_audio_music">Background Music</string>
+    <string name="quick_audio_haptics">Vibration</string>
+    <string name="quick_audio_close">Done</string>
 </resources>

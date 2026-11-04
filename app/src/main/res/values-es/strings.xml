@@ -302,11 +302,16 @@
     <string name="settings_theme_tab_mallet">Rebatedor</string>
     <string name="settings_theme_active_indicator">Conjunto Activo: %1$s</string>
     <string name="customization_screen_title">Personalización de la Arena</string>
-    <string name="customization_tab_bundles">Conjuntos</string>
+    <string name="customization_tab_bundles">Kits</string>
     <string name="customization_tab_tables">Mesas</string>
     <string name="customization_tab_pucks">Discos</string>
-    <string name="customization_tab_mallets">Rebatedores</string>
+    <string name="customization_tab_mallets">Mazos</string>
     <string name="customization_live_preview">Vista Previa de la Arena</string>
     <string name="customization_custom_preset">Conjunto Personalizado</string>
     <string name="customization_menu_tooltip">Arena y Equipamiento</string>
+    <string name="quick_audio_title">Audio y Vibración</string>
+    <string name="quick_audio_sound">Efectos de Sonido</string>
+    <string name="quick_audio_music">Música de Fondo</string>
+    <string name="quick_audio_haptics">Vibración</string>
+    <string name="quick_audio_close">Listo</string>
 </resources>
