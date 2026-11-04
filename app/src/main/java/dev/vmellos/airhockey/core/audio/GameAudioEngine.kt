@@ -8,30 +8,42 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.sin
+import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Motor de áudio do jogo com síntese procedural temática adaptativa.
+ * Fornece BGM, contagem regressiva, impactos e fanfarras de gols exclusivos por arena.
+ */
 class GameAudioEngine(private val context: Context) {
 
     private val soundPool: SoundPool
     private val vibrator: Vibrator?
 
-    private var soundHitPaddleId: Int = 0
-    private var soundHitWallId: Int = 0
-    private var soundGoalId: Int = 0
-    private var soundCountdown3Id: Int = 0
-    private var soundCountdown2Id: Int = 0
-    private var soundCountdown1Id: Int = 0
-    private var soundCountdownGoId: Int = 0
     private val loadedSoundIds = java.util.Collections.synchronizedSet(mutableSetOf<Int>())
 
     // Controles de Efeitos Sonoros
     var isSoundEnabled: Boolean = true
     var volume: Float = 0.8f
     var isHapticsEnabled: Boolean = true
+
+    // Controles de Tema e Skins
+    var currentTheme: TableTheme = TableTheme.CLASSIC_NEON
+        set(value) {
+            val changed = field != value
+            field = value
+            if (changed) {
+                ensureThemeLoaded(value)
+                if (bgmPlayer != null && isMusicEnabled) {
+                    playBgm(value)
+                }
+            }
+        }
+
+    var currentMalletSkinP1: MalletSkin = MalletSkin.CLASSIC_NEON
+    var currentMalletSkinP2: MalletSkin = MalletSkin.CLASSIC_NEON
 
     // Controles de Música de Fundo (BGM)
     var isMusicEnabled: Boolean = true
@@ -53,7 +65,33 @@ class GameAudioEngine(private val context: Context) {
         }
 
     private var bgmPlayer: MediaPlayer? = null
-    private var bgmFile: File? = null
+    private var playingBgmTheme: TableTheme? = null
+
+    // Cache de IDs de som por tema
+    data class ThemeSoundSet(
+        val hitPaddleId: Int,
+        val hitWallId: Int,
+        val goalScoredId: Int,
+        val goalConcededId: Int,
+        val countdown3Id: Int,
+        val countdown2Id: Int,
+        val countdown1Id: Int,
+        val countdownGoId: Int,
+        val scoreBlipId: Int
+    )
+
+    private val themeSounds = ConcurrentHashMap<TableTheme, ThemeSoundSet>()
+
+    // Sons padrão (fallback instantâneo)
+    private var defaultPaddleHitId: Int = 0
+    private var defaultWallHitId: Int = 0
+    private var defaultGoalScoredId: Int = 0
+    private var defaultGoalConcededId: Int = 0
+    private var defaultCountdown3Id: Int = 0
+    private var defaultCountdown2Id: Int = 0
+    private var defaultCountdown1Id: Int = 0
+    private var defaultCountdownGoId: Int = 0
+    private var defaultScoreBlipId: Int = 0
 
     init {
         val audioAttributes = AudioAttributes.Builder()
@@ -62,7 +100,7 @@ class GameAudioEngine(private val context: Context) {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(8)
+            .setMaxStreams(12)
             .setAudioAttributes(audioAttributes)
             .build()
 
@@ -80,53 +118,98 @@ class GameAudioEngine(private val context: Context) {
             context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
 
-        initializeSynthesizedSounds()
+        // Carrega tema clássico imediatamente para prover fallbacks
+        ensureThemeLoaded(TableTheme.CLASSIC_NEON)
     }
 
-    private fun initializeSynthesizedSounds() {
+    @Synchronized
+    fun ensureThemeLoaded(theme: TableTheme): ThemeSoundSet {
+        themeSounds[theme]?.let { return it }
+
+        val cacheDir = context.cacheDir
+        val prefix = "sfx_${theme.name.lowercase()}"
+
+        val paddleWav = File(cacheDir, "${prefix}_paddle.wav")
+        val wallWav = File(cacheDir, "${prefix}_wall.wav")
+        val goalScoredWav = File(cacheDir, "${prefix}_goal_scored.wav")
+        val goalConcededWav = File(cacheDir, "${prefix}_goal_conceded.wav")
+        val c3Wav = File(cacheDir, "${prefix}_c3.wav")
+        val c2Wav = File(cacheDir, "${prefix}_c2.wav")
+        val c1Wav = File(cacheDir, "${prefix}_c1.wav")
+        val cGoWav = File(cacheDir, "${prefix}_c_go.wav")
+        val scoreWav = File(cacheDir, "${prefix}_score.wav")
+
         try {
-            val cacheDir = context.cacheDir
-            val hitPaddleWav = File(cacheDir, "sfx_hit_paddle.wav")
-            val hitWallWav = File(cacheDir, "sfx_hit_wall.wav")
-            val goalWav = File(cacheDir, "sfx_goal.wav")
-            val countdown3Wav = File(cacheDir, "sfx_countdown_3.wav")
-            val countdown2Wav = File(cacheDir, "sfx_countdown_2.wav")
-            val countdown1Wav = File(cacheDir, "sfx_countdown_1.wav")
-            val countdownGoWav = File(cacheDir, "sfx_countdown_go.wav")
+            if (!paddleWav.exists() || paddleWav.length() == 0L) ProceduralAudioSynthesizer.generatePaddleHitWav(paddleWav, theme)
+            if (!wallWav.exists() || wallWav.length() == 0L) ProceduralAudioSynthesizer.generateWallHitWav(wallWav, theme)
+            if (!goalScoredWav.exists() || goalScoredWav.length() == 0L) ProceduralAudioSynthesizer.generateGoalScoredWav(goalScoredWav, theme)
+            if (!goalConcededWav.exists() || goalConcededWav.length() == 0L) ProceduralAudioSynthesizer.generateGoalConcededWav(goalConcededWav, theme)
+            if (!c3Wav.exists() || c3Wav.length() == 0L) ProceduralAudioSynthesizer.generateCountdownWav(c3Wav, theme, 3)
+            if (!c2Wav.exists() || c2Wav.length() == 0L) ProceduralAudioSynthesizer.generateCountdownWav(c2Wav, theme, 2)
+            if (!c1Wav.exists() || c1Wav.length() == 0L) ProceduralAudioSynthesizer.generateCountdownWav(c1Wav, theme, 1)
+            if (!cGoWav.exists() || cGoWav.length() == 0L) ProceduralAudioSynthesizer.generateCountdownWav(cGoWav, theme, 0)
+            if (!scoreWav.exists() || scoreWav.length() == 0L) ProceduralAudioSynthesizer.generateScoreBlipWav(scoreWav, theme)
 
-            if (!hitPaddleWav.exists() || hitPaddleWav.length() == 0L) generateWav(hitPaddleWav, frequency = 480.0, durationMs = 60, isDecay = true)
-            if (!hitWallWav.exists() || hitWallWav.length() == 0L) generateWav(hitWallWav, frequency = 240.0, durationMs = 45, isDecay = true)
-            if (!goalWav.exists() || goalWav.length() == 0L) generateFanfareWav(goalWav)
-            if (!countdown3Wav.exists() || countdown3Wav.length() == 0L) generateHarmonicChimeWav(countdown3Wav, frequency = 523.25, durationMs = 140)
-            if (!countdown2Wav.exists() || countdown2Wav.length() == 0L) generateHarmonicChimeWav(countdown2Wav, frequency = 659.25, durationMs = 140)
-            if (!countdown1Wav.exists() || countdown1Wav.length() == 0L) generateHarmonicChimeWav(countdown1Wav, frequency = 783.99, durationMs = 140)
-            if (!countdownGoWav.exists() || countdownGoWav.length() == 0L) generateGoChordWav(countdownGoWav)
+            val pId = soundPool.load(paddleWav.absolutePath, 1)
+            val wId = soundPool.load(wallWav.absolutePath, 1)
+            val gsId = soundPool.load(goalScoredWav.absolutePath, 1)
+            val gcId = soundPool.load(goalConcededWav.absolutePath, 1)
+            val c3Id = soundPool.load(c3Wav.absolutePath, 1)
+            val c2Id = soundPool.load(c2Wav.absolutePath, 1)
+            val c1Id = soundPool.load(c1Wav.absolutePath, 1)
+            val cGoId = soundPool.load(cGoWav.absolutePath, 1)
+            val sId = soundPool.load(scoreWav.absolutePath, 1)
 
-            soundHitPaddleId = soundPool.load(hitPaddleWav.absolutePath, 1)
-            soundHitWallId = soundPool.load(hitWallWav.absolutePath, 1)
-            soundGoalId = soundPool.load(goalWav.absolutePath, 1)
-            soundCountdown3Id = soundPool.load(countdown3Wav.absolutePath, 1)
-            soundCountdown2Id = soundPool.load(countdown2Wav.absolutePath, 1)
-            soundCountdown1Id = soundPool.load(countdown1Wav.absolutePath, 1)
-            soundCountdownGoId = soundPool.load(countdownGoWav.absolutePath, 1)
+            val soundSet = ThemeSoundSet(
+                hitPaddleId = pId,
+                hitWallId = wId,
+                goalScoredId = gsId,
+                goalConcededId = gcId,
+                countdown3Id = c3Id,
+                countdown2Id = c2Id,
+                countdown1Id = c1Id,
+                countdownGoId = cGoId,
+                scoreBlipId = sId
+            )
+
+            if (defaultPaddleHitId == 0) {
+                defaultPaddleHitId = pId
+                defaultWallHitId = wId
+                defaultGoalScoredId = gsId
+                defaultGoalConcededId = gcId
+                defaultCountdown3Id = c3Id
+                defaultCountdown2Id = c2Id
+                defaultCountdown1Id = c1Id
+                defaultCountdownGoId = cGoId
+                defaultScoreBlipId = sId
+            }
+
+            themeSounds[theme] = soundSet
+            return soundSet
         } catch (_: Exception) {
-            // Silently fall back if storage fails
+            val fallback = ThemeSoundSet(
+                defaultPaddleHitId, defaultWallHitId, defaultGoalScoredId, defaultGoalConcededId,
+                defaultCountdown3Id, defaultCountdown2Id, defaultCountdown1Id, defaultCountdownGoId, defaultScoreBlipId
+            )
+            themeSounds[theme] = fallback
+            return fallback
         }
     }
 
-    /**
-     * Converte o valor linear do controle de volume (0.0 a 1.0) para uma curva logarítmica/quadrática
-     * natural para a audição humana, permitindo volumes mínimos verdadeiramente suaves e sem piso artificial.
-     */
     private fun calculateEffectiveVolume(baseMultiplier: Float = 1.0f): Float {
         val normalized = volume.coerceIn(0f, 1f)
         return (normalized * normalized * baseMultiplier).coerceIn(0f, 1f)
     }
 
-    fun playPaddleHit(intensity: Float = 1.0f) {
-        if (isSoundEnabled && soundHitPaddleId != 0) {
-            val effVol = calculateEffectiveVolume(intensity.coerceIn(0.25f, 1.0f))
-            soundPool.play(soundHitPaddleId, effVol, effVol, 1, 0, 1.0f)
+    fun playPaddleHit(intensity: Float = 1.0f, isPlayer1: Boolean = true) {
+        if (isSoundEnabled) {
+            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
+            val soundId = if (currentSet.hitPaddleId != 0) currentSet.hitPaddleId else defaultPaddleHitId
+            if (soundId != 0) {
+                val effVol = calculateEffectiveVolume(intensity.coerceIn(0.25f, 1.0f))
+                val rate = if (isPlayer1) 1.0f else 0.92f
+                soundPool.play(soundId, effVol, effVol, 1, 0, rate)
+            }
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 15, amplitude = (intensity * 255).toInt().coerceIn(60, 255))
@@ -134,36 +217,98 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun playWallHit() {
-        if (isSoundEnabled && soundHitWallId != 0) {
-            val effVol = calculateEffectiveVolume(0.7f)
-            soundPool.play(soundHitWallId, effVol, effVol, 1, 0, 1.0f)
+        if (isSoundEnabled) {
+            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
+            val soundId = if (currentSet.hitWallId != 0) currentSet.hitWallId else defaultWallHitId
+            if (soundId != 0) {
+                val effVol = calculateEffectiveVolume(0.7f)
+                soundPool.play(soundId, effVol, effVol, 1, 0, 1.0f)
+            }
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 10, amplitude = 50)
         }
     }
 
-    fun playGoal() {
-        if (isSoundEnabled && soundGoalId != 0) {
-            val effVol = calculateEffectiveVolume(1.0f)
-            soundPool.play(soundGoalId, effVol, effVol, 2, 0, 1.0f)
+    /**
+     * Ponto marcado pelo jogador (Ponto Pró).
+     * Toca fanfarra triunfante exclusiva do tema + progressão harmônica proporcional aos pontos.
+     */
+    fun playGoalScored(currentScore: Int = 0, targetScore: Int = 3) {
+        if (isSoundEnabled) {
+            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
+            val soundId = if (currentSet.goalScoredId != 0) currentSet.goalScoredId else defaultGoalScoredId
+            if (soundId != 0) {
+                val effVol = calculateEffectiveVolume(1.0f)
+                soundPool.play(soundId, effVol, effVol, 2, 0, 1.0f)
+            }
+            if (currentScore > 0) {
+                playScoreAnnouncement(currentScore, targetScore)
+            }
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = 250, amplitude = 255)
         }
     }
 
+    /**
+     * Ponto sofrido pelo jogador (Ponto Contra / Oponente marcou).
+     * Toca alarme / som descendente exclusivo do tema.
+     */
+    fun playGoalConceded(currentScore: Int = 0, targetScore: Int = 3) {
+        if (isSoundEnabled) {
+            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
+            val soundId = if (currentSet.goalConcededId != 0) currentSet.goalConcededId else defaultGoalConcededId
+            if (soundId != 0) {
+                val effVol = calculateEffectiveVolume(0.95f)
+                soundPool.play(soundId, effVol, effVol, 2, 0, 1.0f)
+            }
+        }
+        if (isHapticsEnabled) {
+            triggerVibration(durationMs = 180, amplitude = 180)
+        }
+    }
+
+    /**
+     * Método de compatibilidade legado.
+     */
+    fun playGoal() {
+        playGoalScored()
+    }
+
+    /**
+     * Toca o chime com elevação harmônica proporcional à pontuação.
+     */
+    fun playScoreAnnouncement(currentScore: Int, targetScore: Int) {
+        if (!isSoundEnabled) return
+        val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
+        val scoreId = if (currentSet.scoreBlipId != 0) currentSet.scoreBlipId else defaultScoreBlipId
+        if (scoreId != 0) {
+            val progress = (currentScore.coerceAtLeast(1) - 1).coerceAtMost(10)
+            val rate = (1.0f + progress * 0.10f).coerceIn(0.5f, 2.0f)
+            val effVol = calculateEffectiveVolume(0.80f)
+            soundPool.play(scoreId, effVol, effVol, 1, 0, rate)
+        }
+    }
+
     fun playCountdownBeep(countdownNumber: Int) {
         if (!isSoundEnabled) return
+        val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
         val soundId = when (countdownNumber) {
-            3 -> soundCountdown3Id
-            2 -> soundCountdown2Id
-            1 -> soundCountdown1Id
-            else -> soundCountdownGoId
+            3 -> currentSet.countdown3Id
+            2 -> currentSet.countdown2Id
+            1 -> currentSet.countdown1Id
+            else -> currentSet.countdownGoId
         }
-        if (soundId != 0) {
+        val effSoundId = if (soundId != 0) soundId else when (countdownNumber) {
+            3 -> defaultCountdown3Id
+            2 -> defaultCountdown2Id
+            1 -> defaultCountdown1Id
+            else -> defaultCountdownGoId
+        }
+        if (effSoundId != 0) {
             val effVol = calculateEffectiveVolume(0.85f)
-            soundPool.play(soundId, effVol, effVol, 1, 0, 1.0f)
+            soundPool.play(effSoundId, effVol, effVol, 1, 0, 1.0f)
         }
         if (isHapticsEnabled) {
             triggerVibration(durationMs = if (countdownNumber <= 0) 50 else 25, amplitude = 180)
@@ -174,37 +319,43 @@ class GameAudioEngine(private val context: Context) {
         playCountdownBeep(if (isFinal) 0 else 3)
     }
 
-    // --- Reprodução e Controle da Música de Fundo (BGM) Arcade ---
+    // --- Reprodução e Controle da Música de Fundo (BGM) Temática ---
 
-    fun playBgm() {
+    fun playBgm(theme: TableTheme = currentTheme) {
         if (!isMusicEnabled) return
         try {
-            if (bgmPlayer == null) {
-                val file = bgmFile ?: File(context.cacheDir, "bgm_arcade_loop_v2.wav").also { bgmFile = it }
-                if (!file.exists() || file.length() == 0L) {
-                    generateBgmArcadeLoopWav(file)
-                }
-                bgmPlayer = MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_GAME)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .build()
-                    )
-                    setDataSource(file.absolutePath)
-                    isLooping = true
-                    prepare()
-                    val vol = musicVolume.coerceIn(0f, 1f)
-                    setVolume(vol, vol)
-                    start()
-                }
-            } else {
+            if (bgmPlayer != null && playingBgmTheme == theme) {
                 val player = bgmPlayer ?: return
                 val vol = musicVolume.coerceIn(0f, 1f)
                 player.setVolume(vol, vol)
                 if (!player.isPlaying) {
                     player.start()
                 }
+                return
+            }
+
+            stopBgm()
+            playingBgmTheme = theme
+
+            val bgmFileName = "bgm_${theme.name.lowercase()}_v1.wav"
+            val file = File(context.cacheDir, bgmFileName)
+            if (!file.exists() || file.length() == 0L) {
+                ProceduralAudioSynthesizer.generateBgmWav(file, theme)
+            }
+
+            bgmPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_GAME)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                setDataSource(file.absolutePath)
+                isLooping = true
+                prepare()
+                val vol = musicVolume.coerceIn(0f, 1f)
+                setVolume(vol, vol)
+                start()
             }
         } catch (_: Exception) {
             // Silently recover if audio subsystem fails
@@ -227,7 +378,7 @@ class GameAudioEngine(private val context: Context) {
                 bgmPlayer?.setVolume(vol, vol)
                 bgmPlayer?.start()
             } else if (bgmPlayer == null) {
-                playBgm()
+                playBgm(currentTheme)
             }
         } catch (_: Exception) {}
     }
@@ -237,161 +388,8 @@ class GameAudioEngine(private val context: Context) {
             bgmPlayer?.stop()
             bgmPlayer?.release()
             bgmPlayer = null
+            playingBgmTheme = null
         } catch (_: Exception) {}
-    }
-
-
-
-    private fun generateBgmArcadeLoopWav(file: File) {
-        val sampleRate = 22050
-        val bpm = 125.0
-        val beatDuration = 60.0 / bpm // ~0.48s
-        val totalBars = 8
-        val beatsPerBar = 4
-        val totalDuration = totalBars * beatsPerBar * beatDuration // 15.36s
-        val numSamples = (sampleRate * totalDuration).toInt()
-        val pcmData = ByteArray(numSamples * 2)
-
-        var noiseSeed = 123456789L
-        fun pseudoNoise(): Double {
-            noiseSeed = (noiseSeed * 1103515245L + 12345L) and 0x7FFFFFFF
-            return (noiseSeed.toDouble() / 0x7FFFFFFF) * 2.0 - 1.0
-        }
-
-        // Progressão harmônica: Am (compassos 0-1), F (2-3), C (4-5), G (6-7)
-        val chordRoots = doubleArrayOf(110.0, 87.31, 130.81, 98.00) // A2, F2, C3, G2
-        val chordFifths = doubleArrayOf(164.81, 130.81, 196.00, 146.83) // E3, C3, G3, D3
-        val chordOctaves = doubleArrayOf(220.0, 174.61, 261.63, 196.00) // A3, F3, C4, G3
-
-        // Frase melódica arcade retro em A minor
-        val melodyNotes = doubleArrayOf(
-            440.00, 523.25, 659.25, 783.99,
-            880.00, 783.99, 659.25, 523.25,
-            587.33, 659.25, 783.99, 880.00,
-            1046.50, 880.00, 783.99, 659.25
-        )
-
-        var kickPhase = 0.0
-        var bassPhase = 0.0
-        var leadPhase = 0.0
-
-        for (i in 0 until numSamples) {
-            val t = i.toDouble() / sampleRate
-            val currentBar = ((t / (4.0 * beatDuration)).toInt()).coerceIn(0, totalBars - 1)
-            val chordIdx = (currentBar / 2).coerceIn(0, 3)
-
-            val rootFreq = chordRoots[chordIdx]
-            val fifthFreq = chordFifths[chordIdx]
-            val octFreq = chordOctaves[chordIdx]
-
-            // 1. Bumbo / Kick (four-on-the-floor)
-            val tBeat = t % beatDuration
-            var kickSample = 0.0
-            if (tBeat < 0.22) {
-                val kickEnv = kotlin.math.exp(-22.0 * tBeat)
-                val kickFreq = 48.0 + 120.0 * kotlin.math.exp(-35.0 * tBeat)
-                kickPhase += 2.0 * Math.PI * kickFreq / sampleRate
-                kickSample = sin(kickPhase) * kickEnv * 0.45
-            }
-
-            // 2. Caixa / Snare arcade (tempos 2 e 4)
-            val beatIndex = (t / beatDuration).toInt()
-            var snareSample = 0.0
-            if (beatIndex % 2 == 1 && tBeat < 0.18) {
-                val snareEnv = kotlin.math.exp(-20.0 * tBeat)
-                val noise = pseudoNoise()
-                val tone = sin(2.0 * Math.PI * 185.0 * tBeat)
-                snareSample = (noise * 0.65 + tone * 0.35) * snareEnv * 0.30
-            }
-
-            // 3. Chimbal / Hi-Hat nos contratempos
-            val tEighth = (t + beatDuration * 0.5) % beatDuration
-            var hatSample = 0.0
-            if (tEighth < 0.06) {
-                val hatEnv = kotlin.math.exp(-65.0 * tEighth)
-                hatSample = pseudoNoise() * hatEnv * 0.12
-            }
-
-            // 4. Synthwave Rolling Bass (arpejo em semicolcheias)
-            val sixteenthDuration = beatDuration / 4.0
-            val sixteenthIdx = ((t / sixteenthDuration).toInt()) % 4
-            val bassFreq = when (sixteenthIdx) {
-                0 -> rootFreq
-                1 -> rootFreq
-                2 -> octFreq
-                else -> fifthFreq
-            }
-            val tSixteenth = t % sixteenthDuration
-            val bassEnv = kotlin.math.exp(-12.0 * tSixteenth)
-            bassPhase += 2.0 * Math.PI * bassFreq / sampleRate
-            val bassWave = sin(bassPhase) + 0.35 * sin(bassPhase * 2.0)
-            val bassSample = bassWave * bassEnv * 0.35
-
-            // 5. Melodia sintetizada arcade retro
-            val melodyIdx = ((t / sixteenthDuration).toInt()) % melodyNotes.size
-            val leadFreq = melodyNotes[melodyIdx]
-            val leadEnv = kotlin.math.exp(-14.0 * tSixteenth)
-            leadPhase += 2.0 * Math.PI * leadFreq / sampleRate
-            val leadWave = sin(leadPhase) + 0.25 * sin(leadPhase * 3.0)
-            val leadSample = leadWave * leadEnv * 0.18
-
-            var mixed = (kickSample + snareSample + hatSample + bassSample + leadSample) * 0.45
-
-            // Crossfade suave nos limites de início e fim para garantir loop contínuo sem estalos
-            val fadeSamples = (0.015 * sampleRate).toInt()
-            if (i < fadeSamples) {
-                mixed *= (i.toDouble() / fadeSamples)
-            } else if (i > numSamples - fadeSamples) {
-                mixed *= ((numSamples - i).toDouble() / fadeSamples)
-            }
-
-            val clampedSample = (mixed * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
-            val byteIndex = i * 2
-            pcmData[byteIndex] = (clampedSample.toInt() and 0xFF).toByte()
-            pcmData[byteIndex + 1] = ((clampedSample.toInt() shr 8) and 0xFF).toByte()
-        }
-
-        writeWavFile(file, pcmData, sampleRate)
-    }
-
-    private fun generateHarmonicChimeWav(file: File, frequency: Double, durationMs: Int) {
-        val sampleRate = 22050
-        val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
-        val pcmData = ByteArray(numSamples * 2)
-
-        for (i in 0 until numSamples) {
-            val time = i.toDouble() / sampleRate
-            val decay = kotlin.math.exp(-3.2 * (i.toDouble() / numSamples))
-            val fundamental = sin(2.0 * Math.PI * frequency * time)
-            val overtone = 0.25 * sin(4.0 * Math.PI * frequency * time)
-            val sample = ((fundamental + overtone) / 1.25 * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
-
-            val byteIndex = i * 2
-            pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
-            pcmData[byteIndex + 1] = ((sample.toInt() shr 8) and 0xFF).toByte()
-        }
-        writeWavFile(file, pcmData, sampleRate)
-    }
-
-    private fun generateGoChordWav(file: File) {
-        val sampleRate = 22050
-        val durationMs = 280
-        val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
-        val pcmData = ByteArray(numSamples * 2)
-
-        for (i in 0 until numSamples) {
-            val time = i.toDouble() / sampleRate
-            val decay = kotlin.math.exp(-2.5 * (i.toDouble() / numSamples))
-            val note1 = sin(2.0 * Math.PI * 1046.50 * time) // C6
-            val note2 = 0.6 * sin(2.0 * Math.PI * 1318.51 * time) // E6
-            val note3 = 0.4 * sin(2.0 * Math.PI * 1567.98 * time) // G6
-            val sample = ((note1 + note2 + note3) / 2.0 * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
-
-            val byteIndex = i * 2
-            pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
-            pcmData[byteIndex + 1] = ((sample.toInt() shr 8) and 0xFF).toByte()
-        }
-        writeWavFile(file, pcmData, sampleRate)
     }
 
     private fun triggerVibration(durationMs: Long, amplitude: Int) {
@@ -402,71 +400,6 @@ class GameAudioEngine(private val context: Context) {
         } else {
             @Suppress("DEPRECATION")
             vibrator.vibrate(durationMs)
-        }
-    }
-
-    private fun generateWav(file: File, frequency: Double, durationMs: Int, isDecay: Boolean) {
-        val sampleRate = 22050
-        val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
-        val pcmData = ByteArray(numSamples * 2)
-
-        for (i in 0 until numSamples) {
-            val time = i.toDouble() / sampleRate
-            val decay = if (isDecay) (1.0 - (i.toDouble() / numSamples)) else 1.0
-            val angle = 2.0 * Math.PI * frequency * time
-            val sample = (sin(angle) * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
-
-            val byteIndex = i * 2
-            pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
-            pcmData[byteIndex + 1] = ((sample.toInt() shr 8) and 0xFF).toByte()
-        }
-        writeWavFile(file, pcmData, sampleRate)
-    }
-
-    private fun generateFanfareWav(file: File) {
-        val sampleRate = 22050
-        val durationMs = 400
-        val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()
-        val pcmData = ByteArray(numSamples * 2)
-
-        for (i in 0 until numSamples) {
-            val time = i.toDouble() / sampleRate
-            val freq = if (time < 0.15) 523.25 else if (time < 0.28) 659.25 else 783.99
-            val decay = 1.0 - (i.toDouble() / numSamples)
-            val sample = (sin(2.0 * Math.PI * freq * time) * decay * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
-
-            val byteIndex = i * 2
-            pcmData[byteIndex] = (sample.toInt() and 0xFF).toByte()
-            pcmData[byteIndex + 1] = ((sample.toInt() shr 8) and 0xFF).toByte()
-        }
-        writeWavFile(file, pcmData, sampleRate)
-    }
-
-    private fun writeWavFile(file: File, pcmData: ByteArray, sampleRate: Int) {
-        val totalAudioLen = pcmData.size.toLong()
-        val totalDataLen = totalAudioLen + 36
-        val channels = 1
-        val byteRate = sampleRate * channels * 2
-
-        val header = ByteArray(44)
-        val buffer = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
-        buffer.put("RIFF".toByteArray())
-        buffer.putInt(totalDataLen.toInt())
-        buffer.put("WAVE".toByteArray())
-        buffer.put("fmt ".toByteArray())
-        buffer.putInt(16) // Subchunk1Size
-        buffer.putShort(1) // AudioFormat (1 = PCM)
-        buffer.putShort(channels.toShort())
-        buffer.putInt(sampleRate)
-        buffer.putInt(byteRate)
-        buffer.putShort((channels * 2).toShort()) // BlockAlign
-        buffer.putShort(16) // BitsPerSample
-        buffer.put("data".toByteArray())
-        buffer.putInt(totalAudioLen.toInt())
-
-        FileOutputStream(file).use { out ->
-            out.write(header)
-            out.write(pcmData)
         }
     }
 

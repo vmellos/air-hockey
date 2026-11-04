@@ -26,7 +26,7 @@ data class MatchFrameSnapshot(
     val player2MalletY: Float,
     val scorePlayer1: Int = 0,
     val scorePlayer2: Int = 0,
-    val targetScore: Int = 7,
+    val targetScore: Int = 3,
     val remainingTimeSeconds: Int = 180,
     val countdownNumber: Int = 3,
     val matchStatus: MatchStatus = MatchStatus.COUNTDOWN,
@@ -91,7 +91,7 @@ object NoOpAudioOutputPort : AudioOutputPort {
 class ArbitroVirtual(
     val dimensions: TableDimensions,
     val mode: GameMode = GameMode.SOLO,
-    val targetScore: Int = 7,
+    val targetScore: Int = 3,
     val matchTimeSeconds: Int = 180,
     val audioPort: AudioOutputPort = NoOpAudioOutputPort
 ) {

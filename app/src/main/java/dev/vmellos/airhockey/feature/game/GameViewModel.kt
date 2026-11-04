@@ -131,7 +131,7 @@ class GameViewModel : ViewModel() {
         bezelGapMm: Float = 8.0f,
         screenHeightPx: Float = 2400f,
         yDpi: Float = 420f,
-        targetScore: Int = 7,
+        targetScore: Int = 3,
         matchTimeSeconds: Int = 180,
         aiDifficulty: AiDifficulty = AiDifficulty.MEDIUM,
         aiDifficultyPlayer1: AiDifficulty = AiDifficulty.MEDIUM,
@@ -219,12 +219,12 @@ class GameViewModel : ViewModel() {
         engine.onCollisionListener = { event, intensity ->
             when (event) {
                 CollisionEvent.PADDLE_HIT_P1 -> {
-                    audioEngine.playPaddleHit(intensity)
+                    audioEngine.playPaddleHit(intensity, isPlayer1 = true)
                     pendingCollisionEvent = 1
                     pendingCollisionIntensity = intensity
                 }
                 CollisionEvent.PADDLE_HIT_P2 -> {
-                    audioEngine.playPaddleHit(intensity)
+                    audioEngine.playPaddleHit(intensity, isPlayer1 = false)
                     pendingCollisionEvent = 2
                     pendingCollisionIntensity = intensity
                 }
@@ -249,12 +249,18 @@ class GameViewModel : ViewModel() {
     private fun handleGoal(scorer: Int) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
 
-        audioEngine.playGoal()
-
         val p1 = if (scorer == 1) _matchState.value.scorePlayer1 + 1 else _matchState.value.scorePlayer1
         val p2 = if (scorer == 2) _matchState.value.scorePlayer2 + 1 else _matchState.value.scorePlayer2
-
         val target = _matchState.value.targetScore
+
+        val isPlayer1Scored = (scorer == 1)
+        val currentScorerScore = if (isPlayer1Scored) p1 else p2
+
+        if (isPlayer1Scored) {
+            audioEngine.playGoalScored(currentScorerScore, target)
+        } else {
+            audioEngine.playGoalConceded(currentScorerScore, target)
+        }
         if (p1 >= target || p2 >= target) {
             _matchState.update {
                 it.copy(
@@ -520,7 +526,8 @@ class GameViewModel : ViewModel() {
         // Telemetria de Colisão: reproduz som de colisão de rebatedor ou borda no dispositivo convidado
         if (collisionEvent.toInt() != 0) {
             when (collisionEvent.toInt()) {
-                1, 2 -> audioEngine.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f))
+                1 -> audioEngine.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = true)
+                2 -> audioEngine.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = false)
                 3 -> audioEngine.playWallHit()
             }
         }
@@ -555,7 +562,13 @@ class GameViewModel : ViewModel() {
         } else if (newStatus == MatchStatus.PLAYING && prev.status == MatchStatus.COUNTDOWN) {
             audioEngine.playCountdownBeep(0)
         } else if (newStatus == MatchStatus.GOAL_PAUSE && prev.status != MatchStatus.GOAL_PAUSE) {
-            audioEngine.playGoal()
+            val isGuestScored = (remote.lastScorer == 2)
+            val score = if (isGuestScored) remote.scorePlayer2 else remote.scorePlayer1
+            if (isGuestScored) {
+                audioEngine.playGoalScored(score, remote.targetScore)
+            } else {
+                audioEngine.playGoalConceded(score, remote.targetScore)
+            }
         }
     }
 

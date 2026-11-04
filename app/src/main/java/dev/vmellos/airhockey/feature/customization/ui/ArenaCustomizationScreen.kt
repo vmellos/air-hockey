@@ -861,7 +861,7 @@ private fun BundleCard(
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (isEquipped) bundle.primaryColor else Color(0xFF1E293B)
-    val containerBg = if (isEquipped) Color(0xFF111D33) else Color(0xFF0D1424)
+    val containerBg = if (isEquipped) bundle.primaryColor.copy(alpha = 0.12f) else Color(0xFF0D1424)
 
     Card(
         shape = CutCornerShape(10.dp),
@@ -869,7 +869,7 @@ private fun BundleCard(
         colors = CardDefaults.cardColors(containerColor = containerBg),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onPreview)
+            .clickable(onClick = onEquip)
     ) {
         Row(
             modifier = Modifier
@@ -920,47 +920,20 @@ private fun BundleCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
-
-            // Ação: Botão Equipado / Equipar
             if (isEquipped) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
                     modifier = Modifier
-                        .background(Color(0x2800E5FF), CutCornerShape(6.dp))
-                        .border(1.dp, Color(0xFF00E5FF), CutCornerShape(6.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .size(32.dp)
+                        .background(bundle.primaryColor.copy(alpha = 0.15f), CircleShape)
+                        .border(1.5.dp, bundle.primaryColor, CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(R.string.settings_theme_equipped),
-                        color = Color(0xFF00E5FF),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                OutlinedButton(
-                    onClick = onEquip,
-                    shape = CutCornerShape(6.dp),
-                    border = BorderStroke(1.dp, bundle.primaryColor),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = bundle.primaryColor.copy(alpha = 0.12f)
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(34.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_theme_equip_action),
-                        color = bundle.primaryColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        tint = bundle.primaryColor,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -984,7 +957,7 @@ private fun SingleItemCard(
     modifier: Modifier = Modifier
 ) {
     val borderColor = if (isEquipped) primaryColor else Color(0xFF1E293B)
-    val containerBg = if (isEquipped) Color(0xFF111D33) else Color(0xFF0D1424)
+    val containerBg = if (isEquipped) primaryColor.copy(alpha = 0.12f) else Color(0xFF0D1424)
 
     Card(
         shape = CutCornerShape(10.dp),
@@ -992,7 +965,7 @@ private fun SingleItemCard(
         colors = CardDefaults.cardColors(containerColor = containerBg),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onPreview)
+            .clickable(onClick = onEquip)
     ) {
         Row(
             modifier = Modifier
@@ -1035,46 +1008,20 @@ private fun SingleItemCard(
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
-
             if (isEquipped) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
                     modifier = Modifier
-                        .background(Color(0x2800E5FF), CutCornerShape(6.dp))
-                        .border(1.dp, Color(0xFF00E5FF), CutCornerShape(6.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .size(32.dp)
+                        .background(primaryColor.copy(alpha = 0.15f), CircleShape)
+                        .border(1.5.dp, primaryColor, CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(R.string.settings_theme_equipped),
-                        color = Color(0xFF00E5FF),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            } else {
-                OutlinedButton(
-                    onClick = onEquip,
-                    shape = CutCornerShape(6.dp),
-                    border = BorderStroke(1.dp, primaryColor),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = primaryColor.copy(alpha = 0.12f)
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(34.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_theme_equip_action),
-                        color = primaryColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        tint = primaryColor,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

@@ -86,7 +86,7 @@ class UserPreferencesRepository(private val context: Context) {
             } catch (_: Exception) {
                 TableAlignment.TOP_TO_TOP
             }
-            val targetScore = preferences[PreferencesKeys.TARGET_SCORE] ?: 7
+            val targetScore = preferences[PreferencesKeys.TARGET_SCORE] ?: 3
             val matchTime = preferences[PreferencesKeys.MATCH_TIME_SECONDS] ?: 180
             val touchOffsetEnabled = preferences[PreferencesKeys.TOUCH_OFFSET_ENABLED] ?: true
             val puckSpeedStr = preferences[PreferencesKeys.PUCK_SPEED] ?: PuckSpeedPreset.NORMAL.name

@@ -31,7 +31,7 @@ data class MatchState(
     val status: MatchStatus = MatchStatus.IDLE,
     val scorePlayer1: Int = 0,
     val scorePlayer2: Int = 0,
-    val targetScore: Int = 7,
+    val targetScore: Int = 3,
     val countdownNumber: Int = 3,
     val lastScorer: Int = 0, // 1 ou 2
     val winner: Int = 0, // 1 ou 2
