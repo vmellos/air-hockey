@@ -486,140 +486,143 @@ fun LobbyScreen(
 @Composable
 private fun RoleSelectionCards(
     onSelectHost: () -> Unit,
-    onSelectGuest: () -> Unit
+    onSelectGuest: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val hostShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
     val guestShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
 
-    Card(
-        onClick = onSelectHost,
-        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
-        shape = hostShape,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.2.dp,
-                brush = Brush.horizontalGradient(
-                    listOf(
-                        Color(0xFF00E5FF).copy(alpha = 0.90f),
-                        Color(0xFF00E5FF).copy(alpha = 0.35f)
-                    )
-                ),
-                shape = hostShape
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+    Column(modifier = modifier.fillMaxWidth()) {
+        Card(
+            onClick = onSelectHost,
+            colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+            shape = hostShape,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.5.dp)
-                    .height(36.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(Color(0xFF00E5FF), Color(0xFF00E5FF).copy(alpha = 0.35f))
-                        ),
-                        shape = RoundedCornerShape(2.dp)
-                    )
-            )
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.lobby_role_host).uppercase(),
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.8.sp
+                .border(
+                    width = 1.2.dp,
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF00E5FF).copy(alpha = 0.90f),
+                            Color(0xFF00E5FF).copy(alpha = 0.35f)
+                        )
+                    ),
+                    shape = hostShape
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.lobby_role_host_desc),
-                    color = Color(0xFF94A3B8),
-                    fontSize = 12.5.sp,
-                    lineHeight = 16.sp
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(3.5.dp)
+                        .height(36.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(Color(0xFF00E5FF), Color(0xFF00E5FF).copy(alpha = 0.35f))
+                            ),
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.lobby_role_host).uppercase(),
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.lobby_role_host_desc),
+                        color = Color(0xFF94A3B8),
+                        fontSize = 12.5.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = Color(0xFF00E5FF).copy(alpha = 0.70f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = Color(0xFF00E5FF).copy(alpha = 0.70f),
-                modifier = Modifier.size(18.dp)
-            )
         }
-    }
 
-    Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-    Card(
-        onClick = onSelectGuest,
-        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
-        shape = guestShape,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.2.dp,
-                brush = Brush.horizontalGradient(
-                    listOf(
-                        Color(0xFFFF5722).copy(alpha = 0.90f),
-                        Color(0xFFFF5722).copy(alpha = 0.35f)
-                    )
-                ),
-                shape = guestShape
-            )
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Card(
+            onClick = onSelectGuest,
+            colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+            shape = guestShape,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.5.dp)
-                    .height(36.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(Color(0xFFFF5722), Color(0xFFFF5722).copy(alpha = 0.35f))
-                        ),
-                        shape = RoundedCornerShape(2.dp)
-                    )
-            )
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.lobby_role_guest).uppercase(),
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.8.sp
+                .border(
+                    width = 1.2.dp,
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFFFF5722).copy(alpha = 0.90f),
+                            Color(0xFFFF5722).copy(alpha = 0.35f)
+                        )
+                    ),
+                    shape = guestShape
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = stringResource(R.string.lobby_role_guest_desc),
-                    color = Color(0xFF94A3B8),
-                    fontSize = 12.5.sp,
-                    lineHeight = 16.sp
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(3.5.dp)
+                        .height(36.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(Color(0xFFFF5722), Color(0xFFFF5722).copy(alpha = 0.35f))
+                            ),
+                            shape = RoundedCornerShape(2.dp)
+                        )
+                )
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.lobby_role_guest).uppercase(),
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.lobby_role_guest_desc),
+                        color = Color(0xFF94A3B8),
+                        fontSize = 12.5.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = Color(0xFFFF5722).copy(alpha = 0.70f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = Color(0xFFFF5722).copy(alpha = 0.70f),
-                modifier = Modifier.size(18.dp)
-            )
         }
     }
 }
