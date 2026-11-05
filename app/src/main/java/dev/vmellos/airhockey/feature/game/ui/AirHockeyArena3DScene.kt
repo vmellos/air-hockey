@@ -73,8 +73,6 @@ private class Scene3DState(
 ) {
     var presentationProgress: Float = 0f
     var isPresenting: Boolean = true
-    var activePointerP1: PointerId? = null
-    var activePointerP2: PointerId? = null
 
     // Posição e rotação contínuas interpoladas da câmera (atualizadas no onFrame a 60/120 Hz)
     var camX: Float = initialPreset.position.x
@@ -378,6 +376,7 @@ fun AirHockeyArena3DScene(
     val coroutineScope = rememberCoroutineScope()
     val presentationAnim = remember { Animatable(0f) }
 
+    val inputController = remember { ArenaInputController() }
     val particlePool = remember { ParticlePool3D(maxSparks = 60, maxShockwaves = 10) }
     val puckTrail = remember { ArrayDeque<TablePoint>(14) }
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
@@ -406,15 +405,13 @@ fun AirHockeyArena3DScene(
     // Higienização de Ponteiros de Toque
     LaunchedEffect(matchState.status) {
         if (matchState.status != MatchStatus.PLAYING) {
-            sceneState.activePointerP1 = null
-            sceneState.activePointerP2 = null
+            inputController.resetPointers()
             puckTrail.clear()
         }
     }
 
     DisposableEffect(engine) {
-        sceneState.activePointerP1 = null
-        sceneState.activePointerP2 = null
+        inputController.resetPointers()
         val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
             synchronized(pendingCollisions) {
                 if (pendingCollisions.size < 16) {
@@ -424,8 +421,7 @@ fun AirHockeyArena3DScene(
         }
         engine.onVisualCollisionListener = listener
         onDispose {
-            sceneState.activePointerP1 = null
-            sceneState.activePointerP2 = null
+            inputController.resetPointers()
             if (engine.onVisualCollisionListener === listener) {
                 engine.onVisualCollisionListener = null
             }
@@ -516,19 +512,13 @@ fun AirHockeyArena3DScene(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF030712))
-            .pointerInput(engine, mode, touchOffset) {
-                sceneState.activePointerP1 = null
-                sceneState.activePointerP2 = null
+            .pointerInput(engine, mode, touchOffset, matchState.currentStage) {
+                inputController.resetPointers()
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
-
-                        if (event.changes.none { it.pressed }) {
-                            sceneState.activePointerP1 = null
-                            sceneState.activePointerP2 = null
-                        }
 
                         // Tap to Skip: Um toque durante a apresentação encerra o sobrevoo imediatamente
                         if (sceneState.isPresenting) {
@@ -546,102 +536,33 @@ fun AirHockeyArena3DScene(
                             continue
                         }
 
-                        if (matchState.isSpectator) {
-                            continue
-                        }
-
-                        val grabRadiusSq = (engine.player1Mallet.radius * 2.5f).let { it * it }
-
-                        for (change in event.changes) {
-                            val tablePt = screenToTable3D(
-                                screenX = change.position.x,
-                                screenY = change.position.y,
-                                w = w,
-                                h = h,
-                                camX = sceneState.camX,
-                                camY = sceneState.camY,
-                                camZ = sceneState.camZ,
-                                camPitchDeg = sceneState.camPitch
-                            ) ?: continue
-
-                            if (change.pressed) {
-                                when (mode) {
-                                    GameMode.EXTENDED_GUEST, GameMode.CONNECTED_GUEST -> {
-                                        val mallet = engine.player2Mallet
-                                        val targetY = tablePt.y + touchOffset
-                                        val dx = tablePt.x - mallet.x
-                                        val dy = targetY - mallet.y
-                                        val distSq = dx * dx + dy * dy
-
-                                        if (sceneState.activePointerP2 == change.id) {
-                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
-                                            change.consume()
-                                        } else if (sceneState.activePointerP2 == null && distSq <= grabRadiusSq) {
-                                            sceneState.activePointerP2 = change.id
-                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
-                                            change.consume()
-                                        }
-                                    }
-                                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST, GameMode.SOLO -> {
-                                        val mallet = engine.player1Mallet
-                                        val targetY = tablePt.y - touchOffset
-                                        val dx = tablePt.x - mallet.x
-                                        val dy = targetY - mallet.y
-                                        val distSq = dx * dx + dy * dy
-
-                                        if (sceneState.activePointerP1 == change.id) {
-                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                            change.consume()
-                                        } else if (sceneState.activePointerP1 == null && distSq <= grabRadiusSq) {
-                                            sceneState.activePointerP1 = change.id
-                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                            change.consume()
-                                        }
-                                    }
-                                    GameMode.SPLIT_SCREEN -> {
-                                        if (tablePt.y < dimensions.centerLineY) {
-                                            val mallet = engine.player2Mallet
-                                            val targetY = tablePt.y + touchOffset
-                                            val dx = tablePt.x - mallet.x
-                                            val dy = targetY - mallet.y
-                                            val distSq = dx * dx + dy * dy
-
-                                            if (sceneState.activePointerP2 == change.id) {
-                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
-                                                change.consume()
-                                            } else if (sceneState.activePointerP2 == null && distSq <= grabRadiusSq) {
-                                                sceneState.activePointerP2 = change.id
-                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
-                                                change.consume()
-                                            }
-                                        } else {
-                                            val mallet = engine.player1Mallet
-                                            val targetY = tablePt.y - touchOffset
-                                            val dx = tablePt.x - mallet.x
-                                            val dy = targetY - mallet.y
-                                            val distSq = dx * dx + dy * dy
-
-                                            if (sceneState.activePointerP1 == change.id) {
-                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                                change.consume()
-                                            } else if (sceneState.activePointerP1 == null && distSq <= grabRadiusSq) {
-                                                sceneState.activePointerP1 = change.id
-                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                                change.consume()
-                                            }
-                                        }
-                                    }
-                                    else -> {}
-                                }
-                            } else {
-                                if (sceneState.activePointerP1 == change.id) {
-                                    sceneState.activePointerP1 = null
-                                }
-                                if (sceneState.activePointerP2 == change.id) {
-                                    sceneState.activePointerP2 = null
-                                }
-                            }
-                        }
+                        inputController.processPointerEvents(
+                            changes = event.changes,
+                            dimensions = dimensions,
+                            p1MalletX = engine.player1Mallet.x,
+                            p1MalletY = engine.player1Mallet.y,
+                            p2MalletX = engine.player2Mallet.x,
+                            p2MalletY = engine.player2Mallet.y,
+                            malletRadius = engine.player1Mallet.radius,
+                            mode = mode,
+                            touchOffset = touchOffset,
+                            isSpectator = matchState.isSpectator,
+                            screenToTable = { sx, sy ->
+                                screenToTable3D(
+                                    screenX = sx,
+                                    screenY = sy,
+                                    w = w,
+                                    h = h,
+                                    camX = sceneState.camX,
+                                    camY = sceneState.camY,
+                                    camZ = sceneState.camZ,
+                                    camPitchDeg = sceneState.camPitch
+                                )
+                            },
+                            onTouchP1 = { x, y -> viewModel.onTouchPlayer1(x, y) },
+                            onTouchP2 = { x, y -> viewModel.onTouchPlayer2(x, y) },
+                            onTouchGuest = { x, y -> viewModel.onTouchGuestGlobal(x, y) }
+                        )
                     }
                 }
             }

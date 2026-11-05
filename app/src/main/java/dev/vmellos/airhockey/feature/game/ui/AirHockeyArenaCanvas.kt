@@ -51,8 +51,7 @@ fun AirHockeyArenaCanvas(
     val particlePool = remember { ParticlePool(maxSparks = 50, maxShockwaves = 8) }
     val puckTrail = remember { ArrayDeque<Offset>(16) }
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(12) }
-    var activePointerP1 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
-    var activePointerP2 by remember { androidx.compose.runtime.mutableStateOf<PointerId?>(null) }
+    val inputController = remember { ArenaInputController() }
 
     // Limpa o rastro de energia nas pausas de gol, contagem regressiva e reposicionamento
     androidx.compose.runtime.LaunchedEffect(matchState.status, matchState.lastScorer) {
@@ -64,14 +63,12 @@ fun AirHockeyArenaCanvas(
     // Higienização de Ponteiros de Toque: redefine ponteiros quando fora do estado PLAYING
     LaunchedEffect(matchState.status) {
         if (matchState.status != MatchStatus.PLAYING) {
-            activePointerP1 = null
-            activePointerP2 = null
+            inputController.resetPointers()
         }
     }
 
     DisposableEffect(engine) {
-        activePointerP1 = null
-        activePointerP2 = null
+        inputController.resetPointers()
         val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
             synchronized(pendingCollisions) {
                 if (pendingCollisions.size < 12) {
@@ -81,8 +78,7 @@ fun AirHockeyArenaCanvas(
         }
         engine.onVisualCollisionListener = listener
         onDispose {
-            activePointerP1 = null
-            activePointerP2 = null
+            inputController.resetPointers()
             if (engine.onVisualCollisionListener === listener) {
                 engine.onVisualCollisionListener = null
             }
@@ -120,108 +116,29 @@ fun AirHockeyArenaCanvas(
             .fillMaxSize()
             .background(arenaBgColor)
             .pointerInput(engine, mode, projection, touchOffset, matchState.currentStage) {
-                activePointerP1 = null
-                activePointerP2 = null
+                inputController.resetPointers()
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
-                        if (event.changes.none { it.pressed }) {
-                            activePointerP1 = null
-                            activePointerP2 = null
-                        }
-
-                        if (matchState.isSpectator) {
-                            // No modo espectador IA x IA, os toques não interferem nos rebatedores
-                            continue
-                        }
-
-                        val grabRadiusSq = (engine.player1Mallet.radius * 2.2f).let { it * it }
-
-                        for (change in event.changes) {
-                            val tablePt = projection.screenToTable(change.position.x, change.position.y, w, h)
-
-                            if (change.pressed) {
-                                when (mode) {
-                                    GameMode.EXTENDED_GUEST, GameMode.CONNECTED_GUEST -> {
-                                        val mallet = engine.player2Mallet
-                                        val targetY = tablePt.y + touchOffset
-                                        val dx = tablePt.x - mallet.x
-                                        val dy = targetY - mallet.y
-                                        val distSq = dx * dx + dy * dy
-
-                                        if (activePointerP2 == change.id) {
-                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
-                                            change.consume()
-                                        } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
-                                            activePointerP2 = change.id
-                                            viewModel.onTouchGuestGlobal(tablePt.x, targetY)
-                                            change.consume()
-                                        }
-                                    }
-                                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST, GameMode.SOLO -> {
-                                        val mallet = engine.player1Mallet
-                                        val targetY = tablePt.y - touchOffset
-                                        val dx = tablePt.x - mallet.x
-                                        val dy = targetY - mallet.y
-                                        val distSq = dx * dx + dy * dy
-
-                                        if (activePointerP1 == change.id) {
-                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                            change.consume()
-                                        } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
-                                            activePointerP1 = change.id
-                                            viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                            change.consume()
-                                        }
-                                    }
-                                    GameMode.SPLIT_SCREEN -> {
-                                        if (tablePt.y < dimensions.centerLineY) {
-                                            val mallet = engine.player2Mallet
-                                            val targetY = tablePt.y + touchOffset
-                                            val dx = tablePt.x - mallet.x
-                                            val dy = targetY - mallet.y
-                                            val distSq = dx * dx + dy * dy
-
-                                            if (activePointerP2 == change.id) {
-                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
-                                                change.consume()
-                                            } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
-                                                activePointerP2 = change.id
-                                                viewModel.onTouchPlayer2(tablePt.x, targetY)
-                                                change.consume()
-                                            }
-                                        } else {
-                                            val mallet = engine.player1Mallet
-                                            val targetY = tablePt.y - touchOffset
-                                            val dx = tablePt.x - mallet.x
-                                            val dy = targetY - mallet.y
-                                            val distSq = dx * dx + dy * dy
-
-                                            if (activePointerP1 == change.id) {
-                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                                change.consume()
-                                            } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
-                                                activePointerP1 = change.id
-                                                viewModel.onTouchPlayer1(tablePt.x, targetY)
-                                                change.consume()
-                                            }
-                                        }
-                                    }
-                                    else -> {}
-                                }
-                            } else {
-                                // Liberação do toque
-                                if (activePointerP1 == change.id) {
-                                    activePointerP1 = null
-                                }
-                                if (activePointerP2 == change.id) {
-                                    activePointerP2 = null
-                                }
-                            }
-                        }
+                        inputController.processPointerEvents(
+                            changes = event.changes,
+                            dimensions = dimensions,
+                            p1MalletX = engine.player1Mallet.x,
+                            p1MalletY = engine.player1Mallet.y,
+                            p2MalletX = engine.player2Mallet.x,
+                            p2MalletY = engine.player2Mallet.y,
+                            malletRadius = engine.player1Mallet.radius,
+                            mode = mode,
+                            touchOffset = touchOffset,
+                            isSpectator = matchState.isSpectator,
+                            screenToTable = { sx, sy -> projection.screenToTable(sx, sy, w, h) },
+                            onTouchP1 = { x, y -> viewModel.onTouchPlayer1(x, y) },
+                            onTouchP2 = { x, y -> viewModel.onTouchPlayer2(x, y) },
+                            onTouchGuest = { x, y -> viewModel.onTouchGuestGlobal(x, y) }
+                        )
                     }
                 }
             }
