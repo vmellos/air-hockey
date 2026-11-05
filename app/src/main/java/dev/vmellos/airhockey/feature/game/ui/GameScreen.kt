@@ -307,8 +307,8 @@ fun GameScreen(
             }
         }
 
-        // Overlay de Gol/Ponto estilizado por tema
-        if (matchState.status == MatchStatus.GOAL_PAUSE) {
+        // Overlay de Gol/Ponto estilizado por tema (oculto no AR durante calibração)
+        if (matchState.status == MatchStatus.GOAL_PAUSE && (!isArActive || arStagingPhase == ArStagingPhase.PLAYING)) {
             val scorerName = if (matchState.lastScorer == 1) matchState.player1Name else matchState.player2Name
             GoalBannerOverlay(
                 scorer = matchState.lastScorer,
@@ -330,13 +330,7 @@ fun GameScreen(
                     viewModel.stopMatch()
                     onExitToMenu()
                 },
-                onSwitchTo3D = if (isArActive) {
-                    {
-                        scope.launch {
-                            AirHockeyApp.instance.preferencesRepository.setTableTheme(dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D)
-                        }
-                    }
-                } else null
+                onSwitchTo3D = null
             )
         }
 
@@ -350,8 +344,8 @@ fun GameScreen(
             )
         }
 
-        // Diálogo de Fim de Jogo
-        if (matchState.status == MatchStatus.GAME_OVER) {
+        // Diálogo de Fim de Jogo (oculto no AR durante calibração)
+        if (matchState.status == MatchStatus.GAME_OVER && (!isArActive || arStagingPhase == ArStagingPhase.PLAYING)) {
             val activity = LocalContext.current.findActivity()
             if (matchState.mode == GameMode.SOLO) {
                 StageResultDialog(

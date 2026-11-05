@@ -283,6 +283,7 @@
     <string name="ar_reanchor_table_button">Reanclar Mesa</string>
     <string name="ar_searching_surface_hint">Apunta la cámara al suelo o mesa para detectar una superficie</string>
     <string name="ar_surface_ready_hint">¡Superficie detectada! Presiona para posicionar</string>
+    <string name="ar_table_positioned_hint">¡Mesa posicionada! Ajusta la escala o inicia la partida</string>
     <string name="ar_reanchor_button">Reanclar</string>
     <string name="ar_scale_1_1">1:1 Suelo</string>
     <string name="ar_scale_1_4">1:4 Mesa</string>

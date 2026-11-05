@@ -497,6 +497,9 @@ class LobbyViewModel : ViewModel() {
             if (isHost) userPrefs.bezelGapMm else if (s.calibratedGapMm > 0f) s.calibratedGapMm else userPrefs.bezelGapMm
         }
 
+        val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
+
         return MatchSpec(
             mode = gameMode,
             bezelGapMm = effectiveGapMm,
@@ -508,7 +511,8 @@ class LobbyViewModel : ViewModel() {
             puckMaxSpeed = effectivePuckSpeed,
             airFriction = userPrefs.puckSpeed.airFriction,
             player1Name = p1Label,
-            player2Name = p2Label
+            player2Name = p2Label,
+            hasIntroPresentation = needsPresentation
         )
     }
 
