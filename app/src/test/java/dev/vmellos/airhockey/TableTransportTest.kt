@@ -76,7 +76,6 @@ class TableTransportTest {
     fun testControlEventWireStringRoundTrip() {
         val events = listOf(
             TableControlEvent.HandshakeOk("1234"),
-            TableControlEvent.NavigateCalibration,
             TableControlEvent.Ready,
             TableControlEvent.Start(14.2f),
             TableControlEvent.Pause,

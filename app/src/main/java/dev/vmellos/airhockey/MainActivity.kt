@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.vmellos.airhockey.core.localization.LocaleHelper
 import dev.vmellos.airhockey.core.localization.ProvideAppLocale
+import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
@@ -188,71 +189,32 @@ fun AirHockeyAppNavigation(
             // Início direto da partida para todos os modos em rede (Mesa Conectada, Mesa Estendida e IA x IA Estendida)
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
-                    val isConnected = lobbyState.targetMode == "CONNECTED"
                     val isAiExtended = lobbyState.targetMode == "AI_EXTENDED"
-                    val gameMode = when {
-                        isConnected && isHost -> GameMode.CONNECTED_HOST
-                        isConnected && !isHost -> GameMode.CONNECTED_GUEST
-                        isAiExtended && isHost -> GameMode.AI_VS_AI_EXTENDED_HOST
-                        isAiExtended && !isHost -> GameMode.AI_VS_AI_EXTENDED_GUEST
-                        isHost -> GameMode.EXTENDED_HOST
-                        else -> GameMode.EXTENDED_GUEST
-                    }
-                    val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else lobbyState.synchronizedPuckSpeed
-                    val p1Name = if (isHost) {
-                        lobbyState.selfPlayerName.ifBlank { "Jogador 1" }
-                    } else {
-                        lobbyState.peerPlayerName.ifBlank { "Jogador 1" }
-                    }
-                    val p2Name = if (isHost) {
-                        lobbyState.peerPlayerName.ifBlank { "Jogador 2" }
-                    } else {
-                        lobbyState.selfPlayerName.ifBlank { "Jogador 2" }
-                    }
+                    val p1Label = if (isAiExtended) {
+                        val d1 = if (isHost) (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: aiExtendedDiff1)
+                                 else (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: AiDifficulty.MEDIUM)
+                        context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), getAiDiffLabel(d1))
+                    } else null
 
-                    val effectiveAiDiff1 = if (isHost) {
-                        if (lobbyState.aiDifficulty1.isNotBlank()) {
-                            dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: aiExtendedDiff1
-                        } else aiExtendedDiff1
-                    } else (
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) }
-                            ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
-                    )
-                    val effectiveAiDiff2 = if (isHost) {
-                        if (lobbyState.aiDifficulty2.isNotBlank()) {
-                            dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) } ?: aiExtendedDiff2
-                        } else aiExtendedDiff2
-                    } else (
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) }
-                            ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
-                    )
+                    val p2Label = if (isAiExtended) {
+                        val d2 = if (isHost) (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) } ?: aiExtendedDiff2)
+                                 else (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty2, ignoreCase = true) } ?: AiDifficulty.MEDIUM)
+                        context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), getAiDiffLabel(d2))
+                    } else null
 
-                    val p1Label = if (isAiExtended) context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), getAiDiffLabel(effectiveAiDiff1)) else p1Name
-                    val p2Label = if (isAiExtended) context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), getAiDiffLabel(effectiveAiDiff2)) else p2Name
-
-                    val effectiveGapMm = if (isConnected) 0f else (
-                        if (isHost) userPrefs.bezelGapMm else (if (lobbyState.calibratedGapMm > 0f) lobbyState.calibratedGapMm else userPrefs.bezelGapMm)
+                    val spec = lobbyViewModel.buildMatchSpec(
+                        userPrefs = userPrefs,
+                        aiExtendedDiff1 = aiExtendedDiff1,
+                        aiExtendedDiff2 = aiExtendedDiff2,
+                        p1CustomLabel = p1Label,
+                        p2CustomLabel = p2Label
                     )
 
                     lobbyViewModel.consumeStartMatchTrigger()
-
-                    gameViewModel.initializeMatch(
-                        mode = gameMode,
-                        bezelGapMm = effectiveGapMm,
-                        targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = if (isConnected) userPrefs.matchTimeSeconds else 0,
-                        aiDifficulty = effectiveAiDiff1,
-                        aiDifficultyPlayer1 = effectiveAiDiff1,
-                        aiDifficultyPlayer2 = effectiveAiDiff2,
-                        puckMaxSpeed = effectivePuckSpeed,
-                        airFriction = userPrefs.puckSpeed.airFriction,
-                        player1Name = p1Label,
-                        player2Name = p2Label
-                    )
-
+                    gameViewModel.initializeMatch(spec)
                     lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
 
-                    navController.navigate("game/${gameMode.name}") {
+                    navController.navigate("game/${spec.mode.name}") {
                         popUpTo("menu")
                     }
                 }
@@ -300,13 +262,6 @@ fun AirHockeyAppNavigation(
                     }
                 }
             )
-        }
-
-        composable("calibration") {
-            // Calibração manual descontinuada em favor do início direto via vão físico padrão
-            LaunchedEffect(Unit) {
-                navController.popBackStack("lobby", inclusive = false)
-            }
         }
 
         composable("stages") {

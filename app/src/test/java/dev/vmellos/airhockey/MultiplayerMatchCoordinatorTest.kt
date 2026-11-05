@@ -18,36 +18,13 @@ class MultiplayerMatchCoordinatorTest {
         val guestCoordinator = MultiplayerMatchCoordinator(guestTransport, isHost = false)
         delay(50)
 
-        // Guest sinaliza prontidão
-        guestCoordinator.signalCalibrationReady(12.0f)
-        delay(50)
-
-        assertTrue(guestCoordinator.state.value.isSelfReady)
-        assertTrue(hostCoordinator.state.value.isPeerReady)
-
-        // Host inicia a partida (Largada Sincronizada)
+        // Host inicia a partida (Largada Sincronizada direta per ADR-0025)
         hostCoordinator.startMatch(12.0f)
         delay(50)
 
         assertTrue("Host deve disparar startMatchTrigger", hostCoordinator.state.value.startMatchTrigger > 0)
         assertTrue("Guest deve disparar startMatchTrigger simultaneamente", guestCoordinator.state.value.startMatchTrigger > 0)
         assertEquals(12.0f, guestCoordinator.state.value.calibratedGapMm, 0.01f)
-
-        hostCoordinator.terminateSession()
-        guestCoordinator.terminateSession()
-    }
-
-    @Test
-    fun testNavigationToCalibrationSync() = runBlocking {
-        val (hostTransport, guestTransport) = InMemoryLoopbackTransportAdapter.createConnectedPair()
-        val hostCoordinator = MultiplayerMatchCoordinator(hostTransport, isHost = true)
-        val guestCoordinator = MultiplayerMatchCoordinator(guestTransport, isHost = false)
-        delay(50)
-
-        hostCoordinator.notifyNavigateToCalibration()
-        delay(50)
-
-        assertTrue(guestCoordinator.state.value.navigateToCalibrationTrigger > 0)
 
         hostCoordinator.terminateSession()
         guestCoordinator.terminateSession()

@@ -14,7 +14,6 @@ sealed class TableControlEvent {
     data class HandshakeRequest(val code: String, val guestName: String = "", val mode: String = "") : TableControlEvent()
     data class HandshakeOk(val tableCode: String, val hostName: String = "", val mode: String = "") : TableControlEvent()
     data class HandshakeReject(val reason: String) : TableControlEvent()
-    object NavigateCalibration : TableControlEvent()
     object Ready : TableControlEvent()
     data class Start(
         val gapMm: Float,
@@ -37,7 +36,6 @@ sealed class TableControlEvent {
             is HandshakeRequest -> "HANDSHAKE_REQ:$code:$guestName:$mode"
             is HandshakeOk -> "HANDSHAKE_OK:$tableCode:$hostName:$mode"
             is HandshakeReject -> "HANDSHAKE_REJECT:$reason"
-            NavigateCalibration -> "NAVIGATE_CALIBRATION"
             Ready -> ControlMessages.READY
             is Start -> if (aiDiff1.isNotBlank() || aiDiff2.isNotBlank()) {
                 "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2"
@@ -77,7 +75,6 @@ sealed class TableControlEvent {
                     val reason = line.substringAfter("HANDSHAKE_REJECT:")
                     HandshakeReject(reason)
                 }
-                line == "NAVIGATE_CALIBRATION" -> NavigateCalibration
                 line == ControlMessages.READY -> Ready
                 line.startsWith(ControlMessages.START) -> {
                     val parts = line.removePrefix(ControlMessages.START).removePrefix(":").split(":")

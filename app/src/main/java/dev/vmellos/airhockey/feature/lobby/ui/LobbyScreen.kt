@@ -104,7 +104,6 @@ fun LobbyScreen(
     viewModel: LobbyViewModel,
     onBackToMenu: () -> Unit,
     onStartHostMatch: (() -> Unit)? = null,
-    onNavigateToCalibration: () -> Unit = {},
     onStartAiVsAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {

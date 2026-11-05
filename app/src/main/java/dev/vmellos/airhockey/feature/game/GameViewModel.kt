@@ -126,6 +126,83 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    fun initializeMatch(spec: MatchSpec) {
+        val mode = spec.mode
+        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
+                mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(spec.bezelGapMm, spec.screenHeightPx, spec.yDpi) else 0f
+
+        dimensions = TableDimensions(
+            width = 1000f,
+            viewportHeight = 2000f,
+            bezelGapUnits = bezelUnits,
+            isExtendedMode = isExtended
+        )
+
+        val effectiveTargetScore: Int
+        val effectiveAiDiff: AiDifficulty
+        val effectivePuckMaxSpeed: Float
+        val effectiveAirFriction: Float
+
+        if (mode == GameMode.SOLO) {
+            val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(spec.stageNumber)
+            effectiveTargetScore = stageConfig.targetScore
+            effectiveAiDiff = stageConfig.aiDifficulty
+            effectivePuckMaxSpeed = stageConfig.puckSpeed.maxSpeed
+            effectiveAirFriction = stageConfig.puckSpeed.airFriction
+        } else {
+            effectiveTargetScore = spec.targetScore
+            effectiveAiDiff = spec.aiDifficulty
+            effectivePuckMaxSpeed = spec.puckMaxSpeed
+            effectiveAirFriction = spec.airFriction
+        }
+
+        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = effectivePuckMaxSpeed, airFrictionPerSec = effectiveAirFriction)
+        engine.resetPositions()
+        hasRecordedMatch = false
+        currentMatchTimeSeconds = spec.matchTimeSeconds
+
+        // Inicializa controladores de IA conforme o modo
+        aiControllerP1 = when (mode) {
+            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true)
+            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true) else null
+            else -> null
+        }
+
+        aiControllerP2 = when (mode) {
+            GameMode.SOLO -> AirHockeyAiController(effectiveAiDiff, isPlayer1 = false)
+            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false)
+            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false) else null
+            else -> null
+        }
+
+        _matchState.value = MatchState(
+            mode = mode,
+            status = MatchStatus.COUNTDOWN,
+            scorePlayer1 = 0,
+            scorePlayer2 = 0,
+            targetScore = effectiveTargetScore,
+            countdownNumber = 3,
+            remainingTimeSeconds = 0,
+            isHost = !isGuest,
+            peerExited = false,
+            player1Name = spec.player1Name,
+            player2Name = spec.player2Name,
+            currentStage = spec.stageNumber,
+            starsEarned = 0
+        )
+
+        setupCollisionListener()
+
+        if (!isGuest) {
+            broadcastState()
+            if (!spec.hasIntroPresentation) {
+                startCountdown()
+            }
+        }
+    }
+
     fun initializeMatch(
         mode: GameMode,
         bezelGapMm: Float = 8.0f,
@@ -143,79 +220,25 @@ class GameViewModel : ViewModel() {
         stageNumber: Int = 1,
         hasIntroPresentation: Boolean = false
     ) {
-        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
-                mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-        val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(bezelGapMm, screenHeightPx, yDpi) else 0f
-
-        dimensions = TableDimensions(
-            width = 1000f,
-            viewportHeight = 2000f,
-            bezelGapUnits = bezelUnits,
-            isExtendedMode = isExtended
+        initializeMatch(
+            MatchSpec(
+                mode = mode,
+                bezelGapMm = bezelGapMm,
+                screenHeightPx = screenHeightPx,
+                yDpi = yDpi,
+                targetScore = targetScore,
+                matchTimeSeconds = matchTimeSeconds,
+                aiDifficulty = aiDifficulty,
+                aiDifficultyPlayer1 = aiDifficultyPlayer1,
+                aiDifficultyPlayer2 = aiDifficultyPlayer2,
+                puckMaxSpeed = puckMaxSpeed,
+                airFriction = airFriction,
+                player1Name = player1Name,
+                player2Name = player2Name,
+                stageNumber = stageNumber,
+                hasIntroPresentation = hasIntroPresentation
+            )
         )
-
-        val effectiveTargetScore: Int
-        val effectiveAiDiff: AiDifficulty
-        val effectivePuckMaxSpeed: Float
-        val effectiveAirFriction: Float
-
-        if (mode == GameMode.SOLO) {
-            val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(stageNumber)
-            effectiveTargetScore = stageConfig.targetScore
-            effectiveAiDiff = stageConfig.aiDifficulty
-            effectivePuckMaxSpeed = stageConfig.puckSpeed.maxSpeed
-            effectiveAirFriction = stageConfig.puckSpeed.airFriction
-        } else {
-            effectiveTargetScore = targetScore
-            effectiveAiDiff = aiDifficulty
-            effectivePuckMaxSpeed = puckMaxSpeed
-            effectiveAirFriction = airFriction
-        }
-
-        engine = AirHockeyPhysicsEngine(dimensions, maxSpeed = effectivePuckMaxSpeed, airFrictionPerSec = effectiveAirFriction)
-        engine.resetPositions()
-        hasRecordedMatch = false
-        currentMatchTimeSeconds = matchTimeSeconds
-
-        // Inicializa controladores de IA conforme o modo
-        aiControllerP1 = when (mode) {
-            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true)
-            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer1, isPlayer1 = true) else null
-            else -> null
-        }
-
-        aiControllerP2 = when (mode) {
-            GameMode.SOLO -> AirHockeyAiController(effectiveAiDiff, isPlayer1 = false)
-            GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false)
-            GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (!isGuest) AirHockeyAiController(aiDifficultyPlayer2, isPlayer1 = false) else null
-            else -> null
-        }
-
-        _matchState.value = MatchState(
-            mode = mode,
-            status = MatchStatus.COUNTDOWN,
-            scorePlayer1 = 0,
-            scorePlayer2 = 0,
-            targetScore = effectiveTargetScore,
-            countdownNumber = 3,
-            remainingTimeSeconds = 0,
-            isHost = !isGuest,
-            peerExited = false,
-            player1Name = player1Name,
-            player2Name = player2Name,
-            currentStage = stageNumber,
-            starsEarned = 0
-        )
-
-        setupCollisionListener()
-
-        if (!isGuest) {
-            broadcastState()
-            if (!hasIntroPresentation) {
-                startCountdown()
-            }
-        }
     }
 
     fun startCountdownAfterPresentation() {

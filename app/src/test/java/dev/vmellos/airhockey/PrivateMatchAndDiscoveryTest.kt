@@ -192,41 +192,61 @@ class PrivateMatchAndDiscoveryTest {
     }
 
     @Test
-    fun testDiscoveredTableTtlExpiry() {
-        val now = 100_000L
-        val freshTable = DiscoveredTable(
-            name = "AirHockeyTable_1111",
-            hostIp = "192.168.1.10",
-            port = 8888,
-            tableCode = "1111",
-            lastSeenMs = now - 1000L // 1s ago -> fresh
+    fun testTableDiscoveryRegistryBeaconParsingAndRegistration() {
+        var simulatedTime = 1_000_000L
+        val registry = dev.vmellos.airhockey.feature.network.TableDiscoveryRegistry(
+            clock = { simulatedTime },
+            ttlMillis = 3500L
         )
-        val staleTable = DiscoveredTable(
-            name = "AirHockeyTable_2222",
-            hostIp = "192.168.1.20",
-            port = 8888,
-            tableCode = "2222",
-            lastSeenMs = now - 4000L // 4s ago -> expired (> 3.5s)
-        )
-        val tables = listOf(freshTable, staleTable)
-        val ttl = 3500L
-        val activeTables = tables.filter { now - it.lastSeenMs < ttl }
 
-        assertEquals(1, activeTables.size)
-        assertEquals("1111", activeTables.first().tableCode)
+        // Recebe beacon de mesa aberta
+        val tables = registry.handleBeacon("AIRHOCKEY_TABLE:9988:192.168.1.150:8888:CONNECTED:Mesa_Galaxy")
+        assertEquals(1, tables.size)
+        val table = tables.first()
+        assertEquals("9988", table.tableCode)
+        assertEquals("192.168.1.150", table.hostIp)
+        assertEquals(8888, table.port)
+        assertEquals("CONNECTED", table.mode)
+        assertEquals("Mesa_Galaxy", table.hostName)
+        assertEquals(1_000_000L, table.lastSeenMs)
+
+        // Atualização pelo mesmo IP/código com novo hostName
+        val updatedTables = registry.handleBeacon("AIRHOCKEY_TABLE:9988:192.168.1.150:8888:CONNECTED:Mesa_Galaxy_Updated")
+        assertEquals(1, updatedTables.size)
+        assertEquals("Mesa_Galaxy_Updated", updatedTables.first().hostName)
     }
 
     @Test
-    fun testTableClosedRemoval() {
-        val table1 = DiscoveredTable("AirHockeyTable_1111", "192.168.1.10", 8888, "1111")
-        val table2 = DiscoveredTable("AirHockeyTable_2222", "192.168.1.20", 8888, "2222")
-        var tables = listOf(table1, table2)
+    fun testTableDiscoveryRegistryTtlExpiry() {
+        var simulatedTime = 100_000L
+        val registry = dev.vmellos.airhockey.feature.network.TableDiscoveryRegistry(
+            clock = { simulatedTime },
+            ttlMillis = 3500L
+        )
 
-        val closedCode = "1111"
-        val closedIp = "192.168.1.10"
-        tables = tables.filter { !(it.tableCode == closedCode || (closedIp.isNotBlank() && it.hostIp == closedIp)) }
+        registry.handleBeacon("AIRHOCKEY_TABLE:1111:192.168.1.10:8888:EXTENDED:Mesa1")
+        simulatedTime += 2000L // 2 segundos depois -> mesa ainda ativa
+        registry.handleBeacon("AIRHOCKEY_TABLE:2222:192.168.1.20:8888:EXTENDED:Mesa2")
 
-        assertEquals(1, tables.size)
-        assertEquals("2222", tables.first().tableCode)
+        assertEquals(2, registry.getTables().size)
+
+        simulatedTime += 2000L // Mais 2 segundos (Mesa1 tem 4s sem beacon, Mesa2 tem 2s)
+        val activeAfterTtl = registry.pruneExpired()
+
+        assertEquals(1, activeAfterTtl.size)
+        assertEquals("2222", activeAfterTtl.first().tableCode)
+    }
+
+    @Test
+    fun testTableDiscoveryRegistryClosedRemoval() {
+        val registry = dev.vmellos.airhockey.feature.network.TableDiscoveryRegistry()
+        registry.handleBeacon("AIRHOCKEY_TABLE:1111:192.168.1.10:8888:EXTENDED:Mesa1")
+        registry.handleBeacon("AIRHOCKEY_TABLE:2222:192.168.1.20:8888:EXTENDED:Mesa2")
+        assertEquals(2, registry.getTables().size)
+
+        // Mesa 1 fecha graciosamente
+        val remaining = registry.handleBeacon("AIRHOCKEY_TABLE_CLOSED:1111:192.168.1.10")
+        assertEquals(1, remaining.size)
+        assertEquals("2222", remaining.first().tableCode)
     }
 }

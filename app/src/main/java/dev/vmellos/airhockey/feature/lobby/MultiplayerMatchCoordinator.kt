@@ -22,10 +22,7 @@ import kotlinx.coroutines.launch
 data class MultiplayerSessionState(
     val isHost: Boolean,
     val connectionState: TransportConnectionState = TransportConnectionState.CONNECTED,
-    val isSelfReady: Boolean = false,
-    val isPeerReady: Boolean = false,
     val startMatchTrigger: Long = 0L,
-    val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 6800f,
     val aiDifficulty1: String = "",
@@ -151,12 +148,6 @@ class MultiplayerMatchCoordinator(
                     terminateSession()
                 }
             }
-            TableControlEvent.NavigateCalibration -> {
-                _state.update { it.copy(navigateToCalibrationTrigger = System.currentTimeMillis()) }
-            }
-            TableControlEvent.Ready -> {
-                _state.update { it.copy(isPeerReady = true) }
-            }
             is TableControlEvent.Start -> {
                 _state.update {
                     it.copy(
@@ -184,21 +175,6 @@ class MultiplayerMatchCoordinator(
                 _state.update { it.copy(peerExited = true) }
             }
             else -> {}
-        }
-    }
-
-    fun notifyNavigateToCalibration() {
-        if (isHost) {
-            scope.launch {
-                transport.sendControl(TableControlEvent.NavigateCalibration)
-            }
-        }
-    }
-
-    fun signalCalibrationReady(gapMm: Float) {
-        _state.update { it.copy(isSelfReady = true, calibratedGapMm = gapMm) }
-        scope.launch {
-            transport.sendControl(TableControlEvent.Ready)
         }
     }
 

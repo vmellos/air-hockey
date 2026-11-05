@@ -54,6 +54,7 @@ class NsdDiscoveryManager(private val context: Context) {
     private var udpBroadcastSocket: DatagramSocket? = null
     private var udpDiscoverySocket: DatagramSocket? = null
 
+    private val tableRegistry = TableDiscoveryRegistry()
     private val _discoveredTables = MutableStateFlow<List<DiscoveredTable>>(emptyList())
     val discoveredTables: StateFlow<List<DiscoveredTable>> = _discoveredTables.asStateFlow()
 
@@ -243,6 +244,7 @@ class NsdDiscoveryManager(private val context: Context) {
         stopDiscovery()
         isDiscovering = true
         acquireMulticastLock()
+        tableRegistry.clear()
         _discoveredTables.value = emptyList()
 
         // 1. Canal NSD / mDNS
@@ -256,7 +258,7 @@ class NsdDiscoveryManager(private val context: Context) {
             }
 
             override fun onServiceLost(service: NsdServiceInfo) {
-                _discoveredTables.update { current -> current.filter { it.name != service.serviceName } }
+                _discoveredTables.value = tableRegistry.removeByServiceName(service.serviceName)
             }
 
             override fun onDiscoveryStopped(serviceType: String) {}
@@ -299,48 +301,8 @@ class NsdDiscoveryManager(private val context: Context) {
                             val packet = DatagramPacket(buf, buf.size)
                             socket.receive(packet)
                             val text = String(packet.data, packet.offset, packet.length).trim()
-                            if (text.startsWith("AIRHOCKEY_TABLE_CLOSED:")) {
-                                val parts = text.split(":")
-                                if (parts.size >= 2) {
-                                    val code = parts[1]
-                                    val ip = if (parts.size >= 3) parts[2] else ""
-                                    _discoveredTables.update { current ->
-                                        current.filter { !(it.tableCode == code || (ip.isNotBlank() && it.hostIp == ip)) }
-                                    }
-                                }
-                            } else if (text.startsWith("AIRHOCKEY_TABLE:")) {
-                                val parts = text.split(":")
-                                if (parts.size >= 4) {
-                                    val code = parts[1]
-                                    val ip = if (parts[2].isNotBlank() && parts[2] != "127.0.0.1") {
-                                        parts[2]
-                                    } else {
-                                        packet.address.hostAddress ?: ""
-                                    }
-                                    val port = parts[3].toIntOrNull() ?: NetworkConstants.DEFAULT_TCP_PORT
-                                    val mode = if (parts.size >= 5 && parts[4].isNotBlank()) parts[4] else "EXTENDED"
-                                    val hostName = if (parts.size >= 6) parts.subList(5, parts.size).joinToString(":") else ""
-                                    if (ip.isNotBlank()) {
-                                        val now = System.currentTimeMillis()
-                                        val table = DiscoveredTable(
-                                            name = "${NetworkConstants.SERVICE_NAME_PREFIX}$code",
-                                            hostIp = ip,
-                                            port = port,
-                                            tableCode = code,
-                                            mode = mode,
-                                            hostName = hostName,
-                                            lastSeenMs = now
-                                        )
-                                        _discoveredTables.update { current ->
-                                            if (current.any { it.hostIp == ip && it.tableCode == code }) {
-                                                current.map { if (it.hostIp == ip && it.tableCode == code) table else it }
-                                            } else {
-                                                current.filter { it.hostIp != ip } + table
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            val fallbackIp = packet.address?.hostAddress ?: ""
+                            _discoveredTables.value = tableRegistry.handleBeacon(text, fallbackIp)
                         } catch (_: Exception) {
                             if (!isActive || socket.isClosed) break
                             delay(100)
@@ -377,11 +339,7 @@ class NsdDiscoveryManager(private val context: Context) {
                     }
 
                     // Limpeza periódica por TTL (expira mesas inativas sem beacon há mais de 3,5s)
-                    val now = System.currentTimeMillis()
-                    val ttlThreshold = 3500L
-                    _discoveredTables.update { current ->
-                        current.filter { now - it.lastSeenMs < ttlThreshold }
-                    }
+                    _discoveredTables.value = tableRegistry.pruneExpired()
 
                     delay(1200)
                 }
@@ -496,13 +454,7 @@ class NsdDiscoveryManager(private val context: Context) {
                     lastSeenMs = System.currentTimeMillis()
                 )
 
-                _discoveredTables.update { current ->
-                    if (current.any { it.hostIp == host && it.tableCode == code }) {
-                        current
-                    } else {
-                        current.filter { it.hostIp != host } + table
-                    }
-                }
+                _discoveredTables.value = tableRegistry.registerTable(table)
             }
         }
 

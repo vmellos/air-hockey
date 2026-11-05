@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.feature.game.GameMode
+import dev.vmellos.airhockey.feature.game.MatchSpec
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.network.DiscoveredTable
 import dev.vmellos.airhockey.feature.network.HybridSocketTransportAdapter
@@ -55,10 +59,7 @@ data class LobbyState(
     val isScanningQr: Boolean = false,
     val wifiSsid: String = "",
     val isWifiConnected: Boolean = true,
-    val isPeerReady: Boolean = false,
-    val isSelfReady: Boolean = false,
     val startMatchTrigger: Long = 0L,
-    val navigateToCalibrationTrigger: Long = 0L,
     val calibratedGapMm: Float = 8.0f,
     val synchronizedPuckSpeed: Float = 6800f,
     val aiDifficulty1: String = "",
@@ -155,9 +156,6 @@ class LobbyViewModel : ViewModel() {
                 errorMessageRes = null,
                 errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
-                navigateToCalibrationTrigger = 0L,
-                isPeerReady = false,
-                isSelfReady = false,
                 peerPlayerName = ""
             )
         }
@@ -187,9 +185,6 @@ class LobbyViewModel : ViewModel() {
                 errorMessageRes = null,
                 errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
-                navigateToCalibrationTrigger = 0L,
-                isPeerReady = false,
-                isSelfReady = false,
                 peerPlayerName = ""
             )
         }
@@ -205,14 +200,6 @@ class LobbyViewModel : ViewModel() {
 
     fun refreshDiscovery() {
         nsdManager.sendDirectedDiscoveryProbe()
-    }
-
-    fun notifyNavigateToCalibration() {
-        coordinator?.notifyNavigateToCalibration()
-    }
-
-    fun setGuestReady(gapMm: Float) {
-        coordinator?.signalCalibrationReady(gapMm)
     }
 
     fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "") {
@@ -246,9 +233,6 @@ class LobbyViewModel : ViewModel() {
                 errorMessageRes = null,
                 errorMessageArgs = emptyList(),
                 startMatchTrigger = 0L,
-                navigateToCalibrationTrigger = 0L,
-                isPeerReady = false,
-                isSelfReady = false,
                 peerPlayerName = ""
             )
         }
@@ -276,10 +260,7 @@ class LobbyViewModel : ViewModel() {
                         targetMode = if (cState.mode.isNotBlank()) cState.mode else it.targetMode,
                         aiDifficulty1 = if (cState.aiDifficulty1.isNotBlank()) cState.aiDifficulty1 else it.aiDifficulty1,
                         aiDifficulty2 = if (cState.aiDifficulty2.isNotBlank()) cState.aiDifficulty2 else it.aiDifficulty2,
-                        isPeerReady = cState.isPeerReady,
-                        isSelfReady = cState.isSelfReady,
                         startMatchTrigger = cState.startMatchTrigger,
-                        navigateToCalibrationTrigger = cState.navigateToCalibrationTrigger,
                         calibratedGapMm = cState.calibratedGapMm,
                         synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
                         peerPlayerName = cState.peerPlayerName.ifBlank { it.peerPlayerName },
@@ -467,8 +448,68 @@ class LobbyViewModel : ViewModel() {
         _state.update { it.copy(startMatchTrigger = 0L) }
     }
 
-    fun consumeCalibrationTrigger() {
-        _state.update { it.copy(navigateToCalibrationTrigger = 0L) }
+    /**
+     * Constrói uma especificação imutável de partida ([MatchSpec]) com base no estado negociado do Lobby
+     * e nas preferências do usuário.
+     */
+    fun buildMatchSpec(
+        userPrefs: UserPreferences,
+        aiExtendedDiff1: AiDifficulty = AiDifficulty.MEDIUM,
+        aiExtendedDiff2: AiDifficulty = AiDifficulty.MEDIUM,
+        p1CustomLabel: String? = null,
+        p2CustomLabel: String? = null
+    ): MatchSpec {
+        val s = _state.value
+        val isHost = s.role == LobbyRole.HOST
+        val isConnected = s.targetMode == "CONNECTED"
+        val isAiExtended = s.targetMode == "AI_EXTENDED"
+
+        val gameMode = when {
+            isConnected -> if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
+            isAiExtended -> if (isHost) GameMode.AI_VS_AI_EXTENDED_HOST else GameMode.AI_VS_AI_EXTENDED_GUEST
+            else -> if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
+        }
+
+        val effectivePuckSpeed = if (isHost) userPrefs.puckSpeed.maxSpeed else s.synchronizedPuckSpeed
+        val defaultP1 = if (isHost) s.selfPlayerName.ifBlank { "Jogador 1" } else s.peerPlayerName.ifBlank { "Jogador 1" }
+        val defaultP2 = if (isHost) s.peerPlayerName.ifBlank { "Jogador 2" } else s.selfPlayerName.ifBlank { "Jogador 2" }
+
+        val effectiveAiDiff1 = if (isHost) {
+            if (s.aiDifficulty1.isNotBlank()) {
+                AiDifficulty.entries.find { it.name.equals(s.aiDifficulty1, ignoreCase = true) } ?: aiExtendedDiff1
+            } else aiExtendedDiff1
+        } else {
+            AiDifficulty.entries.find { it.name.equals(s.aiDifficulty1, ignoreCase = true) } ?: AiDifficulty.MEDIUM
+        }
+
+        val effectiveAiDiff2 = if (isHost) {
+            if (s.aiDifficulty2.isNotBlank()) {
+                AiDifficulty.entries.find { it.name.equals(s.aiDifficulty2, ignoreCase = true) } ?: aiExtendedDiff2
+            } else aiExtendedDiff2
+        } else {
+            AiDifficulty.entries.find { it.name.equals(s.aiDifficulty2, ignoreCase = true) } ?: AiDifficulty.MEDIUM
+        }
+
+        val p1Label = p1CustomLabel ?: defaultP1
+        val p2Label = p2CustomLabel ?: defaultP2
+
+        val effectiveGapMm = if (isConnected) 0f else {
+            if (isHost) userPrefs.bezelGapMm else if (s.calibratedGapMm > 0f) s.calibratedGapMm else userPrefs.bezelGapMm
+        }
+
+        return MatchSpec(
+            mode = gameMode,
+            bezelGapMm = effectiveGapMm,
+            targetScore = userPrefs.targetScore,
+            matchTimeSeconds = if (isConnected) userPrefs.matchTimeSeconds else 0,
+            aiDifficulty = effectiveAiDiff1,
+            aiDifficultyPlayer1 = effectiveAiDiff1,
+            aiDifficultyPlayer2 = effectiveAiDiff2,
+            puckMaxSpeed = effectivePuckSpeed,
+            airFriction = userPrefs.puckSpeed.airFriction,
+            player1Name = p1Label,
+            player2Name = p2Label
+        )
     }
 
     fun stopAll() {
