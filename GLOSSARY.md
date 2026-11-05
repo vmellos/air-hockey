@@ -122,6 +122,32 @@ _Avoid_: Faíscas comuns, explosão 2D, efeito de batida, colisão simples
 O giro angular contínuo do modelo tridimensional do disco ao redor de seu eixo vertical (Y) no motor Sceneview, calibrado proceduralmente com taxa de rotação proporcional à velocidade do deslocamento físico.
 _Avoid_: Spin 2D, giro solto, rotação fake, giro aleatório
 
+## Experiência de Realidade Aumentada (AR)
+
+**Arena Realidade Aumentada (AR)**:
+A projeção holográfica da Mesa e entidades de jogo em 3D ancorada sobre superfícies físicas do mundo real detectadas pelo ARCore.
+_Avoid_: Jogo em AR, modo câmera, visão de câmera, ar view
+
+**Retícula de Rastreamento AR**:
+O indicador procedural animado projetado no plano horizontal rastreado para guiar a mira do jogador antes da fixação da mesa.
+_Avoid_: Cursor de mira, ponteiro AR, reticle, alvo
+
+**Ancoragem da Mesa AR**:
+A criação do ponto de ancoragem estático no mundo físico que estabelece a origem espacial e a orientação da mesa em relação à posição inicial do jogador.
+_Avoid_: Ponto de fixação, spawn da mesa, placement, pin
+
+**Escala da Mesa AR**:
+O multiplicador dimensional da projeção da mesa no mundo físico, alternável entre Escala Real (1:1 - proporção métrica natural para o chão da sala) e Escala Miniatura (1:4 - proporção reduzida para superfícies de mesas reais).
+_Avoid_: Zoom da mesa, tamanho do jogo, escala 3d, proporção manual
+
+**Desprojeção no Plano da Mesa AR**:
+O cálculo de interseção geométrica do raio gerado a partir do toque na tela com o plano horizontal local da mesa ancorada no ARCore para controle do rebatedor.
+_Avoid_: Raycast de toque, conversão de toque AR, toque na câmera
+
+**Transição para Arena 3D Padrão**:
+A comutação imediata da renderização da partida para a Arena 3D sem perda de pontuação, posições físicas ou tempo de jogo, acionada manualmente ou por indisponibilidade de rastreamento.
+_Avoid_: Sair do AR, resetar em 3D, desligar câmera, downgrade
+
 ## Modos de Jogo
 
 **Modo Solo**:
