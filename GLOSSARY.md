@@ -141,8 +141,12 @@ O multiplicador dimensional da projeção da mesa no mundo físico, alternável 
 _Avoid_: Zoom da mesa, tamanho do jogo, escala 3d, proporção manual
 
 **Desprojeção no Plano da Mesa AR**:
-O cálculo de interseção geométrica do raio gerado a partir do toque na tela com o plano horizontal local da mesa ancorada no ARCore para controle do rebatedor.
-_Avoid_: Raycast de toque, conversão de toque AR, toque na câmera
+O cálculo de interseção geométrica do raio tridimensional gerado a partir do toque na tela com a superfície da mesa holográfica através da matriz inversa de transformação mundial (World-to-Local) do nó da arena no Sceneview, convertendo coordenadas de tela em coordenadas métricas soberanas (0..1000 x 0..2000) com precisão milimétrica sob qualquer ângulo de visualização ou escala.
+_Avoid_: Raycast de toque, conversão de toque AR, toque na câmera, aproximação planar estática
+
+**Retenção de Ancoragem AR no Modo Fases**:
+A preservação contínua da posição e orientação da mesa já fixada no ambiente físico ao avançar de nível ou reiniciar uma partida no Modo Fases com a Arena AR equipada, iniciando a contagem regressiva do próximo estágio imediatamente sem obrigar o jogador a reescanear a sala.
+_Avoid_: Reancoragem por fase, scan a cada nível, reset de mesa
 
 **Lobby de Posicionamento AR**:
 O estágio preliminar e desacoplado na Realidade Aumentada no qual a simulação física e a contagem regressiva permanecem retidas enquanto o jogador rastreia o ambiente físico, fixa a mesa e valida os objetos 3D no espaço real antes de liberar o confronto.

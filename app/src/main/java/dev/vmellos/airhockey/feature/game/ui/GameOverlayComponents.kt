@@ -238,6 +238,21 @@ fun ScoreBoardOverlay(
                             letterSpacing = 0.5.sp
                         )
                     }
+                    if (matchState.mode == GameMode.SOLO && matchState.currentStage > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(1.dp)
+                                .background(Color(0x22FFFFFF), RoundedCornerShape(1.dp))
+                        )
+                        Text(
+                            text = stringResource(R.string.stage_level_header, matchState.currentStage).uppercase(),
+                            color = Color(0xCC00E5FF),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
         }

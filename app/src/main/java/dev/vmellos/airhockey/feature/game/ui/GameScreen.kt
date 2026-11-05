@@ -150,6 +150,13 @@ fun GameScreen(
     var is3dPresenting by remember { mutableStateOf(is3dActive) }
     var arStagingPhase by remember { mutableStateOf(if (isArActive) ArStagingPhase.SCANNING else ArStagingPhase.PLAYING) }
 
+    // No Modo Fases em AR, avanço de fase ou reinício mantém a mesa ancorada e inicia a contagem
+    LaunchedEffect(matchState.currentStage, arStagingPhase, matchState.status) {
+        if (isArActive && arStagingPhase == ArStagingPhase.PLAYING && matchState.status == MatchStatus.COUNTDOWN) {
+            viewModel.startCountdownAfterPresentation()
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         // Mesa de Jogo (Modo AR Sceneview quando o tema REALIDADE_AUMENTADA_AR estiver equipado,
         // Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)

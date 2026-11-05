@@ -88,6 +88,8 @@ import com.google.ar.core.Pose
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingState
 import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Float4
+import dev.romainguy.kotlin.math.inverse
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.preferences.ArTableScale
@@ -101,6 +103,7 @@ import io.github.sceneview.ar.node.ARCameraNode
 import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.ar.rememberARCameraNode
 import io.github.sceneview.ar.rememberAREnvironment
+import io.github.sceneview.ar.scene.PlaneRenderer
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.node.Node
 import io.github.sceneview.rememberEngine
@@ -111,6 +114,7 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Fases operacionais da experiência de Realidade Aumentada (AR).
@@ -143,37 +147,64 @@ private class ArSessionContext {
 }
 
 /**
+ * Validação física e ergonômica das coordenadas métricas para colocação da mesa de Air Hockey.
+ * Rejeita pontos astronômicos gerados por erros de rastreamento, pontos atrás da câmera ou suspensos no teto.
+ */
+internal fun isHitSane(tx: Float, ty: Float, tz: Float, cx: Float, cy: Float, cz: Float): Boolean {
+    if (tx.isNaN() || ty.isNaN() || tz.isNaN() || tx.isInfinite() || ty.isInfinite() || tz.isInfinite()) return false
+
+    val dx = tx - cx
+    val dy = ty - cy
+    val dz = tz - cz
+    val dist = sqrt(dx * dx + dy * dy + dz * dz)
+
+    // Distância confortável para jogar indoor em mesa (0.3m) ou chão (até 3.0m)
+    if (dist < 0.28f || dist > 3.0f) return false
+
+    // A mesa/chão deve estar abaixo da câmera ou ligeiramente acima (máximo 0.15m acima da câmera)
+    // e no máximo 2.0m abaixo da câmera (altura do chão típica ao segurar o celular em pé)
+    if (dy > 0.15f || dy < -2.0f) return false
+
+    return true
+}
+
+internal fun isHitSane(trans: FloatArray, camPose: Pose): Boolean {
+    if (trans.size < 3) return false
+    return isHitSane(trans[0], trans[1], trans[2], camPose.tx(), camPose.ty(), camPose.tz())
+}
+
+/**
  * Desprojeção no Plano da Mesa AR:
- * Intersecta o raio da câmera AR com o plano horizontal local da mesa ancorada,
+ * Intersecta o raio da câmera AR com a superfície da mesa ancorada no mundo real
+ * através da matriz inversa de transformação mundial (World-to-Local) do nó de conteúdo da mesa,
  * convertendo as coordenadas métricas para o sistema soberano (0..1000 x 0..2000).
  */
 internal fun screenToTableAR(
     screenX: Float,
     screenY: Float,
     cameraNode: ARCameraNode,
-    anchorPos: Float3,
-    anchorYawRad: Float,
-    scaleFactor: Float
+    contentNode: Node
 ): TablePoint? {
     val ray = cameraNode.screenPointToRay(screenX, screenY) ?: return null
-    val ro = ray.origin
-    val rd = ray.direction
-    val dy = rd.y
-    if (abs(dy) < 1e-4f) return null
+    val invMat = try {
+        inverse(contentNode.worldTransform)
+    } catch (_: Exception) {
+        return null
+    }
 
-    val t = (anchorPos.y - ro.y) / dy
+    val ro4 = invMat * Float4(ray.origin.x, ray.origin.y, ray.origin.z, 1f)
+    val rd4 = invMat * Float4(ray.direction.x, ray.direction.y, ray.direction.z, 0f)
+
+    val ro = Float3(ro4.x, ro4.y, ro4.z)
+    val rd = Float3(rd4.x, rd4.y, rd4.z)
+
+    if (abs(rd.y) < 1e-4f) return null
+
+    val t = -ro.y / rd.y
     if (t <= 0f) return null
 
-    val worldX = ro.x + t * rd.x
-    val worldZ = ro.z + t * rd.z
-
-    val dx = (worldX - anchorPos.x) / scaleFactor
-    val dz = (worldZ - anchorPos.z) / scaleFactor
-
-    val cosA = cos(-anchorYawRad)
-    val sinA = sin(-anchorYawRad)
-    val localX = dx * cosA - dz * sinA
-    val localZ = dx * sinA + dz * cosA
+    val localX = ro.x + t * rd.x
+    val localZ = ro.z + t * rd.z
 
     val tableX = 500f + localX / 0.00108f
     val tableY = 1000f + localZ / 0.00096f
@@ -304,6 +335,7 @@ fun AirHockeyArenaARScene(
 
     val cameraNode = rememberARCameraNode(engine3d)
     val sceneARState = remember { SceneARState() }
+    val inputController = remember { ArenaInputController(grabRadiusMultiplier = 8.0f) }
 
     // Estados do Lobby de Posicionamento AR
     var stagingPhase by remember { mutableStateOf(ArStagingPhase.SCANNING) }
@@ -312,8 +344,6 @@ fun AirHockeyArenaARScene(
 
     var anchorNode by remember { mutableStateOf<AnchorNode?>(null) }
     var contentNode by remember { mutableStateOf<Node?>(null) }
-    var anchorPos by remember { mutableStateOf<Float3?>(null) }
-    var anchorYawRad by remember { mutableFloatStateOf(0f) }
 
     var currentScale by remember { mutableStateOf(initialScale) }
     val currentScaleFactor = currentScale.scaleFactor
@@ -331,6 +361,7 @@ fun AirHockeyArenaARScene(
     // Higienização de Ponteiros de Toque
     LaunchedEffect(matchState.status) {
         if (matchState.status != MatchStatus.PLAYING) {
+            inputController.resetPointers()
             sceneARState.activePointerP1 = null
         }
     }
@@ -340,39 +371,48 @@ fun AirHockeyArenaARScene(
 
     fun resetAnchor() {
         Log.d("AirHockeyAR", "resetAnchor chamado. Retornando para SCANNING.")
-        contentNode?.destroy()
+        inputController.resetPointers()
+        try {
+            tableNode?.parent = null
+            puckNode?.parent = null
+            p1Node?.parent = null
+            p2Node?.parent = null
+        } catch (_: Throwable) {}
         contentNode = null
-        anchorNode?.destroy()
         anchorNode = null
-        anchorPos = null
         arContext.latestHitResult = null
         surfaceDetected = false
         stagingPhase = ArStagingPhase.SCANNING
     }
 
-    fun anchorTableAtAnchor(anchor: Anchor) {
+    fun anchorTableAtAnchor(anchor: Anchor, camPose: Pose) {
         try {
             val ancTranslation = anchor.pose.translation
-            val camTranslation = cameraNode.pose?.translation ?: floatArrayOf(0f, 1f, 1f)
-            val vx = camTranslation[0] - ancTranslation[0]
-            val vz = camTranslation[2] - ancTranslation[2]
-            val yawRad = atan2(vx, vz)
-            val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
-
-            anchorYawRad = yawRad
-            anchorPos = Float3(ancTranslation[0], ancTranslation[1], ancTranslation[2])
-            Log.d("AirHockeyAR", "anchorTableAtAnchor: anchor em (${ancTranslation[0]}, ${ancTranslation[1]}, ${ancTranslation[2]}), yawDeg=$yawDeg, scale=$currentScaleFactor")
+            Log.d("AirHockeyAR", "anchorTableAtAnchor: anchor em (${ancTranslation[0]}, ${ancTranslation[1]}, ${ancTranslation[2]}), scale=$currentScaleFactor")
 
             // Desanexa de pais anteriores antes de reorganizar a hierarquia
-            tableNode?.parent = null
-            puckNode?.parent = null
-            p1Node?.parent = null
-            p2Node?.parent = null
+            try {
+                tableNode?.parent = null
+                puckNode?.parent = null
+                p1Node?.parent = null
+                p2Node?.parent = null
+            } catch (_: Throwable) {}
 
-            // Nó de conteúdo que mantém orientação e escala imunes a atualizações automáticas de pose do AnchorNode
+            // Converte a posição mundial da câmera para o espaço local do Anchor
+            val camWorld = floatArrayOf(camPose.tx(), camPose.ty(), camPose.tz())
+            val camLocal = anchor.pose.inverse().transformPoint(camWorld)
+            val localYawDeg = if (!camLocal[0].isNaN() && !camLocal[2].isNaN() && (abs(camLocal[0]) > 1e-4f || abs(camLocal[2]) > 1e-4f)) {
+                Math.toDegrees(atan2(camLocal[0].toDouble(), camLocal[2].toDouble())).toFloat()
+            } else {
+                0f
+            }
+            Log.d("AirHockeyAR", "anchorTableAtAnchor: camLocal=(${camLocal[0]}, ${camLocal[1]}, ${camLocal[2]}), localYawDeg=$localYawDeg")
+
+            // Nó de conteúdo perfeitamente alinhado na origem do AnchorNode (orientação horizontal e frontal voltada para o jogador)
             val newContentNode = Node(engine3d).apply {
                 this.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
-                this.rotation = Float3(0f, yawDeg, 0f)
+                this.position = Float3(0f, 0f, 0f)
+                this.rotation = Float3(0f, localYawDeg, 0f)
                 tableNode?.let { addChildNode(it) }
                 puckNode?.let { addChildNode(it) }
                 p1Node?.let { addChildNode(it) }
@@ -386,6 +426,17 @@ fun AirHockeyArenaARScene(
 
             val newAnchorNode = AnchorNode(engine3d, anchor).apply {
                 isPositionEditable = false
+                updateAnchorPose = true
+                visibleTrackingStates = setOf(
+                    TrackingState.TRACKING,
+                    TrackingState.PAUSED,
+                    TrackingState.STOPPED
+                )
+                visibleCameraTrackingStates = setOf(
+                    TrackingState.TRACKING,
+                    TrackingState.PAUSED,
+                    TrackingState.STOPPED
+                )
                 addChildNode(newContentNode)
             }
 
@@ -401,74 +452,178 @@ fun AirHockeyArenaARScene(
 
     fun placeTable() {
         Log.d("AirHockeyAR", "placeTable acionado pelo jogador (surfaceDetected=$surfaceDetected)")
-        val hit = arContext.latestHitResult
-        if (hit != null) {
-            try {
-                Log.d("AirHockeyAR", "placeTable: tentando ancorar a partir de HitResult (${hit.trackable.javaClass.simpleName})")
-                val anchor = hit.createAnchor()
-                anchorTableAtAnchor(anchor)
-                return
-            } catch (e: Exception) {
-                Log.w("AirHockeyAR", "Falha ao criar anchor a partir de HitResult: ${e.message}. Tentando fallback...")
-            }
+        val session = arContext.session ?: return
+        val frame = arContext.frame ?: return
+
+        if (frame.camera.trackingState != TrackingState.TRACKING) {
+            Log.w("AirHockeyAR", "placeTable ignorado: câmera ARCore ainda não está em TRACKING")
+            Toast.makeText(context, context.getString(R.string.ar_tracking_hint), Toast.LENGTH_SHORT).show()
+            return
         }
 
-        val session = arContext.session
-        val frame = arContext.frame
-        if (session != null) {
-            // Fallback 1: Verificar se existe qualquer plano horizontal rastreado na sessão
-            val trackingPlane = try {
-                session.getAllTrackables(Plane::class.java).firstOrNull {
-                    it.trackingState == TrackingState.TRACKING &&
-                            it.type == Plane.Type.HORIZONTAL_UPWARD_FACING
-                }
-            } catch (_: Exception) {
+        val camPose = frame.camera.pose
+        val cx = screenWidthPx / 2f
+        val cy = screenHeightPx / 2f
+
+        var chosenAnchor: Anchor? = null
+
+        // 1. Tenta usar o latestHitResult se for um Plane ou Point (Depth) válido e são
+        val latestHit = arContext.latestHitResult
+        if (latestHit != null && isHitSane(latestHit.hitPose.translation, camPose)) {
+            chosenAnchor = try {
+                latestHit.createAnchor()
+            } catch (e: Exception) {
+                Log.w("AirHockeyAR", "Falha ao criar anchor a partir de latestHit: ${e.message}")
                 null
             }
-
-            if (trackingPlane != null) {
-                try {
-                    Log.d("AirHockeyAR", "placeTable: ancorando no centro de plano horizontal rastreado")
-                    val anchor = trackingPlane.createAnchor(trackingPlane.centerPose)
-                    anchorTableAtAnchor(anchor)
-                    return
-                } catch (e: Exception) {
-                    Log.w("AirHockeyAR", "Falha ao criar anchor no plano: ${e.message}. Tentando fallback de câmera...")
-                }
+            if (chosenAnchor != null) {
+                Log.d("AirHockeyAR", "placeTable: ancorado via latestHitResult (${latestHit.trackable.javaClass.simpleName}) em ${latestHit.hitPose.translation.contentToString()}")
             }
+        }
 
-            // Fallback 2: Projeção direta à frente da câmera no plano horizontal (garantido em qualquer chão)
-            if (frame != null) {
-                try {
-                    val cameraPose = frame.camera.pose
-                    Log.d("AirHockeyAR", "placeTable: fallback de câmera na pose: tx=${cameraPose.tx()}, ty=${cameraPose.ty()}, tz=${cameraPose.tz()}")
-                    val targetPose = cameraPose.compose(Pose.makeTranslation(0f, -0.65f, -1.2f))
-                    val flatPose = Pose(
-                        floatArrayOf(targetPose.tx(), targetPose.ty(), targetPose.tz()),
-                        floatArrayOf(0f, 0f, 0f, 1f)
-                    )
-                    val anchor = session.createAnchor(flatPose)
-                    anchorTableAtAnchor(anchor)
-                    return
-                } catch (e: Exception) {
-                    Log.e("AirHockeyAR", "Falha no fallback de câmera: ${e.message}", e)
+        // 2. Se não houver latestHit, testa raio central direto e amostras ao redor
+        if (chosenAnchor == null) {
+            val samplePoints = listOf(
+                cx to cy,
+                cx to (cy + 150f),
+                cx to (cy + 300f),
+                (cx - 150f) to (cy + 150f),
+                (cx + 150f) to (cy + 150f)
+            )
+            for ((sx, sy) in samplePoints) {
+                val hits = try {
+                    frame.hitTest(sx, sy)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                val hit = hits.firstOrNull { h ->
+                    val trackable = h.trackable
+                    val isPlane = trackable is Plane &&
+                        trackable.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
+                        trackable.trackingState == TrackingState.TRACKING &&
+                        (trackable.isPoseInPolygon(h.hitPose) || trackable.isPoseInExtents(h.hitPose))
+                    val isPoint = trackable is Point &&
+                        trackable.trackingState == TrackingState.TRACKING &&
+                        trackable.orientationMode == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL
+
+                    (isPlane || isPoint) && isHitSane(h.hitPose.translation, camPose)
+                }
+                if (hit != null) {
+                    chosenAnchor = try {
+                        hit.createAnchor()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    if (chosenAnchor != null) {
+                        Log.d("AirHockeyAR", "placeTable: ancorado via hitTest (${hit.trackable.javaClass.simpleName}) em ${hit.hitPose.translation.contentToString()}")
+                        break
+                    }
                 }
             }
         }
 
-        Toast.makeText(
-            context,
-            context.getString(R.string.ar_searching_surface_hint),
-            Toast.LENGTH_SHORT
-        ).show()
+        // 3. Tenta interseção com plano horizontal rastreado (Floor Plane)
+        if (chosenAnchor == null) {
+            val trackingPlanes = try {
+                session.getAllTrackables(Plane::class.java).filter { plane ->
+                    plane.trackingState == TrackingState.TRACKING &&
+                        plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
+                        (plane.centerPose.ty() - camPose.ty()) in -2.0f..-0.2f
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            // Seleciona o plano horizontal são mais próximo do nível esperado (~0.5m para mesa, ~1.2m para chão)
+            val floorPlane = trackingPlanes.minByOrNull { abs(it.centerPose.ty() - camPose.ty() + 0.8f) }
+
+            if (floorPlane != null) {
+                val floorY = floorPlane.centerPose.ty()
+                val ray = cameraNode.screenPointToRay(cx, cy)
+                if (ray.direction.y < -0.05f && ray.origin.y > floorY) {
+                    val t = (floorY - ray.origin.y) / ray.direction.y
+                    val ix = ray.origin.x + t * ray.direction.x
+                    val iy = floorY
+                    val iz = ray.origin.z + t * ray.direction.z
+                    val intersectionPt = floatArrayOf(ix, iy, iz)
+
+                    if (isHitSane(intersectionPt, camPose)) {
+                        val planePose = Pose.makeTranslation(ix, iy, iz)
+                        chosenAnchor = try {
+                            floorPlane.createAnchor(planePose)
+                        } catch (e: Exception) {
+                            Log.w("AirHockeyAR", "Falha ao criar anchor com planePose: ${e.message}. Tentando centerPose...")
+                            try {
+                                floorPlane.createAnchor(floorPlane.centerPose)
+                            } catch (_: Exception) {
+                                null
+                            }
+                        }
+                        if (chosenAnchor != null) {
+                            Log.d("AirHockeyAR", "placeTable: ancorado no floorPlane em ($ix, $iy, $iz)")
+                        }
+                    }
+                }
+
+                // Fallback para o centerPose do floorPlane se a interseção do raio não ocorreu
+                if (chosenAnchor == null && isHitSane(floorPlane.centerPose.translation, camPose)) {
+                    chosenAnchor = try {
+                        floorPlane.createAnchor(floorPlane.centerPose)
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (chosenAnchor != null) {
+                        Log.d("AirHockeyAR", "placeTable: ancorado via centerPose do floorPlane")
+                    }
+                }
+            }
+        }
+
+        // 4. Instant Placement Fallback calibrado (para superfícies com pouca textura como mesas brancas ou carpetes lisos)
+        if (chosenAnchor == null) {
+            val instantHits = try {
+                frame.hitTestInstantPlacement(cx, cy, 1.1f)
+            } catch (_: Exception) {
+                emptyList()
+            }
+            val instantHit = instantHits.firstOrNull { isHitSane(it.hitPose.translation, camPose) }
+            if (instantHit != null) {
+                chosenAnchor = try {
+                    instantHit.createAnchor()
+                } catch (e: Exception) {
+                    null
+                }
+                if (chosenAnchor != null) {
+                    Log.d("AirHockeyAR", "placeTable: ancorado via InstantPlacement na mesa/chão em ${instantHit.hitPose.translation.contentToString()}")
+                }
+            }
+        }
+
+        if (chosenAnchor != null) {
+            anchorTableAtAnchor(chosenAnchor, camPose)
+        } else {
+            Log.w("AirHockeyAR", "placeTable: nenhuma superfície física detectada ainda. Orientando jogador a escanear o chão.")
+            Toast.makeText(
+                context,
+                context.getString(R.string.ar_searching_surface_hint),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     DisposableEffect(Unit) {
         onDispose {
+            inputController.resetPointers()
             sceneARState.activePointerP1 = null
-            contentNode?.destroy()
+            try {
+                tableNode?.parent = null
+                puckNode?.parent = null
+                p1Node?.parent = null
+                p2Node?.parent = null
+            } catch (_: Throwable) {
+                // Filament Scene e Engine já reciclados pelo ciclo de recomposição
+            }
             contentNode = null
-            anchorNode?.destroy()
             anchorNode = null
         }
     }
@@ -484,62 +639,43 @@ fun AirHockeyArenaARScene(
                     screenHeightPx = size.height.toFloat()
                 }
             }
-            .pointerInput(engine, stagingPhase, anchorPos, anchorYawRad, currentScaleFactor, touchOffset) {
-                // Entrada de toque desativada durante a calibração preliminar
+            .pointerInput(engine, mode, stagingPhase, contentNode, touchOffset) {
                 if (stagingPhase != ArStagingPhase.PLAYING) return@pointerInput
+                val cNode = contentNode ?: return@pointerInput
 
-                sceneARState.activePointerP1 = null
+                inputController.resetPointers()
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
-                        val ancPos = anchorPos ?: continue
-
-                        if (event.changes.none { it.pressed }) {
-                            sceneARState.activePointerP1 = null
-                        }
-
-                        if (matchState.isSpectator || matchState.status == MatchStatus.PAUSED || matchState.status == MatchStatus.GAME_OVER) {
-                            continue
-                        }
-
-                        val grabRadiusSq = (engine.player1Mallet.radius * 2.8f).let { it * it }
-
-                        for (change in event.changes) {
-                            val tablePt = screenToTableAR(
-                                screenX = change.position.x,
-                                screenY = change.position.y,
-                                cameraNode = cameraNode,
-                                anchorPos = ancPos,
-                                anchorYawRad = anchorYawRad,
-                                scaleFactor = currentScaleFactor
-                            ) ?: continue
-
-                            if (change.pressed) {
-                                if (sceneARState.activePointerP1 == null) {
-                                    val dx = tablePt.x - engine.player1Mallet.x
-                                    val dy = tablePt.y - engine.player1Mallet.y
-                                    if ((dx * dx + dy * dy) <= grabRadiusSq) {
-                                        sceneARState.activePointerP1 = change.id
-                                    }
-                                }
-
-                                if (sceneARState.activePointerP1 == change.id) {
-                                    val targetY = (tablePt.y - touchOffset).coerceIn(
-                                        engine.dimensions.centerLineY + engine.player1Mallet.radius,
-                                        engine.dimensions.totalHeight - engine.player1Mallet.radius
-                                    )
-                                    val targetX = tablePt.x.coerceIn(
-                                        engine.player1Mallet.radius,
-                                        engine.dimensions.width - engine.player1Mallet.radius
-                                    )
-                                    engine.player1Mallet.targetX = targetX
-                                    engine.player1Mallet.targetY = targetY
-                                    change.consume()
-                                }
-                            } else if (sceneARState.activePointerP1 == change.id) {
-                                sceneARState.activePointerP1 = null
+                        inputController.processPointerEvents(
+                            changes = event.changes,
+                            dimensions = engine.dimensions,
+                            p1MalletX = engine.player1Mallet.x,
+                            p1MalletY = engine.player1Mallet.y,
+                            p2MalletX = engine.player2Mallet.x,
+                            p2MalletY = engine.player2Mallet.y,
+                            malletRadius = engine.player1Mallet.radius,
+                            mode = mode,
+                            touchOffset = touchOffset,
+                            isSpectator = matchState.isSpectator,
+                            screenToTable = { sx, sy ->
+                                screenToTableAR(
+                                    screenX = sx,
+                                    screenY = sy,
+                                    cameraNode = cameraNode,
+                                    contentNode = cNode
+                                )
+                            },
+                            onTouchP1 = { tx, ty ->
+                                viewModel.onTouchPlayer1(tx, ty)
+                            },
+                            onTouchP2 = { tx, ty ->
+                                viewModel.onTouchPlayer2(tx, ty)
+                            },
+                            onTouchGuest = { gx, gy ->
+                                viewModel.onTouchGuestGlobal(gx, gy)
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -554,9 +690,20 @@ fun AirHockeyArenaARScene(
             environment = environment,
             mainLightNode = mainLightNode,
             planeRenderer = stagingPhase == ArStagingPhase.SCANNING,
-            sessionConfiguration = { _, config ->
+            onViewCreated = {
+                planeRenderer.planeRendererMode = PlaneRenderer.PlaneRendererMode.RENDER_ALL
+                planeRenderer.isVisible = true
+                planeRenderer.isEnabled = true
+            },
+            sessionConfiguration = { session, config ->
                 config.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
                 config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+                    config.depthMode = Config.DepthMode.AUTOMATIC
+                    Log.d("AirHockeyAR", "DepthMode.AUTOMATIC ativado com sucesso para hardware Galaxy!")
+                } else {
+                    Log.d("AirHockeyAR", "DepthMode não suportado neste dispositivo.")
+                }
                 config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                 config.focusMode = Config.FocusMode.AUTO
             },
@@ -567,13 +714,17 @@ fun AirHockeyArenaARScene(
                 if (stagingPhase == ArStagingPhase.SCANNING) {
                     val cx = screenWidthPx / 2f
                     val cy = screenHeightPx / 2f
+                    val camPose = frame.camera.pose
 
                     val samplePoints = listOf(
                         cx to cy,
-                        cx to (cy + 120f),
-                        cx to (cy - 120f),
-                        (cx - 120f) to cy,
-                        (cx + 120f) to cy
+                        cx to (cy + 150f),
+                        cx to (cy + 300f),
+                        cx to (cy - 150f),
+                        (cx - 150f) to cy,
+                        (cx + 150f) to cy,
+                        (cx - 150f) to (cy + 150f),
+                        (cx + 150f) to (cy + 150f)
                     )
 
                     var foundHit: HitResult? = null
@@ -584,37 +735,54 @@ fun AirHockeyArenaARScene(
                             emptyList()
                         }
                         val planeHit = hits.firstOrNull { hit ->
-                            when (val trackable = hit.trackable) {
-                                is Plane -> {
-                                    trackable.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
-                                            (trackable.isPoseInPolygon(hit.hitPose) || trackable.isPoseInExtents(hit.hitPose))
-                                }
-                                is InstantPlacementPoint -> true
-                                is Point -> trackable.orientationMode == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL
-                                else -> false
+                            val trackable = hit.trackable
+                            trackable is Plane &&
+                                trackable.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
+                                trackable.trackingState == TrackingState.TRACKING &&
+                                (trackable.isPoseInPolygon(hit.hitPose) || trackable.isPoseInExtents(hit.hitPose)) &&
+                                isHitSane(hit.hitPose.translation, camPose)
+                        }
+                        val pointHit = if (planeHit == null) {
+                            hits.firstOrNull { hit ->
+                                val trackable = hit.trackable
+                                trackable is Point &&
+                                    trackable.trackingState == TrackingState.TRACKING &&
+                                    trackable.orientationMode == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL &&
+                                    isHitSane(hit.hitPose.translation, camPose)
                             }
-                        } ?: hits.firstOrNull { it.trackable is Plane }
+                        } else null
+                        val instantHit = if (planeHit == null && pointHit == null) {
+                            hits.firstOrNull { hit ->
+                                val trackable = hit.trackable
+                                trackable is InstantPlacementPoint &&
+                                    trackable.trackingState == TrackingState.TRACKING &&
+                                    isHitSane(hit.hitPose.translation, camPose)
+                            }
+                        } else null
 
-                        if (planeHit != null) {
-                            foundHit = planeHit
+                        val validHit = planeHit ?: pointHit ?: instantHit
+                        if (validHit != null) {
+                            foundHit = validHit
                             break
                         }
                     }
 
                     if (foundHit == null) {
-                        foundHit = try {
-                            frame.hitTestInstantPlacement(cx, cy, 2.0f).firstOrNull()
+                        val instantHits = try {
+                            frame.hitTestInstantPlacement(cx, cy, 1.1f)
                         } catch (_: Exception) {
-                            null
+                            emptyList()
                         }
+                        foundHit = instantHits.firstOrNull { isHitSane(it.hitPose.translation, camPose) }
                     }
 
                     arContext.latestHitResult = foundHit
 
                     val hasPlaneInSession = try {
-                        session.getAllTrackables(Plane::class.java).any {
-                            it.trackingState == TrackingState.TRACKING &&
-                                    it.type == Plane.Type.HORIZONTAL_UPWARD_FACING
+                        session.getAllTrackables(Plane::class.java).any { plane ->
+                            plane.trackingState == TrackingState.TRACKING &&
+                                plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
+                                (plane.centerPose.ty() - camPose.ty()) in -2.0f..-0.2f
                         }
                     } catch (_: Exception) {
                         false
@@ -623,7 +791,7 @@ fun AirHockeyArenaARScene(
                     val isDetected = (foundHit != null || hasPlaneInSession)
                     if (isDetected != surfaceDetected) {
                         if (isDetected) {
-                            Log.d("AirHockeyAR", "Superfície detectada no centro ($cx, $cy)! Tipo: ${foundHit?.trackable?.javaClass?.simpleName ?: "TrackingPlane"}")
+                            Log.d("AirHockeyAR", "Superfície detectada! (foundHit=${foundHit != null}, hasPlaneInSession=$hasPlaneInSession)")
                         }
                         surfaceDetected = isDetected
                     }
@@ -721,7 +889,11 @@ fun AirHockeyArenaARScene(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = stringResource(R.string.ar_place_table_button),
+                                text = if (surfaceDetected) {
+                                    stringResource(R.string.ar_place_table_button)
+                                } else {
+                                    stringResource(R.string.ar_tracking_hint)
+                                },
                                 color = if (surfaceDetected) Color.Black else Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,

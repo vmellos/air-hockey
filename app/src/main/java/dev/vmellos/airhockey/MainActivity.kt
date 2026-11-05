@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         window.decorView.keepScreenOn = true
+        window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
 
         AirHockeyApp.instance.adManager.initialize(this)
 
@@ -322,8 +323,8 @@ fun AirHockeyAppNavigation(
                 },
                 onStartNextStage = { nextStage ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
-                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
+                    // Na Arena AR a mesa já está ancorada; o novo estágio inicia a contagem diretamente sem esperar autorização inicial
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
