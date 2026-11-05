@@ -150,13 +150,13 @@ fun AirHockeyArena3DScene(
     val coroutineScope = rememberCoroutineScope()
     val presentationAnim = remember { Animatable(0f) }
 
-    // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone ao redor da mesa)
+    // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone ao redor da arena)
     LaunchedEffect(Unit) {
         try {
             presentationAnim.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
-                    durationMillis = 4800,
+                    durationMillis = 6500,
                     easing = FastOutSlowInEasing
                 )
             ) {
@@ -402,23 +402,23 @@ fun AirHockeyArena3DScene(
             onFrame = { _ ->
                 val p = sceneState.presentationProgress
                 if (p < 1f) {
-                    // Voo panorâmico cinematográfico estilo drone (2 giros de 360° ao redor da arena = 720°)
-                    // Interpolação quintica (Smootherstep) para decolagem e aterrissagem ultra-suaves sem solavancos
+                    // Voo panorâmico cinematográfico estilo drone (giro majestoso de 360° em raio amplo e ângulo oblíquo)
+                    // Interpolação quintica (Smootherstep) para cruzeiro fluido e aterrissagem estável
                     val t = (p * p * p * (p * (p * 6f - 15f) + 10f)).coerceIn(0f, 1f)
-                    val totalAngleRad = 4f * Math.PI.toFloat() // 720 graus (2 voltas completas)
+                    val totalAngleRad = 2f * Math.PI.toFloat() // 360 graus (1 giro panorâmico majestoso)
                     val currentAngleRad = (1f - t) * totalAngleRad
 
-                    // Altitude aérea suave: inicia em plano panorâmico elevado (3.50m) e desce suavemente para a perspectiva de jogo
-                    val y = 3.50f * (1f - t) + targetPreset.position.y * t
+                    // Altitude dramática: inicia em ângulo lateral oblíquo (1.70m) e sobe gradualmente até a altura de jogo (targetCamY)
+                    val y = 1.70f * (1f - t) + targetPreset.position.y * t
 
-                    // Trajetória elíptica que acompanha proporcionalmente o formato retangular da arena
-                    val rx = 2.60f * (1f - t) + 1.60f * t
-                    val rz = 3.30f * (1f - t) + targetPreset.position.z * t
+                    // Raio amplo afastado da mesa (não fica em cima da mesa, revela o estádio e piso com profundidade)
+                    val rx = 3.60f * (1f - t) + 1.20f * t
+                    val rz = 4.20f * (1f - t) + targetPreset.position.z * t
 
                     val x = rx * kotlin.math.sin(currentAngleRad)
                     val z = rz * kotlin.math.cos(currentAngleRad)
 
-                    // Foco contínuo: câmera do drone trava o foco no centro da arena e ancora perfeitamente na mira do jogador
+                    // Foco dinâmico: lente do drone rastreia o centro do disco e transita suavemente para a meta de jogo
                     val finalFocusZ = targetPreset.position.z - (targetPreset.position.y / kotlin.math.tan(Math.toRadians(-targetPreset.rotation.x.toDouble()).toFloat()))
                     val focusZ = finalFocusZ * t
                     val focusY = 0.05f * (1f - t)

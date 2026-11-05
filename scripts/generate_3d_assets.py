@@ -249,8 +249,8 @@ def generate_table():
     center_circle.data.materials.append(mat_center)
 
     # 7. Piso da Arena 3D (Plataforma Estádio Arcade com Grid Cibernético e Balizadores)
-    arena_w = 5.0
-    arena_l = 7.0
+    arena_w = 8.0
+    arena_l = 10.0
     arena_z = -h_surface - 0.05
 
     # Base do piso
@@ -264,14 +264,14 @@ def generate_table():
 
     # Linhas de Grid Cibernético Neon
     mat_grid = create_pbr_material("ArenaGridGlow", (0.0, 0.7, 0.9, 1.0), emission_color=(0.0, 0.6, 0.85, 1.0), emission_strength=2.0)
-    for gx in [-1.8, -0.9, 0.9, 1.8]:
+    for gx in [-3.0, -2.0, -1.0, 1.0, 2.0, 3.0]:
         bpy.ops.mesh.primitive_cube_add(size=1.0, location=(gx, 0, arena_z + 0.011))
         gline = bpy.context.active_object
         gline.scale = (0.012, arena_l * 0.92, 0.002)
         bpy.ops.object.transform_apply(scale=True)
         gline.data.materials.append(mat_grid)
 
-    for gy in [-2.5, -1.25, 1.25, 2.5]:
+    for gy in [-4.0, -2.5, -1.25, 1.25, 2.5, 4.0]:
         bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, gy, arena_z + 0.011))
         gline = bpy.context.active_object
         gline.scale = (arena_w * 0.92, 0.012, 0.002)
@@ -284,18 +284,18 @@ def generate_table():
     mat_beacon_orange = create_pbr_material("BeaconOrange", (1.0, 0.4, 0.1, 1.0), emission_color=(1.0, 0.4, 0.1, 1.0), emission_strength=5.0)
 
     pillar_coords = [
-        (-arena_w/2 + 0.35, -arena_l/2 + 0.35, mat_beacon_cyan),
-        (arena_w/2 - 0.35, -arena_l/2 + 0.35, mat_beacon_cyan),
-        (-arena_w/2 + 0.35, arena_l/2 - 0.35, mat_beacon_orange),
-        (arena_w/2 - 0.35, arena_l/2 - 0.35, mat_beacon_orange),
+        (-arena_w/2 + 0.45, -arena_l/2 + 0.45, mat_beacon_cyan),
+        (arena_w/2 - 0.45, -arena_l/2 + 0.45, mat_beacon_cyan),
+        (-arena_w/2 + 0.45, arena_l/2 - 0.45, mat_beacon_orange),
+        (arena_w/2 - 0.45, arena_l/2 - 0.45, mat_beacon_orange),
     ]
     for px, py, mat_beacon in pillar_coords:
         # Coluna
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.06, depth=0.7, vertices=24, location=(px, py, arena_z + 0.35))
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.07, depth=0.9, vertices=24, location=(px, py, arena_z + 0.45))
         pillar = bpy.context.active_object
         pillar.data.materials.append(mat_pillar)
         # Topo Luminoso
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.075, depth=0.08, vertices=24, location=(px, py, arena_z + 0.7))
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.085, depth=0.1, vertices=24, location=(px, py, arena_z + 0.9))
         beacon = bpy.context.active_object
         beacon.data.materials.append(mat_beacon)
 

@@ -91,7 +91,7 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 ## Experiência Visual e Câmera 3D
 
 **Apresentação de Abertura da Mesa 3D**:
-O voo panorâmico cinematográfico estilo drone com dois giros fluidos de 360 graus e descida gradual de altitude ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva travada do Jogador 1. Pode ser pulada instantaneamente com um toque na tela ("Tap to Skip") e retém o Saque de Início até sua conclusão.
+O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva travada do Jogador 1. Pode ser pulada instantaneamente com um toque na tela ("Tap to Skip") e retém o Saque de Início até sua conclusão.
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360
 
 **Níveis de Enquadramento 3D**:
