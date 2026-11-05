@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.Pause
@@ -162,7 +163,7 @@ fun ScoreBoardOverlay(
             TokamakPlasma,
             FontFamily.SansSerif
         )
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> SixTuple(
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> SixTuple(
             RoundedCornerShape(12.dp),
             Color(0x33000000),
             BorderStroke(1.dp, Color(0x33FFFFFF)),
@@ -237,6 +238,21 @@ fun ScoreBoardOverlay(
                             letterSpacing = 0.5.sp
                         )
                     }
+                    if (matchState.mode == GameMode.SOLO && matchState.currentStage > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(1.dp)
+                                .background(Color(0x22FFFFFF), RoundedCornerShape(1.dp))
+                        )
+                        Text(
+                            text = stringResource(R.string.stage_level_header, matchState.currentStage).uppercase(),
+                            color = Color(0xCC00E5FF),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
         }
@@ -269,7 +285,7 @@ fun CountdownOverlay(
         TableTheme.WASTELAND_APOCALYPSE -> Triple(WastelandFlame, WastelandFlameBright, FontFamily.SansSerif)
         TableTheme.RETRO_SYNTHWAVE -> Triple(SynthPink, SynthCyanBright, FontFamily.SansSerif)
         TableTheme.TOKAMAK_REACTOR -> Triple(TokamakRadiation, TokamakPlasmaBright, FontFamily.SansSerif)
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
     }
 
     val textColor = if (countdownNumber == 0) goColor else numberColor
@@ -303,7 +319,7 @@ fun GoalBannerOverlay(
     modifier: Modifier = Modifier
 ) {
     val (primaryColor, secondaryColor) = when (tableTheme) {
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Pair(NeonCyan, NeonOrange)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> Pair(NeonCyan, NeonOrange)
         TableTheme.CYBER_SOCCER -> Pair(NeonEmerald, NeonRuby)
         TableTheme.NEO_BASKETBALL -> Pair(NeonAmber, NeonCyan)
         TableTheme.GRAVITY_VOLLEY -> Pair(NeonViolet, NeonMagenta)
@@ -318,7 +334,7 @@ fun GoalBannerOverlay(
 
     val color = if (scorer == 1) primaryColor else secondaryColor
     val glowColor = when (tableTheme) {
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> if (scorer == 1) NeonCyanBright else NeonOrangeBright
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> if (scorer == 1) NeonCyanBright else NeonOrangeBright
         TableTheme.CYBER_SOCCER -> if (scorer == 1) NeonEmeraldBright else NeonRubyBright
         TableTheme.NEO_BASKETBALL -> if (scorer == 1) NeonAmberBright else NeonCyanBright
         TableTheme.GRAVITY_VOLLEY -> if (scorer == 1) NeonVioletBright else NeonMagentaBright
@@ -342,7 +358,7 @@ fun GoalBannerOverlay(
         TableTheme.NEO_BASKETBALL -> CutCornerShape(12.dp)
         TableTheme.TOKAMAK_REACTOR -> CutCornerShape(12.dp)
         TableTheme.CYBER_BASEBALL -> CutCornerShape(14.dp)
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> CutCornerShape(16.dp)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> CutCornerShape(16.dp)
     }
 
     val bannerBg = when (tableTheme) {
@@ -356,7 +372,7 @@ fun GoalBannerOverlay(
         TableTheme.RETRO_SYNTHWAVE -> Color(0xE61A081C)
         TableTheme.TOKAMAK_REACTOR -> Color(0xE607180A)
         TableTheme.CYBER_COLOSSEUM -> Color(0xE61C1408)
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xD9080E1A)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> Color(0xD9080E1A)
     }
 
     val bannerFont = when (tableTheme) {
@@ -605,7 +621,8 @@ fun PauseDialog(
     onToggleMusic: () -> Unit = {},
     onResume: () -> Unit,
     onRestart: () -> Unit,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    onSwitchTo3D: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -747,6 +764,16 @@ fun PauseDialog(
                     icon = Icons.Default.Refresh,
                     onClick = onRestart
                 )
+
+                if (onSwitchTo3D != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    ArcadeSecondaryButton(
+                        text = stringResource(R.string.ar_switch_to_3d).uppercase(),
+                        accentColor = Color(0xFF10B981),
+                        icon = Icons.Default.Layers,
+                        onClick = onSwitchTo3D
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 

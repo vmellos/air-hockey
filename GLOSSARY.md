@@ -122,6 +122,48 @@ _Avoid_: Faíscas comuns, explosão 2D, efeito de batida, colisão simples
 O giro angular contínuo do modelo tridimensional do disco ao redor de seu eixo vertical (Y) no motor Sceneview, calibrado proceduralmente com taxa de rotação proporcional à velocidade do deslocamento físico.
 _Avoid_: Spin 2D, giro solto, rotação fake, giro aleatório
 
+## Experiência de Realidade Aumentada (AR)
+
+**Arena Realidade Aumentada (AR)**:
+A projeção holográfica da Mesa e entidades de jogo em 3D ancorada sobre superfícies físicas do mundo real detectadas pelo ARCore.
+_Avoid_: Jogo em AR, modo câmera, visão de câmera, ar view
+
+**Retícula de Rastreamento AR**:
+O indicador procedural animado projetado no plano horizontal rastreado para guiar a mira do jogador antes da fixação da mesa.
+_Avoid_: Cursor de mira, ponteiro AR, reticle, alvo
+
+**Ancoragem da Mesa AR**:
+A criação do ponto de ancoragem estático no mundo físico que estabelece a origem espacial e a orientação da mesa em relação à posição inicial do jogador.
+_Avoid_: Ponto de fixação, spawn da mesa, placement, pin
+
+**Escala da Mesa AR**:
+O multiplicador dimensional da projeção da mesa no mundo físico, alternável entre Escala Real (1:1 - proporção métrica natural para o chão da sala) e Escala Miniatura (1:4 - proporção reduzida para superfícies de mesas reais).
+_Avoid_: Zoom da mesa, tamanho do jogo, escala 3d, proporção manual
+
+**Desprojeção no Plano da Mesa AR**:
+O cálculo de interseção geométrica do raio tridimensional gerado a partir do toque na tela com a superfície da mesa holográfica através da matriz inversa de transformação mundial (World-to-Local) do nó da arena no Sceneview, convertendo coordenadas de tela em coordenadas métricas soberanas (0..1000 x 0..2000) com precisão milimétrica sob qualquer ângulo de visualização ou escala.
+_Avoid_: Raycast de toque, conversão de toque AR, toque na câmera, aproximação planar estática
+
+**Retenção de Ancoragem AR no Modo Fases**:
+A preservação contínua da posição e orientação da mesa já fixada no ambiente físico ao avançar de nível ou reiniciar uma partida no Modo Fases com a Arena AR equipada, iniciando a contagem regressiva do próximo estágio imediatamente sem obrigar o jogador a reescanear a sala.
+_Avoid_: Reancoragem por fase, scan a cada nível, reset de mesa
+
+**Lobby de Posicionamento AR**:
+O estágio preliminar e desacoplado na Realidade Aumentada no qual a simulação física e a contagem regressiva permanecem retidas enquanto o jogador rastreia o ambiente físico, fixa a mesa e valida os objetos 3D no espaço real antes de liberar o confronto.
+_Avoid_: Pré-jogo AR, sala de espera AR, tela de loading AR, espera de câmera
+
+**Botão Centralizado de Fixação AR**:
+O controle de ação primário posicionado no centro da tela que ancora a mesa no ponto focal exato indicado pela Retícula de Rastreamento AR sobre a superfície detectada.
+_Avoid_: Toque livre na tela para posicionar, clique no chão, tap to place solto
+
+**Autorização Manual da Partida AR**:
+O comando deliberado acionado pelo jogador após a mesa estar ancorada e visível no ambiente físico, disparando a contagem regressiva e liberando a movimentação dos rebatedores e do disco.
+_Avoid_: Início automático AR, contagem prematura, start forçado
+
+**Transição para Arena 3D Padrão** (Descontinuado da Interface Ativa):
+A antiga alternância manual em botão de tela para a Arena 3D, suprimida em favor da imersão contínua em AR com saída regida exclusivamente pelo menu padrão de pausa.
+_Avoid_: Mudar para 3D, botão de downgrade, toggle 3D
+
 ## Modos de Jogo
 
 **Modo Solo**:

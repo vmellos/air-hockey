@@ -145,12 +145,36 @@ fun GameScreen(
         }
     }
 
+    val isArActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR && mode != GameMode.SPLIT_SCREEN
     val is3dActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D && mode != GameMode.SPLIT_SCREEN
     var is3dPresenting by remember { mutableStateOf(is3dActive) }
+    var arStagingPhase by remember { mutableStateOf(if (isArActive) ArStagingPhase.SCANNING else ArStagingPhase.PLAYING) }
+
+    // No Modo Fases em AR, avanço de fase ou reinício mantém a mesa ancorada e inicia a contagem
+    LaunchedEffect(matchState.currentStage, arStagingPhase, matchState.status) {
+        if (isArActive && arStagingPhase == ArStagingPhase.PLAYING && matchState.status == MatchStatus.COUNTDOWN) {
+            viewModel.startCountdownAfterPresentation()
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Mesa de Jogo (Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
-        if (is3dActive) {
+        // Mesa de Jogo (Modo AR Sceneview quando o tema REALIDADE_AUMENTADA_AR estiver equipado,
+        // Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
+        if (isArActive) {
+            AirHockeyArenaARScene(
+                viewModel = viewModel,
+                mode = mode,
+                initialScale = prefs.arTableScale,
+                onStagingPhaseChanged = { phase ->
+                    arStagingPhase = phase
+                },
+                onExit = {
+                    viewModel.stopMatch()
+                    onExitToMenu()
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (is3dActive) {
             AirHockeyArena3DScene(
                 viewModel = viewModel,
                 mode = mode,
@@ -169,17 +193,31 @@ fun GameScreen(
             )
         }
 
-        // Placar e Controles estilizados pelo tema ativo
-        ScoreBoardOverlay(
-            matchState = matchState,
-            tableTheme = prefs.tableTheme,
-            isSoundEnabled = isSoundEnabled,
-            onToggleSound = { viewModel.toggleSound() },
-            onPauseClick = { viewModel.pauseMatch() }
-        )
+        // Placar e Controles estilizados pelo tema ativo (oculto no AR durante a fase preliminar de calibragem)
+        val showScoreboard = if (isArActive) {
+            arStagingPhase == ArStagingPhase.PLAYING
+        } else {
+            true
+        }
 
-        // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D)
-        if (matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting) {
+        if (showScoreboard) {
+            ScoreBoardOverlay(
+                matchState = matchState,
+                tableTheme = prefs.tableTheme,
+                isSoundEnabled = isSoundEnabled,
+                onToggleSound = { viewModel.toggleSound() },
+                onPauseClick = { viewModel.pauseMatch() }
+            )
+        }
+
+        // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D ou confirmação no lobby AR)
+        val showCountdown = if (isArActive) {
+            arStagingPhase == ArStagingPhase.PLAYING && matchState.status == MatchStatus.COUNTDOWN
+        } else {
+            matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting
+        }
+
+        if (showCountdown) {
             CountdownOverlay(
                 countdownNumber = matchState.countdownNumber,
                 tableTheme = prefs.tableTheme
@@ -276,8 +314,8 @@ fun GameScreen(
             }
         }
 
-        // Overlay de Gol/Ponto estilizado por tema
-        if (matchState.status == MatchStatus.GOAL_PAUSE) {
+        // Overlay de Gol/Ponto estilizado por tema (oculto no AR durante calibração)
+        if (matchState.status == MatchStatus.GOAL_PAUSE && (!isArActive || arStagingPhase == ArStagingPhase.PLAYING)) {
             val scorerName = if (matchState.lastScorer == 1) matchState.player1Name else matchState.player2Name
             GoalBannerOverlay(
                 scorer = matchState.lastScorer,
@@ -298,7 +336,8 @@ fun GameScreen(
                 onExit = {
                     viewModel.stopMatch()
                     onExitToMenu()
-                }
+                },
+                onSwitchTo3D = null
             )
         }
 
@@ -312,8 +351,8 @@ fun GameScreen(
             )
         }
 
-        // Diálogo de Fim de Jogo
-        if (matchState.status == MatchStatus.GAME_OVER) {
+        // Diálogo de Fim de Jogo (oculto no AR durante calibração)
+        if (matchState.status == MatchStatus.GAME_OVER && (!isArActive || arStagingPhase == ArStagingPhase.PLAYING)) {
             val activity = LocalContext.current.findActivity()
             if (matchState.mode == GameMode.SOLO) {
                 StageResultDialog(

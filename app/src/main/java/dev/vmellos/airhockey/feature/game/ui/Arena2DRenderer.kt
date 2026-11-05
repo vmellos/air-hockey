@@ -32,7 +32,7 @@ object Arena2DRenderer {
             TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.CYBER_PONG -> drawCyberPongTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
-            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> drawChamferedTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
         }
     }
 
@@ -88,7 +88,7 @@ object Arena2DRenderer {
                 if (drawTopGoal) drawColosseumGoal(goalLeft, goalWidth, topY, scale, topGoalColor, isTop = true)
                 drawColosseumGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
             }
-            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                 if (drawTopGoal) drawAngledGoal(goalLeft, goalWidth, topY, scale, NeonOrange, isTop = true)
                 drawAngledGoal(goalLeft, goalWidth, bottomY, scale, NeonCyan, isTop = false)
             }

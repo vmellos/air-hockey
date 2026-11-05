@@ -2,7 +2,7 @@ import bpy
 import os
 import math
 
-OUTPUT_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/assets/models"
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app/src/main/assets/models")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def reset_scene():
@@ -373,56 +373,22 @@ def generate_table():
         bpy.ops.object.transform_apply(scale=True)
         barrier_laser.data.materials.append(goal_mat)
 
-    # 3.8 Piso da Arena 3D Expandido (Plataforma Estádio 10m x 12m)
-    arena_w = 10.0
-    arena_l = 12.0
-    arena_z = -h_surface - 0.06
-
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, arena_z))
-    arena_floor = bpy.context.active_object
-    arena_floor.name = "ArenaStadiumFloor"
-    arena_floor.scale = (arena_w, arena_l, 0.025)
-    bpy.ops.object.transform_apply(scale=True)
-    mat_arena_floor = create_pbr_material("ArenaFloorDarkTitanium", (0.012, 0.018, 0.03, 1.0), metallic=0.75, roughness=0.35)
-    arena_floor.data.materials.append(mat_arena_floor)
-
-    # Grade Cibernética Neon
-    mat_grid = create_pbr_material("ArenaGridCyberGlow", (0.0, 0.65, 0.9, 1.0), emission_color=(0.0, 0.60, 0.85, 1.0), emission_strength=2.2)
-    for gx in [-4.0, -2.5, -1.25, 1.25, 2.5, 4.0]:
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(gx, 0, arena_z + 0.013))
-        gline = bpy.context.active_object
-        gline.scale = (0.015, arena_l * 0.94, 0.002)
-        bpy.ops.object.transform_apply(scale=True)
-        gline.data.materials.append(mat_grid)
-
-    for gy in [-5.0, -3.5, -2.0, 0.0, 2.0, 3.5, 5.0]:
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, gy, arena_z + 0.013))
-        gline = bpy.context.active_object
-        gline.scale = (arena_w * 0.94, 0.015, 0.002)
-        bpy.ops.object.transform_apply(scale=True)
-        gline.data.materials.append(mat_grid)
-
-    # 4 Balizadores Perimetrais de Iluminação da Arena (Torres Cilíndricas Multi-estágio)
-    mat_pillar = create_pbr_material("PillarMat", (0.04, 0.05, 0.07, 1.0), metallic=0.88, roughness=0.20)
-    pillar_coords = [
-        (-arena_w/2 + 0.6, -arena_l/2 + 0.6, mat_p1_neon),
-        (arena_w/2 - 0.6, -arena_l/2 + 0.6, mat_p1_neon),
-        (-arena_w/2 + 0.6, arena_l/2 - 0.6, mat_p2_neon),
-        (arena_w/2 - 0.6, arena_l/2 - 0.6, mat_p2_neon),
-    ]
-    for px, py, mat_beacon in pillar_coords:
-        # Coluna Principal
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.08, depth=1.1, vertices=24, location=(px, py, arena_z + 0.55))
-        pillar = bpy.context.active_object
-        pillar.data.materials.append(mat_pillar)
-        # Anel Intermediário de Emissão
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.092, depth=0.04, vertices=24, location=(px, py, arena_z + 0.70))
-        p_ring = bpy.context.active_object
-        p_ring.data.materials.append(mat_beacon)
-        # Topo Luminoso
-        bpy.ops.mesh.primitive_cylinder_add(radius=0.10, depth=0.14, vertices=24, location=(px, py, arena_z + 1.1))
-        beacon = bpy.context.active_object
-        beacon.data.materials.append(mat_beacon)
+    # 3.8 Pés de Suporte da Mesa (4 Colunas Stilts Compactas Sob a Mesa)
+    leg_r = 0.035
+    leg_h = 0.72
+    leg_x_offset = w / 2 - 0.08
+    leg_y_offset = l / 2 - 0.12
+    mat_legs = create_pbr_material("TableLegsTitanium", (0.04, 0.05, 0.07, 1.0), metallic=0.90, roughness=0.25)
+    for lx in [-leg_x_offset, leg_x_offset]:
+        for ly in [-leg_y_offset, leg_y_offset]:
+            bpy.ops.mesh.primitive_cylinder_add(
+                radius=leg_r,
+                depth=leg_h,
+                vertices=24,
+                location=(lx, ly, -h_surface - leg_h / 2)
+            )
+            leg = bpy.context.active_object
+            leg.data.materials.append(mat_legs)
 
     out_path = os.path.join(OUTPUT_DIR, "mesa_arcade.glb")
     bpy.ops.export_scene.gltf(filepath=out_path, export_format='GLB')

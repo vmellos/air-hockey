@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         window.decorView.keepScreenOn = true
+        window.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
 
         AirHockeyApp.instance.adManager.initialize(this)
 
@@ -154,6 +155,8 @@ fun AirHockeyAppNavigation(
                 },
                 onStartSplit = {
                     val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
                     gameViewModel.initializeMatch(
                         mode = GameMode.SPLIT_SCREEN,
                         bezelGapMm = userPrefs.bezelGapMm,
@@ -162,7 +165,8 @@ fun AirHockeyAppNavigation(
                         puckMaxSpeed = puckPreset.maxSpeed,
                         airFriction = puckPreset.airFriction,
                         player1Name = context.getString(R.string.player_1_default),
-                        player2Name = context.getString(R.string.player_2_default)
+                        player2Name = context.getString(R.string.player_2_default),
+                        hasIntroPresentation = needsPresentation
                     )
                     navController.navigate("game/SPLIT_SCREEN")
                 },
@@ -244,6 +248,8 @@ fun AirHockeyAppNavigation(
                     }
                     val d1Str = getAiDiffLabel(diff1)
                     val d2Str = getAiDiffLabel(diff2)
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
                     gameViewModel.initializeMatch(
                         mode = GameMode.AI_VS_AI_LOCAL,
                         bezelGapMm = userPrefs.bezelGapMm,
@@ -255,7 +261,8 @@ fun AirHockeyAppNavigation(
                         puckMaxSpeed = puckPreset.maxSpeed,
                         airFriction = puckPreset.airFriction,
                         player1Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), d1Str),
-                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str)
+                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str),
+                        hasIntroPresentation = needsPresentation
                     )
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
@@ -268,14 +275,15 @@ fun AirHockeyAppNavigation(
             StageSelectionScreen(
                 onSelectStage = { stageNum ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val is3d = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
                         stageNumber = stageNum,
-                        hasIntroPresentation = is3d
+                        hasIntroPresentation = needsPresentation
                     )
                     navController.navigate("game/SOLO")
                 },
@@ -315,12 +323,15 @@ fun AirHockeyAppNavigation(
                 },
                 onStartNextStage = { nextStage ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
+                    // Na Arena AR a mesa já está ancorada; o novo estágio inicia a contagem diretamente sem esperar autorização inicial
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
-                        stageNumber = nextStage
+                        stageNumber = nextStage,
+                        hasIntroPresentation = needsPresentation
                     )
                 }
             )

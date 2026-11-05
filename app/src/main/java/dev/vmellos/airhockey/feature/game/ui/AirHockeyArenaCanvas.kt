@@ -164,7 +164,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakRadiation
                 TableTheme.CYBER_PONG -> PongGreen
                 TableTheme.CYBER_COLOSSEUM -> ColosseumGold
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonCyan
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> NeonCyan
             }
             val p2ThemeColor = when (prefs.tableTheme) {
                 TableTheme.CYBER_SOCCER -> NeonRuby
@@ -177,7 +177,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakPlasma
                 TableTheme.CYBER_PONG -> PongGreenBright
                 TableTheme.CYBER_COLOSSEUM -> ColosseumCrimson
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonOrange
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> NeonOrange
             }
             val wallHitColor = when (prefs.tableTheme) {
                 TableTheme.CYBER_SOCCER -> CyberSoccerGold
@@ -190,7 +190,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakRadiationBright
                 TableTheme.CYBER_PONG -> PongGreenBright
                 TableTheme.CYBER_COLOSSEUM -> ColosseumGoldBright
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xFFE2E8F0)
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> Color(0xFFE2E8F0)
             }
 
             synchronized(pendingCollisions) {

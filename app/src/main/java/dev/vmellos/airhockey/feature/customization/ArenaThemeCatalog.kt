@@ -38,7 +38,7 @@ object ArenaThemeCatalog {
         TableTheme.TOKAMAK_REACTOR -> ThemeVisuals(TokamakDark, TokamakRadiation, TokamakRadiationBright)
         TableTheme.CYBER_PONG -> ThemeVisuals(PongDark, PongGreen, PongGreenBright)
         TableTheme.CYBER_COLOSSEUM -> ThemeVisuals(ColosseumDark, ColosseumGold, ColosseumGoldBright)
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> ThemeVisuals(TableBgDark, NeonCyan, NeonOrange)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> ThemeVisuals(TableBgDark, NeonCyan, NeonOrange)
     }
 
     fun getMalletSkinVisuals(skin: MalletSkin, isPlayer1: Boolean): MalletSkinVisuals {
