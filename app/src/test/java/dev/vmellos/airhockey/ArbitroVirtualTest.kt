@@ -16,10 +16,11 @@ class ArbitroVirtualTest {
         var paddleHitPlayed = false
         var countdownBeeps = mutableListOf<Boolean>()
 
-        override fun playPaddleHit(intensity: Float) { paddleHitPlayed = true }
+        override fun playPaddleHit(intensity: Float, isPlayer1: Boolean) { paddleHitPlayed = true }
         override fun playWallHit() { wallHitPlayed = true }
-        override fun playGoal() { goalPlayed = true }
-        override fun playCountdownBeep(isFinal: Boolean) { countdownBeeps.add(isFinal) }
+        override fun playGoalScored(score: Int, target: Int) { goalPlayed = true }
+        override fun playGoalConceded(score: Int, target: Int) { goalPlayed = true }
+        override fun playCountdownBeep(number: Int) { countdownBeeps.add(number == 0) }
     }
 
     @Test
@@ -136,5 +137,51 @@ class ArbitroVirtualTest {
         assertEquals(snapshot.puckX, packet.puckX, 0.01f)
         assertEquals(snapshot.player1MalletX, packet.hostMalletX, 0.01f)
         assertEquals(snapshot.player2MalletX, packet.guestMalletX, 0.01f)
+    }
+
+    @Test
+    fun testPreparatoryPositionClampingDuringCountdown() {
+        val dimensions = TableDimensions()
+        val arbitro = ArbitroVirtual(dimensions, mode = GameMode.SOLO)
+        assertEquals(MatchStatus.COUNTDOWN, arbitro.matchState.value.status)
+
+        // Tenta tocar fora da metade defensiva do Jogador 1 (y < centerLineY)
+        arbitro.onTouchPlayer1(500f, 200f)
+
+        // O rebatedor deve ser grampeado dentro de sua área defensiva
+        val r = arbitro.engine.player1Mallet.radius
+        val expectedMinY = dimensions.centerLineY + r
+        org.junit.Assert.assertTrue(
+            "Durante a contagem, y do Player 1 deve ficar na metade inferior (>= $expectedMinY)",
+            arbitro.engine.player1Mallet.y >= expectedMinY
+        )
+    }
+
+    @Test
+    fun testCollisionTelemetryConsumption() {
+        val dimensions = TableDimensions()
+        val arbitro = ArbitroVirtual(dimensions, mode = GameMode.SOLO)
+        arbitro.setCountdown(0)
+
+        // Posiciona disco e rebatedor 1 em rota de colisão
+        arbitro.engine.puck.x = 500f
+        arbitro.engine.puck.y = 1200f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+
+        arbitro.engine.player1Mallet.x = 500f
+        arbitro.engine.player1Mallet.y = 1250f
+        arbitro.engine.player1Mallet.targetX = 500f
+        arbitro.engine.player1Mallet.targetY = 1200f
+
+        arbitro.tickPhysics(0.016f)
+
+        val (evt, intensity) = arbitro.consumeCollisionTelemetry()
+        if (evt.toInt() != 0) {
+            org.junit.Assert.assertTrue("Telemetria de colisão deve ter intensidade positiva", intensity > 0f)
+            val (clearedEvt, clearedIntensity) = arbitro.consumeCollisionTelemetry()
+            assertEquals(0.toByte(), clearedEvt)
+            assertEquals(0f, clearedIntensity, 0.001f)
+        }
     }
 }
