@@ -3,6 +3,7 @@ package dev.vmellos.airhockey.feature.game.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,10 +12,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.romainguy.kotlin.math.Float3
@@ -24,6 +32,7 @@ import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
+import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TablePoint
 import io.github.sceneview.Scene
 import io.github.sceneview.node.ModelNode
@@ -31,6 +40,10 @@ import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.random.Random
 
 data class CameraPreset(
     val position: Float3,
@@ -69,6 +82,9 @@ private class Scene3DState(
     var camZ: Float = initialPreset.position.z
     var camPitch: Float = initialPreset.rotation.x
     var camYaw: Float = initialPreset.rotation.y
+
+    // Giroscópio procedural do disco (rotação em torno do eixo vertical Y)
+    var puckYawDeg: Float = 0f
 }
 
 /**
@@ -100,14 +116,14 @@ internal fun screenToTable3D(
     val rz = -1f
 
     val alpha = Math.toRadians(camPitchDeg.toDouble()).toFloat()
-    val cosA = kotlin.math.cos(alpha)
-    val sinA = kotlin.math.sin(alpha)
+    val cosA = cos(alpha)
+    val sinA = sin(alpha)
 
     val dx = rx
     val dy = ry * cosA - rz * sinA
     val dz = ry * sinA + rz * cosA
 
-    if (kotlin.math.abs(dy) < 1e-4f) return null
+    if (abs(dy) < 1e-4f) return null
     val t = -camY / dy
     if (t <= 0f) return null
 
@@ -120,14 +136,226 @@ internal fun screenToTable3D(
 }
 
 /**
+ * Projeta um ponto métrico da mesa (0..1000 x 0..2000) para coordenadas de tela em pixels
+ * sob a perspectiva exata da câmera 3D (World-to-Screen).
+ */
+internal fun tableToScreen3D(
+    tableX: Float,
+    tableY: Float,
+    w: Float,
+    h: Float,
+    camX: Float,
+    camY: Float,
+    camZ: Float,
+    camPitchDeg: Float,
+    elevationY: Float = 0.0075f
+): Offset? {
+    if (w <= 0f || h <= 0f) return null
+    val aspect = w / h
+
+    val fovY = 2f * kotlin.math.atan(12f / 28f)
+    val tanHalfFov = kotlin.math.tan(fovY / 2f)
+
+    val worldX = (tableX - 500f) * 0.00108f
+    val worldY = elevationY
+    val worldZ = (tableY - 1000f) * 0.00096f
+
+    val dx = worldX - camX
+    val dy = worldY - camY
+    val dz = worldZ - camZ
+
+    val alpha = Math.toRadians(camPitchDeg.toDouble()).toFloat()
+    val cosA = cos(alpha)
+    val sinA = sin(alpha)
+
+    val camXPrime = dx
+    val camYPrime = dy * cosA + dz * sinA
+    val camZPrime = -dy * sinA + dz * cosA
+
+    if (camZPrime >= -0.05f) return null
+
+    val depth = -camZPrime
+    val rx = camXPrime / depth
+    val ry = camYPrime / depth
+
+    val ndcX = rx / (aspect * tanHalfFov)
+    val ndcY = ry / tanHalfFov
+
+    val screenX = (ndcX + 1f) * 0.5f * w
+    val screenY = (1f - ndcY) * 0.5f * h
+    return Offset(screenX, screenY)
+}
+
+/**
+ * Faísca de impacto projetada na mesa 3D.
+ */
+private class SparkParticle3D {
+    var x: Float = 0f
+    var y: Float = 0f
+    var vx: Float = 0f
+    var vy: Float = 0f
+    var color: Color = Color.Cyan
+    var size: Float = 3.5f
+    var life: Float = 0f
+    var maxLife: Float = 0.5f
+    var active: Boolean = false
+
+    fun init(startX: Float, startY: Float, vX: Float, vY: Float, c: Color, s: Float, duration: Float) {
+        x = startX
+        y = startY
+        vx = vX
+        vy = vY
+        color = c
+        size = s
+        life = 0f
+        maxLife = duration
+        active = true
+    }
+
+    fun update(dt: Float) {
+        if (!active) return
+        x += vx * dt
+        y += vy * dt
+        vx *= 0.92f
+        vy *= 0.92f
+        life += dt
+        if (life >= maxLife) {
+            active = false
+        }
+    }
+}
+
+/**
+ * Onda de choque expansiva projetada na mesa 3D.
+ */
+private class VisualShockwave3D {
+    var x: Float = 0f
+    var y: Float = 0f
+    var color: Color = Color.Cyan
+    var maxRadius: Float = 160f
+    var progress: Float = 0f
+    var active: Boolean = false
+
+    fun init(startX: Float, startY: Float, waveColor: Color, radius: Float) {
+        x = startX
+        y = startY
+        color = waveColor
+        maxRadius = radius
+        progress = 0f
+        active = true
+    }
+
+    fun update(speed: Float) {
+        if (!active) return
+        progress += speed
+        if (progress >= 1f) {
+            active = false
+        }
+    }
+}
+
+/**
+ * Gerenciador de partículas e ondas de choque em coordenadas da mesa 3D.
+ */
+private class ParticlePool3D(
+    private val maxSparks: Int = 60,
+    private val maxShockwaves: Int = 10
+) {
+    private val sparks = Array(maxSparks) { SparkParticle3D() }
+    private val shockwaves = Array(maxShockwaves) { VisualShockwave3D() }
+    private val rng = Random(42)
+
+    fun spawnSparks(
+        x: Float,
+        y: Float,
+        count: Int,
+        baseColor: Color,
+        spreadSpeed: Float = 550f,
+        duration: Float = 0.5f
+    ) {
+        var spawned = 0
+        for (p in sparks) {
+            if (!p.active) {
+                val angle = rng.nextFloat() * 2f * Math.PI.toFloat()
+                val speed = (0.35f + rng.nextFloat() * 0.65f) * spreadSpeed
+                val vx = cos(angle) * speed
+                val vy = sin(angle) * speed
+                val size = 2.5f + rng.nextFloat() * 3.5f
+                val color = if (rng.nextFloat() > 0.35f) baseColor else Color(0xFFFFD54F)
+                p.init(x, y, vx, vy, color, size, duration * (0.7f + rng.nextFloat() * 0.5f))
+                spawned++
+                if (spawned >= count) break
+            }
+        }
+    }
+
+    fun spawnShockwave(x: Float, y: Float, color: Color, maxRadius: Float = 160f) {
+        for (sw in shockwaves) {
+            if (!sw.active) {
+                sw.init(x, y, color, maxRadius)
+                break
+            }
+        }
+    }
+
+    fun update(dt: Float) {
+        for (p in sparks) {
+            if (p.active) p.update(dt)
+        }
+        for (sw in shockwaves) {
+            if (sw.active) sw.update(0.045f)
+        }
+    }
+
+    fun draw(
+        drawScope: androidx.compose.ui.graphics.drawscope.DrawScope,
+        w: Float,
+        h: Float,
+        camX: Float,
+        camY: Float,
+        camZ: Float,
+        camPitchDeg: Float
+    ) {
+        for (sw in shockwaves) {
+            if (!sw.active) continue
+            val center = tableToScreen3D(sw.x, sw.y, w, h, camX, camY, camZ, camPitchDeg) ?: continue
+            val currentR = sw.maxRadius * sw.progress
+            val edge = tableToScreen3D(sw.x + currentR, sw.y, w, h, camX, camY, camZ, camPitchDeg)
+            val screenR = if (edge != null) abs(edge.x - center.x).coerceAtLeast(4f) else (sw.maxRadius * 0.5f * sw.progress)
+            val alpha = (1f - sw.progress).coerceIn(0f, 1f)
+
+            drawScope.drawCircle(
+                color = sw.color.copy(alpha = alpha * 0.8f),
+                radius = screenR,
+                center = center,
+                style = Stroke(width = 4f * alpha)
+            )
+        }
+
+        for (p in sparks) {
+            if (!p.active) continue
+            val pos = tableToScreen3D(p.x, p.y, w, h, camX, camY, camZ, camPitchDeg) ?: continue
+            val alpha = (1f - (p.life / p.maxLife)).coerceIn(0f, 1f)
+            drawScope.drawCircle(
+                color = p.color.copy(alpha = alpha),
+                radius = p.size,
+                center = pos
+            )
+        }
+    }
+}
+
+/**
  * Renderizador Tridimensional da Arena de Air Hockey utilizando o Sceneview (Google Filament).
  * 
  * Mantém a simulação física 2D soberana via [AirHockeyPhysicsEngine] e projeta as coordenadas
  * espaciais métricas para a Mesa com Piso da Arena, Rebatedores P1/P2 e Disco gerados no Blender.
  * 
- * Executa a Apresentação de Abertura da Mesa 3D (sobrevoo cinematográfico dinâmico com variação de altitude)
- * no início da partida e suporta 3 Níveis de Enquadramento 3D (Próximo, Padrão e Amplo)
- * calibrados com Desprojeção em Perspectiva 3D para controle de toque com precisão milimétrica.
+ * Incorpora Efeitos Visuais Sci-Fi Arcade de alta performance acelerados por hardware:
+ * - Rastro de Energia 3D no Disco
+ * - Efeitos de Impacto 3D (Ondas de Choque e Faíscas incandescentes em tempo real)
+ * - Barreira de Energia da Meta 3D com Pulso de Celebração de Ponto
+ * - Rotação Giroscópica do Disco com rotação angular vinculada à velocidade
  */
 @Composable
 fun AirHockeyArena3DScene(
@@ -150,7 +378,11 @@ fun AirHockeyArena3DScene(
     val coroutineScope = rememberCoroutineScope()
     val presentationAnim = remember { Animatable(0f) }
 
-    // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone ao redor da arena)
+    val particlePool = remember { ParticlePool3D(maxSparks = 60, maxShockwaves = 10) }
+    val puckTrail = remember { ArrayDeque<TablePoint>(14) }
+    val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
+
+    // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone)
     LaunchedEffect(Unit) {
         try {
             presentationAnim.animateTo(
@@ -176,15 +408,27 @@ fun AirHockeyArena3DScene(
         if (matchState.status != MatchStatus.PLAYING) {
             sceneState.activePointerP1 = null
             sceneState.activePointerP2 = null
+            puckTrail.clear()
         }
     }
 
     DisposableEffect(engine) {
         sceneState.activePointerP1 = null
         sceneState.activePointerP2 = null
+        val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
+            synchronized(pendingCollisions) {
+                if (pendingCollisions.size < 16) {
+                    pendingCollisions.addLast(Triple(px, py, evt))
+                }
+            }
+        }
+        engine.onVisualCollisionListener = listener
         onDispose {
             sceneState.activePointerP1 = null
             sceneState.activePointerP2 = null
+            if (engine.onVisualCollisionListener === listener) {
+                engine.onVisualCollisionListener = null
+            }
         }
     }
 
@@ -253,8 +497,18 @@ fun AirHockeyArena3DScene(
         listOfNotNull(tableNode, puckNode, p1Node, p2Node)
     }
 
-    // Conversão métrica de coordenadas 2D do AirHockeyPhysicsEngine (1000 x 2000)
-    // para as dimensões exatas da Mesa 3D do Blender (Largura: 1.08m, Comprimento: 1.92m)
+    // Frame pulse acoplado ao vsync nativo do display
+    var framePulse by remember { mutableLongStateOf(0L) }
+    var lastFrameTime by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            withFrameNanos { time ->
+                framePulse = time
+            }
+        }
+    }
+
     fun mapX(engineX: Float): Float = (engineX - 500f) * 0.00108f
     fun mapZ(engineY: Float): Float = (engineY - 1000f) * 0.00096f
 
@@ -402,23 +656,17 @@ fun AirHockeyArena3DScene(
             onFrame = { _ ->
                 val p = sceneState.presentationProgress
                 if (p < 1f) {
-                    // Voo panorâmico cinematográfico estilo drone (giro majestoso de 360° em raio amplo e ângulo oblíquo)
-                    // Interpolação quintica (Smootherstep) para cruzeiro fluido e aterrissagem estável
                     val t = (p * p * p * (p * (p * 6f - 15f) + 10f)).coerceIn(0f, 1f)
-                    val totalAngleRad = 2f * Math.PI.toFloat() // 360 graus (1 giro panorâmico majestoso)
+                    val totalAngleRad = 2f * Math.PI.toFloat()
                     val currentAngleRad = (1f - t) * totalAngleRad
 
-                    // Altitude dramática: inicia em ângulo lateral oblíquo (1.70m) e sobe gradualmente até a altura de jogo (targetCamY)
                     val y = 1.70f * (1f - t) + targetPreset.position.y * t
-
-                    // Raio amplo afastado da mesa (não fica em cima da mesa, revela o estádio e piso com profundidade)
                     val rx = 3.60f * (1f - t) + 1.20f * t
                     val rz = 4.20f * (1f - t) + targetPreset.position.z * t
 
-                    val x = rx * kotlin.math.sin(currentAngleRad)
-                    val z = rz * kotlin.math.cos(currentAngleRad)
+                    val x = rx * sin(currentAngleRad)
+                    val z = rz * cos(currentAngleRad)
 
-                    // Foco dinâmico: lente do drone rastreia o centro do disco e transita suavemente para a meta de jogo
                     val finalFocusZ = targetPreset.position.z - (targetPreset.position.y / kotlin.math.tan(Math.toRadians(-targetPreset.rotation.x.toDouble()).toFloat()))
                     val focusZ = finalFocusZ * t
                     val focusY = 0.05f * (1f - t)
@@ -432,7 +680,6 @@ fun AirHockeyArena3DScene(
                     sceneState.camPitch = cameraNode.rotation.x
                     sceneState.camYaw = cameraNode.rotation.y
                 } else {
-                    // Transição suave contínua entre Níveis de Enquadramento 3D sem recomposição
                     sceneState.camX += (targetPreset.position.x - sceneState.camX) * 0.15f
                     sceneState.camY += (targetPreset.position.y - sceneState.camY) * 0.15f
                     sceneState.camZ += (targetPreset.position.z - sceneState.camZ) * 0.15f
@@ -443,12 +690,19 @@ fun AirHockeyArena3DScene(
                     cameraNode.rotation = Float3(sceneState.camPitch, 0f, 0f)
                 }
 
-                // Sincronização em tempo real das coordenadas físicas para os nós 3D
+                // Sincronização em tempo real das coordenadas físicas
                 puckNode?.position = Float3(
                     mapX(engine.puck.x),
                     0.0075f,
                     mapZ(engine.puck.y)
                 )
+
+                // Rotação Giroscópica do Disco: rotação contínua proporcional à velocidade
+                val spd = engine.puck.speed()
+                if (spd > 15f) {
+                    sceneState.puckYawDeg = (sceneState.puckYawDeg + spd * 0.035f) % 360f
+                }
+                puckNode?.rotation = Float3(0f, sceneState.puckYawDeg, 0f)
 
                 p1Node?.position = Float3(
                     mapX(engine.player1Mallet.x),
@@ -463,5 +717,99 @@ fun AirHockeyArena3DScene(
                 )
             }
         )
+
+        // Camada de Efeitos Visuais Sci-Fi em Tempo Real com Aceleração por Hardware
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val dt = if (lastFrameTime > 0L) {
+                ((framePulse - lastFrameTime) / 1_000_000_000f).coerceIn(0.001f, 0.05f)
+            } else 0.016f
+            lastFrameTime = framePulse
+
+            val w = size.width
+            val h = size.height
+            val camX = sceneState.camX
+            val camY = sceneState.camY
+            val camZ = sceneState.camZ
+            val camPitch = sceneState.camPitch
+
+            // 1. Pulso de Celebração de Ponto na Barreira da Meta
+            if (matchState.status == MatchStatus.GOAL_PAUSE) {
+                val scorer = matchState.lastScorer
+                val goalColor = if (scorer == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
+                val goalTableY = if (scorer == 2) 200f else 1800f
+                val goalScreenCenter = tableToScreen3D(500f, goalTableY, w, h, camX, camY, camZ, camPitch)
+                    ?: Offset(w / 2f, if (scorer == 2) h * 0.25f else h * 0.75f)
+
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            goalColor.copy(alpha = 0.35f),
+                            goalColor.copy(alpha = 0.08f),
+                            Color.Transparent
+                        ),
+                        center = goalScreenCenter,
+                        radius = w * 0.85f
+                    ),
+                    center = goalScreenCenter,
+                    radius = w * 0.85f
+                )
+            }
+
+            // 2. Rastro de Energia 3D do Disco (Puck Trail)
+            if (matchState.status != MatchStatus.PLAYING) {
+                puckTrail.clear()
+            } else {
+                val spd = engine.puck.speed()
+                if (spd > 220f) {
+                    puckTrail.addFirst(TablePoint(engine.puck.x, engine.puck.y))
+                    if (puckTrail.size > 14) puckTrail.removeLast()
+                } else if (puckTrail.isNotEmpty()) {
+                    puckTrail.removeLast()
+                }
+            }
+
+            if (puckTrail.size >= 2) {
+                val trailColor = if (engine.puck.lastHitBy == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
+                val points = puckTrail.mapNotNull { pt ->
+                    tableToScreen3D(pt.x, pt.y, w, h, camX, camY, camZ, camPitch)
+                }
+                for (i in 0 until points.size - 1) {
+                    val pA = points[i]
+                    val pB = points[i + 1]
+                    val frac = 1f - (i.toFloat() / points.size.toFloat())
+                    val alpha = (frac * 0.85f).coerceIn(0f, 1f)
+                    val strokeW = (frac * 12f + 2f)
+                    drawLine(
+                        color = trailColor.copy(alpha = alpha),
+                        start = pA,
+                        end = pB,
+                        strokeWidth = strokeW,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            // 3. Processamento de Eventos de Colisão (Ondas de Choque e Faíscas)
+            synchronized(pendingCollisions) {
+                while (pendingCollisions.isNotEmpty()) {
+                    val (cx, cy, evt) = pendingCollisions.removeFirst()
+                    val color = when (evt) {
+                        CollisionEvent.PADDLE_HIT_P1 -> Color(0xFF00E5FF)
+                        CollisionEvent.PADDLE_HIT_P2 -> Color(0xFFFF6D00)
+                        CollisionEvent.GOAL_PLAYER1 -> Color(0xFF00E5FF)
+                        CollisionEvent.GOAL_PLAYER2 -> Color(0xFFFF6D00)
+                        CollisionEvent.WALL_HIT -> if (cy > dimensions.centerLineY) Color(0xFF00E5FF) else Color(0xFFFF6D00)
+                        else -> Color(0xFF00E5FF)
+                    }
+                    particlePool.spawnShockwave(cx, cy, color, maxRadius = 160f)
+                    val sparkCount = if (evt == CollisionEvent.WALL_HIT) 8 else 14
+                    particlePool.spawnSparks(cx, cy, sparkCount, color, spreadSpeed = 520f)
+                }
+            }
+
+            // 4. Desenha Ondas de Choque e Faíscas com Perspectiva 3D
+            particlePool.update(dt)
+            particlePool.draw(this, w, h, camX, camY, camZ, camPitch)
+        }
     }
 }

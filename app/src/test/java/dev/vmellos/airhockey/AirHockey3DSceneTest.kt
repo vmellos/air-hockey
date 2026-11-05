@@ -3,6 +3,7 @@ package dev.vmellos.airhockey
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.feature.game.ui.getCameraPreset
 import dev.vmellos.airhockey.feature.game.ui.screenToTable3D
+import dev.vmellos.airhockey.feature.game.ui.tableToScreen3D
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -97,5 +98,74 @@ class AirHockey3DSceneTest {
 
         val zeroH = screenToTable3D(540f, 1200f, 1080f, 0f, 0f, standard.position.y, standard.position.z, standard.rotation.x)
         assertNull(zeroH)
+    }
+
+    @Test
+    fun tableToScreen3D_projectsCenterTableNearHorizontalCenter() {
+        val standard = getCameraPreset(CameraZoom3D.STANDARD)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        val screenPt = tableToScreen3D(
+            tableX = 500f,
+            tableY = 1000f,
+            w = screenW,
+            h = screenH,
+            camX = standard.position.x,
+            camY = standard.position.y,
+            camZ = standard.position.z,
+            camPitchDeg = standard.rotation.x,
+            elevationY = 0f
+        )
+
+        assertNotNull("Ponto de tela projetado não deve ser nulo", screenPt)
+        screenPt?.let {
+            assertEquals("O centro da mesa X=500 deve projetar no centro horizontal da tela", 540f, it.x, 2f)
+            assertTrue("O centro da mesa Y=1000 deve projetar em Y visível na tela", it.y in 800f..1800f)
+        }
+    }
+
+    @Test
+    fun tableToScreen3D_and_screenToTable3D_areMathematicallyReversible() {
+        val standard = getCameraPreset(CameraZoom3D.STANDARD)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        val originalX = 500f
+        val originalY = 1600f
+
+        val screenPt = tableToScreen3D(
+            tableX = originalX,
+            tableY = originalY,
+            w = screenW,
+            h = screenH,
+            camX = standard.position.x,
+            camY = standard.position.y,
+            camZ = standard.position.z,
+            camPitchDeg = standard.rotation.x,
+            elevationY = 0f
+        )
+        assertNotNull(screenPt)
+
+        val unprojectedTable = screenToTable3D(
+            screenX = screenPt!!.x,
+            screenY = screenPt.y,
+            w = screenW,
+            h = screenH,
+            camX = standard.position.x,
+            camY = standard.position.y,
+            camZ = standard.position.z,
+            camPitchDeg = standard.rotation.x
+        )
+        assertNotNull(unprojectedTable)
+        assertEquals(originalX, unprojectedTable!!.x, 2f)
+        assertEquals(originalY, unprojectedTable.y, 2f)
+    }
+
+    @Test
+    fun tableToScreen3D_handlesInvalidInputsGracefully() {
+        val standard = getCameraPreset(CameraZoom3D.STANDARD)
+        assertNull(tableToScreen3D(500f, 1000f, 0f, 2400f, 0f, standard.position.y, standard.position.z, standard.rotation.x))
+        assertNull(tableToScreen3D(500f, 1000f, 1080f, 0f, 0f, standard.position.y, standard.position.z, standard.rotation.x))
     }
 }
