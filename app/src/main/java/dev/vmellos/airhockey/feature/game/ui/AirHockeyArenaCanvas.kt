@@ -97,19 +97,8 @@ fun AirHockeyArenaCanvas(
         }
     }
 
-    val arenaBgColor = when (prefs.tableTheme) {
-        TableTheme.CYBER_SOCCER -> CyberTurfDark
-        TableTheme.NEO_BASKETBALL -> CourtDark
-        TableTheme.GRAVITY_VOLLEY -> VolleySpaceDark
-        TableTheme.GRIDIRON_FOOTBALL -> GridironDark
-        TableTheme.CYBER_BASEBALL -> BaseballDark
-        TableTheme.WASTELAND_APOCALYPSE -> WastelandDark
-        TableTheme.RETRO_SYNTHWAVE -> SynthDark
-        TableTheme.TOKAMAK_REACTOR -> TokamakDark
-        TableTheme.CYBER_PONG -> PongDark
-        TableTheme.CYBER_COLOSSEUM -> ColosseumDark
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> TableBgDark
-    }
+    val themeVisuals = remember(prefs.tableTheme) { dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(prefs.tableTheme) }
+    val arenaBgColor = themeVisuals.backgroundColor
 
     Box(
         modifier = modifier
@@ -234,72 +223,38 @@ fun AirHockeyArenaCanvas(
             particlePool.update(dt)
 
             // 2. Desenha arena da mesa completa para todos os 11 temas
-            when (prefs.tableTheme) {
-                TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.GRIDIRON_FOOTBALL -> drawGridironTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.CYBER_BASEBALL -> drawCyberBaseballTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.WASTELAND_APOCALYPSE -> drawWastelandTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.RETRO_SYNTHWAVE -> drawRetroSynthwaveTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.CYBER_PONG -> drawCyberPongTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+            Arena2DRenderer.run {
+                drawTableSurface(
+                    theme = prefs.tableTheme,
+                    left = offsetX,
+                    top = offsetY,
+                    width = vWidth * scale,
+                    height = vHeight * scale,
+                    scale = scale,
+                    isExtendedHost = isExtendedHost,
+                    isExtendedGuest = isExtendedGuest,
+                    isConnectedGuest = isConnectedGuest
+                )
             }
 
             // 3. Desenha metas da mesa
             val goalW = dimensions.goalWidth * scale
             val goalLeft = offsetX + dimensions.goalLeft * scale
             val screenBottom = offsetY + vHeight * scale
-            val topGoalColor = if (isConnectedGuest || isExtendedGuest) p2ThemeColor else p2ThemeColor
             val bottomGoalColor = if (isExtendedGuest) p2ThemeColor else p1ThemeColor
 
-            when (prefs.tableTheme) {
-                TableTheme.CYBER_SOCCER -> {
-                    if (!isExtendedHost) drawCyberSoccerGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawCyberSoccerGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.NEO_BASKETBALL -> {
-                    if (!isExtendedHost) drawBasketballGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawBasketballGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.GRAVITY_VOLLEY -> {
-                    if (!isExtendedHost) drawVolleyGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawVolleyGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.GRIDIRON_FOOTBALL -> {
-                    if (!isExtendedHost) drawGridironGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawGridironGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.CYBER_BASEBALL -> {
-                    if (!isExtendedHost) drawBaseballGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawBaseballGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.WASTELAND_APOCALYPSE -> {
-                    if (!isExtendedHost) drawWastelandGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawWastelandGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.RETRO_SYNTHWAVE -> {
-                    if (!isExtendedHost) drawSynthwaveGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawSynthwaveGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.TOKAMAK_REACTOR -> {
-                    if (!isExtendedHost) drawTokamakGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawTokamakGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.CYBER_PONG -> {
-                    if (!isExtendedHost) drawPongGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawPongGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.CYBER_COLOSSEUM -> {
-                    if (!isExtendedHost) drawColosseumGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
-                    drawColosseumGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
-                    if (!isExtendedHost) drawAngledGoal(goalLeft, goalW, offsetY, scale, NeonOrange, isTop = true)
-                    drawAngledGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
-                }
+            Arena2DRenderer.run {
+                drawTableGoals(
+                    theme = prefs.tableTheme,
+                    goalLeft = goalLeft,
+                    goalWidth = goalW,
+                    topY = offsetY,
+                    bottomY = screenBottom,
+                    scale = scale,
+                    topGoalColor = p2ThemeColor,
+                    bottomGoalColor = bottomGoalColor,
+                    drawTopGoal = !isExtendedHost
+                )
             }
 
             // 4. Vórtice de Contagem Regressiva (Print 1)

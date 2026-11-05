@@ -82,4 +82,32 @@ class ThemeAudioAndPreferencesTest {
         assertEquals("Cabeçalho WAVE esperado", "WAVE", wave)
         assertEquals("Sub-bloco fmt esperado", "fmt ", fmt)
     }
+
+    @Test
+    fun testArenaThemeCatalogProvidesVisualsForAllThemes() {
+        for (theme in TableTheme.entries) {
+            val visuals = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(theme)
+            org.junit.Assert.assertNotNull(visuals.backgroundColor)
+            org.junit.Assert.assertNotNull(visuals.primaryColor)
+            org.junit.Assert.assertNotNull(visuals.secondaryColor)
+        }
+    }
+
+    @Test
+    fun testArenaThemeCatalogProvidesMalletSkinVisuals() {
+        for (skin in dev.vmellos.airhockey.core.preferences.MalletSkin.entries) {
+            val p1 = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getMalletSkinVisuals(skin, isPlayer1 = true)
+            val p2 = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getMalletSkinVisuals(skin, isPlayer1 = false)
+            org.junit.Assert.assertNotNull(p1.color)
+            org.junit.Assert.assertNotNull(p2.color)
+        }
+    }
+
+    @Test
+    fun testArenaThemeCatalogProvidesPuckAccents() {
+        for (puck in dev.vmellos.airhockey.core.preferences.PuckSkin.entries) {
+            val accent = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getPuckAccent(puck)
+            org.junit.Assert.assertNotNull(accent)
+        }
+    }
 }

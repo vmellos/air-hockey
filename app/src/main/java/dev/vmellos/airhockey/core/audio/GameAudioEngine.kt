@@ -42,9 +42,6 @@ class GameAudioEngine(private val context: Context) {
             }
         }
 
-    var currentMalletSkinP1: MalletSkin = MalletSkin.CLASSIC_NEON
-    var currentMalletSkinP2: MalletSkin = MalletSkin.CLASSIC_NEON
-
     // Controles de Música de Fundo (BGM)
     var isMusicEnabled: Boolean = true
         set(value) {

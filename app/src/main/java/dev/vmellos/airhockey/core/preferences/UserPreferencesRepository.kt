@@ -37,7 +37,6 @@ class UserPreferencesRepository(private val context: Context) {
         val VISUAL_EFFECTS_PROFILE = stringPreferencesKey("visual_effects_profile")
         val PLAYER_NAME = stringPreferencesKey("player_name")
         val TABLE_THEME = stringPreferencesKey("table_theme")
-        val IS_3D_MODE_ENABLED = booleanPreferencesKey("is_3d_mode_enabled")
         val CAMERA_ZOOM_3D = stringPreferencesKey("camera_zoom_3d")
         val PUCK_SKIN = stringPreferencesKey("puck_skin")
         val MALLET_SKIN_P1 = stringPreferencesKey("mallet_skin_p1")
@@ -107,7 +106,6 @@ class UserPreferencesRepository(private val context: Context) {
 
             val tableThemeStr = preferences[PreferencesKeys.TABLE_THEME] ?: TableTheme.CLASSIC_NEON.name
             val tableTheme = try { TableTheme.valueOf(tableThemeStr) } catch (_: Exception) { TableTheme.CLASSIC_NEON }
-            val is3dModeEnabled = preferences[PreferencesKeys.IS_3D_MODE_ENABLED] ?: false
             val cameraZoomStr = preferences[PreferencesKeys.CAMERA_ZOOM_3D] ?: CameraZoom3D.STANDARD.name
             val cameraZoom3d = try { CameraZoom3D.valueOf(cameraZoomStr) } catch (_: Exception) { CameraZoom3D.STANDARD }
 
@@ -137,7 +135,6 @@ class UserPreferencesRepository(private val context: Context) {
                 visualEffectsProfile = fxProfile,
                 playerName = playerName,
                 tableTheme = tableTheme,
-                is3dModeEnabled = is3dModeEnabled,
                 cameraZoom3d = cameraZoom3d,
                 puckSkin = puckSkin,
                 player1MalletSkin = malletP1,
@@ -250,12 +247,6 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setTableTheme(theme: TableTheme) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.TABLE_THEME] = theme.name
-        }
-    }
-
-    suspend fun set3dModeEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.IS_3D_MODE_ENABLED] = enabled
         }
     }
 

@@ -53,6 +53,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
+import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -655,61 +657,18 @@ private fun ArenaLivePreview(
         label = "puckPulse"
     )
 
-    val bgColor = when (tableTheme) {
-        TableTheme.CYBER_SOCCER -> CyberTurfDark
-        TableTheme.NEO_BASKETBALL -> CourtDark
-        TableTheme.GRAVITY_VOLLEY -> VolleySpaceDark
-        TableTheme.GRIDIRON_FOOTBALL -> GridironDark
-        TableTheme.CYBER_BASEBALL -> BaseballDark
-        TableTheme.WASTELAND_APOCALYPSE -> WastelandDark
-        TableTheme.RETRO_SYNTHWAVE -> SynthDark
-        TableTheme.TOKAMAK_REACTOR -> TokamakDark
-        TableTheme.CYBER_PONG -> PongDark
-        TableTheme.CYBER_COLOSSEUM -> ColosseumDark
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> TableBgDark
-    }
+    val themeVisuals = remember(tableTheme) { ArenaThemeCatalog.getVisuals(tableTheme) }
+    val bgColor = themeVisuals.backgroundColor
 
-    val (p1Color, p1Rim) = when (malletSkin) {
-        MalletSkin.MAGNETIC_STRIKER -> Pair(NeonEmerald, NeonEmeraldBright)
-        MalletSkin.DUNK_STRIKER -> Pair(NeonAmber, NeonAmberBright)
-        MalletSkin.SPIKE_EMITTER -> Pair(NeonViolet, NeonVioletBright)
-        MalletSkin.LINEBACKER_STRIKER -> Pair(GridironCyan, GridironGold)
-        MalletSkin.SLUGGER_STRIKER -> Pair(BaseballRed, BaseballRedBright)
-        MalletSkin.RIPPER_STRIKER -> Pair(WastelandFlame, WastelandFlameBright)
-        MalletSkin.OUTRUN_STRIKER -> Pair(SynthPink, SynthPinkBright)
-        MalletSkin.MAGNETIC_COIL -> Pair(TokamakRadiation, TokamakRadiationBright)
-        MalletSkin.PONG_PADDLE -> Pair(PongGreen, PongGreenBright)
-        MalletSkin.SPARTAN_AEGIS -> Pair(ColosseumGold, ColosseumGoldBright)
-        MalletSkin.CLASSIC_NEON -> Pair(NeonCyan, NeonCyanBright)
-    }
+    val p1Visuals = remember(malletSkin) { ArenaThemeCatalog.getMalletSkinVisuals(malletSkin, isPlayer1 = true) }
+    val p1Color = p1Visuals.color
+    val p1Rim = p1Visuals.rimColor
 
-    val (p2Color, p2Rim) = when (malletSkin) {
-        MalletSkin.MAGNETIC_STRIKER -> Pair(NeonRuby, NeonRubyBright)
-        MalletSkin.DUNK_STRIKER -> Pair(NeonCyan, NeonCyanBright)
-        MalletSkin.SPIKE_EMITTER -> Pair(NeonMagenta, NeonMagentaBright)
-        MalletSkin.LINEBACKER_STRIKER -> Pair(GridironGold, GridironCyan)
-        MalletSkin.SLUGGER_STRIKER -> Pair(BaseballCyan, BaseballCyanBright)
-        MalletSkin.RIPPER_STRIKER -> Pair(WastelandFlameBright, WastelandFlame)
-        MalletSkin.OUTRUN_STRIKER -> Pair(SynthCyan, SynthCyanBright)
-        MalletSkin.MAGNETIC_COIL -> Pair(TokamakPlasma, TokamakPlasmaBright)
-        MalletSkin.PONG_PADDLE -> Pair(PongGreenBright, PongGreen)
-        MalletSkin.SPARTAN_AEGIS -> Pair(ColosseumCrimson, ColosseumGold)
-        MalletSkin.CLASSIC_NEON -> Pair(NeonOrange, NeonOrangeBright)
-    }
+    val p2Visuals = remember(malletSkin) { ArenaThemeCatalog.getMalletSkinVisuals(malletSkin, isPlayer1 = false) }
+    val p2Color = p2Visuals.color
+    val p2Rim = p2Visuals.rimColor
 
-    val puckAccent = when (puckSkin) {
-        PuckSkin.CYBER_SOCCER_BALL -> NeonEmerald
-        PuckSkin.NEO_BASKETBALL -> NeonAmber
-        PuckSkin.GRAVITY_VOLLEY -> NeonViolet
-        PuckSkin.GRIDIRON_FOOTBALL -> GridironCyan
-        PuckSkin.CYBER_BASEBALL -> BaseballRed
-        PuckSkin.SAWBLADE -> WastelandFlame
-        PuckSkin.SYNTH_DISC -> SynthPink
-        PuckSkin.ATOMIC_CORE -> TokamakRadiation
-        PuckSkin.PONG_SQUARE -> PongGreen
-        PuckSkin.GLADIATOR_SHIELD -> ColosseumGold
-        PuckSkin.CLASSIC_PLASMA -> NeonCyan
-    }
+    val puckAccent = remember(puckSkin) { ArenaThemeCatalog.getPuckAccent(puckSkin) }
 
     Box(
         modifier = modifier
@@ -734,101 +693,38 @@ private fun ArenaLivePreview(
             val goalLeft = left + (tableW - goalW) / 2f
 
             // 1. Desenha a mesa completa
-            when (tableTheme) {
-                TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.GRIDIRON_FOOTBALL -> drawGridironTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.CYBER_BASEBALL -> drawCyberBaseballTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.WASTELAND_APOCALYPSE -> drawWastelandTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.RETRO_SYNTHWAVE -> drawRetroSynthwaveTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.CYBER_PONG -> drawCyberPongTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left, top, tableW, tableH, scale, false, false, false)
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left, top, tableW, tableH, scale, false, false, false)
+            Arena2DRenderer.run {
+                drawTableSurface(tableTheme, left, top, tableW, tableH, scale)
             }
 
             // 2. Desenha as metas
-            when (tableTheme) {
-                TableTheme.CYBER_SOCCER -> {
-                    drawCyberSoccerGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawCyberSoccerGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.NEO_BASKETBALL -> {
-                    drawBasketballGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawBasketballGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.GRAVITY_VOLLEY -> {
-                    drawVolleyGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawVolleyGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.GRIDIRON_FOOTBALL -> {
-                    drawGridironGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawGridironGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.CYBER_BASEBALL -> {
-                    drawBaseballGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawBaseballGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.WASTELAND_APOCALYPSE -> {
-                    drawWastelandGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawWastelandGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.RETRO_SYNTHWAVE -> {
-                    drawSynthwaveGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawSynthwaveGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.TOKAMAK_REACTOR -> {
-                    drawTokamakGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawTokamakGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.CYBER_PONG -> {
-                    drawPongGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawPongGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.CYBER_COLOSSEUM -> {
-                    drawColosseumGoal(goalLeft, goalW, top + tableH, scale, p1Color, isTop = false)
-                    drawColosseumGoal(goalLeft, goalW, top, scale, p2Color, isTop = true)
-                }
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
-                    drawAngledGoal(goalLeft, goalW, top + tableH, scale, NeonCyan, isTop = false)
-                    drawAngledGoal(goalLeft, goalW, top, scale, NeonOrange, isTop = true)
-                }
+            Arena2DRenderer.run {
+                drawTableGoals(
+                    theme = tableTheme,
+                    goalLeft = goalLeft,
+                    goalWidth = goalW,
+                    topY = top,
+                    bottomY = top + tableH,
+                    scale = scale,
+                    topGoalColor = p2Color,
+                    bottomGoalColor = p1Color,
+                    drawTopGoal = true
+                )
             }
 
             // 3. Rebatedor P1 (Inferior)
             val p1X = left + tableW / 2f
             val p1Y = top + tableH * 0.78f
             val malletRadius = 64f * scale
-            when (malletSkin) {
-                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.PONG_PADDLE -> drawPongMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
-                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
+            Arena2DRenderer.run {
+                drawMalletSkin(malletSkin, p1X, p1Y, malletRadius, p1Color, p1Rim, scale)
             }
 
             // 4. Rebatedor P2 (Superior)
             val p2X = left + tableW / 2f
             val p2Y = top + tableH * 0.22f
-            when (malletSkin) {
-                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.PONG_PADDLE -> drawPongMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
-                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
+            Arena2DRenderer.run {
+                drawMalletSkin(malletSkin, p2X, p2Y, malletRadius, p2Color, p2Rim, scale)
             }
 
             // 5. Disco de Jogo (Centro com pulso animado)
