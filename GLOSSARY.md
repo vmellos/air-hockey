@@ -106,6 +106,22 @@ _Avoid_: Raycast 2D, touch 3D aproximado, clique na tela, conversão ortográfic
 O plano espacial perimetral posicionado abaixo e ao redor da mesa 3D estilizado com grade cibernética e balizadores de iluminação neon, servindo de âncora óptica fixa no mundo para evidenciar a cinemática de câmera durante a Apresentação de Abertura da Mesa 3D e ao longo da partida.
 _Avoid_: Chão escuro, fundo vazio, piso simples, arena vazia
 
+**Barreira de Energia da Meta 3D**:
+O portal luminoso em arco com emissores laser posicionado na embocadura de cada meta na Mesa 3D, simulando um campo de força de contenção arcade com iluminação temática da facção correspondente.
+_Avoid_: Trave de gol, rede 3D, poste de gol, baliza 3d
+
+**Rastro de Energia 3D**:
+A esteira luminescente translúcida projetada dinamicamente atrás do disco em perspectiva tridimensional, desenhada com atenuação suave proporcional à velocidade instantânea de deslocamento na arena.
+_Avoid_: Cauda da bola, rastro 2D estático, linha do disco, rastro simples
+
+**Efeitos de Impacto 3D**:
+O conjunto de partículas cintilantes e ondas de choque circulares geradas nos pontos exatos de colisão do disco contra os rebatedores ou trilhos da mesa e projetadas matematicamente na perspectiva da câmera 3D.
+_Avoid_: Faíscas comuns, explosão 2D, efeito de batida, colisão simples
+
+**Rotação Giroscópica do Disco**:
+O giro angular contínuo do modelo tridimensional do disco ao redor de seu eixo vertical (Y) no motor Sceneview, calibrado proceduralmente com taxa de rotação proporcional à velocidade do deslocamento físico.
+_Avoid_: Spin 2D, giro solto, rotação fake, giro aleatório
+
 ## Modos de Jogo
 
 **Modo Solo**:
