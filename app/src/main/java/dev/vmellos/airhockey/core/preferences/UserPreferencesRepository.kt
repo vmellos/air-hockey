@@ -38,6 +38,7 @@ class UserPreferencesRepository(private val context: Context) {
         val PLAYER_NAME = stringPreferencesKey("player_name")
         val TABLE_THEME = stringPreferencesKey("table_theme")
         val CAMERA_ZOOM_3D = stringPreferencesKey("camera_zoom_3d")
+        val AR_TABLE_SCALE = stringPreferencesKey("ar_table_scale")
         val PUCK_SKIN = stringPreferencesKey("puck_skin")
         val MALLET_SKIN_P1 = stringPreferencesKey("mallet_skin_p1")
         val MALLET_SKIN_P2 = stringPreferencesKey("mallet_skin_p2")
@@ -108,6 +109,8 @@ class UserPreferencesRepository(private val context: Context) {
             val tableTheme = try { TableTheme.valueOf(tableThemeStr) } catch (_: Exception) { TableTheme.CLASSIC_NEON }
             val cameraZoomStr = preferences[PreferencesKeys.CAMERA_ZOOM_3D] ?: CameraZoom3D.STANDARD.name
             val cameraZoom3d = try { CameraZoom3D.valueOf(cameraZoomStr) } catch (_: Exception) { CameraZoom3D.STANDARD }
+            val arScaleStr = preferences[PreferencesKeys.AR_TABLE_SCALE] ?: ArTableScale.MINIATURE_1_4.name
+            val arTableScale = try { ArTableScale.valueOf(arScaleStr) } catch (_: Exception) { ArTableScale.MINIATURE_1_4 }
 
             val puckSkinStr = preferences[PreferencesKeys.PUCK_SKIN] ?: PuckSkin.CLASSIC_PLASMA.name
             val puckSkin = try { PuckSkin.valueOf(puckSkinStr) } catch (_: Exception) { PuckSkin.CLASSIC_PLASMA }
@@ -136,6 +139,7 @@ class UserPreferencesRepository(private val context: Context) {
                 playerName = playerName,
                 tableTheme = tableTheme,
                 cameraZoom3d = cameraZoom3d,
+                arTableScale = arTableScale,
                 puckSkin = puckSkin,
                 player1MalletSkin = malletP1,
                 player2MalletSkin = malletP2
@@ -327,12 +331,18 @@ class UserPreferencesRepository(private val context: Context) {
                     preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPARTAN_AEGIS.name
                     preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPARTAN_AEGIS.name
                 }
-                TableTheme.ARCADE_3D -> {
+                TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CLASSIC_PLASMA.name
                     preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.CLASSIC_NEON.name
                     preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
                 }
             }
+        }
+    }
+
+    suspend fun updateArTableScale(scale: ArTableScale) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.AR_TABLE_SCALE] = scale.name
         }
     }
 

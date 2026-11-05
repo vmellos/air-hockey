@@ -30,6 +30,11 @@ enum class CameraZoom3D {
     WIDE
 }
 
+enum class ArTableScale(val scaleFactor: Float) {
+    REAL_1_1(1.0f),
+    MINIATURE_1_4(0.25f)
+}
+
 enum class TableTheme {
     CLASSIC_NEON,
     CYBER_SOCCER,
@@ -42,7 +47,8 @@ enum class TableTheme {
     TOKAMAK_REACTOR,
     CYBER_PONG,
     CYBER_COLOSSEUM,
-    ARCADE_3D
+    ARCADE_3D,
+    REALIDADE_AUMENTADA_AR
 }
 
 enum class PuckSkin {
@@ -91,6 +97,7 @@ data class UserPreferences(
     val playerName: String = "",
     val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     val cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
+    val arTableScale: ArTableScale = ArTableScale.MINIATURE_1_4,
     val puckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
     val player1MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON,
     val player2MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON

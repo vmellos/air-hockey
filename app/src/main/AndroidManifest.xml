@@ -21,10 +21,13 @@
     <!-- Google Play In-App Billing -->
     <uses-permission android:name="com.android.vending.BILLING" />
 
-    <!-- Optional Camera for On-Demand QR Code scanning -->
+    <!-- Optional Camera for On-Demand QR Code scanning & AR Gameplay -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature
         android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.ar"
         android:required="false" />
 
     <!-- Suporte a dispositivos de tela grande, tablets e dobráveis -->
@@ -48,6 +51,11 @@
         android:localeConfig="@xml/locales_config"
         android:resizeableActivity="true"
         android:usesCleartextTraffic="true">
+
+        <!-- Google ARCore Optional Flag (Allows non-AR devices to download while enabling ARCore on supported ones) -->
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
 
         <!-- Google AdMob Application ID (Configured via manifestPlaceholders) -->
         <meta-data

@@ -126,8 +126,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
-    // 3D Sceneview (Google Filament)
+    // 3D Sceneview & ARScene (Google Filament & ARCore)
     implementation(libs.sceneview)
+    implementation(libs.arsceneview)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

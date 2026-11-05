@@ -34,7 +34,7 @@ object ProceduralAudioSynthesizer {
             TableTheme.TOKAMAK_REACTOR -> Pair(134.0, 8)
             TableTheme.CYBER_PONG -> Pair(120.0, 8)
             TableTheme.CYBER_COLOSSEUM -> Pair(114.0, 8)
-            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Pair(125.0, 8)
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> Pair(125.0, 8)
         }
 
         val beatDuration = 60.0 / bpm
@@ -64,7 +64,7 @@ object ProceduralAudioSynthesizer {
             var sample = 0.0
 
             when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     // Synthwave Arcade A-minor (Am, F, C, G)
                     val roots = doubleArrayOf(110.0, 87.31, 130.81, 98.00)
                     val fifths = doubleArrayOf(164.81, 130.81, 196.00, 146.83)
@@ -403,7 +403,7 @@ object ProceduralAudioSynthesizer {
             val decay = exp(-3.0 * progress)
 
             val sampleVal: Double = when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     val freq = when (countdownNumber) {
                         3 -> 523.25
                         2 -> 659.25
@@ -539,7 +539,7 @@ object ProceduralAudioSynthesizer {
             val decay = 1.0 - (i.toDouble() / numSamples)
 
             val sampleVal: Double = when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     // Arcade pop 480Hz
                     sin(2.0 * PI * 480.0 * t) * decay
                 }
@@ -622,7 +622,7 @@ object ProceduralAudioSynthesizer {
             val decay = 1.0 - (i.toDouble() / numSamples)
 
             val sampleVal: Double = when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> sin(2.0 * PI * 240.0 * t) * decay
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> sin(2.0 * PI * 240.0 * t) * decay
                 TableTheme.CYBER_SOCCER -> sin(2.0 * PI * 200.0 * t) * decay
                 TableTheme.NEO_BASKETBALL -> sin(2.0 * PI * 180.0 * t) * decay
                 TableTheme.GRAVITY_VOLLEY -> (sin(2.0 * PI * 320.0 * t) + 0.3 * sin(2.0 * PI * 640.0 * t)) * decay
@@ -664,7 +664,7 @@ object ProceduralAudioSynthesizer {
             val decay = 1.0 - (i.toDouble() / numSamples)
 
             val sampleVal: Double = when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     // Fanfarra arpejada C5 -> E5 -> G5 -> C6
                     val freq = if (t < 0.10) 523.25 else if (t < 0.22) 659.25 else if (t < 0.34) 783.99 else 1046.50
                     sin(2.0 * PI * freq * t) * decay
@@ -752,7 +752,7 @@ object ProceduralAudioSynthesizer {
             val decay = 1.0 - (i.toDouble() / numSamples)
 
             val sampleVal: Double = when (theme) {
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     // Sawtooth descendente 330Hz -> 220Hz -> 160Hz
                     val freq = if (t < 0.12) 330.0 else if (t < 0.24) 220.0 else 160.0
                     val saw = ((2.0 * PI * freq * t % (2.0 * PI)) / PI) - 1.0
@@ -838,7 +838,7 @@ object ProceduralAudioSynthesizer {
                 TableTheme.CYBER_PONG -> {
                     if (sin(2.0 * PI * 523.25 * t) > 0.0) 1.0 else -1.0
                 }
-                TableTheme.RETRO_SYNTHWAVE, TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
+                TableTheme.RETRO_SYNTHWAVE, TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.REALIDADE_AUMENTADA_AR -> {
                     (sin(2.0 * PI * 523.25 * t) + 0.3 * sin(2.0 * PI * 1046.50 * t)) / 1.3
                 }
                 TableTheme.GRAVITY_VOLLEY -> {

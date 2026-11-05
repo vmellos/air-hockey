@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.ButtonDefaults
@@ -286,6 +287,17 @@ fun ArenaCustomizationScreen(
                 tableTheme = TableTheme.ARCADE_3D,
                 puckSkin = PuckSkin.CLASSIC_PLASMA,
                 malletSkin = MalletSkin.CLASSIC_NEON
+            ),
+            ThemeBundleItem(
+                id = "ar_mode",
+                titleRes = R.string.theme_preset_ar,
+                descRes = R.string.theme_preset_ar_desc,
+                icon = Icons.Default.ViewInAr,
+                primaryColor = NeonCyan,
+                secondaryColor = NeonEmerald,
+                tableTheme = TableTheme.REALIDADE_AUMENTADA_AR,
+                puckSkin = PuckSkin.CLASSIC_PLASMA,
+                malletSkin = MalletSkin.CLASSIC_NEON
             )
         )
     }
@@ -303,7 +315,8 @@ fun ArenaCustomizationScreen(
             TableItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, R.string.theme_preset_tokamak_desc, Icons.Default.Bolt, TokamakRadiation, TokamakPlasma),
             TableItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, R.string.theme_preset_pong_desc, Icons.Default.VideogameAsset, PongGreen, PongAmber),
             TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson),
-            TableItem(TableTheme.ARCADE_3D, R.string.theme_preset_arcade_3d, R.string.theme_preset_arcade_3d_desc, Icons.Default.Layers, NeonCyan, NeonOrange)
+            TableItem(TableTheme.ARCADE_3D, R.string.theme_preset_arcade_3d, R.string.theme_preset_arcade_3d_desc, Icons.Default.Layers, NeonCyan, NeonOrange),
+            TableItem(TableTheme.REALIDADE_AUMENTADA_AR, R.string.theme_preset_ar, R.string.theme_preset_ar_desc, Icons.Default.ViewInAr, NeonCyan, NeonEmerald)
         )
     }
 
@@ -377,6 +390,9 @@ fun ArenaCustomizationScreen(
         prefs.tableTheme == TableTheme.ARCADE_3D &&
                 prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
                 prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_arcade_3d)
+        prefs.tableTheme == TableTheme.REALIDADE_AUMENTADA_AR &&
+                prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
+                prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_ar)
         else -> stringResource(R.string.customization_custom_preset)
     }
 

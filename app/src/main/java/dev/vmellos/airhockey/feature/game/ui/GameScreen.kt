@@ -145,12 +145,26 @@ fun GameScreen(
         }
     }
 
+    val isArActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR && mode != GameMode.SPLIT_SCREEN
     val is3dActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D && mode != GameMode.SPLIT_SCREEN
     var is3dPresenting by remember { mutableStateOf(is3dActive) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Mesa de Jogo (Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
-        if (is3dActive) {
+        // Mesa de Jogo (Modo AR Sceneview quando o tema REALIDADE_AUMENTADA_AR estiver equipado,
+        // Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
+        if (isArActive) {
+            AirHockeyArenaARScene(
+                viewModel = viewModel,
+                mode = mode,
+                initialScale = prefs.arTableScale,
+                onSwitchTo3D = {
+                    scope.launch {
+                        AirHockeyApp.instance.preferencesRepository.setTableTheme(dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (is3dActive) {
             AirHockeyArena3DScene(
                 viewModel = viewModel,
                 mode = mode,
@@ -298,7 +312,14 @@ fun GameScreen(
                 onExit = {
                     viewModel.stopMatch()
                     onExitToMenu()
-                }
+                },
+                onSwitchTo3D = if (isArActive) {
+                    {
+                        scope.launch {
+                            AirHockeyApp.instance.preferencesRepository.setTableTheme(dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D)
+                        }
+                    }
+                } else null
             )
         }
 

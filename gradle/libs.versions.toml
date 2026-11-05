@@ -54,6 +54,7 @@ play-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", 
 play-app-update = { group = "com.google.android.play", name = "app-update", version.ref = "playAppUpdate" }
 play-app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "playAppUpdate" }
 sceneview = { group = "io.github.sceneview", name = "sceneview", version.ref = "sceneview" }
+arsceneview = { group = "io.github.sceneview", name = "arsceneview", version.ref = "sceneview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
