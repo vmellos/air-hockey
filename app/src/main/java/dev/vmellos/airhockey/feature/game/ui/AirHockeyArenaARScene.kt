@@ -2,6 +2,8 @@ package dev.vmellos.airhockey.feature.game.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -64,7 +66,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +79,9 @@ import androidx.core.content.ContextCompat
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Config
 import com.google.ar.core.HitResult
+import com.google.ar.core.InstantPlacementPoint
 import com.google.ar.core.Plane
+import com.google.ar.core.Point
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
@@ -89,9 +95,11 @@ import io.github.sceneview.ar.ARScene
 import io.github.sceneview.ar.node.ARCameraNode
 import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.ar.rememberARCameraNode
+import io.github.sceneview.ar.rememberAREnvironment
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.node.Node
 import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberMainLightNode
 import io.github.sceneview.rememberModelLoader
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -159,16 +167,6 @@ internal fun screenToTableAR(
 
 /**
  * Renderizador de Realidade Aumentada (AR) para o Air Hockey utilizando o Sceneview e Google ARCore.
- *
- * Suporta:
- * - Lobby de Posicionamento AR com retenção soberana da contagem regressiva e da simulação física
- * - Rastreamento de planos horizontais do mundo real (chão e tampos de mesa)
- * - Retícula de mira animada procedural com indicação de superfície detectada
- * - Botão centralizado de fixação da mesa acoplado à retícula central
- * - Projeção 3D fotorrealista da mesa, rebatedores P1/P2 e disco com posicionamento métrico calibrado
- * - Alternância dinâmica de escala (1:1 Real para chão e 1:4 Miniatura para mesas)
- * - Autorização manual da partida pelo jogador com botão proeminente "Iniciar Partida"
- * - Desprojeção de toque com raio de agarre e deslocamento ergonômico soberano
  */
 @Composable
 fun AirHockeyArenaARScene(
@@ -180,12 +178,24 @@ fun AirHockeyArenaARScene(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
     val coroutineScope = rememberCoroutineScope()
     val preferencesRepo = AirHockeyApp.instance.preferencesRepository
     val prefs by preferencesRepo.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
     val engine = viewModel.engine
+
+    // Dimensões dinâmicas da tela em pixels
+    var screenWidthPx by remember { mutableFloatStateOf(1080f) }
+    var screenHeightPx by remember { mutableFloatStateOf(2340f) }
+
+    LaunchedEffect(view) {
+        if (view.width > 0 && view.height > 0) {
+            screenWidthPx = view.width.toFloat()
+            screenHeightPx = view.height.toFloat()
+        }
+    }
 
     // 1. Verificação de suporte a ARCore e Permissões
     var arAvailability by remember { mutableStateOf<ArCoreApk.Availability?>(null) }
@@ -231,35 +241,43 @@ fun AirHockeyArenaARScene(
         return
     }
 
-    // 2. Inicialização do Motor Gráfico Filament & Carregamento de Modelos 3D
+    // 2. Inicialização do Motor Gráfico Filament & Modelos 3D
     val engine3d = rememberEngine()
     val modelLoader = rememberModelLoader(engine3d)
+    val environment = rememberAREnvironment(engine3d)
+    val mainLightNode = rememberMainLightNode(engine3d) {
+        intensity = 80_000f
+    }
 
     val tableInstance = remember(modelLoader) {
         try {
             modelLoader.createModelInstance("models/mesa_arcade.glb")
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("AirHockeyAR", "Erro ao carregar mesa_arcade.glb: ${e.message}")
             null
         }
     }
     val puckInstance = remember(modelLoader) {
         try {
             modelLoader.createModelInstance("models/disco_cyber.glb")
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("AirHockeyAR", "Erro ao carregar disco_cyber.glb: ${e.message}")
             null
         }
     }
     val p1Instance = remember(modelLoader) {
         try {
             modelLoader.createModelInstance("models/rebatedor_p1.glb")
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("AirHockeyAR", "Erro ao carregar rebatedor_p1.glb: ${e.message}")
             null
         }
     }
     val p2Instance = remember(modelLoader) {
         try {
             modelLoader.createModelInstance("models/rebatedor_p2.glb")
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("AirHockeyAR", "Erro ao carregar rebatedor_p2.glb: ${e.message}")
             null
         }
     }
@@ -306,55 +324,66 @@ fun AirHockeyArenaARScene(
     fun mapZ(engineY: Float): Float = (engineY - 1000f) * 0.00096f
 
     fun resetAnchor() {
+        Log.d("AirHockeyAR", "resetAnchor chamado. Retornando para SCANNING.")
         contentNode?.destroy()
         contentNode = null
         anchorNode?.destroy()
         anchorNode = null
         anchorPos = null
+        detectedHitResult = null
+        surfaceDetected = false
         stagingPhase = ArStagingPhase.SCANNING
     }
 
     fun anchorTableAtHit(hit: HitResult) {
-        val anchor = hit.createAnchor()
-        val ancTranslation = anchor.pose.translation
-        val camTranslation = cameraNode.pose?.translation ?: floatArrayOf(0f, 1f, 1f)
-        val vx = camTranslation[0] - ancTranslation[0]
-        val vz = camTranslation[2] - ancTranslation[2]
-        val yawRad = atan2(vx, vz)
-        val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
+        try {
+            Log.d("AirHockeyAR", "anchorTableAtHit: iniciando ancoragem com trackable=${hit.trackable.javaClass.simpleName}")
+            val anchor = hit.createAnchor()
+            val ancTranslation = anchor.pose.translation
+            val camTranslation = cameraNode.pose?.translation ?: floatArrayOf(0f, 1f, 1f)
+            val vx = camTranslation[0] - ancTranslation[0]
+            val vz = camTranslation[2] - ancTranslation[2]
+            val yawRad = atan2(vx, vz)
+            val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
 
-        anchorYawRad = yawRad
-        anchorPos = Float3(ancTranslation[0], ancTranslation[1], ancTranslation[2])
+            anchorYawRad = yawRad
+            anchorPos = Float3(ancTranslation[0], ancTranslation[1], ancTranslation[2])
+            Log.d("AirHockeyAR", "anchorTableAtHit: anchor em (${ancTranslation[0]}, ${ancTranslation[1]}, ${ancTranslation[2]}), yawDeg=$yawDeg, scale=$currentScaleFactor")
 
-        // Garante que nós estejam desanexados de pais anteriores antes de reorganizar
-        tableNode?.parent = null
-        puckNode?.parent = null
-        p1Node?.parent = null
-        p2Node?.parent = null
+            // Desanexa de pais anteriores antes de reorganizar a hierarquia
+            tableNode?.parent = null
+            puckNode?.parent = null
+            p1Node?.parent = null
+            p2Node?.parent = null
 
-        // Criação de nó de conteúdo desacoplado para manter orientação e escala imunes a atualizações automáticas de pose
-        val newContentNode = Node(engine3d).apply {
-            this.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
-            this.rotation = Float3(0f, yawDeg, 0f)
-            tableNode?.let { addChildNode(it) }
-            puckNode?.let { addChildNode(it) }
-            p1Node?.let { addChildNode(it) }
-            p2Node?.let { addChildNode(it) }
+            // Nó de conteúdo que mantém orientação e escala imunes a atualizações automáticas de pose do AnchorNode
+            val newContentNode = Node(engine3d).apply {
+                this.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
+                this.rotation = Float3(0f, yawDeg, 0f)
+                tableNode?.let { addChildNode(it) }
+                puckNode?.let { addChildNode(it) }
+                p1Node?.let { addChildNode(it) }
+                p2Node?.let { addChildNode(it) }
+            }
+
+            // Sincronização inicial das posições das entidades 3D no plano local da mesa
+            puckNode?.position = Float3(mapX(engine.puck.x), 0.0075f, mapZ(engine.puck.y))
+            p1Node?.position = Float3(mapX(engine.player1Mallet.x), 0.0f, mapZ(engine.player1Mallet.y))
+            p2Node?.position = Float3(mapX(engine.player2Mallet.x), 0.0f, mapZ(engine.player2Mallet.y))
+
+            val newAnchorNode = AnchorNode(engine3d, anchor).apply {
+                isPositionEditable = false
+                addChildNode(newContentNode)
+            }
+
+            contentNode = newContentNode
+            anchorNode = newAnchorNode
+            stagingPhase = ArStagingPhase.POSITIONED
+            Log.d("AirHockeyAR", "anchorTableAtHit concluído com sucesso. StagingPhase alterada para POSITIONED.")
+        } catch (e: Exception) {
+            Log.e("AirHockeyAR", "Falha ao ancorar mesa: ${e.message}", e)
+            Toast.makeText(context, "Erro ao fixar arena: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-
-        // Sincronização inicial das posições dos nós 3D
-        puckNode?.position = Float3(mapX(engine.puck.x), 0.0075f, mapZ(engine.puck.y))
-        p1Node?.position = Float3(mapX(engine.player1Mallet.x), 0.0f, mapZ(engine.player1Mallet.y))
-        p2Node?.position = Float3(mapX(engine.player2Mallet.x), 0.0f, mapZ(engine.player2Mallet.y))
-
-        val newAnchorNode = AnchorNode(engine3d, anchor).apply {
-            isPositionEditable = false
-            addChildNode(newContentNode)
-        }
-
-        contentNode = newContentNode
-        anchorNode = newAnchorNode
-        stagingPhase = ArStagingPhase.POSITIONED
     }
 
     DisposableEffect(Unit) {
@@ -372,8 +401,14 @@ fun AirHockeyArenaARScene(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .onSizeChanged { size ->
+                if (size.width > 0 && size.height > 0) {
+                    screenWidthPx = size.width.toFloat()
+                    screenHeightPx = size.height.toFloat()
+                }
+            }
             .pointerInput(engine, stagingPhase, anchorPos, anchorYawRad, currentScaleFactor, touchOffset) {
-                // Entrada de toque desativada durante o Lobby de Posicionamento preliminar
+                // Entrada de toque desativada durante a calibração preliminar
                 if (stagingPhase != ArStagingPhase.PLAYING) return@pointerInput
 
                 sceneARState.activePointerP1 = null
@@ -439,28 +474,51 @@ fun AirHockeyArenaARScene(
             modelLoader = modelLoader,
             cameraNode = cameraNode,
             childNodes = childNodes,
+            environment = environment,
+            mainLightNode = mainLightNode,
             planeRenderer = stagingPhase == ArStagingPhase.SCANNING,
             sessionConfiguration = { _, config ->
                 config.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
                 config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                config.focusMode = Config.FocusMode.AUTO
             },
             onSessionUpdated = { _, frame ->
                 if (stagingPhase == ArStagingPhase.SCANNING) {
-                    val viewWidth = frame.camera.imageIntrinsics?.imageDimensions?.get(0)?.toFloat() ?: 1080f
-                    val viewHeight = frame.camera.imageIntrinsics?.imageDimensions?.get(1)?.toFloat() ?: 1920f
-                    val hits = frame.hitTest(viewWidth / 2f, viewHeight / 2f)
-                    val validPlaneHit = hits.firstOrNull { hit ->
-                        val trackable = hit.trackable
-                        trackable is Plane &&
-                                trackable.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
-                                trackable.isPoseInPolygon(hit.hitPose)
+                    val cx = screenWidthPx / 2f
+                    val cy = screenHeightPx / 2f
+
+                    val hits = try {
+                        frame.hitTest(cx, cy)
+                    } catch (e: Exception) {
+                        emptyList()
                     }
+
+                    val validPlaneHit = hits.firstOrNull { hit ->
+                        when (val trackable = hit.trackable) {
+                            is Plane -> {
+                                trackable.type == Plane.Type.HORIZONTAL_UPWARD_FACING &&
+                                        (trackable.isPoseInPolygon(hit.hitPose) || trackable.isPoseInExtents(hit.hitPose))
+                            }
+                            is InstantPlacementPoint -> true
+                            is Point -> trackable.orientationMode == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL
+                            else -> false
+                        }
+                    } ?: hits.firstOrNull { it.trackable is Plane }
+                      ?: try {
+                          frame.hitTestInstantPlacement(cx, cy, 2.0f).firstOrNull()
+                      } catch (_: Exception) {
+                          null
+                      }
+
                     if (validPlaneHit != null) {
+                        if (!surfaceDetected) {
+                            Log.d("AirHockeyAR", "Superfície detectada no centro ($cx, $cy)! Tipo: ${validPlaneHit.trackable.javaClass.simpleName}")
+                        }
                         surfaceDetected = true
                         detectedHitResult = validPlaneHit
                     } else {
                         surfaceDetected = false
-                        detectedHitResult = null
                     }
                 } else {
                     // Sincronização contínua das posições físicas com as entidades 3D no plano ancorado
@@ -534,14 +592,24 @@ fun AirHockeyArenaARScene(
                     modifier = Modifier.padding(top = 180.dp)
                 ) {
                     Surface(
-                        color = if (surfaceDetected) Color(0xEE00E5FF) else Color(0x880B111E),
+                        color = if (surfaceDetected) Color(0xEE00E5FF) else Color(0xAA0B111E),
                         shape = RoundedCornerShape(28.dp),
                         border = BorderStroke(
                             1.5.dp,
-                            if (surfaceDetected) Color(0xFF00E5FF) else Color(0xFF475569)
+                            if (surfaceDetected) Color(0xFF00E5FF) else Color(0xFF38BDF8)
                         ),
-                        modifier = Modifier.clickable(enabled = surfaceDetected) {
-                            detectedHitResult?.let { anchorTableAtHit(it) }
+                        modifier = Modifier.clickable {
+                            Log.d("AirHockeyAR", "Clique no botão Posicionar Mesa (surfaceDetected=$surfaceDetected)")
+                            val hit = detectedHitResult
+                            if (hit != null) {
+                                anchorTableAtHit(hit)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.ar_searching_surface_hint),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     ) {
                         Row(
@@ -552,22 +620,32 @@ fun AirHockeyArenaARScene(
                             Icon(
                                 imageVector = Icons.Default.Place,
                                 contentDescription = null,
-                                tint = if (surfaceDetected) Color.Black else Color(0xFF94A3B8),
+                                tint = if (surfaceDetected) Color.Black else Color(0xFF00E5FF),
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = if (surfaceDetected) {
-                                    stringResource(R.string.ar_place_table_button)
-                                } else {
-                                    stringResource(R.string.ar_searching_surface_hint)
-                                },
-                                color = if (surfaceDetected) Color.Black else Color(0xFF94A3B8),
-                                fontSize = 13.sp,
+                                text = stringResource(R.string.ar_place_table_button),
+                                color = if (surfaceDetected) Color.Black else Color.White,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (surfaceDetected) {
+                            stringResource(R.string.ar_surface_ready_hint)
+                        } else {
+                            stringResource(R.string.ar_searching_surface_hint)
+                        },
+                        color = if (surfaceDetected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
                 }
             }
         }
@@ -598,6 +676,7 @@ fun AirHockeyArenaARScene(
                     // Botão Iniciar Partida
                     Button(
                         onClick = {
+                            Log.d("AirHockeyAR", "Jogador acionou Iniciar Partida. Liberando contagem regressiva.")
                             stagingPhase = ArStagingPhase.PLAYING
                             viewModel.startCountdownAfterPresentation()
                         },
