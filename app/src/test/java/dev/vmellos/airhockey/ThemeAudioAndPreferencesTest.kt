@@ -20,6 +20,7 @@ class ThemeAudioAndPreferencesTest {
     fun testDefaultTargetScoreIsThree() {
         val prefs = UserPreferences()
         assertEquals("Target score padrão deve ser 3", 3, prefs.targetScore)
+        assertEquals("CameraZoom3D padrão deve ser STANDARD", dev.vmellos.airhockey.core.preferences.CameraZoom3D.STANDARD, prefs.cameraZoom3d)
     }
 
     @Test

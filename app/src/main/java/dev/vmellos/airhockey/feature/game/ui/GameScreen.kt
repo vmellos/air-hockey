@@ -1,20 +1,55 @@
 package dev.vmellos.airhockey.feature.game.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.util.findActivity
 import dev.vmellos.airhockey.feature.game.GameMode
@@ -110,13 +145,29 @@ fun GameScreen(
         }
     }
 
+    val is3dActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D && mode != GameMode.SPLIT_SCREEN
+    var is3dPresenting by remember { mutableStateOf(is3dActive) }
+
     Box(modifier = modifier.fillMaxSize()) {
-        // Canvas da Mesa de Jogo
-        AirHockeyArenaCanvas(
-            viewModel = viewModel,
-            mode = mode,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Mesa de Jogo (Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
+        if (is3dActive) {
+            AirHockeyArena3DScene(
+                viewModel = viewModel,
+                mode = mode,
+                zoom = prefs.cameraZoom3d,
+                onPresentationFinished = {
+                    is3dPresenting = false
+                    viewModel.startCountdownAfterPresentation()
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            AirHockeyArenaCanvas(
+                viewModel = viewModel,
+                mode = mode,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         // Placar e Controles estilizados pelo tema ativo
         ScoreBoardOverlay(
@@ -127,12 +178,102 @@ fun GameScreen(
             onPauseClick = { viewModel.pauseMatch() }
         )
 
-        // Overlay de Contagem Regressiva estilizado por tema
-        if (matchState.status == MatchStatus.COUNTDOWN) {
+        // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D)
+        if (matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting) {
             CountdownOverlay(
                 countdownNumber = matchState.countdownNumber,
                 tableTheme = prefs.tableTheme
             )
+        }
+
+        // Indicador discreto para Pular a Apresentação 3D (Tap to Skip)
+        if (is3dActive && is3dPresenting) {
+            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+            val alpha by infiniteTransition.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 0.95f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "alpha"
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(bottom = 36.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(
+                    color = Color(0x66000000),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = alpha * 0.7f)),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.presentation_skip_hint),
+                        color = Color.White.copy(alpha = alpha),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
+
+        // Botão de Alternância de Zoom 3D no HUD (Próximo, Padrão, Amplo)
+        if (is3dActive && !is3dPresenting && matchState.status != MatchStatus.PAUSED && matchState.status != MatchStatus.GAME_OVER) {
+            val nextZoom = when (prefs.cameraZoom3d) {
+                CameraZoom3D.STANDARD -> CameraZoom3D.WIDE
+                CameraZoom3D.WIDE -> CameraZoom3D.CLOSE
+                CameraZoom3D.CLOSE -> CameraZoom3D.STANDARD
+            }
+            val zoomLabel = when (prefs.cameraZoom3d) {
+                CameraZoom3D.STANDARD -> stringResource(R.string.camera_zoom_standard)
+                CameraZoom3D.WIDE -> stringResource(R.string.camera_zoom_wide)
+                CameraZoom3D.CLOSE -> stringResource(R.string.camera_zoom_close)
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(start = 16.dp, top = 16.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Surface(
+                    color = Color(0x44000000),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.6f)),
+                    modifier = Modifier.clickable {
+                        scope.launch {
+                            AirHockeyApp.instance.preferencesRepository.updateCameraZoom3d(nextZoom)
+                        }
+                    }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = null,
+                            tint = NeonCyan,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = zoomLabel,
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
         }
 
         // Overlay de Gol/Ponto estilizado por tema

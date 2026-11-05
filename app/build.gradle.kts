@@ -15,8 +15,8 @@ android {
         applicationId = "dev.vmellos.airhockey"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.4.5"
+        versionCode = 13
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -125,6 +125,9 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    // 3D Sceneview (Google Filament)
+    implementation(libs.sceneview)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

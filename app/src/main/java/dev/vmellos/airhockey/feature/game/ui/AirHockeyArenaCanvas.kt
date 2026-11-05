@@ -112,7 +112,7 @@ fun AirHockeyArenaCanvas(
         TableTheme.TOKAMAK_REACTOR -> TokamakDark
         TableTheme.CYBER_PONG -> PongDark
         TableTheme.CYBER_COLOSSEUM -> ColosseumDark
-        TableTheme.CLASSIC_NEON -> TableBgDark
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> TableBgDark
     }
 
     Box(
@@ -258,7 +258,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakRadiation
                 TableTheme.CYBER_PONG -> PongGreen
                 TableTheme.CYBER_COLOSSEUM -> ColosseumGold
-                TableTheme.CLASSIC_NEON -> NeonCyan
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonCyan
             }
             val p2ThemeColor = when (prefs.tableTheme) {
                 TableTheme.CYBER_SOCCER -> NeonRuby
@@ -271,7 +271,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakPlasma
                 TableTheme.CYBER_PONG -> PongGreenBright
                 TableTheme.CYBER_COLOSSEUM -> ColosseumCrimson
-                TableTheme.CLASSIC_NEON -> NeonOrange
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonOrange
             }
             val wallHitColor = when (prefs.tableTheme) {
                 TableTheme.CYBER_SOCCER -> CyberSoccerGold
@@ -284,7 +284,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> TokamakRadiationBright
                 TableTheme.CYBER_PONG -> PongGreenBright
                 TableTheme.CYBER_COLOSSEUM -> ColosseumGoldBright
-                TableTheme.CLASSIC_NEON -> Color(0xFFE2E8F0)
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xFFE2E8F0)
             }
 
             synchronized(pendingCollisions) {
@@ -328,7 +328,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
                 TableTheme.CYBER_PONG -> drawCyberPongTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
                 TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
-                TableTheme.CLASSIC_NEON -> drawChamferedTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left = offsetX, top = offsetY, width = vWidth * scale, height = vHeight * scale, scale = scale, isExtendedHost = isExtendedHost, isExtendedGuest = isExtendedGuest, isConnectedGuest = isConnectedGuest)
             }
 
             // 3. Desenha metas da mesa
@@ -379,7 +379,7 @@ fun AirHockeyArenaCanvas(
                     if (!isExtendedHost) drawColosseumGoal(goalLeft, goalW, offsetY, scale, p2ThemeColor, isTop = true)
                     drawColosseumGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
                 }
-                TableTheme.CLASSIC_NEON -> {
+                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
                     if (!isExtendedHost) drawAngledGoal(goalLeft, goalW, offsetY, scale, NeonOrange, isTop = true)
                     drawAngledGoal(goalLeft, goalW, screenBottom, scale, bottomGoalColor, isTop = false)
                 }
