@@ -123,8 +123,8 @@ data class HostTelemetryPacket(
 }
 
 data class GuestInputPacket(
-    val sequenceNumber: Long,
-    val timestampNano: Long,
+    val sequenceNumber: Long = 0L,
+    val timestampNano: Long = 0L,
     val guestTargetX: Float,
     val guestTargetY: Float
 ) {

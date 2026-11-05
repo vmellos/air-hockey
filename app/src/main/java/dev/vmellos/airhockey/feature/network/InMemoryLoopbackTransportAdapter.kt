@@ -42,17 +42,24 @@ class InMemoryLoopbackTransportAdapter private constructor() : TableTransport {
     private val _connectionState = MutableStateFlow(TransportConnectionState.CONNECTED)
     override val connectionState: StateFlow<TransportConnectionState> = _connectionState.asStateFlow()
 
+    private var telemetrySeq = 0L
+    private var guestInputSeq = 0L
+
     override suspend fun sendControl(event: TableControlEvent) {
         val target = peer ?: return
         target._controlEvents.emit(event)
     }
 
     override fun sendTelemetry(packet: HostTelemetryPacket) {
-        peer?._telemetryFrames?.tryEmit(packet)
+        val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++telemetrySeq
+        val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
+        peer?._telemetryFrames?.tryEmit(outgoing)
     }
 
     override fun sendGuestInput(packet: GuestInputPacket) {
-        peer?._guestInputs?.tryEmit(packet)
+        val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++guestInputSeq
+        val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
+        peer?._guestInputs?.tryEmit(outgoing)
     }
 
     override suspend fun close() {

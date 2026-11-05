@@ -158,4 +158,28 @@ class TableTransportTest {
         assertEquals(2.toByte(), parsed.packet.collisionEvent)
         assertEquals(0.85f, parsed.packet.collisionIntensity, 0.01f)
     }
+
+    @Test
+    fun testInMemoryLoopbackAutoMonotonicSequencing() = runBlocking {
+        val (host, guest) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+
+        // Envia pacote com sequenceNumber = 0L (padrão)
+        val t1 = HostTelemetryPacket(
+            puckX = 500f, puckY = 1000f, puckVx = 0f, puckVy = 0f,
+            hostMalletX = 500f, hostMalletY = 1750f, guestMalletX = 500f, guestMalletY = 250f
+        )
+        host.sendTelemetry(t1)
+        val received1 = guest.telemetryFrames.first()
+        assertEquals(1L, received1.sequenceNumber)
+
+        val t2 = t1.copy(puckX = 510f)
+        host.sendTelemetry(t2)
+        val received2 = guest.telemetryFrames.first()
+        assertEquals(2L, received2.sequenceNumber)
+
+        val i1 = GuestInputPacket(guestTargetX = 490f, guestTargetY = 260f)
+        guest.sendGuestInput(i1)
+        val recInput1 = host.guestInputs.first()
+        assertEquals(1L, recInput1.sequenceNumber)
+    }
 }

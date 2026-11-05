@@ -51,18 +51,36 @@ class HybridSocketTransportAdapter(
     private val _connectionState = MutableStateFlow(TransportConnectionState.IDLE)
     override val connectionState: StateFlow<TransportConnectionState> = _connectionState.asStateFlow()
 
+    private var hostTelemetrySeq = 0L
+    private var guestInputSeq = 0L
+
+    private var lastReceivedTelemetrySeq = 0L
+    private var lastReceivedGuestInputSeq = 0L
+
     init {
         setupTransportChannels()
+    }
+
+    internal fun isUdpHealthy(): Boolean {
+        val now = System.currentTimeMillis()
+        val last = udpSocket.lastPacketReceivedTimestamp
+        return last > 0L && (now - last) <= 200L
     }
 
     private fun setupTransportChannels() {
         udpSocket.startListening()
 
         udpSocket.onHostTelemetryReceived = { packet ->
-            _telemetryFrames.tryEmit(packet)
+            if (packet.sequenceNumber > lastReceivedTelemetrySeq) {
+                lastReceivedTelemetrySeq = packet.sequenceNumber
+                _telemetryFrames.tryEmit(packet)
+            }
         }
         udpSocket.onGuestInputReceived = { input ->
-            _guestInputs.tryEmit(input)
+            if (input.sequenceNumber > lastReceivedGuestInputSeq) {
+                lastReceivedGuestInputSeq = input.sequenceNumber
+                _guestInputs.tryEmit(input)
+            }
         }
 
         if (isHost) {
@@ -78,7 +96,12 @@ class HybridSocketTransportAdapter(
             server.onMessageReceived = { line ->
                 val event = TableControlEvent.fromWireString(line)
                 when (event) {
-                    is TableControlEvent.GuestInputFallback -> _guestInputs.tryEmit(event.packet)
+                    is TableControlEvent.GuestInputFallback -> {
+                        if (!isUdpHealthy() && event.packet.sequenceNumber > lastReceivedGuestInputSeq) {
+                            lastReceivedGuestInputSeq = event.packet.sequenceNumber
+                            _guestInputs.tryEmit(event.packet)
+                        }
+                    }
                     else -> _controlEvents.tryEmit(event)
                 }
             }
@@ -100,7 +123,12 @@ class HybridSocketTransportAdapter(
             client.onMessageReceived = { line ->
                 val event = TableControlEvent.fromWireString(line)
                 when (event) {
-                    is TableControlEvent.TelemetryFallback -> _telemetryFrames.tryEmit(event.packet)
+                    is TableControlEvent.TelemetryFallback -> {
+                        if (!isUdpHealthy() && event.packet.sequenceNumber > lastReceivedTelemetrySeq) {
+                            lastReceivedTelemetrySeq = event.packet.sequenceNumber
+                            _telemetryFrames.tryEmit(event.packet)
+                        }
+                    }
                     else -> _controlEvents.tryEmit(event)
                 }
             }
@@ -121,25 +149,22 @@ class HybridSocketTransportAdapter(
     }
 
     override fun sendTelemetry(packet: HostTelemetryPacket) {
-        udpSocket.sendHostTelemetry(
-            packet.puckX, packet.puckY,
-            packet.puckVx, packet.puckVy,
-            packet.hostMalletX, packet.hostMalletY,
-            packet.guestMalletX, packet.guestMalletY,
-            packet.collisionEvent, packet.collisionIntensity,
-            packet.puckLastHitBy
-        )
-        // Fallback de contingência periódica via TCP para contornar bloqueios de UDP em roteadores Wi-Fi
-        if (packet.sequenceNumber % 4L == 0L) {
-            tcpServer?.sendMessage(TableControlEvent.TelemetryFallback(packet).toWireString())
+        val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++hostTelemetrySeq
+        val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
+        udpSocket.sendHostTelemetryPacket(outgoing)
+        // Fallback de contingência periódica throttled via TCP para contornar bloqueios de UDP (~15 Hz)
+        if (seq % 8L == 0L) {
+            tcpServer?.sendMessage(TableControlEvent.TelemetryFallback(outgoing).toWireString())
         }
     }
 
     override fun sendGuestInput(packet: GuestInputPacket) {
-        udpSocket.sendGuestInput(packet.guestTargetX, packet.guestTargetY)
-        // Fallback de contingência periódica via TCP
-        if (packet.sequenceNumber % 4L == 0L) {
-            tcpClient?.sendMessage(TableControlEvent.GuestInputFallback(packet).toWireString())
+        val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++guestInputSeq
+        val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
+        udpSocket.sendGuestInputPacket(outgoing)
+        // Fallback de contingência periódica throttled via TCP (~15 Hz)
+        if (seq % 8L == 0L) {
+            tcpClient?.sendMessage(TableControlEvent.GuestInputFallback(outgoing).toWireString())
         }
     }
 

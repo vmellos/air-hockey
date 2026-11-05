@@ -30,7 +30,7 @@ class UdpTelemetrySocket(
     private var sequenceCounter = 0L
 
     @Volatile var lastPacketReceivedTimestamp: Long = 0L
-        private set
+        internal set
 
     var onHostTelemetryReceived: ((HostTelemetryPacket) -> Unit)? = null
     var onGuestInputReceived: ((GuestInputPacket) -> Unit)? = null
@@ -102,6 +102,14 @@ class UdpTelemetrySocket(
         }
     }
 
+    fun sendHostTelemetryPacket(packet: HostTelemetryPacket) {
+        outbox.trySend(packet.toByteArray())
+    }
+
+    fun sendGuestInputPacket(packet: GuestInputPacket) {
+        outbox.trySend(packet.toByteArray())
+    }
+
     fun sendHostTelemetry(
         puckX: Float, puckY: Float,
         puckVx: Float, puckVy: Float,
@@ -126,7 +134,7 @@ class UdpTelemetrySocket(
             collisionIntensity = collisionIntensity,
             puckLastHitBy = puckLastHitBy
         )
-        outbox.trySend(telemetry.toByteArray())
+        sendHostTelemetryPacket(telemetry)
     }
 
     fun sendGuestInput(targetX: Float, targetY: Float) {
@@ -136,7 +144,7 @@ class UdpTelemetrySocket(
             guestTargetX = targetX,
             guestTargetY = targetY
         )
-        outbox.trySend(input.toByteArray())
+        sendGuestInputPacket(input)
     }
 
     fun stop() {
