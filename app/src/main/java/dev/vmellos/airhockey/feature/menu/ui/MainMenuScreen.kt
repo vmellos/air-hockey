@@ -110,17 +110,19 @@ fun MainMenuScreen(
     val context = LocalContext.current
     val activity = context.findActivity()
 
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        billingManager.events.collect { event ->
-            when (event) {
-                is dev.vmellos.airhockey.core.billing.BillingEvent.PurchaseSuccess -> {
-                    android.widget.Toast.makeText(context, context.getString(R.string.remove_ads_feedback_success), android.widget.Toast.LENGTH_SHORT).show()
+    androidx.compose.runtime.LaunchedEffect(billingManager.isPurchaseSupported) {
+        if (billingManager.isPurchaseSupported) {
+            billingManager.events.collect { event ->
+                when (event) {
+                    is dev.vmellos.airhockey.core.billing.BillingEvent.PurchaseSuccess -> {
+                        android.widget.Toast.makeText(context, context.getString(R.string.remove_ads_feedback_success), android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    is dev.vmellos.airhockey.core.billing.BillingEvent.BillingError -> {
+                        val msg = event.message?.takeIf { it.isNotBlank() } ?: context.getString(R.string.remove_ads_feedback_error)
+                        android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {}
                 }
-                is dev.vmellos.airhockey.core.billing.BillingEvent.BillingError -> {
-                    val msg = event.message?.takeIf { it.isNotBlank() } ?: context.getString(R.string.remove_ads_feedback_error)
-                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                }
-                else -> {}
             }
         }
     }
@@ -194,7 +196,7 @@ fun MainMenuScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (!isAdsRemovedPermanently && activity != null) {
+                    if (billingManager.isPurchaseSupported && !isAdsRemovedPermanently && activity != null) {
                         IconButton(
                             onClick = { billingManager.launchPurchaseFlow(activity) },
                             modifier = Modifier
@@ -291,8 +293,8 @@ fun MainMenuScreen(
                 )
             }
 
-            // Banner de Atualização Flexível Concluída
-            if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
+            // Banner de Atualização Flexível Concluída (apenas na Google Play Store)
+            if (dev.vmellos.airhockey.BuildConfig.FLAVOR != "samsung" && inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
                 InAppUpdateDownloadedBanner(
                     onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
                     onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }

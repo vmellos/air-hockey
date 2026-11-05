@@ -103,14 +103,16 @@ fun SettingsScreen(
     val cardShape = CutCornerShape(14.dp)
     val cardBorder = BorderStroke(1.dp, Color(0x3300E5FF))
 
-    LaunchedEffect(Unit) {
-        billingManager.events.collectLatest { event ->
-            when (event) {
-                is BillingEvent.PurchaseSuccess -> feedbackMessage = successStr
-                is BillingEvent.RestoreSuccess -> feedbackMessage = restoredStr
-                is BillingEvent.RestoreNotFound -> feedbackMessage = notFoundStr
-                is BillingEvent.PurchaseCanceled -> feedbackMessage = canceledStr
-                is BillingEvent.BillingError -> feedbackMessage = errorStr
+    LaunchedEffect(billingManager.isPurchaseSupported) {
+        if (billingManager.isPurchaseSupported) {
+            billingManager.events.collectLatest { event ->
+                when (event) {
+                    is BillingEvent.PurchaseSuccess -> feedbackMessage = successStr
+                    is BillingEvent.RestoreSuccess -> feedbackMessage = restoredStr
+                    is BillingEvent.RestoreNotFound -> feedbackMessage = notFoundStr
+                    is BillingEvent.PurchaseCanceled -> feedbackMessage = canceledStr
+                    is BillingEvent.BillingError -> feedbackMessage = errorStr
+                }
             }
         }
     }
@@ -232,128 +234,130 @@ fun SettingsScreen(
                 }
             }
 
-            // Seção Remoção Permanente de Anúncios
-            Text(
-                text = stringResource(R.string.remove_ads_title),
-                color = Color(0xFF00E5FF),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (billingManager.isPurchaseSupported) {
+                // Seção Remoção Permanente de Anúncios
+                Text(
+                    text = stringResource(R.string.remove_ads_title),
+                    color = Color(0xFF00E5FF),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            if (isAdsRemovedPermanently) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xD9064E3B)),
-                    shape = cardShape,
-                    border = BorderStroke(1.dp, Color(0xFF10B981)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                if (isAdsRemovedPermanently) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xD9064E3B)),
+                        shape = cardShape,
+                        border = BorderStroke(1.dp, Color(0xFF10B981)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.remove_ads_active),
-                                color = Color(0xFF10B981),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(32.dp)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.remove_ads_active),
+                                    color = Color(0xFF10B981),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.remove_ads_active_desc),
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+                        shape = cardShape,
+                        border = cardBorder,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = stringResource(R.string.remove_ads_active_desc),
-                                color = Color(0xFF94A3B8),
+                                text = stringResource(R.string.remove_ads_desc),
+                                color = Color(0xFFCBD5E1),
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
                             )
-                        }
-                    }
-                }
-            } else {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
-                    shape = cardShape,
-                    border = cardBorder,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(R.string.remove_ads_desc),
-                            color = Color(0xFFCBD5E1),
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                onClick = {
-                                    if (activity != null) {
-                                        billingManager.launchPurchaseFlow(activity)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(
+                                    onClick = {
+                                        if (activity != null) {
+                                            billingManager.launchPurchaseFlow(activity)
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                                    shape = CutCornerShape(8.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ShoppingBag,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0A0E1A),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    val buttonText = formattedPrice ?: if (isLoadingPrice) {
+                                        stringResource(R.string.remove_ads_price_loading)
+                                    } else {
+                                        stringResource(R.string.remove_ads_buy)
                                     }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                                shape = CutCornerShape(8.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingBag,
-                                    contentDescription = null,
-                                    tint = Color(0xFF0A0E1A),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                val buttonText = formattedPrice ?: if (isLoadingPrice) {
-                                    stringResource(R.string.remove_ads_price_loading)
-                                } else {
-                                    stringResource(R.string.remove_ads_buy)
+                                    Text(
+                                        text = buttonText,
+                                        color = Color(0xFF0A0E1A),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
                                 }
-                                Text(
-                                    text = buttonText,
-                                    color = Color(0xFF0A0E1A),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
 
-                            OutlinedButton(
-                                onClick = { billingManager.restorePurchases() },
-                                shape = CutCornerShape(8.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF)),
-                                border = BorderStroke(1.dp, Color(0xFF00E5FF))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Restore,
-                                    contentDescription = null,
-                                    tint = Color(0xFF00E5FF),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.remove_ads_restore),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                OutlinedButton(
+                                    onClick = { billingManager.restorePurchases() },
+                                    shape = CutCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF)),
+                                    border = BorderStroke(1.dp, Color(0xFF00E5FF))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Restore,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00E5FF),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = stringResource(R.string.remove_ads_restore),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             // Seção Perfil do Jogador
             Text(
