@@ -148,6 +148,7 @@ fun GameScreen(
     val isArActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR && mode != GameMode.SPLIT_SCREEN
     val is3dActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D && mode != GameMode.SPLIT_SCREEN
     var is3dPresenting by remember { mutableStateOf(is3dActive) }
+    var arStagingPhase by remember { mutableStateOf(if (isArActive) ArStagingPhase.SCANNING else ArStagingPhase.PLAYING) }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Mesa de Jogo (Modo AR Sceneview quando o tema REALIDADE_AUMENTADA_AR estiver equipado,
@@ -157,10 +158,12 @@ fun GameScreen(
                 viewModel = viewModel,
                 mode = mode,
                 initialScale = prefs.arTableScale,
-                onSwitchTo3D = {
-                    scope.launch {
-                        AirHockeyApp.instance.preferencesRepository.setTableTheme(dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D)
-                    }
+                onStagingPhaseChanged = { phase ->
+                    arStagingPhase = phase
+                },
+                onExit = {
+                    viewModel.stopMatch()
+                    onExitToMenu()
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -183,17 +186,31 @@ fun GameScreen(
             )
         }
 
-        // Placar e Controles estilizados pelo tema ativo
-        ScoreBoardOverlay(
-            matchState = matchState,
-            tableTheme = prefs.tableTheme,
-            isSoundEnabled = isSoundEnabled,
-            onToggleSound = { viewModel.toggleSound() },
-            onPauseClick = { viewModel.pauseMatch() }
-        )
+        // Placar e Controles estilizados pelo tema ativo (oculto no AR durante a fase preliminar de calibragem)
+        val showScoreboard = if (isArActive) {
+            arStagingPhase == ArStagingPhase.PLAYING
+        } else {
+            true
+        }
 
-        // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D)
-        if (matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting) {
+        if (showScoreboard) {
+            ScoreBoardOverlay(
+                matchState = matchState,
+                tableTheme = prefs.tableTheme,
+                isSoundEnabled = isSoundEnabled,
+                onToggleSound = { viewModel.toggleSound() },
+                onPauseClick = { viewModel.pauseMatch() }
+            )
+        }
+
+        // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D ou confirmação no lobby AR)
+        val showCountdown = if (isArActive) {
+            arStagingPhase == ArStagingPhase.PLAYING && matchState.status == MatchStatus.COUNTDOWN
+        } else {
+            matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting
+        }
+
+        if (showCountdown) {
             CountdownOverlay(
                 countdownNumber = matchState.countdownNumber,
                 tableTheme = prefs.tableTheme

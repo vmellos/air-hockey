@@ -16,6 +16,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,13 +31,13 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CropSquare
-import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material3.Button
@@ -58,7 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -74,15 +74,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Config
-import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
 import com.google.ar.core.Plane
-import com.google.ar.core.Session
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.preferences.ArTableScale
-import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
@@ -96,12 +93,23 @@ import io.github.sceneview.node.ModelNode
 import io.github.sceneview.node.Node
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
-import io.github.sceneview.rememberNodes
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+
+/**
+ * Fases operacionais da experiência de Realidade Aumentada (AR).
+ */
+enum class ArStagingPhase {
+    /** Rastreamento de superfície com retícula central ativa e botão centralizado de fixação. */
+    SCANNING,
+    /** Mesa ancorada e modelos 3D projetados na superfície; lobby de conferência e disparo manual. */
+    POSITIONED,
+    /** Partida em andamento; física e desprojeção de toque ativas. */
+    PLAYING
+}
 
 /**
  * Estado desacoplado de controle da Arena em Realidade Aumentada (AR).
@@ -153,19 +161,22 @@ internal fun screenToTableAR(
  * Renderizador de Realidade Aumentada (AR) para o Air Hockey utilizando o Sceneview e Google ARCore.
  *
  * Suporta:
+ * - Lobby de Posicionamento AR com retenção soberana da contagem regressiva e da simulação física
  * - Rastreamento de planos horizontais do mundo real (chão e tampos de mesa)
- * - Retícula de mira animada procedural com indicação de superfície
- * - Ancoragem da mesa com orientação frontal alinhada ao jogador
+ * - Retícula de mira animada procedural com indicação de superfície detectada
+ * - Botão centralizado de fixação da mesa acoplado à retícula central
+ * - Projeção 3D fotorrealista da mesa, rebatedores P1/P2 e disco com posicionamento métrico calibrado
  * - Alternância dinâmica de escala (1:1 Real para chão e 1:4 Miniatura para mesas)
- * - Projeção de toque no plano da âncora com raio de agarre e deslocamento ergonômico
- * - Transição fluida de retorno para a Arena 3D Padrão a qualquer momento
+ * - Autorização manual da partida pelo jogador com botão proeminente "Iniciar Partida"
+ * - Desprojeção de toque com raio de agarre e deslocamento ergonômico soberano
  */
 @Composable
 fun AirHockeyArenaARScene(
     viewModel: GameViewModel,
     mode: GameMode,
     initialScale: ArTableScale = ArTableScale.MINIATURE_1_4,
-    onSwitchTo3D: () -> Unit = {},
+    onStagingPhaseChanged: (ArStagingPhase) -> Unit = {},
+    onExit: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -197,14 +208,14 @@ fun AirHockeyArenaARScene(
     ) { granted ->
         hasCameraPermission = granted
         if (!granted) {
-            onSwitchTo3D()
+            onExit()
         }
     }
 
     // Se o dispositivo for comprovadamente incompatível com ARCore, exibe tela de fallback
     if (arAvailability == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE) {
         ARUnsupportedFallback(
-            onSwitchTo3D = onSwitchTo3D,
+            onExit = onExit,
             modifier = modifier
         )
         return
@@ -214,13 +225,13 @@ fun AirHockeyArenaARScene(
     if (!hasCameraPermission) {
         ARPermissionPrompt(
             onGrantPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-            onSwitchTo3D = onSwitchTo3D,
+            onExit = onExit,
             modifier = modifier
         )
         return
     }
 
-    // 2. Inicialização do Motor Gráfico Filament & ARCore
+    // 2. Inicialização do Motor Gráfico Filament & Carregamento de Modelos 3D
     val engine3d = rememberEngine()
     val modelLoader = rememberModelLoader(engine3d)
 
@@ -261,20 +272,27 @@ fun AirHockeyArenaARScene(
     val cameraNode = rememberARCameraNode(engine3d)
     val sceneARState = remember { SceneARState() }
 
-    // Estados de Rastreamento e Ancoragem
-    var isAnchored by remember { mutableStateOf(false) }
+    // Estados do Lobby de Posicionamento AR
+    var stagingPhase by remember { mutableStateOf(ArStagingPhase.SCANNING) }
     var surfaceDetected by remember { mutableStateOf(false) }
     var detectedHitResult by remember { mutableStateOf<HitResult?>(null) }
+
     var anchorNode by remember { mutableStateOf<AnchorNode?>(null) }
+    var contentNode by remember { mutableStateOf<Node?>(null) }
     var anchorPos by remember { mutableStateOf<Float3?>(null) }
     var anchorYawRad by remember { mutableFloatStateOf(0f) }
 
     var currentScale by remember { mutableStateOf(initialScale) }
     val currentScaleFactor = currentScale.scaleFactor
 
-    // Atualiza a escala do AnchorNode dinamicamente quando a preferência muda
-    LaunchedEffect(currentScale, anchorNode) {
-        anchorNode?.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
+    // Notifica o GameScreen sobre transições do ciclo de AR
+    LaunchedEffect(stagingPhase) {
+        onStagingPhaseChanged(stagingPhase)
+    }
+
+    // Atualiza a escala do contentNode dinamicamente quando a preferência muda
+    LaunchedEffect(currentScale, contentNode) {
+        contentNode?.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
     }
 
     // Higienização de Ponteiros de Toque
@@ -284,25 +302,79 @@ fun AirHockeyArenaARScene(
         }
     }
 
+    fun mapX(engineX: Float): Float = (engineX - 500f) * 0.00108f
+    fun mapZ(engineY: Float): Float = (engineY - 1000f) * 0.00096f
+
+    fun resetAnchor() {
+        contentNode?.destroy()
+        contentNode = null
+        anchorNode?.destroy()
+        anchorNode = null
+        anchorPos = null
+        stagingPhase = ArStagingPhase.SCANNING
+    }
+
+    fun anchorTableAtHit(hit: HitResult) {
+        val anchor = hit.createAnchor()
+        val ancTranslation = anchor.pose.translation
+        val camTranslation = cameraNode.pose?.translation ?: floatArrayOf(0f, 1f, 1f)
+        val vx = camTranslation[0] - ancTranslation[0]
+        val vz = camTranslation[2] - ancTranslation[2]
+        val yawRad = atan2(vx, vz)
+        val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
+
+        anchorYawRad = yawRad
+        anchorPos = Float3(ancTranslation[0], ancTranslation[1], ancTranslation[2])
+
+        // Garante que nós estejam desanexados de pais anteriores antes de reorganizar
+        tableNode?.parent = null
+        puckNode?.parent = null
+        p1Node?.parent = null
+        p2Node?.parent = null
+
+        // Criação de nó de conteúdo desacoplado para manter orientação e escala imunes a atualizações automáticas de pose
+        val newContentNode = Node(engine3d).apply {
+            this.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
+            this.rotation = Float3(0f, yawDeg, 0f)
+            tableNode?.let { addChildNode(it) }
+            puckNode?.let { addChildNode(it) }
+            p1Node?.let { addChildNode(it) }
+            p2Node?.let { addChildNode(it) }
+        }
+
+        // Sincronização inicial das posições dos nós 3D
+        puckNode?.position = Float3(mapX(engine.puck.x), 0.0075f, mapZ(engine.puck.y))
+        p1Node?.position = Float3(mapX(engine.player1Mallet.x), 0.0f, mapZ(engine.player1Mallet.y))
+        p2Node?.position = Float3(mapX(engine.player2Mallet.x), 0.0f, mapZ(engine.player2Mallet.y))
+
+        val newAnchorNode = AnchorNode(engine3d, anchor).apply {
+            isPositionEditable = false
+            addChildNode(newContentNode)
+        }
+
+        contentNode = newContentNode
+        anchorNode = newAnchorNode
+        stagingPhase = ArStagingPhase.POSITIONED
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             sceneARState.activePointerP1 = null
-            anchorNode?.let {
-                it.destroy()
-            }
+            contentNode?.destroy()
+            contentNode = null
+            anchorNode?.destroy()
+            anchorNode = null
         }
     }
-
-    fun mapX(engineX: Float): Float = (engineX - 500f) * 0.00108f
-    fun mapZ(engineY: Float): Float = (engineY - 1000f) * 0.00096f
 
     val childNodes = remember(anchorNode) { listOfNotNull(anchorNode) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(engine, isAnchored, anchorPos, anchorYawRad, currentScaleFactor, touchOffset) {
-                if (!isAnchored) return@pointerInput
+            .pointerInput(engine, stagingPhase, anchorPos, anchorYawRad, currentScaleFactor, touchOffset) {
+                // Entrada de toque desativada durante o Lobby de Posicionamento preliminar
+                if (stagingPhase != ArStagingPhase.PLAYING) return@pointerInput
 
                 sceneARState.activePointerP1 = null
                 awaitPointerEventScope {
@@ -367,13 +439,13 @@ fun AirHockeyArenaARScene(
             modelLoader = modelLoader,
             cameraNode = cameraNode,
             childNodes = childNodes,
-            planeRenderer = !isAnchored,
+            planeRenderer = stagingPhase == ArStagingPhase.SCANNING,
             sessionConfiguration = { _, config ->
                 config.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
                 config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
             },
             onSessionUpdated = { _, frame ->
-                if (!isAnchored) {
+                if (stagingPhase == ArStagingPhase.SCANNING) {
                     val viewWidth = frame.camera.imageIntrinsics?.imageDimensions?.get(0)?.toFloat() ?: 1080f
                     val viewHeight = frame.camera.imageIntrinsics?.imageDimensions?.get(1)?.toFloat() ?: 1920f
                     val hits = frame.hitTest(viewWidth / 2f, viewHeight / 2f)
@@ -391,7 +463,7 @@ fun AirHockeyArenaARScene(
                         detectedHitResult = null
                     }
                 } else {
-                    // Sincronização em tempo real das coordenadas físicas soberanas com os nós 3D
+                    // Sincronização contínua das posições físicas com as entidades 3D no plano ancorado
                     puckNode?.position = Float3(
                         mapX(engine.puck.x),
                         0.0075f,
@@ -419,75 +491,176 @@ fun AirHockeyArenaARScene(
             }
         )
 
-        // 3. Retícula Guia Visual & Camada de Ancoragem
-        if (!isAnchored) {
+        // 3. Fase SCANNING: Retícula Guia Visual e Botão Centralizado de Fixação
+        if (stagingPhase == ArStagingPhase.SCANNING) {
+            ARReticleOverlay(surfaceDetected = surfaceDetected)
+
+            // Dica Superior de Calibração
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clickable {
-                        val hit = detectedHitResult
-                        if (hit != null) {
-                            val anchor = hit.createAnchor()
-                            val ancTranslation = anchor.pose.translation
-                            val camTranslation = cameraNode.pose?.translation ?: floatArrayOf(0f, 1f, 1f)
-                            val vx = camTranslation[0] - ancTranslation[0]
-                            val vz = camTranslation[2] - ancTranslation[2]
-                            val yawRad = atan2(vx, vz)
-                            val yawDeg = Math.toDegrees(yawRad.toDouble()).toFloat()
-
-                            anchorYawRad = yawRad
-                            anchorPos = Float3(ancTranslation[0], ancTranslation[1], ancTranslation[2])
-
-                            val newAnchorNode = AnchorNode(engine3d, anchor).apply {
-                                this.scale = Float3(currentScaleFactor, currentScaleFactor, currentScaleFactor)
-                                rotation = Float3(0f, yawDeg, 0f)
-                                tableNode?.let { addChildNode(it) }
-                                puckNode?.let { addChildNode(it) }
-                                p1Node?.let { addChildNode(it) }
-                                p2Node?.let { addChildNode(it) }
-                            }
-                            anchorNode = newAnchorNode
-                            isAnchored = true
-                            viewModel.startCountdownAfterPresentation()
-                        }
-                    }
+                    .fillMaxWidth()
+                    .safeDrawingPadding()
+                    .padding(top = 70.dp),
+                contentAlignment = Alignment.TopCenter
             ) {
-                ARReticleOverlay(surfaceDetected = surfaceDetected)
+                Surface(
+                    color = Color(0xCC080E1A),
+                    shape = CutCornerShape(12.dp),
+                    border = BorderStroke(1.dp, if (surfaceDetected) Color(0xFF00E5FF) else Color(0x66FFFFFF)),
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
+                    Text(
+                        text = if (surfaceDetected) {
+                            stringResource(R.string.ar_surface_ready_hint)
+                        } else {
+                            stringResource(R.string.ar_tracking_hint)
+                        },
+                        color = if (surfaceDetected) Color(0xFF00E5FF) else Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    )
+                }
+            }
 
-                // Dica superior instruindo o usuário
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .safeDrawingPadding()
-                        .padding(top = 24.dp),
-                    contentAlignment = Alignment.TopCenter
+            // Botão Centralizado de Fixação AR ("Posicionar Mesa")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 180.dp)
                 ) {
                     Surface(
-                        color = Color(0xCC080E1A),
-                        shape = CutCornerShape(12.dp),
-                        border = BorderStroke(1.dp, if (surfaceDetected) Color(0xFF00E5FF) else Color(0x66FFFFFF)),
-                        modifier = Modifier.padding(horizontal = 20.dp)
+                        color = if (surfaceDetected) Color(0xEE00E5FF) else Color(0x880B111E),
+                        shape = RoundedCornerShape(28.dp),
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (surfaceDetected) Color(0xFF00E5FF) else Color(0xFF475569)
+                        ),
+                        modifier = Modifier.clickable(enabled = surfaceDetected) {
+                            detectedHitResult?.let { anchorTableAtHit(it) }
+                        }
                     ) {
-                        Text(
-                            text = if (surfaceDetected) {
-                                stringResource(R.string.ar_surface_detected)
-                            } else {
-                                stringResource(R.string.ar_tracking_hint)
-                            },
-                            color = if (surfaceDetected) Color(0xFF00E5FF) else Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                tint = if (surfaceDetected) Color.Black else Color(0xFF94A3B8),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = if (surfaceDetected) {
+                                    stringResource(R.string.ar_place_table_button)
+                                } else {
+                                    stringResource(R.string.ar_searching_surface_hint)
+                                },
+                                color = if (surfaceDetected) Color.Black else Color(0xFF94A3B8),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // 4. Barra Superior de Controles de AR (Reancorar, Alternar Escala e Mudar para 3D)
+        // 4. Fase POSITIONED: Lobby de Conferência com Botões "Iniciar Partida" e "Reancorar Mesa"
+        if (stagingPhase == ArStagingPhase.POSITIONED) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .widthIn(max = 340.dp)
+                        .background(Color(0xDD0B111E), RoundedCornerShape(20.dp))
+                        .border(1.5.dp, Color(0xFF00E5FF).copy(alpha = 0.8f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 26.dp, vertical = 22.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.ar_surface_ready_hint),
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Botão Iniciar Partida
+                    Button(
+                        onClick = {
+                            stagingPhase = ArStagingPhase.PLAYING
+                            viewModel.startCountdownAfterPresentation()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                tint = Color.Black,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.ar_start_match_button).uppercase(),
+                                color = Color.Black,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    // Botão Reancorar Mesa
+                    OutlinedButton(
+                        onClick = { resetAnchor() },
+                        border = BorderStroke(1.dp, Color(0xFF38BDF8)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = Color(0xFF38BDF8),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.ar_reanchor_table_button),
+                                color = Color(0xFF38BDF8),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Barra Superior de Controle de Escala e Reancoragem
         ARControlsOverlay(
-            isAnchored = isAnchored,
+            stagingPhase = stagingPhase,
             currentScale = currentScale,
             onToggleScale = {
                 val nextScale = if (currentScale == ArTableScale.MINIATURE_1_4) {
@@ -500,16 +673,7 @@ fun AirHockeyArenaARScene(
                     preferencesRepo.updateArTableScale(nextScale)
                 }
             },
-            onReanchor = {
-                isAnchored = false
-                viewModel.pauseMatch()
-                anchorNode?.let { node ->
-                    node.destroy()
-                }
-                anchorNode = null
-                anchorPos = null
-            },
-            onSwitchTo3D = onSwitchTo3D
+            onReanchor = { resetAnchor() }
         )
     }
 }
@@ -528,15 +692,6 @@ private fun ARReticleOverlay(surfaceDetected: Boolean) {
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseAlpha"
-    )
-    val rotationDeg by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(6000),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "rotation"
     )
 
     Box(
@@ -562,26 +717,25 @@ private fun ARReticleOverlay(surfaceDetected: Boolean) {
             drawLine(strokeColor, Offset(center.x, center.y - r - 12f), Offset(center.x, center.y - r + 8f), strokeWidth = 3f, cap = StrokeCap.Round)
             drawLine(strokeColor, Offset(center.x, center.y + r - 8f), Offset(center.x, center.y + r + 12f), strokeWidth = 3f, cap = StrokeCap.Round)
 
-            // Círculo interno holográfico
+            // Ponto central holográfico
             drawCircle(
-                color = if (surfaceDetected) Color(0xFF10B981).copy(alpha = 0.8f) else Color(0xFF00E5FF).copy(alpha = 0.5f),
-                radius = 10f * pulseAlpha,
-                style = Stroke(width = 3f)
+                color = if (surfaceDetected) Color(0xFF10B981).copy(alpha = 0.9f) else Color(0xFF00E5FF).copy(alpha = 0.5f),
+                radius = 8f * pulseAlpha,
+                style = Stroke(width = 2.5f)
             )
         }
     }
 }
 
 /**
- * Controles de HUD específicos do modo AR.
+ * Controles de HUD específicos do modo AR (Alternar Escala e Reancorar).
  */
 @Composable
 private fun ARControlsOverlay(
-    isAnchored: Boolean,
+    stagingPhase: ArStagingPhase,
     currentScale: ArTableScale,
     onToggleScale: () -> Unit,
-    onReanchor: () -> Unit,
-    onSwitchTo3D: () -> Unit
+    onReanchor: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -589,7 +743,6 @@ private fun ARControlsOverlay(
             .safeDrawingPadding()
             .padding(16.dp)
     ) {
-        // Controles alinhados no topo à esquerda
         Row(
             modifier = Modifier.align(Alignment.TopStart),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -627,8 +780,8 @@ private fun ARControlsOverlay(
                 }
             }
 
-            // Botão Reancorar (visível quando a mesa já está posicionada)
-            if (isAnchored) {
+            // Botão Reancorar (disponível quando a partida já está em andamento)
+            if (stagingPhase == ArStagingPhase.PLAYING) {
                 Surface(
                     color = Color(0xCC0B111E),
                     shape = RoundedCornerShape(10.dp),
@@ -656,34 +809,6 @@ private fun ARControlsOverlay(
                     }
                 }
             }
-
-            // Botão Alternar para Modo 3D
-            Surface(
-                color = Color(0xCC0B111E),
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.6f)),
-                modifier = Modifier.clickable { onSwitchTo3D() }
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Layers,
-                        contentDescription = null,
-                        tint = Color(0xFF10B981),
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.ar_switch_to_3d),
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-            }
         }
     }
 }
@@ -694,7 +819,7 @@ private fun ARControlsOverlay(
 @Composable
 private fun ARPermissionPrompt(
     onGrantPermission: () -> Unit,
-    onSwitchTo3D: () -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -752,13 +877,13 @@ private fun ARPermissionPrompt(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedButton(
-                    onClick = onSwitchTo3D,
+                    onClick = onExit,
                     border = BorderStroke(1.dp, Color(0xFF64748B)),
                     shape = CutCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(R.string.ar_switch_to_3d).uppercase(),
+                        text = stringResource(R.string.cancel).uppercase(),
                         color = Color(0xFF94A3B8),
                         fontWeight = FontWeight.Medium
                     )
@@ -773,7 +898,7 @@ private fun ARPermissionPrompt(
  */
 @Composable
 private fun ARUnsupportedFallback(
-    onSwitchTo3D: () -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -818,14 +943,14 @@ private fun ARUnsupportedFallback(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
-                    onClick = onSwitchTo3D,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                    onClick = onExit,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
                     shape = CutCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(R.string.ar_switch_to_3d).uppercase(),
-                        color = Color.Black,
+                        text = stringResource(R.string.cancel).uppercase(),
+                        color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 }

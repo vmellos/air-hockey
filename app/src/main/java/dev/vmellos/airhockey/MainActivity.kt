@@ -268,14 +268,15 @@ fun AirHockeyAppNavigation(
             StageSelectionScreen(
                 onSelectStage = { stageNum ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val is3d = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
                         stageNumber = stageNum,
-                        hasIntroPresentation = is3d
+                        hasIntroPresentation = needsPresentation
                     )
                     navController.navigate("game/SOLO")
                 },
@@ -315,12 +316,15 @@ fun AirHockeyAppNavigation(
                 },
                 onStartNextStage = { nextStage ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
+                    val needsPresentation = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D ||
+                            userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.REALIDADE_AUMENTADA_AR
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
-                        stageNumber = nextStage
+                        stageNumber = nextStage,
+                        hasIntroPresentation = needsPresentation
                     )
                 }
             )

@@ -144,9 +144,21 @@ _Avoid_: Zoom da mesa, tamanho do jogo, escala 3d, proporção manual
 O cálculo de interseção geométrica do raio gerado a partir do toque na tela com o plano horizontal local da mesa ancorada no ARCore para controle do rebatedor.
 _Avoid_: Raycast de toque, conversão de toque AR, toque na câmera
 
-**Transição para Arena 3D Padrão**:
-A comutação imediata da renderização da partida para a Arena 3D sem perda de pontuação, posições físicas ou tempo de jogo, acionada manualmente ou por indisponibilidade de rastreamento.
-_Avoid_: Sair do AR, resetar em 3D, desligar câmera, downgrade
+**Lobby de Posicionamento AR**:
+O estágio preliminar e desacoplado na Realidade Aumentada no qual a simulação física e a contagem regressiva permanecem retidas enquanto o jogador rastreia o ambiente físico, fixa a mesa e valida os objetos 3D no espaço real antes de liberar o confronto.
+_Avoid_: Pré-jogo AR, sala de espera AR, tela de loading AR, espera de câmera
+
+**Botão Centralizado de Fixação AR**:
+O controle de ação primário posicionado no centro da tela que ancora a mesa no ponto focal exato indicado pela Retícula de Rastreamento AR sobre a superfície detectada.
+_Avoid_: Toque livre na tela para posicionar, clique no chão, tap to place solto
+
+**Autorização Manual da Partida AR**:
+O comando deliberado acionado pelo jogador após a mesa estar ancorada e visível no ambiente físico, disparando a contagem regressiva e liberando a movimentação dos rebatedores e do disco.
+_Avoid_: Início automático AR, contagem prematura, start forçado
+
+**Transição para Arena 3D Padrão** (Descontinuado da Interface Ativa):
+A antiga alternância manual em botão de tela para a Arena 3D, suprimida em favor da imersão contínua em AR com saída regida exclusivamente pelo menu padrão de pausa.
+_Avoid_: Mudar para 3D, botão de downgrade, toggle 3D
 
 ## Modos de Jogo
 
