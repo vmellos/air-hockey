@@ -204,5 +204,14 @@ class ArbitroVirtualTest {
         arbitro.pause()
         assertEquals("Arbitro deve pausar mesmo durante a apresentação de abertura", MatchStatus.PAUSED, arbitro.matchState.value.status)
         org.junit.Assert.assertTrue("Ao pausar durante a apresentação, stopAll deve ser acionado", audio.stopAllCalled)
+
+        // Retomar a partir da pausa deve iniciar o countdown
+        arbitro.resume()
+        assertEquals("Retomar deve transitar para COUNTDOWN", MatchStatus.COUNTDOWN, arbitro.matchState.value.status)
+        assertEquals(3, arbitro.matchState.value.countdownNumber)
+
+        // Reiniciar deve restaurar a apresentação caso configurada
+        arbitro.restart()
+        assertEquals("Reiniciar deve restaurar PRESENTATION", MatchStatus.PRESENTATION, arbitro.matchState.value.status)
     }
 }
