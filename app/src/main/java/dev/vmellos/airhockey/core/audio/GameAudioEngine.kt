@@ -25,6 +25,15 @@ class GameAudioEngine(private val context: Context) {
     private val loadedSoundIds = java.util.Collections.synchronizedSet(mutableSetOf<Int>())
 
     // Controles de Efeitos Sonoros
+    @Volatile
+    var isAppInForeground: Boolean = true
+        set(value) {
+            field = value
+            if (!value) {
+                stopAll()
+            }
+        }
+
     var isSoundEnabled: Boolean = true
     var volume: Float = 0.8f
     var isHapticsEnabled: Boolean = true
@@ -36,7 +45,7 @@ class GameAudioEngine(private val context: Context) {
             field = value
             if (changed) {
                 ensureThemeLoaded(value)
-                if (bgmPlayer?.isPlaying == true && isMusicEnabled) {
+                if (isAppInForeground && bgmPlayer?.isPlaying == true && isMusicEnabled) {
                     playBgm(value)
                 }
             }
@@ -197,6 +206,7 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun playPaddleHit(intensity: Float = 1.0f, isPlayer1: Boolean = true) {
+        if (!isAppInForeground) return
         if (isSoundEnabled) {
             val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
             val soundId = if (currentSet.hitPaddleId != 0) currentSet.hitPaddleId else defaultPaddleHitId
@@ -212,6 +222,7 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun playWallHit() {
+        if (!isAppInForeground) return
         if (isSoundEnabled) {
             val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
             val soundId = if (currentSet.hitWallId != 0) currentSet.hitWallId else defaultWallHitId
@@ -230,6 +241,7 @@ class GameAudioEngine(private val context: Context) {
      * Toca fanfarra triunfante exclusiva do tema + progressão harmônica proporcional aos pontos.
      */
     fun playGoalScored(currentScore: Int = 0, targetScore: Int = 3) {
+        if (!isAppInForeground) return
         if (isSoundEnabled) {
             val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
             val soundId = if (currentSet.goalScoredId != 0) currentSet.goalScoredId else defaultGoalScoredId
@@ -251,6 +263,7 @@ class GameAudioEngine(private val context: Context) {
      * Toca alarme / som descendente exclusivo do tema.
      */
     fun playGoalConceded(currentScore: Int = 0, targetScore: Int = 3) {
+        if (!isAppInForeground) return
         if (isSoundEnabled) {
             val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
             val soundId = if (currentSet.goalConcededId != 0) currentSet.goalConcededId else defaultGoalConcededId
@@ -275,7 +288,7 @@ class GameAudioEngine(private val context: Context) {
      * Toca o chime com elevação harmônica proporcional à pontuação.
      */
     fun playScoreAnnouncement(currentScore: Int, targetScore: Int) {
-        if (!isSoundEnabled) return
+        if (!isAppInForeground || !isSoundEnabled) return
         val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
         val scoreId = if (currentSet.scoreBlipId != 0) currentSet.scoreBlipId else defaultScoreBlipId
         if (scoreId != 0) {
@@ -287,7 +300,7 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun playCountdownBeep(countdownNumber: Int) {
-        if (!isSoundEnabled) return
+        if (!isAppInForeground || !isSoundEnabled) return
         val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
         val soundId = when (countdownNumber) {
             3 -> currentSet.countdown3Id
@@ -317,7 +330,7 @@ class GameAudioEngine(private val context: Context) {
     // --- Reprodução e Controle da Música de Fundo (BGM) Temática ---
 
     fun playBgm(theme: TableTheme = currentTheme) {
-        if (!isMusicEnabled) return
+        if (!isMusicEnabled || !isAppInForeground) return
         try {
             if (bgmPlayer != null && playingBgmTheme == theme) {
                 val player = bgmPlayer ?: return
@@ -366,7 +379,7 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun resumeBgm() {
-        if (!isMusicEnabled) return
+        if (!isMusicEnabled || !isAppInForeground) return
         try {
             if (bgmPlayer != null && bgmPlayer?.isPlaying == false) {
                 val vol = musicVolume.coerceIn(0f, 1f)
@@ -403,6 +416,7 @@ class GameAudioEngine(private val context: Context) {
     }
 
     fun resumeAudio() {
+        if (!isAppInForeground) return
         soundPool.autoResume()
         if (isMusicEnabled && bgmPlayer != null) {
             resumeBgm()

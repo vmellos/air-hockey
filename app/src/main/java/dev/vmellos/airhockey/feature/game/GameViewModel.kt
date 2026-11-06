@@ -464,10 +464,11 @@ class GameViewModel : ViewModel() {
     fun pauseMatch() {
         if (_matchState.value.isGuestMode) {
             onGuestSendControl?.invoke(ControlMessages.PAUSE)
+            audioEngine.stopAll()
             return
         }
         val currentStatus = _matchState.value.status
-        if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE) {
+        if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE || currentStatus == MatchStatus.PRESENTATION) {
             countdownJob?.cancel()
             countdownJob = null
             countdownPhysicsJob?.cancel()

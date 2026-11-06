@@ -14,6 +14,7 @@ class ArbitroVirtualTest {
         var goalPlayed = false
         var wallHitPlayed = false
         var paddleHitPlayed = false
+        var stopAllCalled = false
         var countdownBeeps = mutableListOf<Boolean>()
 
         override fun playPaddleHit(intensity: Float, isPlayer1: Boolean) { paddleHitPlayed = true }
@@ -21,6 +22,7 @@ class ArbitroVirtualTest {
         override fun playGoalScored(score: Int, target: Int) { goalPlayed = true }
         override fun playGoalConceded(score: Int, target: Int) { goalPlayed = true }
         override fun playCountdownBeep(number: Int) { countdownBeeps.add(number == 0) }
+        override fun stopAll() { stopAllCalled = true }
     }
 
     @Test
@@ -183,5 +185,24 @@ class ArbitroVirtualTest {
             assertEquals(0.toByte(), clearedEvt)
             assertEquals(0f, clearedIntensity, 0.001f)
         }
+    }
+
+    @Test
+    fun testPauseDuringPresentation() {
+        val audio = TestAudioPort()
+        val dimensions = TableDimensions()
+        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.SOLO,
+            hasIntroPresentation = true
+        )
+        val arbitro = ArbitroVirtual(
+            dimensions = dimensions,
+            spec = spec,
+            audioPort = audio
+        )
+        assertEquals(MatchStatus.PRESENTATION, arbitro.matchState.value.status)
+        arbitro.pause()
+        assertEquals("Arbitro deve pausar mesmo durante a apresentação de abertura", MatchStatus.PAUSED, arbitro.matchState.value.status)
+        org.junit.Assert.assertTrue("Ao pausar durante a apresentação, stopAll deve ser acionado", audio.stopAllCalled)
     }
 }

@@ -107,7 +107,7 @@ fun GameScreen(
                 AirHockeyApp.instance.audioEngine.stopBgm()
             }
             else -> {
-                AirHockeyApp.instance.audioEngine.pauseBgm()
+                AirHockeyApp.instance.audioEngine.stopBgm()
             }
         }
     }
