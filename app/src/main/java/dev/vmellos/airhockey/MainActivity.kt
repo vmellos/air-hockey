@@ -268,14 +268,15 @@ fun AirHockeyAppNavigation(
             StageSelectionScreen(
                 onSelectStage = { stageNum ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val is3d = userPrefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D
+                    val is3d = userPrefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
                         stageNumber = stageNum,
-                        hasIntroPresentation = is3d
+                        hasIntroPresentation = hasIntro
                     )
                     navController.navigate("game/SOLO")
                 },

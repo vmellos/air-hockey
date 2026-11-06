@@ -37,6 +37,9 @@ class UserPreferencesRepository(private val context: Context) {
         val VISUAL_EFFECTS_PROFILE = stringPreferencesKey("visual_effects_profile")
         val PLAYER_NAME = stringPreferencesKey("player_name")
         val TABLE_THEME = stringPreferencesKey("table_theme")
+        val ARENA_DIMENSION = stringPreferencesKey("arena_dimension")
+        val NEON_BLOOM_INTENSITY = floatPreferencesKey("neon_bloom_intensity")
+        val ARENA_3D_INTRO_ENABLED = booleanPreferencesKey("arena_3d_intro_enabled")
         val CAMERA_ZOOM_3D = stringPreferencesKey("camera_zoom_3d")
         val PUCK_SKIN = stringPreferencesKey("puck_skin")
         val MALLET_SKIN_P1 = stringPreferencesKey("mallet_skin_p1")
@@ -105,7 +108,19 @@ class UserPreferencesRepository(private val context: Context) {
             val playerName = if (!storedName.isNullOrBlank()) storedName else getDefaultDevicePlayerName(context)
 
             val tableThemeStr = preferences[PreferencesKeys.TABLE_THEME] ?: TableTheme.CLASSIC_NEON.name
-            val tableTheme = try { TableTheme.valueOf(tableThemeStr) } catch (_: Exception) { TableTheme.CLASSIC_NEON }
+            val rawTableTheme = try { TableTheme.valueOf(tableThemeStr) } catch (_: Exception) { TableTheme.CLASSIC_NEON }
+
+            val arenaDimStr = preferences[PreferencesKeys.ARENA_DIMENSION]
+            val arenaDimension = if (arenaDimStr != null) {
+                try { ArenaDimension.valueOf(arenaDimStr) } catch (_: Exception) { ArenaDimension.THREE_DIMENSIONAL }
+            } else {
+                ArenaDimension.THREE_DIMENSIONAL
+            }
+            val tableTheme = if (rawTableTheme == TableTheme.ARCADE_3D) TableTheme.CLASSIC_NEON else rawTableTheme
+
+            val rawNeonBloom = preferences[PreferencesKeys.NEON_BLOOM_INTENSITY] ?: 0.05f
+            val neonBloomIntensity = rawNeonBloom.coerceIn(0.0f, 0.10f)
+            val arena3dIntroEnabled = preferences[PreferencesKeys.ARENA_3D_INTRO_ENABLED] ?: true
             val cameraZoomStr = preferences[PreferencesKeys.CAMERA_ZOOM_3D] ?: CameraZoom3D.STANDARD.name
             val cameraZoom3d = try { CameraZoom3D.valueOf(cameraZoomStr) } catch (_: Exception) { CameraZoom3D.STANDARD }
 
@@ -135,6 +150,9 @@ class UserPreferencesRepository(private val context: Context) {
                 visualEffectsProfile = fxProfile,
                 playerName = playerName,
                 tableTheme = tableTheme,
+                arenaDimension = arenaDimension,
+                neonBloomIntensity = neonBloomIntensity,
+                arena3dIntroEnabled = arena3dIntroEnabled,
                 cameraZoom3d = cameraZoom3d,
                 puckSkin = puckSkin,
                 player1MalletSkin = malletP1,
@@ -333,6 +351,24 @@ class UserPreferencesRepository(private val context: Context) {
                     preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
                 }
             }
+        }
+    }
+
+    suspend fun updateArenaDimension(dimension: ArenaDimension) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ARENA_DIMENSION] = dimension.name
+        }
+    }
+
+    suspend fun updateNeonBloomIntensity(intensity: Float) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NEON_BLOOM_INTENSITY] = intensity.coerceIn(0.0f, 0.10f)
+        }
+    }
+
+    suspend fun setArena3dIntroEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ARENA_3D_INTRO_ENABLED] = enabled
         }
     }
 

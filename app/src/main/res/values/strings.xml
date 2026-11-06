@@ -320,4 +320,15 @@
     <string name="camera_zoom_wide">Wide (1.3x)</string>
     <string name="camera_zoom_close">Close (0.8x)</string>
     <string name="presentation_skip_hint">Tap to skip</string>
+    <string name="dimension_2d">2D Classic</string>
+    <string name="dimension_3d">3D Immersive</string>
+    <string name="dimension_selector_title">Arena Dimension</string>
+    <string name="native_3d_badge">3D NATIVE</string>
+    <string name="neon_bloom_intensity_title">Neon Glow Intensity</string>
+    <string name="neon_bloom_off">Off</string>
+    <string name="neon_bloom_soft">Soft</string>
+    <string name="neon_bloom_normal">Standard</string>
+    <string name="neon_bloom_vibrant">Vibrant</string>
+    <string name="settings_3d_intro_title">3D Arena Intro Animation</string>
+    <string name="settings_3d_intro_desc">Cinematic camera flyover when starting 3D matches</string>
 </resources>

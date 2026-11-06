@@ -320,4 +320,15 @@
     <string name="camera_zoom_wide">Amplio (1.3x)</string>
     <string name="camera_zoom_close">Cercano (0.8x)</string>
     <string name="presentation_skip_hint">Toca para saltar</string>
+    <string name="dimension_2d">2D Clásico</string>
+    <string name="dimension_3d">3D Inmersivo</string>
+    <string name="dimension_selector_title">Dimensión de la Arena</string>
+    <string name="native_3d_badge">3D NATIVO</string>
+    <string name="neon_bloom_intensity_title">Brillo del Neón</string>
+    <string name="neon_bloom_off">Desactivado</string>
+    <string name="neon_bloom_soft">Suave</string>
+    <string name="neon_bloom_normal">Estándar</string>
+    <string name="neon_bloom_vibrant">Intenso</string>
+    <string name="settings_3d_intro_title">Animación Inicial de Arena 3D</string>
+    <string name="settings_3d_intro_desc">Presentación cinemática de sobrevuelo al iniciar partidas 3D</string>
 </resources>

@@ -35,10 +35,12 @@ import dev.vmellos.airhockey.feature.game.MatchStatus
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TablePoint
 import io.github.sceneview.Scene
+import io.github.sceneview.SceneView
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
+import io.github.sceneview.rememberView
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
@@ -69,10 +71,11 @@ fun getCameraPreset(zoom: CameraZoom3D): CameraPreset = when (zoom) {
  * Estado operacional da Arena 3D desacoplado do ciclo de recomposição do Jetpack Compose.
  */
 private class Scene3DState(
-    initialPreset: CameraPreset
+    initialPreset: CameraPreset,
+    initialPresenting: Boolean = true
 ) {
-    var presentationProgress: Float = 0f
-    var isPresenting: Boolean = true
+    var presentationProgress: Float = if (initialPresenting) 0f else 1f
+    var isPresenting: Boolean = initialPresenting
 
     // Posição e rotação contínuas interpoladas da câmera (atualizadas no onFrame a 60/120 Hz)
     var camX: Float = initialPreset.position.x
@@ -371,10 +374,10 @@ fun AirHockeyArena3DScene(
     val matchState by viewModel.matchState.collectAsState()
 
     val targetPreset = remember(zoom) { getCameraPreset(zoom) }
-    val sceneState = remember { Scene3DState(targetPreset) }
+    val sceneState = remember { Scene3DState(targetPreset, initialPresenting = prefs.arena3dIntroEnabled) }
 
     val coroutineScope = rememberCoroutineScope()
-    val presentationAnim = remember { Animatable(0f) }
+    val presentationAnim = remember { Animatable(if (prefs.arena3dIntroEnabled) 0f else 1f) }
 
     val inputController = remember { ArenaInputController() }
     val particlePool = remember { ParticlePool3D(maxSparks = 60, maxShockwaves = 10) }
@@ -382,7 +385,14 @@ fun AirHockeyArena3DScene(
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
 
     // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone)
-    LaunchedEffect(Unit) {
+    LaunchedEffect(prefs.arena3dIntroEnabled) {
+        if (!prefs.arena3dIntroEnabled) {
+            sceneState.presentationProgress = 1f
+            sceneState.isPresenting = false
+            presentationAnim.snapTo(1f)
+            onPresentationFinished()
+            return@LaunchedEffect
+        }
         try {
             presentationAnim.animateTo(
                 targetValue = 1f,
@@ -431,34 +441,62 @@ fun AirHockeyArena3DScene(
     // Inicialização do Motor 3D Filament e Carregamento dos Assets .glb
     val engine3d = rememberEngine()
     val modelLoader = rememberModelLoader(engine3d)
+    val view3d = rememberView(engine3d) {
+        SceneView.createView(engine3d).apply {
+            bloomOptions = bloomOptions.apply {
+                enabled = prefs.neonBloomIntensity > 0.005f
+                strength = prefs.neonBloomIntensity
+            }
+        }
+    }
 
-    val tableInstance = remember(modelLoader) {
+    LaunchedEffect(prefs.neonBloomIntensity) {
+        view3d.bloomOptions = view3d.bloomOptions.apply {
+            enabled = prefs.neonBloomIntensity > 0.005f
+            strength = prefs.neonBloomIntensity
+        }
+    }
+
+    val tableAsset = remember(prefs.tableTheme) {
+        Theme3DAssetResolver.getTable3DAsset(prefs.tableTheme)
+    }
+    val puckAsset = remember(prefs.puckSkin, prefs.tableTheme) {
+        Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, prefs.tableTheme)
+    }
+    val p1MalletAsset = remember(prefs.player1MalletSkin, prefs.tableTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true, theme = prefs.tableTheme)
+    }
+    val p2MalletAsset = remember(prefs.player2MalletSkin, prefs.tableTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(prefs.player2MalletSkin, isPlayer1 = false, theme = prefs.tableTheme)
+    }
+
+    val tableInstance = remember(modelLoader, tableAsset) {
         try {
-            modelLoader.createModelInstance("models/mesa_arcade.glb")
+            modelLoader.createModelInstance(tableAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val puckInstance = remember(modelLoader) {
+    val puckInstance = remember(modelLoader, puckAsset) {
         try {
-            modelLoader.createModelInstance("models/disco_cyber.glb")
+            modelLoader.createModelInstance(puckAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p1Instance = remember(modelLoader) {
+    val p1Instance = remember(modelLoader, p1MalletAsset) {
         try {
-            modelLoader.createModelInstance("models/rebatedor_p1.glb")
+            modelLoader.createModelInstance(p1MalletAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p2Instance = remember(modelLoader) {
+    val p2Instance = remember(modelLoader, p2MalletAsset) {
         try {
-            modelLoader.createModelInstance("models/rebatedor_p2.glb")
+            modelLoader.createModelInstance(p2MalletAsset)
         } catch (_: Exception) {
             null
         }
@@ -571,6 +609,7 @@ fun AirHockeyArena3DScene(
             modifier = Modifier.fillMaxSize(),
             engine = engine3d,
             modelLoader = modelLoader,
+            view = view3d,
             cameraNode = cameraNode,
             cameraManipulator = null,
             childNodes = childNodes,
