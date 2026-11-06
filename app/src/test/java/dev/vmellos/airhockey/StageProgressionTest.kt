@@ -4,9 +4,12 @@ import dev.vmellos.airhockey.core.database.StageProgressDao
 import dev.vmellos.airhockey.core.database.StageProgressEntity
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
+import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.stage.StageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -152,5 +155,49 @@ class StageProgressionTest {
     fun testRoomMigration1To2Definition() {
         assertEquals(1, dev.vmellos.airhockey.core.database.AppDatabase.MIGRATION_1_2.startVersion)
         assertEquals(2, dev.vmellos.airhockey.core.database.AppDatabase.MIGRATION_1_2.endVersion)
+    }
+
+    @Test
+    fun testArenaConquestCatalogTiersAndThemesMapping() {
+        assertEquals(10, ArenaConquestCatalog.TIERS.size)
+
+        // Stage 1-10 -> CYBER_PONG, unlock at 10
+        assertEquals(TableTheme.CYBER_PONG, ArenaConquestCatalog.getThemeForStage(1))
+        assertEquals(TableTheme.CYBER_PONG, ArenaConquestCatalog.getThemeForStage(10))
+        assertEquals(10, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.CYBER_PONG))
+
+        // Stage 11-20 -> CYBER_SOCCER, unlock at 20
+        assertEquals(TableTheme.CYBER_SOCCER, ArenaConquestCatalog.getThemeForStage(15))
+        assertEquals(20, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.CYBER_SOCCER))
+
+        // Stage 21-30 -> NEO_BASKETBALL, unlock at 30
+        assertEquals(TableTheme.NEO_BASKETBALL, ArenaConquestCatalog.getThemeForStage(25))
+        assertEquals(30, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.NEO_BASKETBALL))
+
+        // Classic arena is default unlocked
+        assertTrue(ArenaConquestCatalog.isDefaultUnlocked(TableTheme.CLASSIC_NEON))
+        assertTrue(ArenaConquestCatalog.isDefaultUnlocked(TableTheme.ARCADE_3D))
+        assertEquals(0, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.CLASSIC_NEON))
+    }
+
+    @Test
+    fun testArenaUnlockingProgressionThroughRepository() = runBlocking {
+        repository.ensureStagesInitialized()
+
+        // Before completing stage 10, CYBER_PONG is locked
+        assertFalse(repository.isThemeUnlocked(TableTheme.CYBER_PONG))
+        val initialThemes = repository.unlockedThemesFlow.first()
+        assertTrue(initialThemes.contains(TableTheme.CLASSIC_NEON))
+        assertFalse(initialThemes.contains(TableTheme.CYBER_PONG))
+
+        // Complete stage 10 with stars
+        repository.recordStageResult(stageNumber = 10, scorePlayer = 3, scoreAi = 1)
+
+        // Now CYBER_PONG is unlocked, but CYBER_SOCCER (stage 20) is still locked
+        assertTrue(repository.isThemeUnlocked(TableTheme.CYBER_PONG))
+        assertFalse(repository.isThemeUnlocked(TableTheme.CYBER_SOCCER))
+        val updatedThemes = repository.unlockedThemesFlow.first()
+        assertTrue(updatedThemes.contains(TableTheme.CYBER_PONG))
+        assertFalse(updatedThemes.contains(TableTheme.CYBER_SOCCER))
     }
 }

@@ -7,6 +7,7 @@ import dev.vmellos.airhockey.feature.game.MatchState
 import dev.vmellos.airhockey.feature.game.MatchStatus
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.network.HostTelemetryPacket
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -156,7 +157,8 @@ class ArbitroVirtual(
             player1Name = spec.player1Name,
             player2Name = spec.player2Name,
             currentStage = spec.stageNumber,
-            starsEarned = 0
+            starsEarned = 0,
+            tableTheme = spec.tableTheme
         )
     )
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
@@ -527,8 +529,8 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun updateStarsEarned(stars: Int) {
-        _matchState.update { it.copy(starsEarned = stars) }
+    fun updateStarsEarned(stars: Int, newlyConqueredTheme: TableTheme? = null) {
+        _matchState.update { it.copy(starsEarned = stars, newlyConqueredTheme = newlyConqueredTheme) }
         publishSnapshot()
     }
 

@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
@@ -363,6 +364,7 @@ fun AirHockeyArena3DScene(
     viewModel: GameViewModel,
     mode: GameMode,
     zoom: CameraZoom3D = CameraZoom3D.STANDARD,
+    tableTheme: TableTheme? = null,
     onPresentationFinished: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -370,6 +372,7 @@ fun AirHockeyArena3DScene(
     val dimensions = engine.dimensions
 
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+    val activeTheme = tableTheme ?: prefs.tableTheme
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
 
@@ -463,17 +466,17 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    val tableAsset = remember(prefs.tableTheme) {
-        Theme3DAssetResolver.getTable3DAsset(prefs.tableTheme)
+    val tableAsset = remember(activeTheme) {
+        Theme3DAssetResolver.getTable3DAsset(activeTheme)
     }
-    val puckAsset = remember(prefs.puckSkin, prefs.tableTheme) {
-        Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, prefs.tableTheme)
+    val puckAsset = remember(prefs.puckSkin, activeTheme) {
+        Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, activeTheme)
     }
-    val p1MalletAsset = remember(prefs.player1MalletSkin, prefs.tableTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true, theme = prefs.tableTheme)
+    val p1MalletAsset = remember(prefs.player1MalletSkin, activeTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true, theme = activeTheme)
     }
-    val p2MalletAsset = remember(prefs.player2MalletSkin, prefs.tableTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(prefs.player2MalletSkin, isPlayer1 = false, theme = prefs.tableTheme)
+    val p2MalletAsset = remember(prefs.player2MalletSkin, activeTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(prefs.player2MalletSkin, isPlayer1 = false, theme = activeTheme)
     }
 
     val tableInstance = remember(modelLoader, tableAsset) {

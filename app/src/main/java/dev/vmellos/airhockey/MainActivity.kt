@@ -230,7 +230,7 @@ fun AirHockeyAppNavigation(
                     val d2 = if (lobbyState.targetMode == "AI_EXTENDED") {
                         if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
                     } else ""
-                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2)
+                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, userPrefs.tableTheme.name)
                 },
                 onBackToMenu = {
                     lobbyViewModel.stopAll()
@@ -341,7 +341,12 @@ fun AirHockeyAppNavigation(
 
         composable("customization") {
             ArenaCustomizationScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToStages = {
+                    navController.navigate("stages") {
+                        popUpTo("menu")
+                    }
+                }
             )
         }
     }

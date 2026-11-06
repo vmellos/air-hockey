@@ -10,6 +10,8 @@ import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import dev.vmellos.airhockey.feature.physics.ArbitroVirtual
 import dev.vmellos.airhockey.feature.physics.AudioOutputPort
 import dev.vmellos.airhockey.feature.physics.TableDimensions
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -167,7 +169,8 @@ class GameViewModel : ViewModel() {
                 targetScore = stageConfig.targetScore,
                 aiDifficulty = stageConfig.aiDifficulty,
                 puckMaxSpeed = stageConfig.puckSpeed.maxSpeed,
-                airFriction = stageConfig.puckSpeed.airFriction
+                airFriction = stageConfig.puckSpeed.airFriction,
+                tableTheme = stageConfig.tableTheme
             )
         } else {
             spec
@@ -226,7 +229,8 @@ class GameViewModel : ViewModel() {
         player1Name: String = "Jogador 1",
         player2Name: String = "Jogador 2",
         stageNumber: Int = 1,
-        hasIntroPresentation: Boolean = false
+        hasIntroPresentation: Boolean = false,
+        tableTheme: TableTheme? = null
     ) {
         initializeMatch(
             MatchSpec(
@@ -244,7 +248,8 @@ class GameViewModel : ViewModel() {
                 player1Name = player1Name,
                 player2Name = player2Name,
                 stageNumber = stageNumber,
-                hasIntroPresentation = hasIntroPresentation
+                hasIntroPresentation = hasIntroPresentation,
+                tableTheme = tableTheme
             )
         )
     }
@@ -544,12 +549,15 @@ class GameViewModel : ViewModel() {
 
             if (state.mode == GameMode.SOLO) {
                 try {
+                    val currentTheme = ArenaConquestCatalog.getThemeForStage(state.currentStage)
+                    val previouslyUnlocked = AirHockeyApp.instance.stageRepository.isThemeUnlocked(currentTheme)
                     val stars = AirHockeyApp.instance.stageRepository.recordStageResult(
                         stageNumber = state.currentStage,
                         scorePlayer = state.scorePlayer1,
                         scoreAi = state.scorePlayer2
                     )
-                    arbitro?.updateStarsEarned(stars)
+                    val newlyConquered = if (stars > 0 && state.currentStage % 10 == 0 && !previouslyUnlocked) currentTheme else null
+                    arbitro?.updateStarsEarned(stars, newlyConquered)
                 } catch (_: Exception) {}
             }
 

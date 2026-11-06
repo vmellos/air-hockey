@@ -1,6 +1,7 @@
 package dev.vmellos.airhockey.feature.game
 
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.TableTheme
 
 /**
  * Especificação Imutável de Partida de Air Hockey.
@@ -23,5 +24,6 @@ data class MatchSpec(
     val player1Name: String = "Jogador 1",
     val player2Name: String = "Jogador 2",
     val stageNumber: Int = 1,
-    val hasIntroPresentation: Boolean = false
+    val hasIntroPresentation: Boolean = false,
+    val tableTheme: TableTheme? = null
 )

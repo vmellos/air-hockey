@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
@@ -50,6 +52,8 @@ import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -61,6 +65,8 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.TextButton
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
@@ -150,15 +156,28 @@ private data class MalletItem(
     val primaryColor: Color
 )
 
+private data class LockedDialogInfo(
+    val titleRes: Int,
+    val unlockStage: Int
+)
+
 @Composable
 fun ArenaCustomizationScreen(
     onBack: () -> Unit,
+    onNavigateToStages: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val preferencesRepo = AirHockeyApp.instance.preferencesRepository
     val prefs by preferencesRepo.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val coroutineScope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+
+    val stageRepo = AirHockeyApp.instance.stageRepository
+    val unlockedThemes by stageRepo.unlockedThemesFlow.collectAsState(initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D))
+    val unlockedPucks by stageRepo.unlockedPuckSkinsFlow.collectAsState(initial = setOf(PuckSkin.CLASSIC_PLASMA))
+    val unlockedMallets by stageRepo.unlockedMalletSkinsFlow.collectAsState(initial = setOf(MalletSkin.CLASSIC_NEON))
+
+    var lockedDialogInfo by remember { mutableStateOf<LockedDialogInfo?>(null) }
 
     // Estado da categoria selecionada (0: Conjuntos, 1: Mesas, 2: Discos, 3: Rebatedores)
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
@@ -724,13 +743,20 @@ fun ArenaCustomizationScreen(
                 0 -> {
                     // Categoria: CONJUNTOS COMPLETOS
                     items(bundleItems, key = { it.id }) { bundle ->
-                        val isEquipped = prefs.tableTheme == bundle.tableTheme &&
+                        val unlockStage = ArenaConquestCatalog.getUnlockStageForTheme(bundle.tableTheme)
+                        val isLocked = unlockStage > 0 && !unlockedThemes.contains(bundle.tableTheme)
+                        val isEquipped = !isLocked && prefs.tableTheme == bundle.tableTheme &&
                                 prefs.puckSkin == bundle.puckSkin &&
                                 prefs.player1MalletSkin == bundle.malletSkin
 
                         BundleCard(
                             bundle = bundle,
                             isEquipped = isEquipped,
+                            isLocked = isLocked,
+                            unlockStage = unlockStage,
+                            onLockedClick = {
+                                lockedDialogInfo = LockedDialogInfo(bundle.titleRes, unlockStage)
+                            },
                             onPreview = {
                                 previewTableTheme = bundle.tableTheme
                                 previewPuckSkin = bundle.puckSkin
@@ -751,7 +777,9 @@ fun ArenaCustomizationScreen(
                 1 -> {
                     // Categoria: MESAS
                     items(tableItems, key = { it.theme.name }) { tableItem ->
-                        val isEquipped = prefs.tableTheme == tableItem.theme
+                        val unlockStage = ArenaConquestCatalog.getUnlockStageForTheme(tableItem.theme)
+                        val isLocked = unlockStage > 0 && !unlockedThemes.contains(tableItem.theme)
+                        val isEquipped = !isLocked && prefs.tableTheme == tableItem.theme
 
                         SingleItemCard(
                             title = stringResource(tableItem.titleRes),
@@ -760,6 +788,11 @@ fun ArenaCustomizationScreen(
                             primaryColor = tableItem.primaryColor,
                             secondaryColor = tableItem.secondaryColor,
                             isEquipped = isEquipped,
+                            isLocked = isLocked,
+                            unlockStage = unlockStage,
+                            onLockedClick = {
+                                lockedDialogInfo = LockedDialogInfo(tableItem.titleRes, unlockStage)
+                            },
                             onPreview = {
                                 previewTableTheme = tableItem.theme
                             },
@@ -776,7 +809,9 @@ fun ArenaCustomizationScreen(
                 2 -> {
                     // Categoria: DISCOS
                     items(puckItems, key = { it.skin.name }) { puckItem ->
-                        val isEquipped = prefs.puckSkin == puckItem.skin
+                        val unlockStage = ArenaConquestCatalog.getUnlockStageForPuck(puckItem.skin)
+                        val isLocked = unlockStage > 0 && !unlockedPucks.contains(puckItem.skin)
+                        val isEquipped = !isLocked && prefs.puckSkin == puckItem.skin
 
                         SingleItemCard(
                             title = stringResource(puckItem.titleRes),
@@ -785,6 +820,11 @@ fun ArenaCustomizationScreen(
                             primaryColor = puckItem.primaryColor,
                             secondaryColor = Color.White,
                             isEquipped = isEquipped,
+                            isLocked = isLocked,
+                            unlockStage = unlockStage,
+                            onLockedClick = {
+                                lockedDialogInfo = LockedDialogInfo(puckItem.titleRes, unlockStage)
+                            },
                             onPreview = {
                                 previewPuckSkin = puckItem.skin
                             },
@@ -801,7 +841,9 @@ fun ArenaCustomizationScreen(
                 3 -> {
                     // Categoria: REBATEDORES
                     items(malletItems, key = { it.skin.name }) { malletItem ->
-                        val isEquipped = prefs.player1MalletSkin == malletItem.skin
+                        val unlockStage = ArenaConquestCatalog.getUnlockStageForMallet(malletItem.skin)
+                        val isLocked = unlockStage > 0 && !unlockedMallets.contains(malletItem.skin)
+                        val isEquipped = !isLocked && prefs.player1MalletSkin == malletItem.skin
 
                         SingleItemCard(
                             title = stringResource(malletItem.titleRes),
@@ -810,6 +852,11 @@ fun ArenaCustomizationScreen(
                             primaryColor = malletItem.primaryColor,
                             secondaryColor = Color.White,
                             isEquipped = isEquipped,
+                            isLocked = isLocked,
+                            unlockStage = unlockStage,
+                            onLockedClick = {
+                                lockedDialogInfo = LockedDialogInfo(malletItem.titleRes, unlockStage)
+                            },
                             onPreview = {
                                 previewMalletSkin = malletItem.skin
                             },
@@ -835,6 +882,71 @@ fun ArenaCustomizationScreen(
                 .fillMaxWidth()
                 .padding(bottom = 6.dp)
         )
+
+        val dialogInfo = lockedDialogInfo
+        if (dialogInfo != null) {
+            AlertDialog(
+                onDismissRequest = { lockedDialogInfo = null },
+                shape = CutCornerShape(16.dp),
+                containerColor = Color(0xF20B0F1C),
+                titleContentColor = Color.White,
+                textContentColor = Color(0xFF94A3B8),
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB800),
+                        modifier = Modifier.size(36.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.arena_locked_dialog_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.arena_locked_dialog_desc, dialogInfo.unlockStage),
+                        fontSize = 14.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            lockedDialogInfo = null
+                            onNavigateToStages()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+                        shape = CutCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.play_stages_mode).uppercase(),
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { lockedDialogInfo = null }) {
+                        Text(
+                            text = stringResource(R.string.close),
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -1162,20 +1274,38 @@ private fun ArenaLivePreview(
 private fun BundleCard(
     bundle: ThemeBundleItem,
     isEquipped: Boolean,
+    isLocked: Boolean = false,
+    unlockStage: Int = 0,
+    onLockedClick: (() -> Unit)? = null,
     onPreview: () -> Unit,
     onEquip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (isEquipped) bundle.primaryColor else Color(0xFF1E293B)
-    val containerBg = if (isEquipped) bundle.primaryColor.copy(alpha = 0.12f) else Color(0xFF0D1424)
+    val borderColor = when {
+        isLocked -> Color(0x66FFB800)
+        isEquipped -> bundle.primaryColor
+        else -> Color(0xFF1E293B)
+    }
+    val containerBg = when {
+        isLocked -> Color(0xFF0D1424)
+        isEquipped -> bundle.primaryColor.copy(alpha = 0.12f)
+        else -> Color(0xFF0D1424)
+    }
 
     Card(
         shape = CutCornerShape(10.dp),
-        border = BorderStroke(if (isEquipped) 1.5.dp else 1.dp, borderColor),
+        border = BorderStroke(if (isEquipped || isLocked) 1.5.dp else 1.dp, borderColor),
         colors = CardDefaults.cardColors(containerColor = containerBg),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onEquip)
+            .clickable {
+                onPreview()
+                if (isLocked) {
+                    onLockedClick?.invoke()
+                } else {
+                    onEquip()
+                }
+            }
     ) {
         Row(
             modifier = Modifier
@@ -1226,7 +1356,33 @@ private fun BundleCard(
                 )
             }
 
-            if (isEquipped) {
+            if (isLocked) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    shape = CutCornerShape(6.dp),
+                    color = Color(0x33FFB800),
+                    border = BorderStroke(1.dp, Color(0x88FFB800))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB800),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.arena_locked_badge, unlockStage),
+                            color = Color(0xFFFFB800),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            } else if (isEquipped) {
                 Spacer(modifier = Modifier.width(10.dp))
                 Box(
                     modifier = Modifier
@@ -1258,20 +1414,38 @@ private fun SingleItemCard(
     primaryColor: Color,
     secondaryColor: Color,
     isEquipped: Boolean,
+    isLocked: Boolean = false,
+    unlockStage: Int = 0,
+    onLockedClick: (() -> Unit)? = null,
     onPreview: () -> Unit,
     onEquip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val borderColor = if (isEquipped) primaryColor else Color(0xFF1E293B)
-    val containerBg = if (isEquipped) primaryColor.copy(alpha = 0.12f) else Color(0xFF0D1424)
+    val borderColor = when {
+        isLocked -> Color(0x66FFB800)
+        isEquipped -> primaryColor
+        else -> Color(0xFF1E293B)
+    }
+    val containerBg = when {
+        isLocked -> Color(0xFF0D1424)
+        isEquipped -> primaryColor.copy(alpha = 0.12f)
+        else -> Color(0xFF0D1424)
+    }
 
     Card(
         shape = CutCornerShape(10.dp),
-        border = BorderStroke(if (isEquipped) 1.5.dp else 1.dp, borderColor),
+        border = BorderStroke(if (isEquipped || isLocked) 1.5.dp else 1.dp, borderColor),
         colors = CardDefaults.cardColors(containerColor = containerBg),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onEquip)
+            .clickable {
+                onPreview()
+                if (isLocked) {
+                    onLockedClick?.invoke()
+                } else {
+                    onEquip()
+                }
+            }
     ) {
         Row(
             modifier = Modifier
@@ -1314,7 +1488,33 @@ private fun SingleItemCard(
                 )
             }
 
-            if (isEquipped) {
+            if (isLocked) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    shape = CutCornerShape(6.dp),
+                    color = Color(0x33FFB800),
+                    border = BorderStroke(1.dp, Color(0x88FFB800))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB800),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.arena_locked_badge, unlockStage),
+                            color = Color(0xFFFFB800),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            } else if (isEquipped) {
                 Spacer(modifier = Modifier.width(10.dp))
                 Box(
                     modifier = Modifier

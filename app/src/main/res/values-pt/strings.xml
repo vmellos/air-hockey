@@ -331,4 +331,10 @@
     <string name="neon_bloom_vibrant">Intenso</string>
     <string name="settings_3d_intro_title">Animação Inicial da Arena 3D</string>
     <string name="settings_3d_intro_desc">Apresentação cinematográfica de sobrevoo ao iniciar partidas 3D</string>
+    <string name="arena_conquered_badge">ARENA CONQUISTADA</string>
+    <string name="arena_conquered_message">Conjunto temático desbloqueado para todos os modos!</string>
+    <string name="arena_locked_badge">Bloqueado • Fase %d</string>
+    <string name="arena_locked_dialog_title">Arena Bloqueada</string>
+    <string name="arena_locked_dialog_desc">Vença a Fase %d no Modo Fases para conquistar este conjunto temático completo!</string>
+    <string name="play_stages_mode">Jogar Fases</string>
 </resources>

@@ -70,6 +70,7 @@ fun GameScreen(
     val isSoundEnabled by viewModel.soundEnabled.collectAsState()
     val isMusicEnabled by viewModel.musicEnabled.collectAsState()
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+    val effectiveTheme = matchState.tableTheme ?: prefs.tableTheme
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val window = context.findActivity()?.window
@@ -90,11 +91,11 @@ fun GameScreen(
     }
 
     // Controle dinâmico da música de fundo (BGM) conforme o ciclo de vida, tema e estado do jogo
-    LaunchedEffect(matchState.status, isMusicEnabled, prefs.tableTheme) {
+    LaunchedEffect(matchState.status, isMusicEnabled, effectiveTheme) {
         when (matchState.status) {
             MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE -> {
                 if (isMusicEnabled) {
-                    AirHockeyApp.instance.audioEngine.playBgm(prefs.tableTheme)
+                    AirHockeyApp.instance.audioEngine.playBgm(effectiveTheme)
                 } else {
                     AirHockeyApp.instance.audioEngine.pauseBgm()
                 }
@@ -156,6 +157,7 @@ fun GameScreen(
                 viewModel = viewModel,
                 mode = mode,
                 zoom = prefs.cameraZoom3d,
+                tableTheme = effectiveTheme,
                 onPresentationFinished = {
                     is3dPresenting = false
                     viewModel.startCountdownAfterPresentation()
@@ -166,6 +168,7 @@ fun GameScreen(
             AirHockeyArenaCanvas(
                 viewModel = viewModel,
                 mode = mode,
+                tableTheme = effectiveTheme,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -173,7 +176,7 @@ fun GameScreen(
         // Placar e Controles estilizados pelo tema ativo
         ScoreBoardOverlay(
             matchState = matchState,
-            tableTheme = prefs.tableTheme,
+            tableTheme = effectiveTheme,
             isSoundEnabled = isSoundEnabled,
             onToggleSound = { viewModel.toggleSound() },
             onPauseClick = { viewModel.pauseMatch() }
@@ -183,7 +186,7 @@ fun GameScreen(
         if (matchState.status == MatchStatus.COUNTDOWN && !is3dPresenting) {
             CountdownOverlay(
                 countdownNumber = matchState.countdownNumber,
-                tableTheme = prefs.tableTheme
+                tableTheme = effectiveTheme
             )
         }
 
@@ -246,7 +249,7 @@ fun GameScreen(
             GoalBannerOverlay(
                 scorer = matchState.lastScorer,
                 scorerName = scorerName,
-                tableTheme = prefs.tableTheme
+                tableTheme = effectiveTheme
             )
         }
 
@@ -293,6 +296,7 @@ fun GameScreen(
                     isWon = matchState.winner == 1,
                     scorePlayer = matchState.scorePlayer1,
                     scoreAi = matchState.scorePlayer2,
+                    conqueredTheme = matchState.newlyConqueredTheme,
                     onSelectStages = {
                         if (activity != null) {
                             AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {

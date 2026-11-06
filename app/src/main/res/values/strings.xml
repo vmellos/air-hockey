@@ -331,4 +331,10 @@
     <string name="neon_bloom_vibrant">Vibrant</string>
     <string name="settings_3d_intro_title">3D Arena Intro Animation</string>
     <string name="settings_3d_intro_desc">Cinematic camera flyover when starting 3D matches</string>
+    <string name="arena_conquered_badge">ARENA UNLOCKED</string>
+    <string name="arena_conquered_message">Theme bundle unlocked for all game modes!</string>
+    <string name="arena_locked_badge">Locked • Stage %d</string>
+    <string name="arena_locked_dialog_title">Locked Arena</string>
+    <string name="arena_locked_dialog_desc">Complete Stage %d in Stages Mode to unlock this complete theme set!</string>
+    <string name="play_stages_mode">Play Stages</string>
 </resources>

@@ -36,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -205,22 +207,28 @@ fun StageCard(
     modifier: Modifier = Modifier
 ) {
     val cardShape = CutCornerShape(12.dp)
+    val isBossStage = stage.stageNumber % 10 == 0
+    val tier = remember(stage.stageNumber) { ArenaConquestCatalog.getTierForStage(stage.stageNumber) }
 
     if (stage.isUnlocked) {
         val isCompleted = stage.starsEarned > 0
-        val accentColor = if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
+        val accentColor = if (isBossStage) tier.primaryColor else if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
 
         Box(
             modifier = modifier
                 .aspectRatio(0.74f)
                 .background(Color(0xD9080E1A), cardShape)
                 .border(
-                    width = 1.2.dp,
+                    width = if (isBossStage) 1.5.dp else 1.2.dp,
                     brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            accentColor.copy(alpha = 0.90f),
-                            accentColor.copy(alpha = 0.35f)
-                        )
+                        colors = if (isBossStage) {
+                            listOf(tier.primaryColor, tier.secondaryColor)
+                        } else {
+                            listOf(
+                                accentColor.copy(alpha = 0.90f),
+                                accentColor.copy(alpha = 0.35f)
+                            )
+                        }
                     ),
                     shape = cardShape
                 )
@@ -260,14 +268,35 @@ fun StageCard(
                     }
                 }
 
-                // Número da Fase
-                Text(
-                    text = "${stage.stageNumber}",
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.5.sp
-                )
+                // Número da Fase e Ícone da Arena Conquistável
+                if (isBossStage) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "${stage.stageNumber}",
+                            color = Color.White,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.5.sp
+                        )
+                        Icon(
+                            imageVector = tier.icon,
+                            contentDescription = null,
+                            tint = tier.primaryColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "${stage.stageNumber}",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.5.sp
+                    )
+                }
 
                 // Selo da Pontuação Alvo da Fase (Padrão Arcade)
                 val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(stage.stageNumber)
@@ -294,15 +323,32 @@ fun StageCard(
             modifier = modifier
                 .aspectRatio(0.74f)
                 .background(Color(0x99080E1A), cardShape)
-                .border(1.dp, Color(0x22FFFFFF), cardShape),
+                .border(
+                    width = 1.dp,
+                    color = if (isBossStage) tier.primaryColor.copy(alpha = 0.35f) else Color(0x22FFFFFF),
+                    shape = cardShape
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Lock,
-                contentDescription = stringResource(R.string.stage_locked),
-                tint = Color(0xFF475569),
-                modifier = Modifier.size(32.dp)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = stringResource(R.string.stage_locked),
+                    tint = if (isBossStage) tier.primaryColor.copy(alpha = 0.70f) else Color(0xFF475569),
+                    modifier = Modifier.size(24.dp)
+                )
+                if (isBossStage) {
+                    Icon(
+                        imageVector = tier.icon,
+                        contentDescription = null,
+                        tint = tier.primaryColor.copy(alpha = 0.40f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }

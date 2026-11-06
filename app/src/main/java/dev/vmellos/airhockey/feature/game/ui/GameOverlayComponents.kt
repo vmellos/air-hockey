@@ -43,6 +43,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.runtime.remember
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -923,6 +925,7 @@ fun StageResultDialog(
     isWon: Boolean,
     scorePlayer: Int,
     scoreAi: Int,
+    conqueredTheme: TableTheme? = null,
     onSelectStages: () -> Unit,
     onRetry: () -> Unit,
     onNextStage: () -> Unit
@@ -1024,6 +1027,67 @@ fun StageResultDialog(
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.Monospace
                 )
+
+                // Celebração de Conquista de Arena (sem emojis, com ícone vetorial e tipografia arcade)
+                val conqueredTier = if (isWon && conqueredTheme != null) {
+                    remember(conqueredTheme) { ArenaConquestCatalog.getTierForTheme(conqueredTheme) }
+                } else null
+
+                if (conqueredTier != null) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Surface(
+                        shape = CutCornerShape(12.dp),
+                        color = Color(0x3300E5FF),
+                        border = BorderStroke(
+                            1.5.dp,
+                            Brush.horizontalGradient(
+                                listOf(conqueredTier.primaryColor, conqueredTier.secondaryColor)
+                            )
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = conqueredTier.icon,
+                                    contentDescription = null,
+                                    tint = conqueredTier.primaryColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.arena_conquered_badge),
+                                    color = Color.White,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 1.2.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(conqueredTier.titleRes).uppercase(),
+                                color = conqueredTier.primaryColor,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(R.string.arena_conquered_message),
+                                color = Color(0xFF94A3B8),
+                                fontSize = 11.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(22.dp))
 
