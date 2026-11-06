@@ -146,8 +146,8 @@ fun GameScreen(
         }
     }
 
-    val is3dActive = prefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL && mode != GameMode.SPLIT_SCREEN
-    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled
+    val is3dActive = prefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled && mode != GameMode.SPLIT_SCREEN
     var is3dPresenting by remember { mutableStateOf(shouldPresent) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -190,8 +190,8 @@ fun GameScreen(
             )
         }
 
-        // Botão de Alternância de Zoom 3D no HUD (Próximo, Padrão, Amplo)
-        if (is3dActive && !is3dPresenting && matchState.status != MatchStatus.PAUSED && matchState.status != MatchStatus.GAME_OVER) {
+        // Botão de Alternância de Zoom 3D no HUD (Próximo, Padrão, Amplo) - Oculto em Split-Screen pois utiliza a Câmera Zenital
+        if (is3dActive && mode != GameMode.SPLIT_SCREEN && !is3dPresenting && matchState.status != MatchStatus.PAUSED && matchState.status != MatchStatus.GAME_OVER) {
             val nextZoom = when (prefs.cameraZoom3d) {
                 CameraZoom3D.STANDARD -> CameraZoom3D.WIDE
                 CameraZoom3D.WIDE -> CameraZoom3D.CLOSE

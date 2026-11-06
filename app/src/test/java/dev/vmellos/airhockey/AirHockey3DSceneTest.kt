@@ -33,6 +33,57 @@ class AirHockey3DSceneTest {
     }
 
     @Test
+    fun cameraPreset_splitScreen_usesZenithTopDownPositionAndRotation() {
+        val splitPreset = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = true)
+        assertEquals(0f, splitPreset.position.x, 1e-4f)
+        assertEquals(3.40f, splitPreset.position.y, 1e-4f)
+        assertEquals(0f, splitPreset.position.z, 1e-4f)
+        assertEquals(-90f, splitPreset.rotation.x, 1e-4f)
+        assertEquals(0f, splitPreset.rotation.y, 1e-4f)
+    }
+
+    @Test
+    fun screenToTable3D_splitScreen_mapsBothPlayerHalvesSymmetrically() {
+        val splitPreset = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = true)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        // Center screen maps to table center (500, 1000)
+        val centerPt = screenToTable3D(
+            screenX = screenW / 2f,
+            screenY = screenH / 2f,
+            w = screenW,
+            h = screenH,
+            camX = splitPreset.position.x,
+            camY = splitPreset.position.y,
+            camZ = splitPreset.position.z,
+            camPitchDeg = splitPreset.rotation.x
+        )
+        assertNotNull(centerPt)
+        centerPt?.let {
+            assertEquals(500f, it.x, 5f)
+            assertEquals(1000f, it.y, 5f)
+        }
+
+        // P1 touch in bottom half vs P2 touch in top half (deltaY = 600)
+        val dY = 600f
+        val p1Pt = screenToTable3D(screenW / 2f, (screenH / 2f) + dY, screenW, screenH, splitPreset.position.x, splitPreset.position.y, splitPreset.position.z, splitPreset.rotation.x)
+        val p2Pt = screenToTable3D(screenW / 2f, (screenH / 2f) - dY, screenW, screenH, splitPreset.position.x, splitPreset.position.y, splitPreset.position.z, splitPreset.rotation.x)
+
+        assertNotNull(p1Pt)
+        assertNotNull(p2Pt)
+        p1Pt?.let { p1 ->
+            p2Pt?.let { p2 ->
+                assertTrue("P1 touch should be in host half", p1.y > 1000f)
+                assertTrue("P2 touch should be in guest half", p2.y < 1000f)
+                val distP1FromCenter = p1.y - 1000f
+                val distP2FromCenter = 1000f - p2.y
+                assertEquals("Touches equidistant from screen center must map symmetrically to table center", distP1FromCenter, distP2FromCenter, 2f)
+            }
+        }
+    }
+
+    @Test
     fun screenToTable3D_mapsPlayer1TouchToPlayer1Half() {
         val standard = getCameraPreset(CameraZoom3D.STANDARD)
         val screenW = 1080f
