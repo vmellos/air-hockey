@@ -337,4 +337,9 @@
     <string name="arena_locked_dialog_title">Arena Bloqueada</string>
     <string name="arena_locked_dialog_desc">¡Completa la Fase %d en el Modo Fases para desbloquear este conjunto temático completo!</string>
     <string name="play_stages_mode">Jugar Fases</string>
+    <string name="pre_match_arena_title">Elige la Arena del Partido</string>
+    <string name="pre_match_confirm_host">Confirmar y Abrir Mesa</string>
+    <string name="pre_match_start_game">Iniciar Partida</string>
+    <string name="pre_match_mode_2d">2D Clásico</string>
+    <string name="pre_match_mode_3d">3D Inmersivo</string>
 </resources>

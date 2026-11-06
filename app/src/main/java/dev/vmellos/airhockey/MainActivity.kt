@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import dev.vmellos.airhockey.core.update.InAppUpdateEngine
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,6 +44,7 @@ import dev.vmellos.airhockey.feature.stage.ui.StageSelectionScreen
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.settings.ui.SettingsScreen
 import dev.vmellos.airhockey.feature.customization.ui.ArenaCustomizationScreen
+import dev.vmellos.airhockey.feature.customization.ui.PreMatchArenaSelectionScreen
 import dev.vmellos.airhockey.ui.theme.AirHockeyTheme
 
 class MainActivity : ComponentActivity() {
@@ -153,18 +155,7 @@ fun AirHockeyAppNavigation(
                     navController.navigate("stages")
                 },
                 onStartSplit = {
-                    val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.SPLIT_SCREEN,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        puckMaxSpeed = puckPreset.maxSpeed,
-                        airFriction = puckPreset.airFriction,
-                        player1Name = context.getString(R.string.player_1_default),
-                        player2Name = context.getString(R.string.player_2_default)
-                    )
-                    navController.navigate("game/SPLIT_SCREEN")
+                    navController.navigate("pre-match/SPLIT_SCREEN")
                 },
                 onStartNetwork = {
                     lobbyViewModel.resetToRoleSelection()
@@ -236,6 +227,11 @@ fun AirHockeyAppNavigation(
                     lobbyViewModel.stopAll()
                     navController.popBackStack()
                 },
+                onNavigateToStages = {
+                    navController.navigate("stages") {
+                        popUpTo("menu")
+                    }
+                },
                 onStartAiVsAiLocal = { diff1, diff2 ->
                     val puckPreset = when (diff1) {
                         dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
@@ -259,6 +255,41 @@ fun AirHockeyAppNavigation(
                     )
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
+                    }
+                }
+            )
+        }
+
+        composable("pre-match/{mode}") { backStackEntry ->
+            val modeStr = backStackEntry.arguments?.getString("mode") ?: "SPLIT_SCREEN"
+            val isSplit = modeStr == "SPLIT_SCREEN"
+
+            PreMatchArenaSelectionScreen(
+                confirmButtonText = stringResource(R.string.pre_match_start_game),
+                isSplitScreen = isSplit,
+                onBack = { navController.popBackStack() },
+                onNavigateToStages = {
+                    navController.navigate("stages") {
+                        popUpTo("menu")
+                    }
+                },
+                onConfirm = { chosenTheme ->
+                    if (isSplit) {
+                        val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
+                        gameViewModel.initializeMatch(
+                            mode = GameMode.SPLIT_SCREEN,
+                            bezelGapMm = userPrefs.bezelGapMm,
+                            targetScore = userPrefs.targetScore,
+                            matchTimeSeconds = userPrefs.matchTimeSeconds,
+                            puckMaxSpeed = puckPreset.maxSpeed,
+                            airFriction = puckPreset.airFriction,
+                            player1Name = context.getString(R.string.player_1_default),
+                            player2Name = context.getString(R.string.player_2_default),
+                            tableTheme = chosenTheme
+                        )
+                        navController.navigate("game/SPLIT_SCREEN") {
+                            popUpTo("menu")
+                        }
                     }
                 }
             )

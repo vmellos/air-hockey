@@ -350,6 +350,14 @@ _Avoid_: Restrição cega de sala, trava de convidado, lobby bloqueado
 A transmissão do identificador de Tema de Mesa ativo enviada pelo Dispositivo Anfitrião ao Dispositivo Convidado no handshake de abertura da sessão multijogador, garantindo paridade visual na renderização da arena independentemente do progresso individual do convidado.
 _Avoid_: Sync de skin, pacote de campo, tema compartilhado
 
+**Seletor Pré-Jogo de Arenas**:
+A interface de confirmação exibida antes da inicialização de partidas locais (P1 x P2 Split-Screen ou IA x IA) ou da abertura de mesas multijogador pelo Anfitrião, permitindo inspecionar as arenas conquistadas com pré-visualização interativa (2D/3D), alternar a dimensão gráfica e confirmar o palco do confronto.
+_Avoid_: Tela de skin, menu de mapa, pré-jogo avulso
+
+**Selo de Bloqueio Minimalista**:
+A representação visual discreta aplicada aos itens cosméticos e arenas ainda não conquistados, constituída exclusivamente pelo ícone vetorial de cadeado, postergando detalhes de nível e instruções de desbloqueio para o diálogo interativo disparado ao toque.
+_Avoid_: Badge com texto de fase, selo com número, tarja de bloqueio
+
 ## Competição e Classificação
 
 **Placar de Líderes**:

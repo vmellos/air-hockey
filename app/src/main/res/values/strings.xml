@@ -337,4 +337,9 @@
     <string name="arena_locked_dialog_title">Locked Arena</string>
     <string name="arena_locked_dialog_desc">Complete Stage %d in Stages Mode to unlock this complete theme set!</string>
     <string name="play_stages_mode">Play Stages</string>
+    <string name="pre_match_arena_title">Select Match Arena</string>
+    <string name="pre_match_confirm_host">Confirm &amp; Open Table</string>
+    <string name="pre_match_start_game">Start Match</string>
+    <string name="pre_match_mode_2d">2D Flat</string>
+    <string name="pre_match_mode_3d">3D Arena</string>
 </resources>

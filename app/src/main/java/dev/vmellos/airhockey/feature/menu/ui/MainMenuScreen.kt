@@ -30,7 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Stadium
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Redeem
@@ -219,7 +219,7 @@ fun MainMenuScreen(
                             .border(1.2.dp, Color(0x6600E5FF), CircleShape)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Palette,
+                            imageVector = Icons.Default.Stadium,
                             contentDescription = stringResource(R.string.customization_menu_tooltip),
                             tint = Color(0xFF00E5FF),
                             modifier = Modifier.size(20.dp)

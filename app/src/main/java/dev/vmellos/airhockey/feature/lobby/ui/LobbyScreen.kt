@@ -93,11 +93,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import dev.vmellos.airhockey.R
+import dev.vmellos.airhockey.feature.customization.ui.PreMatchArenaSelectionScreen
 import dev.vmellos.airhockey.feature.lobby.ConnectionStatus
 import dev.vmellos.airhockey.feature.lobby.LobbyRole
 import dev.vmellos.airhockey.feature.lobby.LobbyViewModel
 import dev.vmellos.airhockey.feature.qrcode.QrCodeGenerator
 import dev.vmellos.airhockey.feature.qrcode.QrCodeScannerView
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 
 @Composable
 fun LobbyScreen(
@@ -105,6 +107,7 @@ fun LobbyScreen(
     onBackToMenu: () -> Unit,
     onStartHostMatch: (() -> Unit)? = null,
     onStartAiVsAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null,
+    onNavigateToStages: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsState()
@@ -114,6 +117,48 @@ fun LobbyScreen(
     var showNameDialog by remember { mutableStateOf(false) }
     var nameInput by remember { mutableStateOf("") }
     var showCreateHostDialog by remember { mutableStateOf(false) }
+    var showArenaSelection by remember { mutableStateOf(false) }
+    var pendingHostMode by remember { mutableStateOf<String?>(null) }
+    var pendingAiDiff1 by remember { mutableStateOf<dev.vmellos.airhockey.core.preferences.AiDifficulty?>(null) }
+    var pendingAiDiff2 by remember { mutableStateOf<dev.vmellos.airhockey.core.preferences.AiDifficulty?>(null) }
+
+    if (showArenaSelection && pendingHostMode != null) {
+        val mode = pendingHostMode!!
+        val isAiLocal = mode == "AI_LOCAL"
+        val confirmText = if (isAiLocal) {
+            stringResource(R.string.pre_match_start_game)
+        } else {
+            stringResource(R.string.pre_match_confirm_host)
+        }
+
+        BackHandler {
+            showArenaSelection = false
+            showCreateHostDialog = true
+        }
+
+        PreMatchArenaSelectionScreen(
+            confirmButtonText = confirmText,
+            isSplitScreen = false,
+            onBack = {
+                showArenaSelection = false
+                showCreateHostDialog = true
+            },
+            onNavigateToStages = onNavigateToStages,
+            onConfirm = { chosenTheme ->
+                showArenaSelection = false
+                if (isAiLocal) {
+                    val d1 = pendingAiDiff1 ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
+                    val d2 = pendingAiDiff2 ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
+                    onStartAiVsAiLocal?.invoke(d1, d2)
+                } else {
+                    val d1Str = pendingAiDiff1?.name ?: ""
+                    val d2Str = pendingAiDiff2?.name ?: ""
+                    viewModel.startAsHost(mode, d1Str, d2Str)
+                }
+            }
+        )
+        return
+    }
 
     if (showNameDialog) {
         AlertDialog(
@@ -460,20 +505,32 @@ fun LobbyScreen(
                 onDismiss = { showCreateHostDialog = false },
                 onSelectExtended = {
                     showCreateHostDialog = false
-                    viewModel.startAsHost("EXTENDED")
+                    pendingHostMode = "EXTENDED"
+                    pendingAiDiff1 = null
+                    pendingAiDiff2 = null
+                    showArenaSelection = true
                 },
                 onSelectConnected = {
                     showCreateHostDialog = false
-                    viewModel.startAsHost("CONNECTED")
+                    pendingHostMode = "CONNECTED"
+                    pendingAiDiff1 = null
+                    pendingAiDiff2 = null
+                    showArenaSelection = true
                 },
                 onSelectAiExtended = { d1, d2 ->
                     showCreateHostDialog = false
-                    viewModel.startAsHost("AI_EXTENDED", d1.name, d2.name)
+                    pendingHostMode = "AI_EXTENDED"
+                    pendingAiDiff1 = d1
+                    pendingAiDiff2 = d2
+                    showArenaSelection = true
                 },
-                onSelectAiLocal = onStartAiVsAiLocal?.let { callback ->
+                onSelectAiLocal = onStartAiVsAiLocal?.let {
                     { d1, d2 ->
                         showCreateHostDialog = false
-                        callback(d1, d2)
+                        pendingHostMode = "AI_LOCAL"
+                        pendingAiDiff1 = d1
+                        pendingAiDiff2 = d2
+                        showArenaSelection = true
                     }
                 }
             )
@@ -646,34 +703,68 @@ private fun HostLobbyView(
             else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
         }
 
-        Surface(
-            color = hostModeColor.copy(alpha = 0.15f),
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, hostModeColor.copy(alpha = 0.5f)),
-            modifier = Modifier.then(
-                if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
-            )
+        val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+        val arenaTier = remember(userPrefs.tableTheme) { ArenaConquestCatalog.getTierForTheme(userPrefs.tableTheme) }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Icon(hostModeIcon, contentDescription = null, tint = hostModeColor, modifier = Modifier.size(16.dp))
-                Text(
-                    text = hostModeLabel.uppercase(),
-                    color = hostModeColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+            Surface(
+                color = hostModeColor.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, hostModeColor.copy(alpha = 0.5f)),
+                modifier = Modifier.then(
+                    if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
                 )
-                if (onChangeMode != null) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.content_desc_change_mode),
-                        tint = hostModeColor.copy(alpha = 0.7f),
-                        modifier = Modifier.size(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Icon(hostModeIcon, contentDescription = null, tint = hostModeColor, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = hostModeLabel.uppercase(),
+                        color = hostModeColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
+                    if (onChangeMode != null) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.content_desc_change_mode),
+                            tint = hostModeColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+
+            if (arenaTier != null) {
+                Surface(
+                    color = arenaTier.primaryColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, arenaTier.primaryColor.copy(alpha = 0.5f)),
+                    modifier = Modifier.then(
+                        if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Icon(arenaTier.icon, contentDescription = null, tint = arenaTier.primaryColor, modifier = Modifier.size(16.dp))
+                        Text(
+                            text = stringResource(arenaTier.titleRes).uppercase(),
+                            color = arenaTier.primaryColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
                 }
             }
         }
