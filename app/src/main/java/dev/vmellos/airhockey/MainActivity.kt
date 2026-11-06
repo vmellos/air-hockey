@@ -96,6 +96,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        AirHockeyApp.instance.audioEngine.stopAll()
         AirHockeyApp.instance.playGamesManager.detachActivity(this)
     }
 
