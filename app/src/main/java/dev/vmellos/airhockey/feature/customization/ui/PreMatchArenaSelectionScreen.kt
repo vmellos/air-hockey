@@ -94,7 +94,7 @@ fun PreMatchArenaSelectionScreen(
 
     var selectedTheme by remember { mutableStateOf(prefs.tableTheme) }
     var selectedDimension by remember {
-        mutableStateOf(if (isSplitScreen) ArenaDimension.TWO_DIMENSIONAL else prefs.arenaDimension)
+        mutableStateOf(prefs.arenaDimension)
     }
     var lockedDialogInfo by remember { mutableStateOf<PreMatchLockedDialogInfo?>(null) }
 
@@ -190,72 +190,70 @@ fun PreMatchArenaSelectionScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 3. Seletor de Dimensão Gráfica (2D / 3D) quando permitido pelo modo
-            if (!isSplitScreen) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // 3. Seletor de Dimensão Gráfica (2D / 3D)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val is3D = selectedDimension == ArenaDimension.THREE_DIMENSIONAL
+                
+                Surface(
+                    onClick = { selectedDimension = ArenaDimension.TWO_DIMENSIONAL },
+                    shape = CutCornerShape(8.dp),
+                    color = if (!is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
+                    border = BorderStroke(1.2.dp, if (!is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    val is3D = selectedDimension == ArenaDimension.THREE_DIMENSIONAL
-                    
-                    Surface(
-                        onClick = { selectedDimension = ArenaDimension.TWO_DIMENSIONAL },
-                        shape = CutCornerShape(8.dp),
-                        color = if (!is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
-                        border = BorderStroke(1.2.dp, if (!is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ViewAgenda,
-                                contentDescription = null,
-                                tint = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.pre_match_mode_2d).uppercase(),
-                                color = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.ViewAgenda,
+                            contentDescription = null,
+                            tint = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.pre_match_mode_2d).uppercase(),
+                            color = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
                     }
+                }
 
-                    Surface(
-                        onClick = { selectedDimension = ArenaDimension.THREE_DIMENSIONAL },
-                        shape = CutCornerShape(8.dp),
-                        color = if (is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
-                        border = BorderStroke(1.2.dp, if (is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
-                        modifier = Modifier.weight(1f)
+                Surface(
+                    onClick = { selectedDimension = ArenaDimension.THREE_DIMENSIONAL },
+                    shape = CutCornerShape(8.dp),
+                    color = if (is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
+                    border = BorderStroke(1.2.dp, if (is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Layers,
-                                contentDescription = null,
-                                tint = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.pre_match_mode_3d).uppercase(),
-                                color = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = null,
+                            tint = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.pre_match_mode_3d).uppercase(),
+                            color = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
                     }
                 }
             }
@@ -380,9 +378,7 @@ fun PreMatchArenaSelectionScreen(
 
                     coroutineScope.launch {
                         preferencesRepo.applyThemePreset(finalTheme)
-                        if (!isSplitScreen) {
-                            preferencesRepo.updateArenaDimension(selectedDimension)
-                        }
+                        preferencesRepo.updateArenaDimension(selectedDimension)
                     }
                     onConfirm(finalTheme)
                 },

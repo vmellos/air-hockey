@@ -53,20 +53,28 @@ data class CameraPreset(
     val rotation: Float3
 )
 
-fun getCameraPreset(zoom: CameraZoom3D): CameraPreset = when (zoom) {
-    CameraZoom3D.CLOSE -> CameraPreset(
-        position = Float3(0f, 2.10f, 1.80f),
-        rotation = Float3(-47f, 0f, 0f)
-    )
-    CameraZoom3D.STANDARD -> CameraPreset(
-        position = Float3(0f, 2.50f, 2.15f),
-        rotation = Float3(-46f, 0f, 0f)
-    )
-    CameraZoom3D.WIDE -> CameraPreset(
-        position = Float3(0f, 2.95f, 2.55f),
-        rotation = Float3(-45f, 0f, 0f)
-    )
-}
+fun getCameraPreset(zoom: CameraZoom3D, isSplitScreen: Boolean = false): CameraPreset =
+    if (isSplitScreen) {
+        CameraPreset(
+            position = Float3(0f, 3.40f, 0f),
+            rotation = Float3(-90f, 0f, 0f)
+        )
+    } else {
+        when (zoom) {
+            CameraZoom3D.CLOSE -> CameraPreset(
+                position = Float3(0f, 2.10f, 1.80f),
+                rotation = Float3(-47f, 0f, 0f)
+            )
+            CameraZoom3D.STANDARD -> CameraPreset(
+                position = Float3(0f, 2.50f, 2.15f),
+                rotation = Float3(-46f, 0f, 0f)
+            )
+            CameraZoom3D.WIDE -> CameraPreset(
+                position = Float3(0f, 2.95f, 2.55f),
+                rotation = Float3(-45f, 0f, 0f)
+            )
+        }
+    }
 
 /**
  * Estado operacional da Arena 3D desacoplado do ciclo de recomposição do Jetpack Compose.
@@ -376,11 +384,16 @@ fun AirHockeyArena3DScene(
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
 
-    val targetPreset = remember(zoom) { getCameraPreset(zoom) }
-    val sceneState = remember { Scene3DState(targetPreset, initialPresenting = prefs.arena3dIntroEnabled) }
+    val isSplitScreen = mode == GameMode.SPLIT_SCREEN
+    val targetPreset = remember(zoom, isSplitScreen) { getCameraPreset(zoom, isSplitScreen) }
+    val sceneState = remember(isSplitScreen) {
+        Scene3DState(targetPreset, initialPresenting = if (isSplitScreen) false else prefs.arena3dIntroEnabled)
+    }
 
     val coroutineScope = rememberCoroutineScope()
-    val presentationAnim = remember { Animatable(if (prefs.arena3dIntroEnabled) 0f else 1f) }
+    val presentationAnim = remember(isSplitScreen) {
+        Animatable(if (isSplitScreen || !prefs.arena3dIntroEnabled) 1f else 0f)
+    }
 
     val inputController = remember { ArenaInputController() }
     val particlePool = remember { ParticlePool3D(maxSparks = 60, maxShockwaves = 10) }
@@ -388,8 +401,8 @@ fun AirHockeyArena3DScene(
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
 
     // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone)
-    LaunchedEffect(prefs.arena3dIntroEnabled) {
-        if (!prefs.arena3dIntroEnabled) {
+    LaunchedEffect(prefs.arena3dIntroEnabled, isSplitScreen) {
+        if (isSplitScreen || !prefs.arena3dIntroEnabled) {
             sceneState.presentationProgress = 1f
             sceneState.isPresenting = false
             presentationAnim.snapTo(1f)
