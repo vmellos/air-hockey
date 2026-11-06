@@ -155,7 +155,7 @@ class GameViewModel : ViewModel() {
         val mode = spec.mode
         val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
                 mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
         val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(spec.bezelGapMm, spec.screenHeightPx, spec.yDpi) else 0f
 
         val dimensions = TableDimensions(
@@ -459,7 +459,7 @@ class GameViewModel : ViewModel() {
     }
 
     private val MatchState.isGuestMode: Boolean
-        get() = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        get() = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
 
     fun pauseMatch() {
         if (_matchState.value.isGuestMode) {

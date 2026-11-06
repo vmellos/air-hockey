@@ -366,6 +366,8 @@
     <string name="pre_match_start_game">Iniciar Partida</string>
     <string name="pre_match_mode_2d">2D Clásico</string>
     <string name="pre_match_mode_3d">3D Inmersivo</string>
+    <string name="pre_match_badge_soon">PRONTO</string>
+    <string name="extended_table_3d_in_dev">Mesa Extendida en 3D en desarrollo. Juega en 2D uniendo físicamente los teléfonos.</string>
 
     <!-- Google Play Games Services -->
     <string name="pgs_sign_in_success">Play Games: %1$s</string>
