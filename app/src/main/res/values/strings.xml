@@ -342,4 +342,15 @@
     <string name="pre_match_start_game">Start Match</string>
     <string name="pre_match_mode_2d">2D Flat</string>
     <string name="pre_match_mode_3d">3D Arena</string>
+
+    <!-- Google Play Games Services -->
+    <string name="game_services_project_id" translatable="false">925142400705</string>
+    <string name="pgs_sign_in_success">Play Games: %1$s</string>
+    <string name="pgs_sign_in_offline">Play Games Offline</string>
+    <string name="pgs_sync_in_progress">Syncing cloud save…</string>
+    <string name="pgs_sync_complete">Cloud save synchronized</string>
+    <string name="pgs_open_achievements">Achievements</string>
+    <string name="pgs_open_leaderboards">Global Rankings</string>
+    <string name="pgs_saved_games_title">Cloud Saves</string>
+    <string name="pgs_profile_sync_btn">Cloud Sync</string>
 </resources>

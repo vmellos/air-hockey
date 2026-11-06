@@ -342,4 +342,14 @@
     <string name="pre_match_start_game">Iniciar Partida</string>
     <string name="pre_match_mode_2d">2D Clássico</string>
     <string name="pre_match_mode_3d">3D Imersivo</string>
+
+    <!-- Google Play Games Services -->
+    <string name="pgs_sign_in_success">Play Games: %1$s</string>
+    <string name="pgs_sign_in_offline">Play Games Desconectado</string>
+    <string name="pgs_sync_in_progress">Sincronizando nuvem…</string>
+    <string name="pgs_sync_complete">Progresso salvo na nuvem</string>
+    <string name="pgs_open_achievements">Conquistas</string>
+    <string name="pgs_open_leaderboards">Rankings Globais</string>
+    <string name="pgs_saved_games_title">Jogos Salvos</string>
+    <string name="pgs_profile_sync_btn">Sincronizar Nuvem</string>
 </resources>

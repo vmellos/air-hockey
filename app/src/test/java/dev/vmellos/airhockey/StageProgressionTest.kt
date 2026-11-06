@@ -24,6 +24,10 @@ class FakeStageProgressDao : StageProgressDao {
 
     override fun getAllStages(): Flow<List<StageProgressEntity>> = stagesFlowInternal
 
+    override suspend fun getAllStagesDirect(): List<StageProgressEntity> {
+        return stagesMap.values.sortedBy { it.stageNumber }
+    }
+
     override fun getStage(stageNumber: Int): Flow<StageProgressEntity?> {
         return stagesFlowInternal.map { list -> list.find { it.stageNumber == stageNumber } }
     }
@@ -35,6 +39,11 @@ class FakeStageProgressDao : StageProgressDao {
     override suspend fun getStagesCount(): Int = stagesMap.size
 
     override suspend fun insertAll(stages: List<StageProgressEntity>) {
+        stages.forEach { stagesMap[it.stageNumber] = it }
+        stagesFlowInternal.value = stagesMap.values.sortedBy { it.stageNumber }
+    }
+
+    override suspend fun upsertAll(stages: List<StageProgressEntity>) {
         stages.forEach { stagesMap[it.stageNumber] = it }
         stagesFlowInternal.value = stagesMap.values.sortedBy { it.stageNumber }
     }

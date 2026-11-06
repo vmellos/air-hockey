@@ -21,6 +21,12 @@ data class StageConfig(
 
 class StageRepository(private val stageProgressDao: StageProgressDao) {
 
+    private var onProgressUpdated: (() -> Unit)? = null
+
+    fun setOnProgressUpdatedListener(listener: () -> Unit) {
+        onProgressUpdated = listener
+    }
+
     val stagesFlow: Flow<List<StageProgressEntity>> = stageProgressDao.getAllStages()
 
     val totalStarsFlow: Flow<Int> = stageProgressDao.getTotalStars().map { it ?: 0 }
@@ -188,6 +194,10 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
         if (isWin && stageNumber < 100) {
             stageProgressDao.unlockStage(stageNumber + 1)
+        }
+
+        if (isWin) {
+            onProgressUpdated?.invoke()
         }
 
         return stars
