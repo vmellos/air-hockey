@@ -445,7 +445,10 @@ fun AirHockeyArena3DScene(
         SceneView.createView(engine3d).apply {
             bloomOptions = bloomOptions.apply {
                 enabled = prefs.neonBloomIntensity > 0.005f
-                strength = prefs.neonBloomIntensity
+                threshold = false
+                highlight = 1.0f
+                strength = (prefs.neonBloomIntensity / 0.10f) * 0.45f
+                blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
             }
         }
     }
@@ -453,7 +456,10 @@ fun AirHockeyArena3DScene(
     LaunchedEffect(prefs.neonBloomIntensity) {
         view3d.bloomOptions = view3d.bloomOptions.apply {
             enabled = prefs.neonBloomIntensity > 0.005f
-            strength = prefs.neonBloomIntensity
+            threshold = false
+            highlight = 1.0f
+            strength = (prefs.neonBloomIntensity / 0.10f) * 0.45f
+            blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
         }
     }
 

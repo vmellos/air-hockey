@@ -130,6 +130,22 @@ _Avoid_: Faíscas comuns, explosão 2D, efeito de batida, colisão simples
 O giro angular contínuo do modelo tridimensional do disco ao redor de seu eixo vertical (Y) no motor Sceneview, calibrado proceduralmente com taxa de rotação proporcional à velocidade do deslocamento físico.
 _Avoid_: Spin 2D, giro solto, rotação fake, giro aleatório
 
+**Vitrine de Pré-Visualização 3D**:
+O componente visual interativo na tela de customização que renderiza a Mesa, Disco e Rebatedores em tempo real via Sceneview/Filament, permitindo inspeção estética e espacial completa antes de equipar os itens.
+_Avoid_: Preview 3D, caixa 3D, janela 3D, visualizador de skins
+
+**Giro de Apresentação Contínuo**:
+A rotação orbital lenta e automática da cena ao redor do eixo vertical na Vitrine de Pré-Visualização 3D, simulando um expositor giratório (turntable) que é temporariamente pausado durante qualquer manipulação tátil e restabelecido suavemente após período de inatividade.
+_Avoid_: Auto-rotate, giro fake, rotação infinita, giro solto
+
+**Manipulação por Câmera Orbital**:
+O sistema de controle por gestos táteis multitoque (arraste com um dedo para órbita em azimute/elevação e pinça com dois dedos para zoom) na Vitrine de Pré-Visualização 3D, delimitado por limites de distância e altura para prevenir colisões ou ângulos cegos abaixo do solo.
+_Avoid_: Pinch zoom simples, touch livre, arrastar câmera, gesto solto
+
+**Controle Direto de Bloom Neon**:
+O mecanismo e interface de ajuste em tempo real da intensidade de dispersão luminosa (bloom) e luminescência dos materiais emissivos na Vitrine de Pré-Visualização 3D, proporcionando feedback visual imediato com persistência automática nas preferências globais do jogador.
+_Avoid_: Slider de brilho, ajuste de luz, efeito neon, bloom slider
+
 ## Modos de Jogo
 
 **Modo Solo**:
