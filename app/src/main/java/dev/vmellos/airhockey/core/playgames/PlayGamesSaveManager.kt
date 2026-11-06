@@ -138,6 +138,20 @@ class PlayGamesSaveManager(
 
             snapshotsClient.commitAndClose(snapshot, metadataChange).await()
 
+            // 3. Submete pontuações consolidadas aos Placares Globais da Google Play (se IDs estiverem configurados)
+            try {
+                val eloId = activity.getString(dev.vmellos.airhockey.R.string.leaderboard_elo_id)
+                if (eloId.isNotBlank() && finalPayload.stats != null) {
+                    PlayGames.getLeaderboardsClient(activity).submitScore(eloId, finalPayload.stats.ratingElo.toLong())
+                }
+                val stageId = activity.getString(dev.vmellos.airhockey.R.string.leaderboard_stages_id)
+                if (stageId.isNotBlank()) {
+                    PlayGames.getLeaderboardsClient(activity).submitScore(stageId, finalPayload.totalStars.toLong())
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Submissão de placares na sincronização ignorada: ${e.message}")
+            }
+
             Log.i(TAG, "Sincronização em nuvem concluída com sucesso! Fase $highestStage, $totalStars estrelas.")
             _syncState.value = CloudSyncState.Success(
                 lastSyncTimestamp = System.currentTimeMillis(),

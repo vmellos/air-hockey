@@ -3,6 +3,7 @@ package dev.vmellos.airhockey.feature.game
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.feature.lobby.MultiplayerMatchCoordinator
 import dev.vmellos.airhockey.feature.network.ControlMessages
@@ -536,7 +537,7 @@ class GameViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                AirHockeyApp.instance.leaderboardRepository.recordMatch(
+                val record = AirHockeyApp.instance.leaderboardRepository.recordMatch(
                     gameMode = modeStr,
                     aiDifficulty = diff,
                     playerAName = state.player1Name,
@@ -545,6 +546,12 @@ class GameViewModel : ViewModel() {
                     scoreB = state.scorePlayer2,
                     durationSeconds = duration
                 )
+                val eloLeaderboardId = AirHockeyApp.instance.getString(R.string.leaderboard_elo_id)
+                if (eloLeaderboardId.isNotBlank()) {
+                    val profile = AirHockeyApp.instance.leaderboardRepository.getPlayerStatsDirect(state.player1Name)
+                    val newElo = profile?.ratingElo ?: (1000 + record.ratingDeltaA)
+                    AirHockeyApp.instance.playGamesManager.submitScore(eloLeaderboardId, newElo.toLong())
+                }
             } catch (_: Exception) {}
 
             if (state.mode == GameMode.SOLO) {
@@ -558,6 +565,14 @@ class GameViewModel : ViewModel() {
                     )
                     val newlyConquered = if (stars > 0 && state.currentStage % 10 == 0 && !previouslyUnlocked) currentTheme else null
                     arbitro?.updateStarsEarned(stars, newlyConquered)
+
+                    if (stars > 0) {
+                        val stageLeaderboardId = AirHockeyApp.instance.getString(R.string.leaderboard_stages_id)
+                        if (stageLeaderboardId.isNotBlank()) {
+                            val totalStars = AirHockeyApp.instance.stageRepository.getTotalStarsDirect()
+                            AirHockeyApp.instance.playGamesManager.submitScore(stageLeaderboardId, totalStars.toLong())
+                        }
+                    }
                 } catch (_: Exception) {}
             }
 

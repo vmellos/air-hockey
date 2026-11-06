@@ -144,8 +144,8 @@
     <string name="game_draw">Draw!</string>
     <string name="settings_player_name_default">Player</string>
 
-    <!-- Leaderboard / Placar de Líderes -->
-    <string name="leaderboard_title">Leaderboard</string>
+    <!-- Leaderboard / Placar de Líderes & Estatísticas de Carreira -->
+    <string name="leaderboard_title">Career &amp; Stats</string>
     <string name="leaderboard_tab_elo">General (Elo)</string>
     <string name="leaderboard_tab_extended">Extended Table</string>
     <string name="leaderboard_tab_solo">Solo vs AI</string>
@@ -157,9 +157,32 @@
     <string name="leaderboard_metric_multi_wins">2P Wins</string>
     <string name="leaderboard_metric_solo_wins">Solo Wins</string>
     <string name="leaderboard_empty_players">No matches recorded yet.\nPlay your first match to rank on the leaderboard!</string>
-    <string name="leaderboard_empty_history">No recent match history available.</string>
+    <string name="leaderboard_empty_history">No recent match history available.\nPlay matches to build your record here!</string>
     <string name="leaderboard_player_record">%1$dW - %2$dL · Diff: %3$s</string>
     <string name="leaderboard_delta_elo">%1$s Elo</string>
+
+    <!-- Career Stats & Play Games Global Rankings -->
+    <string name="stats_tab_overview">Career</string>
+    <string name="stats_tab_history">Match History</string>
+    <string name="stats_global_rankings_title">Google Play Global Rankings</string>
+    <string name="stats_global_rankings_desc">Compete with friends and players worldwide on official leaderboards</string>
+    <string name="stats_global_rankings_cta">View Global Rankings</string>
+    <string name="stats_card_wins_title">Victories</string>
+    <string name="stats_card_win_rate_title">Win Rate</string>
+    <string name="stats_card_streaks_title">Streak Record</string>
+    <string name="stats_card_goals_title">Goal Balance</string>
+    <string name="stats_solo_vs_multi">%1$d Solo · %2$d Multi</string>
+    <string name="stats_current_vs_best">Current: %1$d · Best: %2$d</string>
+    <string name="stats_goals_balance">Scored: %1$d · Conceded: %2$d</string>
+    <string name="stats_match_summary_title">Recent Matches</string>
+    <string name="stats_view_all_history">View Full History</string>
+    <string name="stats_status_offline">Local / Offline</string>
+    <string name="stats_status_connected">Connected: %1$s</string>
+    <string name="match_result_win">WIN</string>
+    <string name="match_result_loss">DEFEAT</string>
+    <string name="match_result_draw">DRAW</string>
+    <string name="leaderboard_elo_id" translatable="false"></string>
+    <string name="leaderboard_stages_id" translatable="false"></string>
     <string name="ad_reward_button_desc">Earn 2h Ad-Free</string>
 
     <!-- Remoção Permanente de Anúncios (Billing) -->

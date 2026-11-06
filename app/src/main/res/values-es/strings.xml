@@ -144,8 +144,8 @@
     <string name="game_draw">¡Empate!</string>
     <string name="settings_player_name_default">Jugador</string>
 
-    <!-- Leaderboard / Placar de Líderes -->
-    <string name="leaderboard_title">Tabla de Clasificación</string>
+    <!-- Leaderboard / Placar de Líderes & Estatísticas de Carreira -->
+    <string name="leaderboard_title">Estadísticas e Historial</string>
     <string name="leaderboard_tab_elo">General (Elo)</string>
     <string name="leaderboard_tab_extended">Mesa Extendida</string>
     <string name="leaderboard_tab_solo">Solo vs IA</string>
@@ -157,9 +157,30 @@
     <string name="leaderboard_metric_multi_wins">Victorias 2P</string>
     <string name="leaderboard_metric_solo_wins">Victorias Solo</string>
     <string name="leaderboard_empty_players">Aún no hay partidas registradas.\n¡Juega tu primera partida para puntuar en la clasificación!</string>
-    <string name="leaderboard_empty_history">No hay historial reciente disponible.</string>
+    <string name="leaderboard_empty_history">No hay historial reciente disponible.\n¡Juega partidas para registrar tus estadísticas aquí!</string>
     <string name="leaderboard_player_record">%1$dV - %2$dD · Dif: %3$s</string>
     <string name="leaderboard_delta_elo">%1$s Elo</string>
+
+    <!-- Career Stats & Play Games Global Rankings -->
+    <string name="stats_tab_overview">Carrera</string>
+    <string name="stats_tab_history">Historial de Partidas</string>
+    <string name="stats_global_rankings_title">Clasificaciones Globales Google Play</string>
+    <string name="stats_global_rankings_desc">Compite con amigos y jugadores de todo el mundo en las tablas oficiales</string>
+    <string name="stats_global_rankings_cta">Ver Clasificaciones Globales</string>
+    <string name="stats_card_wins_title">Victorias</string>
+    <string name="stats_card_win_rate_title">Rendimiento</string>
+    <string name="stats_card_streaks_title">Rachas Invicto</string>
+    <string name="stats_card_goals_title">Goles y Balance</string>
+    <string name="stats_solo_vs_multi">%1$d Solo · %2$d Multi</string>
+    <string name="stats_current_vs_best">Actual: %1$d · Récord: %2$d</string>
+    <string name="stats_goals_balance">A favor: %1$d · En contra: %2$d</string>
+    <string name="stats_match_summary_title">Últimas Partidas</string>
+    <string name="stats_view_all_history">Ver Historial Completo</string>
+    <string name="stats_status_offline">Modo Local / Offline</string>
+    <string name="stats_status_connected">Conectado: %1$s</string>
+    <string name="match_result_win">VICTORIA</string>
+    <string name="match_result_loss">DERROTA</string>
+    <string name="match_result_draw">EMPATE</string>
     <string name="ad_reward_button_desc">Obtener 2h Sin Anuncios</string>
 
     <!-- Remoção Permanente de Anúncios (Billing) -->

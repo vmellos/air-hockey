@@ -15,34 +15,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +71,7 @@ import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.database.MatchRecordEntity
 import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
+import dev.vmellos.airhockey.core.playgames.PlayGamesAuthState
 import dev.vmellos.airhockey.core.util.findActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -87,22 +91,19 @@ fun LeaderboardScreen(
     val prefsRepo = AirHockeyApp.instance.preferencesRepository
     val userPrefs by prefsRepo.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
 
-    val topElo by repo.topPlayersByRating.collectAsState(initial = emptyList())
-    val topMulti by repo.topMultiplayerPlayers.collectAsState(initial = emptyList())
-    val topSolo by repo.topSoloPlayers.collectAsState(initial = emptyList())
     val recentMatches by repo.recentMatches.collectAsState(initial = emptyList())
 
     val defaultPlayerName = stringResource(R.string.settings_player_name_default)
     val selfName = userPrefs.playerName.ifBlank { defaultPlayerName }
     val selfStats by repo.getPlayerStats(selfName).collectAsState(initial = null)
 
+    val pgsAuth by AirHockeyApp.instance.playGamesManager.authState.collectAsState()
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = remember {
         listOf(
-            LeaderboardTabItem(R.string.leaderboard_tab_elo, Icons.Default.EmojiEvents),
-            LeaderboardTabItem(R.string.leaderboard_tab_extended, Icons.Default.SportsEsports),
-            LeaderboardTabItem(R.string.leaderboard_tab_solo, Icons.Default.SmartToy),
-            LeaderboardTabItem(R.string.leaderboard_tab_history, Icons.Default.History)
+            LeaderboardTabItem(R.string.stats_tab_overview, Icons.Default.EmojiEvents),
+            LeaderboardTabItem(R.string.stats_tab_history, Icons.Default.History)
         )
     }
 
@@ -143,97 +144,196 @@ fun LeaderboardScreen(
                     .fillMaxWidth()
                     .safeDrawingPadding()
             ) {
-            // Top Bar
-            val context = LocalContext.current
-            val activity = context.findActivity()
+                // Barra Superior
+                val context = LocalContext.current
+                val activity = context.findActivity()
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = stringResource(R.string.leaderboard_title),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Atalhos Google Play Games: Conquistas & Placares Globais
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    IconButton(
-                        onClick = {
-                            activity?.let { AirHockeyApp.instance.playGamesManager.showAchievements(it) }
-                        },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x66FFB800), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MilitaryTech,
-                            contentDescription = stringResource(R.string.pgs_open_achievements),
-                            tint = Color(0xFFFFB800),
-                            modifier = Modifier.size(20.dp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = onBack,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(Color(0xB3070D1A), CircleShape)
+                                .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.leaderboard_title),
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
-                    IconButton(
-                        onClick = {
-                            activity?.let { AirHockeyApp.instance.playGamesManager.showLeaderboards(it) }
-                        },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    // Atalhos Google Play Games: Conquistas & Placares Globais
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Public,
-                            contentDescription = stringResource(R.string.pgs_open_leaderboards),
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(20.dp)
+                        IconButton(
+                            onClick = {
+                                activity?.let { AirHockeyApp.instance.playGamesManager.showAchievements(it) }
+                            },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xB3070D1A), CircleShape)
+                                .border(1.2.dp, Color(0x66FFB800), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MilitaryTech,
+                                contentDescription = stringResource(R.string.pgs_open_achievements),
+                                tint = Color(0xFFFFB800),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                activity?.let { AirHockeyApp.instance.playGamesManager.showLeaderboards(it) }
+                            },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xB3070D1A), CircleShape)
+                                .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Public,
+                                contentDescription = stringResource(R.string.pgs_open_leaderboards),
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Abas de Seleção: Carreira & Histórico
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = Color(0xD9080E1A),
+                    contentColor = Color(0xFF00E5FF),
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                            color = Color(0xFF00E5FF)
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, tabItem ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = tabItem.icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                                    )
+                                    Text(
+                                        text = stringResource(tabItem.titleRes),
+                                        fontSize = 13.sp,
+                                        fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
+                                    )
+                                }
+                            }
                         )
                     }
                 }
+
+                // Conteúdo da Aba
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    when (selectedTabIndex) {
+                        0 -> CareerOverviewContent(
+                            selfName = selfName,
+                            stats = selfStats,
+                            pgsAuth = pgsAuth,
+                            recentMatches = recentMatches,
+                            onOpenGlobalLeaderboards = {
+                                activity?.let { AirHockeyApp.instance.playGamesManager.showLeaderboards(it) }
+                            },
+                            onNavigateToHistory = {
+                                selectedTabIndex = 1
+                            }
+                        )
+                        1 -> RecentMatchesContent(
+                            matches = recentMatches,
+                            selfName = selfName
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                AdBanner(
+                    adManager = AirHockeyApp.instance.adManager,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                )
             }
+        }
+    }
+}
 
-            // Card do Perfil Local
-            val rating = selfStats?.ratingElo ?: 1000
-            val wins = selfStats?.totalWins ?: 0
-            val matches = selfStats?.totalMatches ?: 0
-            val streak = selfStats?.currentWinStreak ?: 0
-            val winRate = if (matches > 0) ((wins.toDouble() / matches) * 100).toInt() else 0
+@Composable
+private fun CareerOverviewContent(
+    selfName: String,
+    stats: PlayerProfileStatsEntity?,
+    pgsAuth: PlayGamesAuthState,
+    recentMatches: List<MatchRecordEntity>,
+    onOpenGlobalLeaderboards: () -> Unit,
+    onNavigateToHistory: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val rating = stats?.ratingElo ?: 1000
+    val totalWins = stats?.totalWins ?: 0
+    val soloWins = stats?.soloWins ?: 0
+    val multiWins = stats?.multiplayerWins ?: 0
+    val matches = stats?.totalMatches ?: 0
+    val streak = stats?.currentWinStreak ?: 0
+    val bestStreak = stats?.bestWinStreak ?: 0
+    val winRate = stats?.winRatePercent ?: 0
+    val goalsScored = stats?.goalsScored ?: 0
+    val goalsConceded = stats?.goalsConceded ?: 0
+    val diff = stats?.goalDifferential ?: 0
 
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        // 1. Card do Perfil do Jogador & Elo
+        item {
             val profileShape = CutCornerShape(14.dp)
             Card(
                 shape = profileShape,
                 colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .border(1.dp, Color(0x6600E5FF), profileShape)
+                    .border(1.2.dp, Color(0x6600E5FF), profileShape)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -242,10 +342,13 @@ fun LeaderboardScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Box(
                             modifier = Modifier
-                                .size(46.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(Brush.linearGradient(listOf(Color(0xFF00E5FF), Color(0xFF0077B6)))),
                             contentAlignment = Alignment.Center
@@ -262,14 +365,47 @@ fun LeaderboardScreen(
                             Text(
                                 text = selfName,
                                 color = Color.White,
-                                fontSize = 17.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(
-                                text = stringResource(R.string.leaderboard_win_streak, streak),
-                                color = Color(0xFF94A3B8),
-                                fontSize = 12.sp
-                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            // Status da Conexão Play Games
+                            if (pgsAuth is PlayGamesAuthState.Authenticated) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDone,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00E5FF),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.stats_status_connected, pgsAuth.player.displayName),
+                                        color = Color(0xFF00E5FF),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudOff,
+                                        contentDescription = null,
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.stats_status_offline),
+                                        color = Color(0xFF94A3B8),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -277,93 +413,259 @@ fun LeaderboardScreen(
                         Text(
                             text = stringResource(R.string.leaderboard_elo_value, rating),
                             color = Color(0xFFFFB800),
-                            fontSize = 18.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = stringResource(R.string.leaderboard_win_rate, wins, matches, winRate),
-                            color = Color(0xFF00E5FF),
-                            fontSize = 12.sp
+                            text = stringResource(R.string.leaderboard_metric_elo),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 11.sp
                         )
                     }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Tabs
-            ScrollableTabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = Color(0xD9080E1A),
-                contentColor = Color(0xFF00E5FF),
-                edgePadding = 16.dp,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                        color = Color(0xFF00E5FF)
-                    )
-                }
+        // 2. Card de Destaque dos Placares Globais da Google Play
+        item {
+            val pgsCardShape = CutCornerShape(12.dp)
+            Card(
+                shape = pgsCardShape,
+                colors = CardDefaults.cardColors(containerColor = Color(0xD908182B)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.2.dp, Color(0xFF00E5FF), pgsCardShape)
             ) {
-                tabs.forEachIndexed { index, tabItem ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
-                        text = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = tabItem.icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
-                                )
-                                Text(
-                                    text = stringResource(tabItem.titleRes),
-                                    fontSize = 13.sp,
-                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTabIndex == index) Color(0xFF00E5FF) else Color(0xFF94A3B8)
-                                )
-                            }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color(0x3300E5FF), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Public,
+                                contentDescription = null,
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.stats_global_rankings_title),
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.stats_global_rankings_desc),
+                                color = Color(0xFF94A3B8),
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Button(
+                        onClick = onOpenGlobalLeaderboards,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00E5FF),
+                            contentColor = Color(0xFF080E1A)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.stats_global_rankings_cta),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. Grid 2x2 de Métricas de Desempenho
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Vitórias
+                    StatMetricCard(
+                        title = stringResource(R.string.stats_card_wins_title),
+                        value = "$totalWins",
+                        valueColor = Color(0xFF00E676),
+                        subtitle = stringResource(R.string.stats_solo_vs_multi, soloWins, multiWins),
+                        modifier = Modifier.weight(1f)
+                    )
+                    // Aproveitamento
+                    StatMetricCard(
+                        title = stringResource(R.string.stats_card_win_rate_title),
+                        value = "$winRate%",
+                        valueColor = Color(0xFF00E5FF),
+                        subtitle = stringResource(R.string.leaderboard_win_rate, totalWins, matches, winRate),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Sequência Invicta
+                    StatMetricCard(
+                        title = stringResource(R.string.stats_card_streaks_title),
+                        value = "$streak",
+                        valueColor = Color(0xFFFFB800),
+                        subtitle = stringResource(R.string.stats_current_vs_best, streak, bestStreak),
+                        modifier = Modifier.weight(1f)
+                    )
+                    // Gols & Saldo
+                    val diffStr = if (diff > 0) "+$diff" else "$diff"
+                    val diffColor = if (diff > 0) Color(0xFF00E676) else if (diff < 0) Color(0xFFFF5252) else Color(0xFF00E5FF)
+                    StatMetricCard(
+                        title = stringResource(R.string.stats_card_goals_title),
+                        value = diffStr,
+                        valueColor = diffColor,
+                        subtitle = stringResource(R.string.stats_goals_balance, goalsScored, goalsConceded),
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
+        }
 
-            // Tab Content
-            Box(
+        // 4. Prévia das Últimas Partidas
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .padding(top = 4.dp)
             ) {
-                when (selectedTabIndex) {
-                    0 -> PlayerListContent(players = topElo, metricLabel = stringResource(R.string.leaderboard_metric_elo))
-                    1 -> PlayerListContent(players = topMulti, metricLabel = stringResource(R.string.leaderboard_metric_multi_wins))
-                    2 -> PlayerListContent(players = topSolo, metricLabel = stringResource(R.string.leaderboard_metric_solo_wins))
-                    3 -> RecentMatchesContent(matches = recentMatches)
+                Text(
+                    text = stringResource(R.string.stats_match_summary_title),
+                    color = Color.White,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (recentMatches.isNotEmpty()) {
+                    TextButton(onClick = onNavigateToHistory) {
+                        Text(
+                            text = stringResource(R.string.stats_view_all_history),
+                            color = Color(0xFF00E5FF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(6.dp))
+        if (recentMatches.isEmpty()) {
+            item {
+                Card(
+                    shape = CutCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0x3300E5FF), CutCornerShape(10.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.leaderboard_empty_history),
+                            color = Color(0xFF94A3B8),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            val previewMatches = recentMatches.take(3)
+            items(previewMatches) { match ->
+                MatchSummaryCard(match = match, selfName = selfName)
+            }
+        }
+    }
+}
 
-            AdBanner(
-                adManager = AirHockeyApp.instance.adManager,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
+@Composable
+private fun StatMetricCard(
+    title: String,
+    value: String,
+    valueColor: Color,
+    subtitle: String,
+    modifier: Modifier = Modifier
+) {
+    val cardShape = CutCornerShape(10.dp)
+    Card(
+        shape = cardShape,
+        colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
+        modifier = modifier
+            .border(1.dp, Color(0x3300E5FF), cardShape)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Text(
+                text = title,
+                color = Color(0xFF94A3B8),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                color = valueColor,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = Color(0xFF64748B),
+                fontSize = 10.sp,
+                maxLines = 1
             )
         }
     }
 }
-}
 
 @Composable
-private fun PlayerListContent(
-    players: List<PlayerProfileStatsEntity>,
-    metricLabel: String
+private fun RecentMatchesContent(
+    matches: List<MatchRecordEntity>,
+    selfName: String
 ) {
-    if (players.isEmpty()) {
+    if (matches.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -371,7 +673,7 @@ private fun PlayerListContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = stringResource(R.string.leaderboard_empty_players),
+                text = stringResource(R.string.leaderboard_empty_history),
                 color = Color(0xFF94A3B8),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
@@ -386,204 +688,120 @@ private fun PlayerListContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        itemsIndexed(players) { index, player ->
-            PlayerRankCard(rank = index + 1, player = player, metricLabel = metricLabel)
+        items(matches) { match ->
+            MatchSummaryCard(match = match, selfName = selfName)
         }
     }
 }
 
 @Composable
-private fun PlayerRankCard(
-    rank: Int,
-    player: PlayerProfileStatsEntity,
-    metricLabel: String
+private fun MatchSummaryCard(
+    match: MatchRecordEntity,
+    selfName: String
 ) {
-    val medalColor = when (rank) {
-        1 -> Color(0xFFFFD700) // Gold
-        2 -> Color(0xFFC0C0C0) // Silver
-        3 -> Color(0xFFCD7F32) // Bronze
-        else -> Color(0xFF1E293B)
+    val dateFormat = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
+    val matchShape = CutCornerShape(12.dp)
+
+    val isPlayerA = match.playerAName.equals(selfName, ignoreCase = true)
+    val isWin = if (isPlayerA) match.winner == "PLAYER_A" else match.winner == "PLAYER_B"
+    val isDraw = match.winner == "DRAW"
+
+    val (resultLabelRes, resultColor, resultBg) = when {
+        isDraw -> Triple(R.string.match_result_draw, Color(0xFF94A3B8), Color(0x2694A3B8))
+        isWin -> Triple(R.string.match_result_win, Color(0xFF00E676), Color(0x2600E676))
+        else -> Triple(R.string.match_result_loss, Color(0xFFFF5252), Color(0x26FF5252))
     }
 
-    val medalTextColor = if (rank <= 3) Color(0xFF0F172A) else Color(0xFF94A3B8)
-    val cardShape = CutCornerShape(12.dp)
-
     Card(
-        shape = cardShape,
+        shape = matchShape,
         colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                width = if (rank <= 3) 1.2.dp else 0.8.dp,
-                color = if (rank <= 3) medalColor else Color(0x3300E5FF),
-                shape = cardShape
-            )
+            .border(1.dp, Color(0x3300E5FF), matchShape)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(14.dp)
         ) {
-            // Rank Badge (Numeric circle)
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(medalColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "$rank",
-                    color = medalTextColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Badge de Resultado (VITÓRIA / DERROTA / EMPATE)
+                    Box(
+                        modifier = Modifier
+                            .background(resultBg, RoundedCornerShape(4.dp))
+                            .border(0.8.dp, resultColor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(resultLabelRes),
+                            color = resultColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+
+                    val modeLabel = when (match.gameMode) {
+                        "EXTENDED_TABLE", "EXTENDED_HOST", "EXTENDED_GUEST" -> stringResource(R.string.menu_mode_extended)
+                        "SPLIT_SCREEN" -> stringResource(R.string.menu_mode_split)
+                        "SOLO" -> {
+                            val difficultyStr = when (match.aiDifficulty) {
+                                "EASY" -> stringResource(R.string.settings_ai_easy)
+                                "MEDIUM" -> stringResource(R.string.settings_ai_medium)
+                                "HARD" -> stringResource(R.string.settings_ai_hard)
+                                else -> match.aiDifficulty ?: ""
+                            }
+                            val soloBase = stringResource(R.string.menu_mode_solo)
+                            if (difficultyStr.isNotBlank()) "$soloBase ($difficultyStr)" else soloBase
+                        }
+                        else -> match.gameMode
+                    }
+                    Text(
+                        text = modeLabel,
+                        color = Color(0xFF00E5FF),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = player.playerName,
+                    text = "${match.playerAName} vs ${match.playerBName}",
                     color = Color.White,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
-                val diff = player.goalDifferential
-                val diffStr = if (diff > 0) "+$diff" else "$diff"
-                Text(
-                    text = stringResource(
-                        R.string.leaderboard_player_record,
-                        player.totalWins,
-                        player.totalMatches - player.totalWins,
-                        diffStr
-                    ),
-                    color = Color(0xFF94A3B8),
-                    fontSize = 11.sp
-                )
-            }
 
-            Column(horizontalAlignment = Alignment.End) {
-                val valueText = when (metricLabel) {
-                    stringResource(R.string.leaderboard_metric_elo) -> "${player.ratingElo}"
-                    stringResource(R.string.leaderboard_metric_multi_wins) -> "${player.multiplayerWins}"
-                    stringResource(R.string.leaderboard_metric_solo_wins) -> "${player.soloWins}"
-                    else -> "${player.ratingElo}"
-                }
+                val formattedDate = dateFormat.format(Date(match.timestamp))
+                val durationText = if (match.durationSeconds > 0) " · ${match.durationSeconds}s" else ""
                 Text(
-                    text = valueText,
-                    color = if (rank == 1) Color(0xFFFFD700) else Color(0xFF00E5FF),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = metricLabel,
+                    text = "$formattedDate$durationText",
                     color = Color(0xFF64748B),
                     fontSize = 10.sp
                 )
             }
-        }
-    }
-}
 
-@Composable
-private fun RecentMatchesContent(
-    matches: List<MatchRecordEntity>
-) {
-    if (matches.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stringResource(R.string.leaderboard_empty_history),
-                color = Color(0xFF94A3B8),
-                fontSize = 14.sp
-            )
-        }
-        return
-    }
-
-    val dateFormat = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
-
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(matches) { match ->
-            val matchShape = CutCornerShape(12.dp)
-            Card(
-                shape = matchShape,
-                colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color(0x3300E5FF), matchShape)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        val modeLabel = when (match.gameMode) {
-                            "EXTENDED_TABLE", "EXTENDED_HOST", "EXTENDED_GUEST" -> stringResource(R.string.menu_mode_extended)
-                            "SPLIT_SCREEN" -> stringResource(R.string.menu_mode_split)
-                            "SOLO" -> {
-                                val difficultyStr = when (match.aiDifficulty) {
-                                    "EASY" -> stringResource(R.string.settings_ai_easy)
-                                    "MEDIUM" -> stringResource(R.string.settings_ai_medium)
-                                    "HARD" -> stringResource(R.string.settings_ai_hard)
-                                    else -> match.aiDifficulty ?: ""
-                                }
-                                val soloBase = stringResource(R.string.menu_mode_solo)
-                                if (difficultyStr.isNotBlank()) "$soloBase ($difficultyStr)" else soloBase
-                            }
-                            else -> match.gameMode
-                        }
-                        Text(
-                            text = modeLabel,
-                            color = Color(0xFF00E5FF),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "${match.playerAName} vs ${match.playerBName}",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = dateFormat.format(Date(match.timestamp)),
-                            color = Color(0xFF64748B),
-                            fontSize = 10.sp
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "${match.playerAScore} - ${match.playerBScore}",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        val deltaA = match.ratingDeltaA
-                        val deltaSign = if (deltaA >= 0) "+$deltaA" else "$deltaA"
-                        val deltaColor = if (deltaA > 0) Color(0xFF10B981) else if (deltaA < 0) Color(0xFFEF4444) else Color(0xFF94A3B8)
-                        Text(
-                            text = stringResource(R.string.leaderboard_delta_elo, deltaSign),
-                            color = deltaColor,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${match.playerAScore} - ${match.playerBScore}",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                val deltaA = match.ratingDeltaA
+                val deltaSign = if (deltaA >= 0) "+$deltaA" else "$deltaA"
+                val deltaColor = if (deltaA > 0) Color(0xFF00E676) else if (deltaA < 0) Color(0xFFFF5252) else Color(0xFF94A3B8)
+                Text(
+                    text = stringResource(R.string.leaderboard_delta_elo, deltaSign),
+                    color = deltaColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

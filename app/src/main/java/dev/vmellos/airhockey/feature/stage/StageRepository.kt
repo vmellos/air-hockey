@@ -31,6 +31,10 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     val totalStarsFlow: Flow<Int> = stageProgressDao.getTotalStars().map { it ?: 0 }
 
+    suspend fun getTotalStarsDirect(): Int = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        stageProgressDao.getAllStagesDirect().sumOf { it.starsEarned }
+    }
+
     val unlockedThemesFlow: Flow<Set<TableTheme>> = stagesFlow.map { stages ->
         val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
         val unlocked = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D)

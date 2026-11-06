@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
 
 /**
  * Gerenciador de Autenticação Silenciosa, Perfil, Conquistas e Placares
@@ -25,10 +26,28 @@ class PlayGamesManager(
     private val _authState = MutableStateFlow<PlayGamesAuthState>(PlayGamesAuthState.Checking)
     val authState: StateFlow<PlayGamesAuthState> = _authState.asStateFlow()
 
+    private var currentActivityRef: WeakReference<Activity>? = null
+
     companion object {
         private const val TAG = "PlayGamesManager"
         const val RC_ACHIEVEMENTS = 9002
         const val RC_LEADERBOARDS = 9003
+    }
+
+    /**
+     * Anexa a Activity em primeiro plano para abertura de intents e submissão de pontuação.
+     */
+    fun attachActivity(activity: Activity) {
+        currentActivityRef = WeakReference(activity)
+    }
+
+    /**
+     * Desanexa a Activity quando destruída para prevenir vazamento de memória.
+     */
+    fun detachActivity(activity: Activity) {
+        if (currentActivityRef?.get() === activity) {
+            currentActivityRef = null
+        }
     }
 
     /**
@@ -48,6 +67,7 @@ class PlayGamesManager(
      * Realiza login silencioso em segundo plano sem diálogos intrusivos.
      */
     fun authenticateSilently(activity: Activity) {
+        attachActivity(activity)
         try {
             val gamesSignInClient = PlayGames.getGamesSignInClient(activity)
             gamesSignInClient.isAuthenticated.addOnCompleteListener { authTask ->
@@ -118,11 +138,16 @@ class PlayGamesManager(
     /**
      * Exibe a tela nativa com todos os Placares Oficiais (Leaderboards) da Google Play.
      */
-    fun showLeaderboards(activity: Activity) {
+    fun showLeaderboards(activity: Activity? = null) {
+        val targetActivity = activity ?: currentActivityRef?.get()
+        if (targetActivity == null) {
+            Log.w(TAG, "Nenhuma Activity disponível para abrir rankings da Google Play.")
+            return
+        }
         try {
-            PlayGames.getLeaderboardsClient(activity).allLeaderboardsIntent
+            PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent
                 .addOnSuccessListener { intent ->
-                    activity.startActivityForResult(intent, RC_LEADERBOARDS)
+                    targetActivity.startActivityForResult(intent, RC_LEADERBOARDS)
                 }
                 .addOnFailureListener { e ->
                     Log.w(TAG, "Erro ao abrir tela de rankings: ${e.message}")
@@ -145,12 +170,27 @@ class PlayGamesManager(
 
     /**
      * Submete pontuação a um ranking oficial da Google Play.
+     * Suporta passagem explícita de Activity ou resolução automática via Activity anexada.
      */
-    fun submitScore(activity: Activity, leaderboardId: String, score: Long) {
+    fun submitScore(leaderboardId: String, score: Long, activity: Activity? = null) {
+        if (leaderboardId.isBlank()) {
+            Log.d(TAG, "ID do placar vazio/não configurado. Submissão ignorada ($score pts).")
+            return
+        }
+        val targetActivity = activity ?: currentActivityRef?.get()
+        if (targetActivity == null) {
+            Log.d(TAG, "Nenhuma Activity ativa no momento para submeter pontuação $score ao placar $leaderboardId.")
+            return
+        }
         try {
-            PlayGames.getLeaderboardsClient(activity).submitScore(leaderboardId, score)
+            PlayGames.getLeaderboardsClient(targetActivity).submitScore(leaderboardId, score)
+            Log.i(TAG, "Pontuação $score submetida com sucesso no placar $leaderboardId.")
         } catch (e: Exception) {
             Log.w(TAG, "Erro ao submeter pontuação $score em $leaderboardId: ${e.message}")
         }
+    }
+
+    fun submitScore(activity: Activity, leaderboardId: String, score: Long) {
+        submitScore(leaderboardId, score, activity)
     }
 }
