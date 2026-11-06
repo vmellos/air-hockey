@@ -90,23 +90,27 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        AirHockeyApp.instance.audioEngine.isAppInForeground = true
         AirHockeyApp.instance.playGamesManager.attachActivity(this)
         AirHockeyApp.instance.inAppUpdateEngine.checkDownloadedStatus()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        AirHockeyApp.instance.audioEngine.isAppInForeground = false
         AirHockeyApp.instance.audioEngine.stopAll()
         AirHockeyApp.instance.playGamesManager.detachActivity(this)
     }
 
     override fun onPause() {
         super.onPause()
+        AirHockeyApp.instance.audioEngine.isAppInForeground = false
         AirHockeyApp.instance.audioEngine.stopAll()
     }
 
     override fun onStop() {
         super.onStop()
+        AirHockeyApp.instance.audioEngine.isAppInForeground = false
         AirHockeyApp.instance.audioEngine.stopAll()
     }
 

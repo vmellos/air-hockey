@@ -480,12 +480,14 @@ fun AirHockeyArena3DScene(
             ) {
                 sceneState.presentationProgress = value
             }
-        } finally {
             sceneState.presentationProgress = 1f
             if (sceneState.isPresenting) {
                 sceneState.isPresenting = false
                 onPresentationFinished()
             }
+        } finally {
+            sceneState.presentationProgress = 1f
+            sceneState.isPresenting = false
         }
     }
 

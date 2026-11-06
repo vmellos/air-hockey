@@ -495,7 +495,7 @@ class ArbitroVirtual(
 
     fun pause() {
         val currentStatus = _matchState.value.status
-        if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE) {
+        if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE || currentStatus == MatchStatus.PRESENTATION) {
             audioPort.stopAll()
             _matchState.update { it.copy(status = MatchStatus.PAUSED) }
         }

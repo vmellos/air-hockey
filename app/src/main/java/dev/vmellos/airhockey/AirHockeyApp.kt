@@ -69,23 +69,34 @@ class AirHockeyApp : Application() {
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             private var startedActivities = 0
+            private var resumedActivities = 0
 
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
                 startedActivities++
             }
-            override fun onActivityResumed(activity: Activity) {}
-            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {
+                resumedActivities++
+                audioEngine.isAppInForeground = true
+            }
+            override fun onActivityPaused(activity: Activity) {
+                resumedActivities = (resumedActivities - 1).coerceAtLeast(0)
+                if (resumedActivities == 0) {
+                    audioEngine.isAppInForeground = false
+                    audioEngine.stopAll()
+                }
+            }
             override fun onActivityStopped(activity: Activity) {
-                startedActivities--
-                if (startedActivities <= 0) {
-                    startedActivities = 0
+                startedActivities = (startedActivities - 1).coerceAtLeast(0)
+                if (startedActivities == 0) {
+                    audioEngine.isAppInForeground = false
                     audioEngine.stopAll()
                 }
             }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
-                if (startedActivities <= 0) {
+                if (startedActivities == 0) {
+                    audioEngine.isAppInForeground = false
                     audioEngine.stopAll()
                 }
             }
