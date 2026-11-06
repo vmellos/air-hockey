@@ -21,6 +21,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "store"
+    productFlavors {
+        create("google") {
+            dimension = "store"
+        }
+        create("samsung") {
+            dimension = "store"
+        }
+    }
+
     signingConfigs {
         create("release") {
             val localProps = project.rootProject.file("local.properties").let { file ->
@@ -110,8 +120,8 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.user.messaging.platform)
 
-    // Google Play In-App Billing
-    implementation(libs.play.billing.ktx)
+    // Google Play In-App Billing (strictly isolated to google flavor)
+    "googleImplementation"(libs.play.billing.ktx)
 
     // Google Play In-App Updates
     implementation(libs.play.app.update)

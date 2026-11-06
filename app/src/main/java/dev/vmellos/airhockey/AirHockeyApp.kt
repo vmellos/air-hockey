@@ -3,6 +3,7 @@ package dev.vmellos.airhockey
 import android.app.Application
 import dev.vmellos.airhockey.core.ads.AdManager
 import dev.vmellos.airhockey.core.billing.BillingManager
+import dev.vmellos.airhockey.core.billing.DefaultBillingManager
 import dev.vmellos.airhockey.core.audio.GameAudioEngine
 import dev.vmellos.airhockey.core.database.AppDatabase
 import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
@@ -51,7 +52,7 @@ class AirHockeyApp : Application() {
         database = AppDatabase.getInstance(this)
         leaderboardRepository = LeaderboardRepository(database.leaderboardDao())
         stageRepository = StageRepository(database.stageProgressDao())
-        billingManager = BillingManager(this)
+        billingManager = DefaultBillingManager(this)
         billingManager.startConnection()
         adManager = AdManager(this, billingManager)
         inAppUpdateEngine = dev.vmellos.airhockey.core.update.PlayInAppUpdateEngine(this)

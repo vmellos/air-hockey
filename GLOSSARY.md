@@ -426,5 +426,24 @@ _Avoid_: Config, tela de opções geral, menu de temas
 O vocabulário padronizado para as abas na tela de personalização (`Kits`, `Mesas`, `Discos`, `Tacos` em PT e `Mazos` em ES), garantindo legibilidade em qualquer densidade de tela sem quebra ou compressão visual.
 _Avoid_: Rebatedores espremido, strings longas em abas fixas
 
+## Distribuição Multi-Loja e Faturamento
+
+**Dimensão de Loja**:
+A dimensão de compilação do Gradle (`store`) que parametriza a geração de variantes de distribuição comercial do aplicativo (`google` e `samsung`) a partir de uma única base de código.
+_Avoid_: Build separado, branch separada, store variant solta
+
+**Variante Google Play**:
+A variante de distribuição comercial destinada à Google Play Store, que empacota a biblioteca oficial do Google Play Billing (`com.android.billingclient:billing-ktx`) para viabilizar a compra e restauração da Remoção Permanente de Anúncios.
+_Avoid_: Play build, versão padrão com billing
+
+**Variante Samsung Galaxy Store**:
+A variante de distribuição comercial 100% gratuita destinada à Samsung Galaxy Store, monetizada exclusivamente via Google AdMob (com supressão temporária via anúncios recompensados), compilada com zero dependências de bibliotecas de billing e sem qualquer botão ou menu de compra na interface.
+_Avoid_: Versão samsung com IAP desativado, build sem loja
+
+**Gerenciador de Faturamento**:
+A interface de domínio (`BillingManager`) localizada em `src/main/` que desacopla a camada de apresentação e a gestão de anúncios das bibliotecas de faturamento específicas de cada loja, substituída transparentemente em tempo de compilação por source sets dedicados (`DefaultBillingManager`).
+_Avoid_: Billing client direto na UI, ad removal adapter
+
+
 
 

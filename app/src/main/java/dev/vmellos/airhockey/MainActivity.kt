@@ -59,9 +59,11 @@ class MainActivity : ComponentActivity() {
 
         deepLinkUri = intent?.dataString
 
-        lifecycleScope.launch {
-            delay(500)
-            AirHockeyApp.instance.inAppUpdateEngine.checkForUpdate(this@MainActivity)
+        if (BuildConfig.FLAVOR != "samsung") {
+            lifecycleScope.launch {
+                delay(500)
+                AirHockeyApp.instance.inAppUpdateEngine.checkForUpdate(this@MainActivity)
+            }
         }
 
         setContent {
@@ -82,7 +84,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        AirHockeyApp.instance.inAppUpdateEngine.checkDownloadedStatus()
+        if (BuildConfig.FLAVOR != "samsung") {
+            AirHockeyApp.instance.inAppUpdateEngine.checkDownloadedStatus()
+        }
     }
 
     override fun onPause() {
@@ -98,7 +102,7 @@ class MainActivity : ComponentActivity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == InAppUpdateEngine.REQUEST_CODE_FLEXIBLE_UPDATE) {
+        if (BuildConfig.FLAVOR != "samsung" && requestCode == InAppUpdateEngine.REQUEST_CODE_FLEXIBLE_UPDATE) {
             AirHockeyApp.instance.inAppUpdateEngine.onUpdateFlowResult(resultCode)
         }
     }
