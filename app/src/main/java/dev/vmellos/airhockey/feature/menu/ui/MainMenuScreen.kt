@@ -28,6 +28,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Stadium
@@ -173,20 +175,74 @@ fun MainMenuScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botão Placar de Líderes
-                IconButton(
-                    onClick = onOpenLeaderboard,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(Color(0xB3070D1A), CircleShape)
-                        .border(1.2.dp, Color(0x66FFB800), CircleShape)
+                // Botão Placar de Líderes + Badge do Play Games
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.EmojiEvents,
-                        contentDescription = stringResource(R.string.leaderboard_title),
-                        tint = Color(0xFFFFB800),
-                        modifier = Modifier.size(22.dp)
-                    )
+                    IconButton(
+                        onClick = onOpenLeaderboard,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x66FFB800), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = stringResource(R.string.leaderboard_title),
+                            tint = Color(0xFFFFB800),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    val pgsAuth by AirHockeyApp.instance.playGamesManager.authState.collectAsState()
+                    val pgsSync by AirHockeyApp.instance.playGamesSaveManager.syncState.collectAsState()
+
+                    if (pgsAuth is dev.vmellos.airhockey.core.playgames.PlayGamesAuthState.Authenticated) {
+                        val player = (pgsAuth as dev.vmellos.airhockey.core.playgames.PlayGamesAuthState.Authenticated).player
+                        Surface(
+                            onClick = {
+                                activity?.let {
+                                    AirHockeyApp.instance.playGamesSaveManager.syncProgressAsync(it)
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        context.getString(R.string.pgs_sync_in_progress),
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xCC070D1A),
+                            border = BorderStroke(1.2.dp, Color(0x6600E5FF)),
+                            modifier = Modifier.height(38.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (pgsSync is dev.vmellos.airhockey.core.playgames.CloudSyncState.Syncing) {
+                                        Icons.Default.CloudSync
+                                    } else {
+                                        Icons.Default.CloudDone
+                                    },
+                                    contentDescription = stringResource(R.string.pgs_saved_games_title),
+                                    tint = if (pgsSync is dev.vmellos.airhockey.core.playgames.CloudSyncState.Error) Color(0xFFFF5252) else Color(0xFF00E5FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = player.displayName,
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 105.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 // Ações da Direita

@@ -43,6 +43,12 @@ class AirHockeyApp : Application() {
     lateinit var inAppUpdateEngine: dev.vmellos.airhockey.core.update.InAppUpdateEngine
         private set
 
+    lateinit var playGamesSaveManager: dev.vmellos.airhockey.core.playgames.PlayGamesSaveManager
+        private set
+
+    lateinit var playGamesManager: dev.vmellos.airhockey.core.playgames.PlayGamesManager
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -51,6 +57,9 @@ class AirHockeyApp : Application() {
         database = AppDatabase.getInstance(this)
         leaderboardRepository = LeaderboardRepository(database.leaderboardDao())
         stageRepository = StageRepository(database.stageProgressDao())
+        playGamesSaveManager = dev.vmellos.airhockey.core.playgames.PlayGamesSaveManager(database)
+        playGamesManager = dev.vmellos.airhockey.core.playgames.PlayGamesManager(playGamesSaveManager)
+        playGamesManager.initialize(this)
         billingManager = BillingManager(this)
         billingManager.startConnection()
         adManager = AdManager(this, billingManager)

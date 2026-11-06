@@ -61,6 +61,12 @@ class MainActivity : ComponentActivity() {
 
         deepLinkUri = intent?.dataString
 
+        // Autenticação silenciosa e conexão do Google Play Games Services v2
+        AirHockeyApp.instance.playGamesManager.authenticateSilently(this)
+        AirHockeyApp.instance.stageRepository.setOnProgressUpdatedListener {
+            AirHockeyApp.instance.playGamesSaveManager.syncProgressAsync(this)
+        }
+
         lifecycleScope.launch {
             delay(500)
             AirHockeyApp.instance.inAppUpdateEngine.checkForUpdate(this@MainActivity)

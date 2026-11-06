@@ -12,6 +12,9 @@ interface StageProgressDao {
     @Query("SELECT * FROM stage_progress ORDER BY stageNumber ASC")
     fun getAllStages(): Flow<List<StageProgressEntity>>
 
+    @Query("SELECT * FROM stage_progress ORDER BY stageNumber ASC")
+    suspend fun getAllStagesDirect(): List<StageProgressEntity>
+
     @Query("SELECT * FROM stage_progress WHERE stageNumber = :stageNumber LIMIT 1")
     fun getStage(stageNumber: Int): Flow<StageProgressEntity?>
 
@@ -23,6 +26,9 @@ interface StageProgressDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(stages: List<StageProgressEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(stages: List<StageProgressEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertStage(stage: StageProgressEntity)

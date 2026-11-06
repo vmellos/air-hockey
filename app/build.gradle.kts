@@ -19,6 +19,18 @@ android {
         versionName = "1.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProps = project.rootProject.file("local.properties").let { file ->
+            if (file.exists()) {
+                Properties().apply { file.inputStream().use { load(it) } }
+            } else {
+                Properties()
+            }
+        }
+        val pgsAppId = localProps.getProperty("PLAY_GAMES_APP_ID")
+            ?: System.getenv("PLAY_GAMES_APP_ID")
+            ?: "925142400705"
+        manifestPlaceholders["playGamesAppId"] = pgsAppId
     }
 
     signingConfigs {
@@ -117,6 +129,10 @@ dependencies {
     implementation(libs.play.app.update)
     implementation(libs.play.app.update.ktx)
 
+    // Google Play Games Services v2 & Tasks Coroutines
+    implementation(libs.play.services.games.v2)
+    implementation(libs.kotlinx.coroutines.play.services)
+
     // Offline QR Code Generation & Scanning
     implementation(libs.zxing.core)
     implementation(libs.androidx.camera.camera2)
@@ -130,6 +146,7 @@ dependencies {
     implementation(libs.sceneview)
 
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
