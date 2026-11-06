@@ -45,6 +45,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -603,6 +605,9 @@ fun PauseDialog(
     onToggleSound: () -> Unit = {},
     isMusicEnabled: Boolean = true,
     onToggleMusic: () -> Unit = {},
+    is3dActive: Boolean = false,
+    neonBloomIntensity: Float = 0.10f,
+    onNeonBloomIntensityChange: ((Float) -> Unit)? = null,
     onResume: () -> Unit,
     onRestart: () -> Unit,
     onExit: () -> Unit
@@ -723,6 +728,62 @@ fun PauseDialog(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
+                            }
+                        }
+
+                        // Controle de Brilho do Neon (quando o 3D estiver em execução)
+                        if (is3dActive && onNeonBloomIntensityChange != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Color(0x1AFFFFFF))
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.neon_bloom_intensity_title),
+                                        color = Color(0xFFE2E8F0),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    val pct = kotlin.math.round((neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
+                                    val intensityLabel = when {
+                                        pct == 0 -> stringResource(R.string.neon_bloom_off)
+                                        pct <= 30 -> stringResource(R.string.neon_bloom_soft)
+                                        pct <= 70 -> stringResource(R.string.neon_bloom_normal)
+                                        else -> stringResource(R.string.neon_bloom_vibrant)
+                                    }
+                                    Text(
+                                        text = "$pct% • $intensityLabel",
+                                        color = Color(0xFF00E5FF),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Slider(
+                                    value = neonBloomIntensity.coerceIn(0.0f, 0.10f),
+                                    onValueChange = onNeonBloomIntensityChange,
+                                    valueRange = 0.0f..0.10f,
+                                    steps = 9,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF00E5FF),
+                                        activeTrackColor = Color(0xFF00E5FF),
+                                        inactiveTrackColor = Color(0xFF1E293B)
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(30.dp)
+                                )
                             }
                         }
                     }

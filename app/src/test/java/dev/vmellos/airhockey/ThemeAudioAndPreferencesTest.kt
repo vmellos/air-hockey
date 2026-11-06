@@ -110,4 +110,48 @@ class ThemeAudioAndPreferencesTest {
             org.junit.Assert.assertNotNull(accent)
         }
     }
+
+    @Test
+    fun testTheme3DAssetResolverResolvesExistingAssetsForAllThemes() {
+        val assetsDir = File("src/main/assets")
+        assertTrue("Diretório assets deve existir", assetsDir.exists())
+
+        for (theme in TableTheme.entries) {
+            val tableModel = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme)
+            assertTrue("Arquivo da mesa 3D deve existir: $tableModel", File(assetsDir, tableModel).exists())
+
+            assertTrue("Todos os temas devem possuir suporte 3D nativo",
+                dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.hasNative3DSupport(theme))
+        }
+
+        for (puck in dev.vmellos.airhockey.core.preferences.PuckSkin.entries) {
+            val puckModel = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getPuck3DAsset(puck, TableTheme.CLASSIC_NEON)
+            assertTrue("Arquivo do disco 3D deve existir: $puckModel", File(assetsDir, puckModel).exists())
+        }
+
+        for (mallet in dev.vmellos.airhockey.core.preferences.MalletSkin.entries) {
+            val m1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(mallet, isPlayer1 = true, TableTheme.CLASSIC_NEON)
+            val m2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(mallet, isPlayer1 = false, TableTheme.CLASSIC_NEON)
+            assertTrue("Arquivo do rebatedor p1 deve existir: $m1", File(assetsDir, m1).exists())
+            assertTrue("Arquivo do rebatedor p2 deve existir: $m2", File(assetsDir, m2).exists())
+        }
+    }
+
+    @Test
+    fun testNeonBloomIntensityAndArenaDimensionPreferences() {
+        val prefs = UserPreferences()
+        assertEquals("ArenaDimension padrão deve ser THREE_DIMENSIONAL",
+            dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL, prefs.arenaDimension)
+        assertEquals("Intensidade padrão do bloom de neon deve ser 0.05f (50%)", 0.05f, prefs.neonBloomIntensity, 0.0001f)
+        assertTrue("Animação inicial 3D deve vir ativada por padrão", prefs.arena3dIntroEnabled)
+
+        val updatedPrefs = prefs.copy(
+            arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL,
+            neonBloomIntensity = 0.08f,
+            arena3dIntroEnabled = false
+        )
+        assertEquals(dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL, updatedPrefs.arenaDimension)
+        assertEquals(0.08f, updatedPrefs.neonBloomIntensity, 0.0001f)
+        org.junit.Assert.assertFalse(updatedPrefs.arena3dIntroEnabled)
+    }
 }

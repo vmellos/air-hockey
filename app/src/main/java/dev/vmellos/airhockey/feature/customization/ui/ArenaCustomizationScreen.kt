@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.SportsFootball
 import androidx.compose.material.icons.filled.SportsHockey
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsVolleyball
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.WbSunny
@@ -53,8 +54,21 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
+import io.github.sceneview.Scene
+import io.github.sceneview.SceneView
+import io.github.sceneview.node.ModelNode
+import io.github.sceneview.rememberCameraNode
+import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberModelLoader
+import io.github.sceneview.rememberView
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -85,9 +99,11 @@ import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
+import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.ui.*
 import kotlinx.coroutines.launch
@@ -275,17 +291,6 @@ fun ArenaCustomizationScreen(
                 tableTheme = TableTheme.CYBER_COLOSSEUM,
                 puckSkin = PuckSkin.GLADIATOR_SHIELD,
                 malletSkin = MalletSkin.SPARTAN_AEGIS
-            ),
-            ThemeBundleItem(
-                id = "arcade_3d",
-                titleRes = R.string.theme_preset_arcade_3d,
-                descRes = R.string.theme_preset_arcade_3d_desc,
-                icon = Icons.Default.Layers,
-                primaryColor = NeonCyan,
-                secondaryColor = NeonOrange,
-                tableTheme = TableTheme.ARCADE_3D,
-                puckSkin = PuckSkin.CLASSIC_PLASMA,
-                malletSkin = MalletSkin.CLASSIC_NEON
             )
         )
     }
@@ -302,8 +307,7 @@ fun ArenaCustomizationScreen(
             TableItem(TableTheme.RETRO_SYNTHWAVE, R.string.theme_preset_synthwave, R.string.theme_preset_synthwave_desc, Icons.Default.WbSunny, SynthPink, SynthCyan),
             TableItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, R.string.theme_preset_tokamak_desc, Icons.Default.Bolt, TokamakRadiation, TokamakPlasma),
             TableItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, R.string.theme_preset_pong_desc, Icons.Default.VideogameAsset, PongGreen, PongAmber),
-            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson),
-            TableItem(TableTheme.ARCADE_3D, R.string.theme_preset_arcade_3d, R.string.theme_preset_arcade_3d_desc, Icons.Default.Layers, NeonCyan, NeonOrange)
+            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson)
         )
     }
 
@@ -374,9 +378,6 @@ fun ArenaCustomizationScreen(
         prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
                 prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
                 prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
-        prefs.tableTheme == TableTheme.ARCADE_3D &&
-                prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
-                prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_arcade_3d)
         else -> stringResource(R.string.customization_custom_preset)
     }
 
@@ -427,7 +428,9 @@ fun ArenaCustomizationScreen(
             }
         }
 
-        // 2. Vitrine de Pré-Visualização Dinâmica da Arena (Live Arena Preview)
+        val is3d = prefs.arenaDimension == ArenaDimension.THREE_DIMENSIONAL
+
+        // 2. Vitrine de Pré-Visualização Dinâmica da Arena (Live Arena Preview 2D / 3D)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -437,12 +440,200 @@ fun ArenaCustomizationScreen(
                 .background(Color(0xFF0B1220))
                 .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
         ) {
-            ArenaLivePreview(
-                tableTheme = previewTableTheme,
-                puckSkin = previewPuckSkin,
-                malletSkin = previewMalletSkin,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (is3d) {
+                Arena3DLivePreview(
+                    tableTheme = previewTableTheme,
+                    puckSkin = previewPuckSkin,
+                    malletSkin = previewMalletSkin,
+                    neonBloomIntensity = prefs.neonBloomIntensity,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                ArenaLivePreview(
+                    tableTheme = previewTableTheme,
+                    puckSkin = previewPuckSkin,
+                    malletSkin = previewMalletSkin,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Seletor de Dimensão da Arena (2D Clássico vs. 3D Imersivo)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF0F172A))
+                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(20.dp))
+                    .padding(3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Opção 2D
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (!is3d) Color(0xFF00E5FF) else Color.Transparent)
+                        .clickable {
+                            if (is3d) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                coroutineScope.launch {
+                                    preferencesRepo.updateArenaDimension(ArenaDimension.TWO_DIMENSIONAL)
+                                }
+                            }
+                        }
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.dimension_2d),
+                        color = if (!is3d) Color(0xFF070B16) else Color(0xFF94A3B8),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Opção 3D
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (is3d) Color(0xFF00E5FF) else Color.Transparent)
+                        .clickable {
+                            if (!is3d) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                coroutineScope.launch {
+                                    preferencesRepo.updateArenaDimension(ArenaDimension.THREE_DIMENSIONAL)
+                                }
+                            }
+                        }
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.dimension_3d),
+                        color = if (is3d) Color(0xFF070B16) else Color(0xFF94A3B8),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        // Controle do Brilho do Neon (quando o 3D está ativo)
+        if (is3d) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = Color(0xFF0C1322),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFF1E293B)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = null,
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(R.string.neon_bloom_intensity_title),
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        val pct = kotlin.math.round((prefs.neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
+                        val intensityLabel = when {
+                            pct == 0 -> stringResource(R.string.neon_bloom_off)
+                            pct <= 30 -> stringResource(R.string.neon_bloom_soft)
+                            pct <= 70 -> stringResource(R.string.neon_bloom_normal)
+                            else -> stringResource(R.string.neon_bloom_vibrant)
+                        }
+                        Text(
+                            text = "$pct% • $intensityLabel",
+                            color = Color(0xFF00E5FF),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Slider(
+                        value = prefs.neonBloomIntensity.coerceIn(0.0f, 0.10f),
+                        onValueChange = { newVal ->
+                            coroutineScope.launch {
+                                preferencesRepo.updateNeonBloomIntensity(newVal)
+                            }
+                        },
+                        valueRange = 0.0f..0.10f,
+                        steps = 9,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFF00E5FF),
+                            activeTrackColor = Color(0xFF00E5FF),
+                            inactiveTrackColor = Color(0xFF1E293B)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Color(0x1AFFFFFF))
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(
+                                text = stringResource(R.string.settings_3d_intro_title),
+                                color = Color(0xFFE2E8F0),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_3d_intro_desc),
+                                color = Color(0xFF94A3B8),
+                                fontSize = 10.sp,
+                                lineHeight = 13.sp
+                            )
+                        }
+                        Switch(
+                            checked = prefs.arena3dIntroEnabled,
+                            onCheckedChange = { isEnabled ->
+                                coroutineScope.launch {
+                                    preferencesRepo.setArena3dIntroEnabled(isEnabled)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFF00E5FF),
+                                checkedTrackColor = Color(0x6600E5FF)
+                            )
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -632,6 +823,139 @@ fun ArenaCustomizationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 6.dp)
+        )
+    }
+}
+
+/**
+ * Renderizador de Pré-Visualização Dinâmica 3D da Arena no Sceneview (Filament).
+ * Renderiza em tempo real a mesa, disco e rebatedores selecionados sob a iluminação e bloom configurados.
+ */
+@Composable
+private fun Arena3DLivePreview(
+    tableTheme: TableTheme,
+    puckSkin: PuckSkin,
+    malletSkin: MalletSkin,
+    neonBloomIntensity: Float,
+    modifier: Modifier = Modifier
+) {
+    val engine3d = rememberEngine()
+    val modelLoader = rememberModelLoader(engine3d)
+    val view3d = rememberView(engine3d) {
+        SceneView.createView(engine3d).apply {
+            bloomOptions = bloomOptions.apply {
+                enabled = neonBloomIntensity > 0.005f
+                strength = neonBloomIntensity
+            }
+        }
+    }
+
+    LaunchedEffect(neonBloomIntensity) {
+        view3d.bloomOptions = view3d.bloomOptions.apply {
+            enabled = neonBloomIntensity > 0.005f
+            strength = neonBloomIntensity
+        }
+    }
+
+    val tableAsset = remember(tableTheme) {
+        Theme3DAssetResolver.getTable3DAsset(tableTheme)
+    }
+    val puckAsset = remember(puckSkin, tableTheme) {
+        Theme3DAssetResolver.getPuck3DAsset(puckSkin, tableTheme)
+    }
+    val p1MalletAsset = remember(malletSkin, tableTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(malletSkin, isPlayer1 = true, theme = tableTheme)
+    }
+    val p2MalletAsset = remember(malletSkin, tableTheme) {
+        Theme3DAssetResolver.getMallet3DAsset(malletSkin, isPlayer1 = false, theme = tableTheme)
+    }
+
+    val tableInstance = remember(modelLoader, tableAsset) {
+        try {
+            modelLoader.createModelInstance(tableAsset)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val puckInstance = remember(modelLoader, puckAsset) {
+        try {
+            modelLoader.createModelInstance(puckAsset)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val p1Instance = remember(modelLoader, p1MalletAsset) {
+        try {
+            modelLoader.createModelInstance(p1MalletAsset)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val p2Instance = remember(modelLoader, p2MalletAsset) {
+        try {
+            modelLoader.createModelInstance(p2MalletAsset)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    val tableNode = remember(tableInstance) {
+        tableInstance?.let {
+            ModelNode(it).apply {
+                position = Float3(0f, 0f, 0f)
+            }
+        }
+    }
+
+    val puckNode = remember(puckInstance) {
+        puckInstance?.let {
+            ModelNode(it).apply {
+                position = Float3(0f, 0.0075f, 0f)
+            }
+        }
+    }
+
+    val p1Node = remember(p1Instance) {
+        p1Instance?.let {
+            ModelNode(it).apply {
+                position = Float3(0f, 0.0f, 0.52f)
+            }
+        }
+    }
+
+    val p2Node = remember(p2Instance) {
+        p2Instance?.let {
+            ModelNode(it).apply {
+                position = Float3(0f, 0.0f, -0.52f)
+            }
+        }
+    }
+
+    val cameraNode = rememberCameraNode(engine3d) {
+        position = Float3(0f, 2.75f, 2.30f)
+        rotation = Float3(-46f, 0f, 0f)
+    }
+
+    val childNodes = remember(tableNode, puckNode, p1Node, p2Node) {
+        listOfNotNull(tableNode, puckNode, p1Node, p2Node)
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF030712))
+    ) {
+        Scene(
+            modifier = Modifier.fillMaxSize(),
+            engine = engine3d,
+            modelLoader = modelLoader,
+            view = view3d,
+            cameraNode = cameraNode,
+            cameraManipulator = null,
+            childNodes = childNodes
         )
     }
 }

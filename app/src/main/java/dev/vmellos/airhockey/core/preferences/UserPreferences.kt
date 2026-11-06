@@ -30,6 +30,11 @@ enum class CameraZoom3D {
     WIDE
 }
 
+enum class ArenaDimension {
+    TWO_DIMENSIONAL,
+    THREE_DIMENSIONAL
+}
+
 enum class TableTheme {
     CLASSIC_NEON,
     CYBER_SOCCER,
@@ -90,6 +95,9 @@ data class UserPreferences(
     val visualEffectsProfile: VisualEffectsProfile = VisualEffectsProfile.FULL,
     val playerName: String = "",
     val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
+    val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL,
+    val neonBloomIntensity: Float = 0.05f,
+    val arena3dIntroEnabled: Boolean = true,
     val cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
     val puckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
     val player1MalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON,

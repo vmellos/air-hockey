@@ -145,11 +145,12 @@ fun GameScreen(
         }
     }
 
-    val is3dActive = prefs.tableTheme == dev.vmellos.airhockey.core.preferences.TableTheme.ARCADE_3D && mode != GameMode.SPLIT_SCREEN
-    var is3dPresenting by remember { mutableStateOf(is3dActive) }
+    val is3dActive = prefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL && mode != GameMode.SPLIT_SCREEN
+    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled
+    var is3dPresenting by remember { mutableStateOf(shouldPresent) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Mesa de Jogo (Modo 3D Sceneview quando o tema ARCADE_3D estiver equipado em modos individuais, ou 2D Canvas)
+        // Mesa de Jogo (Modo 3D Sceneview quando Dimensão 3D estiver ativa em modos individuais, ou 2D Canvas)
         if (is3dActive) {
             AirHockeyArena3DScene(
                 viewModel = viewModel,
@@ -184,43 +185,6 @@ fun GameScreen(
                 countdownNumber = matchState.countdownNumber,
                 tableTheme = prefs.tableTheme
             )
-        }
-
-        // Indicador discreto para Pular a Apresentação 3D (Tap to Skip)
-        if (is3dActive && is3dPresenting) {
-            val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 0.4f,
-                targetValue = 0.95f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(800, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "alpha"
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(bottom = 36.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                Surface(
-                    color = Color(0x66000000),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = alpha * 0.7f)),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.presentation_skip_hint),
-                        color = Color.White.copy(alpha = alpha),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.5.sp,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                    )
-                }
-            }
         }
 
         // Botão de Alternância de Zoom 3D no HUD (Próximo, Padrão, Amplo)
@@ -293,6 +257,13 @@ fun GameScreen(
                 onToggleSound = { viewModel.toggleSound() },
                 isMusicEnabled = isMusicEnabled,
                 onToggleMusic = { viewModel.toggleMusic() },
+                is3dActive = is3dActive,
+                neonBloomIntensity = prefs.neonBloomIntensity,
+                onNeonBloomIntensityChange = { newVal ->
+                    scope.launch {
+                        AirHockeyApp.instance.preferencesRepository.updateNeonBloomIntensity(newVal)
+                    }
+                },
                 onResume = { viewModel.resumeMatch() },
                 onRestart = { viewModel.restartMatch() },
                 onExit = {
