@@ -1,6 +1,8 @@
 package dev.vmellos.airhockey
 
+import android.app.Activity
 import android.app.Application
+import android.os.Bundle
 import dev.vmellos.airhockey.core.ads.AdManager
 import dev.vmellos.airhockey.core.billing.BillingManager
 import dev.vmellos.airhockey.core.audio.GameAudioEngine
@@ -64,6 +66,30 @@ class AirHockeyApp : Application() {
         billingManager.startConnection()
         adManager = AdManager(this, billingManager)
         inAppUpdateEngine = dev.vmellos.airhockey.core.update.PlayInAppUpdateEngine(this)
+
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            private var startedActivities = 0
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityStarted(activity: Activity) {
+                startedActivities++
+            }
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {
+                startedActivities--
+                if (startedActivities <= 0) {
+                    startedActivities = 0
+                    audioEngine.stopAll()
+                }
+            }
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                if (startedActivities <= 0) {
+                    audioEngine.stopAll()
+                }
+            }
+        })
 
         applicationScope.launch {
             stageRepository.ensureStagesInitialized()

@@ -36,7 +36,7 @@ class GameAudioEngine(private val context: Context) {
             field = value
             if (changed) {
                 ensureThemeLoaded(value)
-                if (bgmPlayer != null && isMusicEnabled) {
+                if (bgmPlayer?.isPlaying == true && isMusicEnabled) {
                     playBgm(value)
                 }
             }
@@ -47,9 +47,7 @@ class GameAudioEngine(private val context: Context) {
         set(value) {
             field = value
             if (!value) {
-                pauseBgm()
-            } else {
-                resumeBgm()
+                stopBgm()
             }
         }
 
@@ -374,8 +372,6 @@ class GameAudioEngine(private val context: Context) {
                 val vol = musicVolume.coerceIn(0f, 1f)
                 bgmPlayer?.setVolume(vol, vol)
                 bgmPlayer?.start()
-            } else if (bgmPlayer == null) {
-                playBgm(currentTheme)
             }
         } catch (_: Exception) {}
     }
@@ -402,13 +398,13 @@ class GameAudioEngine(private val context: Context) {
 
     fun stopAll() {
         soundPool.autoPause()
-        pauseBgm()
+        stopBgm()
         vibrator?.cancel()
     }
 
     fun resumeAudio() {
         soundPool.autoResume()
-        if (isMusicEnabled) {
+        if (isMusicEnabled && bgmPlayer != null) {
             resumeBgm()
         }
     }
