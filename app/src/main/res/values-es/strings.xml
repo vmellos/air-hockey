@@ -167,6 +167,9 @@
     <string name="stats_global_rankings_title">Clasificaciones Globales Google Play</string>
     <string name="stats_global_rankings_desc">Compite con amigos y jugadores de todo el mundo en las tablas oficiales</string>
     <string name="stats_global_rankings_cta">Ver Clasificaciones Globales</string>
+    <string name="stats_global_achievements_cta">Ver Logros</string>
+    <string name="pgs_error_login_required">Inicia sesión en Google Play Games para acceder a clasificaciones y logros.</string>
+    <string name="pgs_error_unavailable">Servicios de Google Play Games no disponibles en este momento.</string>
     <string name="stats_card_wins_title">Victorias</string>
     <string name="stats_card_win_rate_title">Rendimiento</string>
     <string name="stats_card_streaks_title">Rachas Invicto</string>

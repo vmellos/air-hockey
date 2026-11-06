@@ -559,7 +559,6 @@ fun SettingsScreen(
                                 .clickable {
                                     scope.launch {
                                         preferencesRepo.setAppLanguage(code)
-                                        LocaleHelper.applySystemLocale(context, code)
                                     }
                                 }
                                 .padding(horizontal = 12.dp, vertical = 10.dp)
@@ -570,7 +569,6 @@ fun SettingsScreen(
                                 onClick = {
                                     scope.launch {
                                         preferencesRepo.setAppLanguage(code)
-                                        LocaleHelper.applySystemLocale(context, code)
                                     }
                                 },
                                 colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF00E5FF))

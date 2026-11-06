@@ -190,4 +190,22 @@ class CareerStatsAndPlayGamesTest {
         // Submissão com ID preenchido mas sem Activity anexada também deve ser segura e tratada
         playGamesManager.submitScore("leaderboard_sample_id", 1200L)
     }
+
+    @Test
+    fun testPlayGamesManagerShowLeaderboardsAndAchievementsSafelyHandlesNoActivity() {
+        val dummySaveManager = PlayGamesSaveManager(DummyAppDatabase())
+        val playGamesManager = PlayGamesManager(dummySaveManager)
+
+        var leaderboardsFeedback: String? = null
+        playGamesManager.showLeaderboards(activity = null) { feedback ->
+            leaderboardsFeedback = feedback
+        }
+        org.junit.Assert.assertNotNull(leaderboardsFeedback)
+
+        var achievementsFeedback: String? = null
+        playGamesManager.showAchievements(activity = null) { feedback ->
+            achievementsFeedback = feedback
+        }
+        org.junit.Assert.assertNotNull(achievementsFeedback)
+    }
 }

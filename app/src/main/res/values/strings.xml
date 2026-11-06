@@ -167,6 +167,9 @@
     <string name="stats_global_rankings_title">Google Play Global Rankings</string>
     <string name="stats_global_rankings_desc">Compete with friends and players worldwide on official leaderboards</string>
     <string name="stats_global_rankings_cta">View Global Rankings</string>
+    <string name="stats_global_achievements_cta">View Achievements</string>
+    <string name="pgs_error_login_required">Sign in to Google Play Games to access leaderboards and achievements.</string>
+    <string name="pgs_error_unavailable">Google Play Games services are currently unavailable.</string>
     <string name="stats_card_wins_title">Victories</string>
     <string name="stats_card_win_rate_title">Win Rate</string>
     <string name="stats_card_streaks_title">Streak Record</string>
