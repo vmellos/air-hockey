@@ -36,10 +36,17 @@ class AirHockey3DSceneTest {
     fun cameraPreset_splitScreen_usesZenithTopDownPositionAndRotation() {
         val splitPreset = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = true)
         assertEquals(0f, splitPreset.position.x, 1e-4f)
-        assertEquals(3.40f, splitPreset.position.y, 1e-4f)
+        assertEquals(2.55f, splitPreset.position.y, 1e-4f)
         assertEquals(0f, splitPreset.position.z, 1e-4f)
         assertEquals(-90f, splitPreset.rotation.x, 1e-4f)
         assertEquals(0f, splitPreset.rotation.y, 1e-4f)
+
+        val closePreset = getCameraPreset(CameraZoom3D.CLOSE, isSplitScreen = true)
+        val widePreset = getCameraPreset(CameraZoom3D.WIDE, isSplitScreen = true)
+        assertTrue(closePreset.position.y < splitPreset.position.y)
+        assertTrue(widePreset.position.y > splitPreset.position.y)
+        assertEquals(-90f, closePreset.rotation.x, 1e-4f)
+        assertEquals(-90f, widePreset.rotation.x, 1e-4f)
     }
 
     @Test

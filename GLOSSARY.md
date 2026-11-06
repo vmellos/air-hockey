@@ -91,7 +91,7 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 ## Experiência Visual e Câmera 3D
 
 **Dimensão de Renderização**:
-A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e forçada em 2D exclusivamente no Modo Tela Dividida por ergonomia competitiva.
+A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e forçada estritamente em 2D na Mesa Dividida e na Mesa Estendida por requisitos físicos e ergonômicos de projeção.
 _Avoid_: Modo de câmera, visual 3d isolado, tema 3d, switch de gráfico
 
 **Kit de Ativos 3D**:
@@ -99,11 +99,11 @@ A coleção integrada de arquivos binários glTF otimizados (`.glb`) composta po
 _Avoid_: Pasta de modelos, pack 3D, skins 3D, bundle glb
 
 **Apresentação de Abertura da Mesa 3D**:
-O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva travada do Jogador 1. Pode ser pulada instantaneamente com um toque na tela ("Tap to Skip") e retém o Saque de Início até sua conclusão.
-_Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360
+O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva travada do Jogador 1. Permanece ativa ininterruptamente até sua conclusão sem descarte por toques na tela, retendo o Saque de Início e a contagem regressiva até sua finalização completa.
+_Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
-Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1 (Próximo, Padrão e Amplo), permitindo enquadrar integralmente a Meta do Jogador 1, a borda inferior e a meta adversária com folga ergonômica, alternáveis por controle no HUD e persistidos nas preferências do usuário.
+Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1 e para a Câmera 3D Zenital no Modo Tela Dividida (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e sem bordas excessivas, alternáveis por controle no HUD e persistidos nas preferências do usuário.
 _Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto
 
 **Desprojeção em Perspectiva 3D**:
@@ -359,7 +359,7 @@ A representação visual discreta aplicada aos itens cosméticos e arenas ainda 
 _Avoid_: Badge com texto de fase, selo com número, tarja de bloqueio
 
 **Câmera 3D Zenital**:
-O enquadramento tridimensional ortogonal calibrado a 90° acima do centro da mesa no Modo Tela Dividida (Split Screen), que projeta os modelos 3D volumétricos (disco, rebatedores e arena) e iluminação dinâmica PBR com simetria geométrica absoluta e sem distorção angular de perspectiva entre os dois competidores locais no mesmo aparelho.
+O enquadramento tridimensional ortogonal calibrado a 90° acima do centro da mesa no Modo Tela Dividida (Split Screen) com suporte aos Níveis de Enquadramento 3D, que projeta os modelos 3D volumétricos (disco, rebatedores e arena) e iluminação dinâmica PBR com simetria geométrica absoluta, preenchimento otimizado da tela e sem distorção angular de perspectiva entre os dois competidores locais no mesmo aparelho.
 _Avoid_: Câmera inclinada, visão torta, 3D assimétrico, top-down fake
 
 ## Competição e Classificação

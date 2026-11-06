@@ -146,7 +146,7 @@ class ArbitroVirtual(
     private val _matchState = MutableStateFlow(
         MatchState(
             mode = mode,
-            status = MatchStatus.COUNTDOWN,
+            status = if (spec.hasIntroPresentation) MatchStatus.PRESENTATION else MatchStatus.COUNTDOWN,
             scorePlayer1 = 0,
             scorePlayer2 = 0,
             targetScore = spec.targetScore,
@@ -158,7 +158,8 @@ class ArbitroVirtual(
             player2Name = spec.player2Name,
             currentStage = spec.stageNumber,
             starsEarned = 0,
-            tableTheme = spec.tableTheme
+            tableTheme = spec.tableTheme,
+            arenaDimension = spec.arenaDimension
         )
     )
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
@@ -508,11 +509,21 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
+    fun finishPresentationAndStartCountdown() {
+        _matchState.update {
+            it.copy(
+                status = MatchStatus.COUNTDOWN,
+                countdownNumber = 3
+            )
+        }
+        publishSnapshot()
+    }
+
     fun restart() {
         engine.resetPositions(0)
         _matchState.update {
             it.copy(
-                status = MatchStatus.COUNTDOWN,
+                status = if (spec.hasIntroPresentation) MatchStatus.PRESENTATION else MatchStatus.COUNTDOWN,
                 scorePlayer1 = 0,
                 scorePlayer2 = 0,
                 winner = 0,

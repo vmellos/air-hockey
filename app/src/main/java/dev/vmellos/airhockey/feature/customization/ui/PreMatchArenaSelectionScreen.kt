@@ -78,7 +78,7 @@ fun PreMatchArenaSelectionScreen(
     title: String = stringResource(R.string.pre_match_arena_title),
     confirmButtonText: String = stringResource(R.string.pre_match_start_game),
     isSplitScreen: Boolean = false,
-    onConfirm: (TableTheme) -> Unit,
+    onConfirm: (TableTheme, ArenaDimension) -> Unit,
     onBack: () -> Unit,
     onNavigateToStages: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -380,7 +380,7 @@ fun PreMatchArenaSelectionScreen(
                         preferencesRepo.applyThemePreset(finalTheme)
                         preferencesRepo.updateArenaDimension(selectedDimension)
                     }
-                    onConfirm(finalTheme)
+                    onConfirm(finalTheme, selectedDimension)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
                 shape = CutCornerShape(8.dp),

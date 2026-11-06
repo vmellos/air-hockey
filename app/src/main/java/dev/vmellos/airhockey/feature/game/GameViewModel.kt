@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.feature.lobby.MultiplayerMatchCoordinator
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
@@ -231,7 +232,8 @@ class GameViewModel : ViewModel() {
         player2Name: String = "Jogador 2",
         stageNumber: Int = 1,
         hasIntroPresentation: Boolean = false,
-        tableTheme: TableTheme? = null
+        tableTheme: TableTheme? = null,
+        arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL
     ) {
         initializeMatch(
             MatchSpec(
@@ -250,13 +252,18 @@ class GameViewModel : ViewModel() {
                 player2Name = player2Name,
                 stageNumber = stageNumber,
                 hasIntroPresentation = hasIntroPresentation,
-                tableTheme = tableTheme
+                tableTheme = tableTheme,
+                arenaDimension = arenaDimension
             )
         )
     }
 
     fun startCountdownAfterPresentation() {
-        if (_matchState.value.status == MatchStatus.COUNTDOWN && countdownJob?.isActive != true) {
+        if (_matchState.value.status == MatchStatus.PRESENTATION) {
+            arbitro?.finishPresentationAndStartCountdown()
+            broadcastState()
+            startCountdown()
+        } else if (_matchState.value.status == MatchStatus.COUNTDOWN && countdownJob?.isActive != true) {
             startCountdown()
         }
     }
@@ -501,7 +508,9 @@ class GameViewModel : ViewModel() {
         hasRecordedMatch = false
         arbitro?.restart()
         broadcastState()
-        startCountdown()
+        if (_matchState.value.status != MatchStatus.PRESENTATION) {
+            startCountdown()
+        }
     }
 
     fun onPeerExited() {

@@ -55,10 +55,20 @@ data class CameraPreset(
 
 fun getCameraPreset(zoom: CameraZoom3D, isSplitScreen: Boolean = false): CameraPreset =
     if (isSplitScreen) {
-        CameraPreset(
-            position = Float3(0f, 3.40f, 0f),
-            rotation = Float3(-90f, 0f, 0f)
-        )
+        when (zoom) {
+            CameraZoom3D.CLOSE -> CameraPreset(
+                position = Float3(0f, 2.35f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+            CameraZoom3D.STANDARD -> CameraPreset(
+                position = Float3(0f, 2.55f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+            CameraZoom3D.WIDE -> CameraPreset(
+                position = Float3(0f, 2.85f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+        }
     } else {
         when (zoom) {
             CameraZoom3D.CLOSE -> CameraPreset(
@@ -384,15 +394,18 @@ fun AirHockeyArena3DScene(
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
 
+    val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
+            mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
+    val canPresentIntro = !isExtended && !isSplitScreen && prefs.arena3dIntroEnabled
     val targetPreset = remember(zoom, isSplitScreen) { getCameraPreset(zoom, isSplitScreen) }
-    val sceneState = remember(isSplitScreen) {
-        Scene3DState(targetPreset, initialPresenting = if (isSplitScreen) false else prefs.arena3dIntroEnabled)
+    val sceneState = remember(isSplitScreen, isExtended) {
+        Scene3DState(targetPreset, initialPresenting = canPresentIntro)
     }
 
     val coroutineScope = rememberCoroutineScope()
-    val presentationAnim = remember(isSplitScreen) {
-        Animatable(if (isSplitScreen || !prefs.arena3dIntroEnabled) 1f else 0f)
+    val presentationAnim = remember(isSplitScreen, isExtended) {
+        Animatable(if (canPresentIntro) 0f else 1f)
     }
 
     val inputController = remember { ArenaInputController() }
@@ -401,14 +414,20 @@ fun AirHockeyArena3DScene(
     val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
 
     // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone)
-    LaunchedEffect(prefs.arena3dIntroEnabled, isSplitScreen) {
-        if (isSplitScreen || !prefs.arena3dIntroEnabled) {
-            sceneState.presentationProgress = 1f
-            sceneState.isPresenting = false
-            presentationAnim.snapTo(1f)
-            onPresentationFinished()
+    LaunchedEffect(matchState.status, canPresentIntro) {
+        if (!canPresentIntro || matchState.status != MatchStatus.PRESENTATION) {
+            if (sceneState.isPresenting && !canPresentIntro) {
+                sceneState.presentationProgress = 1f
+                sceneState.isPresenting = false
+                presentationAnim.snapTo(1f)
+                onPresentationFinished()
+            }
             return@LaunchedEffect
         }
+
+        sceneState.isPresenting = true
+        sceneState.presentationProgress = 0f
+        presentationAnim.snapTo(0f)
         try {
             presentationAnim.animateTo(
                 targetValue = 1f,
@@ -580,18 +599,10 @@ fun AirHockeyArena3DScene(
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
-                        // Tap to Skip: Um toque durante a apresentação encerra o sobrevoo imediatamente
+                        // Durante a apresentação da arena 3D, toques na tela são consumidos e a animação permanece ininterrupta
                         if (sceneState.isPresenting) {
-                            if (event.changes.any { it.pressed }) {
-                                coroutineScope.launch {
-                                    sceneState.presentationProgress = 1f
-                                    sceneState.isPresenting = false
-                                    presentationAnim.snapTo(1f)
-                                    onPresentationFinished()
-                                }
-                                for (change in event.changes) {
-                                    change.consume()
-                                }
+                            for (change in event.changes) {
+                                change.consume()
                             }
                             continue
                         }

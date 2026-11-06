@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.feature.game
 
+import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.physics.MalletSnapshot
 import dev.vmellos.airhockey.feature.physics.PuckSnapshot
@@ -19,6 +20,7 @@ enum class GameMode {
 
 enum class MatchStatus {
     IDLE,
+    PRESENTATION,
     COUNTDOWN,
     PLAYING,
     GOAL_PAUSE,
@@ -44,7 +46,8 @@ data class MatchState(
     val currentStage: Int = 1,
     val starsEarned: Int = 0,
     val tableTheme: TableTheme? = null,
-    val newlyConqueredTheme: TableTheme? = null
+    val newlyConqueredTheme: TableTheme? = null,
+    val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL
 ) {
     val isSpectator: Boolean
         get() = mode == GameMode.AI_VS_AI_LOCAL ||
