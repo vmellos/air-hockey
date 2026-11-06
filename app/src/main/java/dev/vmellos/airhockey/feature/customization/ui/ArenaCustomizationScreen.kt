@@ -955,7 +955,7 @@ fun ArenaCustomizationScreen(
  * Renderiza em tempo real a mesa, disco e rebatedores selecionados sob a iluminação e bloom configurados.
  */
 @Composable
-private fun Arena3DLivePreview(
+internal fun Arena3DLivePreview(
     tableTheme: TableTheme,
     puckSkin: PuckSkin,
     malletSkin: MalletSkin,
@@ -1159,7 +1159,7 @@ private fun Arena3DLivePreview(
  * Renderizador de Pré-Visualização Dinâmica em Canvas da Arena completa.
  */
 @Composable
-private fun ArenaLivePreview(
+internal fun ArenaLivePreview(
     tableTheme: TableTheme,
     puckSkin: PuckSkin,
     malletSkin: MalletSkin,
@@ -1357,30 +1357,20 @@ private fun BundleCard(
             }
 
             if (isLocked) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    shape = CutCornerShape(6.dp),
-                    color = Color(0x33FFB800),
-                    border = BorderStroke(1.dp, Color(0x88FFB800))
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color(0x33FFB800), CircleShape)
+                        .border(1.2.dp, Color(0x88FFB800), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color(0xFFFFB800),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.arena_locked_badge, unlockStage),
-                            color = Color(0xFFFFB800),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB800),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             } else if (isEquipped) {
                 Spacer(modifier = Modifier.width(10.dp))
@@ -1489,30 +1479,20 @@ private fun SingleItemCard(
             }
 
             if (isLocked) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    shape = CutCornerShape(6.dp),
-                    color = Color(0x33FFB800),
-                    border = BorderStroke(1.dp, Color(0x88FFB800))
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color(0x33FFB800), CircleShape)
+                        .border(1.2.dp, Color(0x88FFB800), CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color(0xFFFFB800),
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.arena_locked_badge, unlockStage),
-                            color = Color(0xFFFFB800),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB800),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             } else if (isEquipped) {
                 Spacer(modifier = Modifier.width(10.dp))
