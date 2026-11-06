@@ -358,6 +358,10 @@ _Avoid_: Tela de skin, menu de mapa, pré-jogo avulso
 A representação visual discreta aplicada aos itens cosméticos e arenas ainda não conquistados, constituída exclusivamente pelo ícone vetorial de cadeado, postergando detalhes de nível e instruções de desbloqueio para o diálogo interativo disparado ao toque.
 _Avoid_: Badge com texto de fase, selo com número, tarja de bloqueio
 
+**Câmera 3D Zenital**:
+O enquadramento tridimensional ortogonal calibrado a 90° acima do centro da mesa no Modo Tela Dividida (Split Screen), que projeta os modelos 3D volumétricos (disco, rebatedores e arena) e iluminação dinâmica PBR com simetria geométrica absoluta e sem distorção angular de perspectiva entre os dois competidores locais no mesmo aparelho.
+_Avoid_: Câmera inclinada, visão torta, 3D assimétrico, top-down fake
+
 ## Competição e Classificação
 
 **Placar de Líderes**:
