@@ -170,7 +170,7 @@ fun PreMatchArenaSelectionScreen(
                     .background(Color(0xFF0D1424))
                     .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
             ) {
-                if (selectedDimension == ArenaDimension.THREE_DIMENSIONAL && !isSplitScreen) {
+                if (selectedDimension == ArenaDimension.THREE_DIMENSIONAL) {
                     Arena3DLivePreview(
                         tableTheme = selectedTheme,
                         puckSkin = prefs.puckSkin,
