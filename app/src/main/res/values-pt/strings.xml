@@ -167,6 +167,9 @@
     <string name="stats_global_rankings_title">Rankings Globais Google Play</string>
     <string name="stats_global_rankings_desc">Dispute com amigos e jogadores do mundo todo nos placares oficiais</string>
     <string name="stats_global_rankings_cta">Ver Rankings Globais</string>
+    <string name="stats_global_achievements_cta">Ver Conquistas</string>
+    <string name="pgs_error_login_required">Conecte-se ao Google Play Games para acessar rankings e conquistas.</string>
+    <string name="pgs_error_unavailable">Serviços do Google Play Games indisponíveis no momento.</string>
     <string name="stats_card_wins_title">Vitórias</string>
     <string name="stats_card_win_rate_title">Aproveitamento</string>
     <string name="stats_card_streaks_title">Sequência Invicta</string>

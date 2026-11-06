@@ -75,14 +75,8 @@ class PlayGamesManager(
                 if (isAuthenticated) {
                     fetchPlayerProfile(activity)
                 } else {
-                    gamesSignInClient.signIn().addOnCompleteListener { signInTask ->
-                        if (signInTask.isSuccessful && signInTask.result.isAuthenticated) {
-                            fetchPlayerProfile(activity)
-                        } else {
-                            Log.d(TAG, "Jogador não autenticado no Play Games. Modo offline ativo.")
-                            _authState.value = PlayGamesAuthState.Unauthenticated
-                        }
-                    }
+                    Log.d(TAG, "Jogador não autenticado silenciosamente no Play Games. Modo offline ativo.")
+                    _authState.value = PlayGamesAuthState.Unauthenticated
                 }
             }
         } catch (e: Exception) {
@@ -91,7 +85,37 @@ class PlayGamesManager(
         }
     }
 
-    private fun fetchPlayerProfile(activity: Activity) {
+    /**
+     * Realiza login interativo solicitado expressamente pelo usuário (ex: ao tocar em Ver Rankings Globais).
+     */
+    fun signInExplicitly(
+        activity: Activity,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String?) -> Unit)? = null
+    ) {
+        attachActivity(activity)
+        try {
+            val gamesSignInClient = PlayGames.getGamesSignInClient(activity)
+            gamesSignInClient.signIn().addOnCompleteListener { signInTask ->
+                if (signInTask.isSuccessful && signInTask.result.isAuthenticated) {
+                    fetchPlayerProfile(activity) {
+                        onSuccess?.invoke()
+                    }
+                } else {
+                    val errorMsg = signInTask.exception?.message ?: "Login cancelado ou indisponível"
+                    Log.d(TAG, "Falha no login interativo do Play Games: $errorMsg")
+                    _authState.value = PlayGamesAuthState.Unauthenticated
+                    onFailure?.invoke(errorMsg)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Exceção no login interativo: ${e.message}")
+            _authState.value = PlayGamesAuthState.Unauthenticated
+            onFailure?.invoke(e.message)
+        }
+    }
+
+    private fun fetchPlayerProfile(activity: Activity, onComplete: (() -> Unit)? = null) {
         try {
             val playersClient = PlayGames.getPlayersClient(activity)
             playersClient.currentPlayer.addOnSuccessListener { player ->
@@ -105,23 +129,57 @@ class PlayGamesManager(
 
                 // Sincroniza progresso na nuvem logo após login bem-sucedido
                 saveManager.syncProgressAsync(activity)
+                onComplete?.invoke()
             }.addOnFailureListener { e ->
                 Log.w(TAG, "Não foi possível obter perfil do jogador: ${e.message}")
                 _authState.value = PlayGamesAuthState.Authenticated(
                     PlayGamesPlayer("local", "Jogador")
                 )
                 saveManager.syncProgressAsync(activity)
+                onComplete?.invoke()
             }
         } catch (e: Exception) {
             Log.w(TAG, "Erro ao buscar dados do jogador: ${e.message}")
             _authState.value = PlayGamesAuthState.Unauthenticated
+            onComplete?.invoke()
         }
     }
 
     /**
      * Exibe a tela nativa de Conquistas (Achievements) da Google Play.
+     * Se o usuário não estiver autenticado, dispara login interativo.
      */
-    fun showAchievements(activity: Activity) {
+    fun showAchievements(
+        activity: Activity? = null,
+        onFeedback: ((String) -> Unit)? = null
+    ) {
+        val targetActivity = activity ?: currentActivityRef?.get()
+        if (targetActivity == null) {
+            Log.w(TAG, "Nenhuma Activity disponível para abrir conquistas.")
+            onFeedback?.invoke("Activity não disponível.")
+            return
+        }
+        val auth = _authState.value
+        if (auth !is PlayGamesAuthState.Authenticated) {
+            signInExplicitly(
+                activity = targetActivity,
+                onSuccess = {
+                    launchAchievementsIntent(targetActivity, onFeedback)
+                },
+                onFailure = {
+                    onFeedback?.invoke(targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required))
+                }
+            )
+            return
+        }
+
+        launchAchievementsIntent(targetActivity, onFeedback)
+    }
+
+    private fun launchAchievementsIntent(
+        activity: Activity,
+        onFeedback: ((String) -> Unit)? = null
+    ) {
         try {
             PlayGames.getAchievementsClient(activity).achievementsIntent
                 .addOnSuccessListener { intent ->
@@ -129,31 +187,61 @@ class PlayGamesManager(
                 }
                 .addOnFailureListener { e ->
                     Log.w(TAG, "Erro ao abrir tela de conquistas: ${e.message}")
+                    onFeedback?.invoke(activity.getString(dev.vmellos.airhockey.R.string.pgs_error_unavailable))
                 }
         } catch (e: Exception) {
             Log.w(TAG, "Play Games não disponível para conquistas: ${e.message}")
+            onFeedback?.invoke(activity.getString(dev.vmellos.airhockey.R.string.pgs_error_unavailable))
         }
     }
 
     /**
      * Exibe a tela nativa com todos os Placares Oficiais (Leaderboards) da Google Play.
+     * Se o usuário não estiver autenticado, dispara login interativo.
      */
-    fun showLeaderboards(activity: Activity? = null) {
+    fun showLeaderboards(
+        activity: Activity? = null,
+        onFeedback: ((String) -> Unit)? = null
+    ) {
         val targetActivity = activity ?: currentActivityRef?.get()
         if (targetActivity == null) {
             Log.w(TAG, "Nenhuma Activity disponível para abrir rankings da Google Play.")
+            onFeedback?.invoke("Activity não disponível.")
             return
         }
+        val auth = _authState.value
+        if (auth !is PlayGamesAuthState.Authenticated) {
+            signInExplicitly(
+                activity = targetActivity,
+                onSuccess = {
+                    launchLeaderboardsIntent(targetActivity, onFeedback)
+                },
+                onFailure = {
+                    onFeedback?.invoke(targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required))
+                }
+            )
+            return
+        }
+
+        launchLeaderboardsIntent(targetActivity, onFeedback)
+    }
+
+    private fun launchLeaderboardsIntent(
+        activity: Activity,
+        onFeedback: ((String) -> Unit)? = null
+    ) {
         try {
-            PlayGames.getLeaderboardsClient(targetActivity).allLeaderboardsIntent
+            PlayGames.getLeaderboardsClient(activity).allLeaderboardsIntent
                 .addOnSuccessListener { intent ->
-                    targetActivity.startActivityForResult(intent, RC_LEADERBOARDS)
+                    activity.startActivityForResult(intent, RC_LEADERBOARDS)
                 }
                 .addOnFailureListener { e ->
                     Log.w(TAG, "Erro ao abrir tela de rankings: ${e.message}")
+                    onFeedback?.invoke(activity.getString(dev.vmellos.airhockey.R.string.pgs_error_unavailable))
                 }
         } catch (e: Exception) {
             Log.w(TAG, "Play Games não disponível para rankings: ${e.message}")
+            onFeedback?.invoke(activity.getString(dev.vmellos.airhockey.R.string.pgs_error_unavailable))
         }
     }
 

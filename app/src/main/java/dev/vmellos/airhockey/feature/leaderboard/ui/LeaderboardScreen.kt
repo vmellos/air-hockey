@@ -34,12 +34,14 @@ import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SportsEsports
+import android.widget.Toast
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -150,74 +152,32 @@ fun LeaderboardScreen(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(Color(0xB3070D1A), CircleShape)
-                                .border(1.2.dp, Color(0x6600E5FF), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back),
-                                tint = Color(0xFF00E5FF),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(R.string.leaderboard_title),
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xB3070D1A), CircleShape)
+                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-
-                    // Atalhos Google Play Games: Conquistas & Placares Globais
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = {
-                                activity?.let { AirHockeyApp.instance.playGamesManager.showAchievements(it) }
-                            },
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xB3070D1A), CircleShape)
-                                .border(1.2.dp, Color(0x66FFB800), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MilitaryTech,
-                                contentDescription = stringResource(R.string.pgs_open_achievements),
-                                tint = Color(0xFFFFB800),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                activity?.let { AirHockeyApp.instance.playGamesManager.showLeaderboards(it) }
-                            },
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(Color(0xB3070D1A), CircleShape)
-                                .border(1.2.dp, Color(0x6600E5FF), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Public,
-                                contentDescription = stringResource(R.string.pgs_open_leaderboards),
-                                tint = Color(0xFF00E5FF),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.leaderboard_title),
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
                 // Abas de Seleção: Carreira & Histórico
@@ -272,7 +232,18 @@ fun LeaderboardScreen(
                             pgsAuth = pgsAuth,
                             recentMatches = recentMatches,
                             onOpenGlobalLeaderboards = {
-                                activity?.let { AirHockeyApp.instance.playGamesManager.showLeaderboards(it) }
+                                activity?.let { act ->
+                                    AirHockeyApp.instance.playGamesManager.showLeaderboards(act) { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            onOpenAchievements = {
+                                activity?.let { act ->
+                                    AirHockeyApp.instance.playGamesManager.showAchievements(act) { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             },
                             onNavigateToHistory = {
                                 selectedTabIndex = 1
@@ -305,6 +276,7 @@ private fun CareerOverviewContent(
     pgsAuth: PlayGamesAuthState,
     recentMatches: List<MatchRecordEntity>,
     onOpenGlobalLeaderboards: () -> Unit,
+    onOpenAchievements: () -> Unit,
     onNavigateToHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -488,13 +460,40 @@ private fun CareerOverviewContent(
                             .height(38.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.EmojiEvents,
+                            imageVector = Icons.Default.Public,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.stats_global_rankings_cta),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = onOpenAchievements,
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, Color(0x66FFB800)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFFFB800)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MilitaryTech,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = Color(0xFFFFB800)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.stats_global_achievements_cta),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )

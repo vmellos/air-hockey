@@ -91,7 +91,7 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 ## Experiência Visual e Câmera 3D
 
 **Dimensão de Renderização**:
-A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e configurável nos modos Solo, Fases, Mesa Dividida e IA x IA, com suporte a Enquadramento Zenital na Mesa Dividida.
+A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e configurável nos modos Solo, Fases, Mesa Dividida, Mesa Conectada e IA x IA Local, sendo mantida estritamente em 2D na Mesa Estendida por requisitos geométricos de continuidade da junção física topo-a-topo.
 _Avoid_: Modo de câmera, visual 3d isolado, tema 3d, switch de gráfico
 
 **Kit de Ativos 3D**:
@@ -177,7 +177,7 @@ Partida para dois jogadores em dois dispositivos físicos dispostos em Disposiç
 _Avoid_: Dual screen, tela dupla, big board, mesa dividida
 
 **Mesa Conectada**:
-Partida para dois jogadores em dois dispositivos físicos pareados via rede sem fio, na qual cada aparelho projeta a mesa inteira e sincroniza os movimentos em tempo real.
+Partida para dois jogadores em dois dispositivos físicos pareados via rede sem fio, na qual cada aparelho projeta a mesa inteira e sincroniza os movimentos em tempo real. No modo 3D, o Dispositivo Convidado inverte a câmera em 180° com desprojeção de toque adaptada, permitindo que ambos os competidores defendam a meta na base da tela sob perspectiva nativa do seu próprio lado.
 _Avoid_: Modo online, duelo sem fio, campo inteiro p2p, versus wifi, multiplayer normal
 
 **Modo IA x IA**:
