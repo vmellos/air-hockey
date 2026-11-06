@@ -397,7 +397,7 @@ fun AirHockeyArena3DScene(
     val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
             mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
-    val canPresentIntro = !isExtended && !isSplitScreen && prefs.arena3dIntroEnabled
+    val canPresentIntro = !isExtended && prefs.arena3dIntroEnabled
     val targetPreset = remember(zoom, isSplitScreen) { getCameraPreset(zoom, isSplitScreen) }
     val sceneState = remember(isSplitScreen, isExtended) {
         Scene3DState(targetPreset, initialPresenting = canPresentIntro)
@@ -666,6 +666,14 @@ fun AirHockeyArena3DScene(
 
                     cameraNode.position = Float3(x, y, z)
                     cameraNode.lookAt(Float3(0f, focusY, focusZ))
+
+                    if (isSplitScreen && t > 0.60f) {
+                        val blend = ((t - 0.60f) / 0.40f).coerceIn(0f, 1f)
+                        val blendSmooth = blend * blend * (3f - 2f * blend)
+                        val pitch = cameraNode.rotation.x * (1f - blendSmooth) + targetPreset.rotation.x * blendSmooth
+                        val yaw = cameraNode.rotation.y * (1f - blendSmooth)
+                        cameraNode.rotation = Float3(pitch, yaw, 0f)
+                    }
 
                     sceneState.camX = x
                     sceneState.camY = y

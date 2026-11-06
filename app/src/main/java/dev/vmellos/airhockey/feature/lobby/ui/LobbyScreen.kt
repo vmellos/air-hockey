@@ -106,7 +106,7 @@ fun LobbyScreen(
     viewModel: LobbyViewModel,
     onBackToMenu: () -> Unit,
     onStartHostMatch: (() -> Unit)? = null,
-    onStartAiVsAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null,
+    onStartAiVsAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.TableTheme, dev.vmellos.airhockey.core.preferences.ArenaDimension) -> Unit)? = null,
     onNavigateToStages: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -149,7 +149,7 @@ fun LobbyScreen(
                 if (isAiLocal) {
                     val d1 = pendingAiDiff1 ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
                     val d2 = pendingAiDiff2 ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
-                    onStartAiVsAiLocal?.invoke(d1, d2)
+                    onStartAiVsAiLocal?.invoke(d1, d2, chosenTheme, chosenDimension)
                 } else {
                     val d1Str = pendingAiDiff1?.name ?: ""
                     val d2Str = pendingAiDiff2?.name ?: ""

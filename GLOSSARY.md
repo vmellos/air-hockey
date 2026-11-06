@@ -91,7 +91,7 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 ## Experiência Visual e Câmera 3D
 
 **Dimensão de Renderização**:
-A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e forçada estritamente em 2D na Mesa Dividida e na Mesa Estendida por requisitos físicos e ergonômicos de projeção.
+A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e configurável nos modos Solo, Fases, Mesa Dividida e IA x IA, com suporte a Enquadramento Zenital na Mesa Dividida.
 _Avoid_: Modo de câmera, visual 3d isolado, tema 3d, switch de gráfico
 
 **Kit de Ativos 3D**:
@@ -99,7 +99,7 @@ A coleção integrada de arquivos binários glTF otimizados (`.glb`) composta po
 _Avoid_: Pasta de modelos, pack 3D, skins 3D, bundle glb
 
 **Apresentação de Abertura da Mesa 3D**:
-O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva travada do Jogador 1. Permanece ativa ininterruptamente até sua conclusão sem descarte por toques na tela, retendo o Saque de Início e a contagem regressiva até sua finalização completa.
+O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva do Jogador 1 (ou no ângulo zenital na Mesa Dividida). Sincroniza a execução da Música de Fundo (BGM) desde o primeiro segundo do voo e permanece ativa ininterruptamente até sua conclusão sem descarte por toques na tela, retendo o Saque de Início e a contagem regressiva até sua finalização completa.
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
