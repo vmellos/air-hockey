@@ -93,7 +93,7 @@ fun GameScreen(
     // Controle dinâmico da música de fundo (BGM) conforme o ciclo de vida, tema e estado do jogo
     LaunchedEffect(matchState.status, isMusicEnabled, effectiveTheme) {
         when (matchState.status) {
-            MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE -> {
+            MatchStatus.PRESENTATION, MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE -> {
                 if (isMusicEnabled) {
                     AirHockeyApp.instance.audioEngine.playBgm(effectiveTheme)
                 } else {
@@ -148,7 +148,7 @@ fun GameScreen(
 
     val isExtended = matchState.isExtendedMode
     val is3dActive = matchState.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled && !isExtended && mode != GameMode.SPLIT_SCREEN
+    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled && !isExtended
     var is3dPresenting by remember(matchState.status) {
         mutableStateOf(matchState.status == MatchStatus.PRESENTATION)
     }
