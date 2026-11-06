@@ -1,6 +1,7 @@
 package dev.vmellos.airhockey.feature.game
 
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.TableTheme
 
 /**
@@ -25,5 +26,6 @@ data class MatchSpec(
     val player2Name: String = "Jogador 2",
     val stageNumber: Int = 1,
     val hasIntroPresentation: Boolean = false,
-    val tableTheme: TableTheme? = null
+    val tableTheme: TableTheme? = null,
+    val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL
 )

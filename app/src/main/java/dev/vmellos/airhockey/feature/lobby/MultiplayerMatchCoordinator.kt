@@ -33,7 +33,8 @@ data class MultiplayerSessionState(
     val peerPlayerName: String = "",
     val isHandshakeRejected: Boolean = false,
     val rejectReason: String? = null,
-    val hostThemeName: String? = null
+    val hostThemeName: String? = null,
+    val hostArenaDimension: String? = null
 )
 
 /**
@@ -157,6 +158,7 @@ class MultiplayerMatchCoordinator(
                         aiDifficulty1 = event.aiDiff1,
                         aiDifficulty2 = event.aiDiff2,
                         hostThemeName = event.themeName.ifBlank { null },
+                        hostArenaDimension = event.arenaDimension.ifBlank { null },
                         startMatchTrigger = System.currentTimeMillis()
                     )
                 }
@@ -180,7 +182,14 @@ class MultiplayerMatchCoordinator(
         }
     }
 
-    fun startMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "", themeName: String = "") {
+    fun startMatch(
+        gapMm: Float,
+        maxSpeed: Float = 6800f,
+        aiDiff1: String = "",
+        aiDiff2: String = "",
+        themeName: String = "",
+        arenaDimension: String = ""
+    ) {
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,
@@ -188,11 +197,12 @@ class MultiplayerMatchCoordinator(
                 aiDifficulty1 = aiDiff1,
                 aiDifficulty2 = aiDiff2,
                 hostThemeName = themeName.ifBlank { null },
+                hostArenaDimension = arenaDimension.ifBlank { null },
                 startMatchTrigger = System.currentTimeMillis()
             )
         }
         scope.launch {
-            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, themeName))
+            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, themeName, arenaDimension))
         }
     }
 

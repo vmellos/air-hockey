@@ -130,6 +130,19 @@ class TableTransportTest {
     }
 
     @Test
+    fun testStartEventWithDimensionSerialization() {
+        val startEvent = TableControlEvent.Start(8.0f, 6800f, "", "", "CYBER_SOCCER", "THREE_DIMENSIONAL")
+        val wire = startEvent.toWireString()
+        assertEquals("START:8.0:6800.0:::CYBER_SOCCER:THREE_DIMENSIONAL", wire)
+
+        val parsed = TableControlEvent.fromWireString(wire) as TableControlEvent.Start
+        assertEquals(8.0f, parsed.gapMm, 0.01f)
+        assertEquals(6800f, parsed.maxSpeed, 0.01f)
+        assertEquals("CYBER_SOCCER", parsed.themeName)
+        assertEquals("THREE_DIMENSIONAL", parsed.arenaDimension)
+    }
+
+    @Test
     fun testStartEventBackwardCompatibilityWithoutAiDifficulties() {
         val wireLegacy = "START:8.0:6800.0"
         val parsed = TableControlEvent.fromWireString(wireLegacy) as TableControlEvent.Start

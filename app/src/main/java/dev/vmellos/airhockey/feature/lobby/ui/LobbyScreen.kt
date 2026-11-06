@@ -144,7 +144,7 @@ fun LobbyScreen(
                 showCreateHostDialog = true
             },
             onNavigateToStages = onNavigateToStages,
-            onConfirm = { chosenTheme ->
+            onConfirm = { chosenTheme, chosenDimension ->
                 showArenaSelection = false
                 if (isAiLocal) {
                     val d1 = pendingAiDiff1 ?: dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM
@@ -153,7 +153,7 @@ fun LobbyScreen(
                 } else {
                     val d1Str = pendingAiDiff1?.name ?: ""
                     val d2Str = pendingAiDiff2?.name ?: ""
-                    viewModel.startAsHost(mode, d1Str, d2Str)
+                    viewModel.startAsHost(mode, d1Str, d2Str, chosenDimension.name)
                 }
             }
         )

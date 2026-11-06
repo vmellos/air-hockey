@@ -69,7 +69,8 @@ data class LobbyState(
     val errorMessageArgs: List<String> = emptyList(),
     val peerPlayerName: String = "",
     val selfPlayerName: String = "",
-    val hostThemeName: String? = null
+    val hostThemeName: String? = null,
+    val hostArenaDimension: String? = null
 )
 
 class LobbyViewModel : ViewModel() {
@@ -130,7 +131,7 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "") {
+    fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "", arenaDimension: String = "") {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress(context)
         val selfName = _state.value.selfPlayerName.ifBlank {
@@ -148,6 +149,7 @@ class LobbyViewModel : ViewModel() {
                 targetMode = mode,
                 aiDifficulty1 = aiDiff1,
                 aiDifficulty2 = aiDiff2,
+                hostArenaDimension = arenaDimension.ifBlank { null },
                 tableCode = code,
                 hostIp = ip,
                 qrContent = qr,
@@ -203,10 +205,17 @@ class LobbyViewModel : ViewModel() {
         nsdManager.sendDirectedDiscoveryProbe()
     }
 
-    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "", themeName: String = "") {
+    fun startHostMatch(
+        gapMm: Float,
+        maxSpeed: Float = 6800f,
+        aiDiff1: String = "",
+        aiDiff2: String = "",
+        themeName: String = "",
+        arenaDimension: String = ""
+    ) {
         val d1 = if (aiDiff1.isNotBlank()) aiDiff1 else _state.value.aiDifficulty1
         val d2 = if (aiDiff2.isNotBlank()) aiDiff2 else _state.value.aiDifficulty2
-        coordinator?.startMatch(gapMm, maxSpeed, d1, d2, themeName)
+        coordinator?.startMatch(gapMm, maxSpeed, d1, d2, themeName, arenaDimension)
     }
 
     fun resetToRoleSelection() {
@@ -266,6 +275,7 @@ class LobbyViewModel : ViewModel() {
                         synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
                         peerPlayerName = cState.peerPlayerName.ifBlank { it.peerPlayerName },
                         hostThemeName = cState.hostThemeName,
+                        hostArenaDimension = cState.hostArenaDimension,
                         connectionStatus = when (cState.connectionState) {
                             TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
                             TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING
@@ -505,6 +515,17 @@ class LobbyViewModel : ViewModel() {
             s.hostThemeName?.let { name -> runCatching { dev.vmellos.airhockey.core.preferences.TableTheme.valueOf(name) }.getOrNull() } ?: userPrefs.tableTheme
         }
 
+        val effectiveDimension = if (isHost) {
+            userPrefs.arenaDimension
+        } else {
+            s.hostArenaDimension?.let { dimName -> runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull() } ?: userPrefs.arenaDimension
+        }
+
+        val isExtended = gameMode == GameMode.EXTENDED_HOST || gameMode == GameMode.EXTENDED_GUEST ||
+                gameMode == GameMode.AI_VS_AI_EXTENDED_HOST || gameMode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val is3d = effectiveDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+        val hasIntro = !isExtended && is3d && userPrefs.arena3dIntroEnabled
+
         return MatchSpec(
             mode = gameMode,
             bezelGapMm = effectiveGapMm,
@@ -517,7 +538,9 @@ class LobbyViewModel : ViewModel() {
             airFriction = userPrefs.puckSpeed.airFriction,
             player1Name = p1Label,
             player2Name = p2Label,
-            tableTheme = effectiveTheme
+            tableTheme = effectiveTheme,
+            hasIntroPresentation = hasIntro,
+            arenaDimension = effectiveDimension
         )
     }
 

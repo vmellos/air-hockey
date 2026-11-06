@@ -233,7 +233,8 @@ fun AirHockeyAppNavigation(
                     val d2 = if (lobbyState.targetMode == "AI_EXTENDED") {
                         if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
                     } else ""
-                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, userPrefs.tableTheme.name)
+                    val dim = lobbyState.hostArenaDimension ?: userPrefs.arenaDimension.name
+                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, userPrefs.tableTheme.name, dim)
                 },
                 onBackToMenu = {
                     lobbyViewModel.stopAll()
@@ -252,6 +253,8 @@ fun AirHockeyAppNavigation(
                     }
                     val d1Str = getAiDiffLabel(diff1)
                     val d2Str = getAiDiffLabel(diff2)
+                    val is3d = userPrefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
                     gameViewModel.initializeMatch(
                         mode = GameMode.AI_VS_AI_LOCAL,
                         bezelGapMm = userPrefs.bezelGapMm,
@@ -263,7 +266,9 @@ fun AirHockeyAppNavigation(
                         puckMaxSpeed = puckPreset.maxSpeed,
                         airFriction = puckPreset.airFriction,
                         player1Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), d1Str),
-                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str)
+                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str),
+                        hasIntroPresentation = hasIntro,
+                        arenaDimension = userPrefs.arenaDimension
                     )
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
@@ -285,7 +290,7 @@ fun AirHockeyAppNavigation(
                         popUpTo("menu")
                     }
                 },
-                onConfirm = { chosenTheme ->
+                onConfirm = { chosenTheme, chosenDimension ->
                     if (isSplit) {
                         val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
                         gameViewModel.initializeMatch(
@@ -297,7 +302,9 @@ fun AirHockeyAppNavigation(
                             airFriction = puckPreset.airFriction,
                             player1Name = context.getString(R.string.player_1_default),
                             player2Name = context.getString(R.string.player_2_default),
-                            tableTheme = chosenTheme
+                            tableTheme = chosenTheme,
+                            arenaDimension = chosenDimension,
+                            hasIntroPresentation = false
                         )
                         navController.navigate("game/SPLIT_SCREEN") {
                             popUpTo("menu")
@@ -319,7 +326,8 @@ fun AirHockeyAppNavigation(
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
                         stageNumber = stageNum,
-                        hasIntroPresentation = hasIntro
+                        hasIntroPresentation = hasIntro,
+                        arenaDimension = userPrefs.arenaDimension
                     )
                     navController.navigate("game/SOLO")
                 },
@@ -359,12 +367,16 @@ fun AirHockeyAppNavigation(
                 },
                 onStartNextStage = { nextStage ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
+                    val is3d = userPrefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
                     gameViewModel.initializeMatch(
                         mode = GameMode.SOLO,
                         bezelGapMm = userPrefs.bezelGapMm,
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai),
-                        stageNumber = nextStage
+                        stageNumber = nextStage,
+                        hasIntroPresentation = hasIntro,
+                        arenaDimension = userPrefs.arenaDimension
                     )
                 }
             )

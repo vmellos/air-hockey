@@ -20,7 +20,8 @@ sealed class TableControlEvent {
         val maxSpeed: Float = 6800f,
         val aiDiff1: String = "",
         val aiDiff2: String = "",
-        val themeName: String = ""
+        val themeName: String = "",
+        val arenaDimension: String = ""
     ) : TableControlEvent()
     data class StateSync(val state: ControlMessages.RemoteMatchState) : TableControlEvent()
     data class TelemetryFallback(val packet: HostTelemetryPacket) : TableControlEvent()
@@ -38,7 +39,9 @@ sealed class TableControlEvent {
             is HandshakeOk -> "HANDSHAKE_OK:$tableCode:$hostName:$mode"
             is HandshakeReject -> "HANDSHAKE_REJECT:$reason"
             Ready -> ControlMessages.READY
-            is Start -> if (themeName.isNotBlank()) {
+            is Start -> if (arenaDimension.isNotBlank()) {
+                "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName:$arenaDimension"
+            } else if (themeName.isNotBlank()) {
                 "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName"
             } else if (aiDiff1.isNotBlank() || aiDiff2.isNotBlank()) {
                 "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2"
@@ -86,7 +89,8 @@ sealed class TableControlEvent {
                     val d1 = parts.getOrNull(2) ?: ""
                     val d2 = parts.getOrNull(3) ?: ""
                     val theme = parts.getOrNull(4) ?: ""
-                    Start(gap, speed, d1, d2, theme)
+                    val dimension = parts.getOrNull(5) ?: ""
+                    Start(gap, speed, d1, d2, theme, dimension)
                 }
                 line.startsWith("TELEM:") -> {
                     val parts = line.removePrefix("TELEM:").split(",")
