@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.customization.ui
 
+import android.os.SystemClock
+import android.view.MotionEvent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -65,6 +67,8 @@ import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
 import io.github.sceneview.Scene
 import io.github.sceneview.SceneView
 import io.github.sceneview.node.ModelNode
+import io.github.sceneview.node.Node
+import io.github.sceneview.rememberCameraManipulator
 import io.github.sceneview.rememberCameraNode
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
@@ -78,7 +82,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -161,12 +167,14 @@ fun ArenaCustomizationScreen(
     var previewTableTheme by remember { mutableStateOf(prefs.tableTheme) }
     var previewPuckSkin by remember { mutableStateOf(prefs.puckSkin) }
     var previewMalletSkin by remember { mutableStateOf(prefs.player1MalletSkin) }
+    var liveNeonBloomIntensity by remember(prefs.neonBloomIntensity) { mutableFloatStateOf(prefs.neonBloomIntensity) }
 
     // Sincroniza pré-visualização quando as preferências são atualizadas externamente
-    LaunchedEffect(prefs.tableTheme, prefs.puckSkin, prefs.player1MalletSkin) {
+    LaunchedEffect(prefs.tableTheme, prefs.puckSkin, prefs.player1MalletSkin, prefs.neonBloomIntensity) {
         previewTableTheme = prefs.tableTheme
         previewPuckSkin = prefs.puckSkin
         previewMalletSkin = prefs.player1MalletSkin
+        liveNeonBloomIntensity = prefs.neonBloomIntensity
     }
 
     val bundleItems = remember {
@@ -445,7 +453,7 @@ fun ArenaCustomizationScreen(
                     tableTheme = previewTableTheme,
                     puckSkin = previewPuckSkin,
                     malletSkin = previewMalletSkin,
-                    neonBloomIntensity = prefs.neonBloomIntensity,
+                    neonBloomIntensity = liveNeonBloomIntensity,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -558,7 +566,7 @@ fun ArenaCustomizationScreen(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                        val pct = kotlin.math.round((prefs.neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
+                        val pct = kotlin.math.round((liveNeonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
                         val intensityLabel = when {
                             pct == 0 -> stringResource(R.string.neon_bloom_off)
                             pct <= 30 -> stringResource(R.string.neon_bloom_soft)
@@ -573,10 +581,13 @@ fun ArenaCustomizationScreen(
                         )
                     }
                     Slider(
-                        value = prefs.neonBloomIntensity.coerceIn(0.0f, 0.10f),
+                        value = liveNeonBloomIntensity.coerceIn(0.0f, 0.10f),
                         onValueChange = { newVal ->
+                            liveNeonBloomIntensity = newVal
+                        },
+                        onValueChangeFinished = {
                             coroutineScope.launch {
-                                preferencesRepo.updateNeonBloomIntensity(newVal)
+                                preferencesRepo.updateNeonBloomIntensity(liveNeonBloomIntensity)
                             }
                         },
                         valueRange = 0.0f..0.10f,
@@ -845,7 +856,10 @@ private fun Arena3DLivePreview(
         SceneView.createView(engine3d).apply {
             bloomOptions = bloomOptions.apply {
                 enabled = neonBloomIntensity > 0.005f
-                strength = neonBloomIntensity
+                threshold = false
+                highlight = 1.0f
+                strength = (neonBloomIntensity / 0.10f) * 0.45f
+                blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
             }
         }
     }
@@ -853,7 +867,10 @@ private fun Arena3DLivePreview(
     LaunchedEffect(neonBloomIntensity) {
         view3d.bloomOptions = view3d.bloomOptions.apply {
             enabled = neonBloomIntensity > 0.005f
-            strength = neonBloomIntensity
+            threshold = false
+            highlight = 1.0f
+            strength = (neonBloomIntensity / 0.10f) * 0.45f
+            blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
         }
     }
 
@@ -939,8 +956,29 @@ private fun Arena3DLivePreview(
         rotation = Float3(-46f, 0f, 0f)
     }
 
-    val childNodes = remember(tableNode, puckNode, p1Node, p2Node) {
-        listOfNotNull(tableNode, puckNode, p1Node, p2Node)
+    val cameraManipulator = rememberCameraManipulator(
+        orbitHomePosition = Float3(0f, 2.75f, 2.30f),
+        targetPosition = Float3(0f, 0f, 0f)
+    )
+
+    var lastTouchTime by remember { mutableLongStateOf(0L) }
+    var isTouching by remember { mutableStateOf(false) }
+    var currentRotationDegrees by remember { mutableFloatStateOf(0f) }
+    var lastFrameNanos by remember { mutableLongStateOf(0L) }
+
+    val arenaRootNode = remember(engine3d) {
+        Node(engine3d)
+    }
+
+    LaunchedEffect(arenaRootNode, tableNode, puckNode, p1Node, p2Node) {
+        arenaRootNode.clearChildNodes()
+        listOfNotNull(tableNode, puckNode, p1Node, p2Node).forEach { node ->
+            arenaRootNode.addChildNode(node)
+        }
+    }
+
+    val childNodes = remember(arenaRootNode) {
+        listOf(arenaRootNode)
     }
 
     Box(
@@ -954,8 +992,53 @@ private fun Arena3DLivePreview(
             modelLoader = modelLoader,
             view = view3d,
             cameraNode = cameraNode,
-            cameraManipulator = null,
-            childNodes = childNodes
+            cameraManipulator = cameraManipulator,
+            childNodes = childNodes,
+            onViewCreated = {
+                cameraGestureDetector?.isPanEnabled = false
+                setOnTouchListener { v, event ->
+                    if (event.actionMasked == MotionEvent.ACTION_DOWN || event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                    } else if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                    false
+                }
+            },
+            onTouchEvent = { event, _ ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                        isTouching = true
+                        lastTouchTime = SystemClock.uptimeMillis()
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        isTouching = true
+                        lastTouchTime = SystemClock.uptimeMillis()
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        isTouching = false
+                        lastTouchTime = SystemClock.uptimeMillis()
+                    }
+                    MotionEvent.ACTION_POINTER_UP -> {
+                        if (event.pointerCount <= 1) {
+                            isTouching = false
+                        }
+                        lastTouchTime = SystemClock.uptimeMillis()
+                    }
+                }
+                false
+            },
+            onFrame = { frameTimeNanos ->
+                val now = SystemClock.uptimeMillis()
+                if (lastFrameNanos != 0L) {
+                    val deltaSeconds = (frameTimeNanos - lastFrameNanos).coerceAtLeast(0L) / 1_000_000_000f
+                    if (!isTouching && (now - lastTouchTime >= 3000L)) {
+                        currentRotationDegrees = (currentRotationDegrees + deltaSeconds * 12.0f) % 360f
+                        arenaRootNode.rotation = Float3(0f, currentRotationDegrees, 0f)
+                    }
+                }
+                lastFrameNanos = frameTimeNanos
+            }
         )
     }
 }
