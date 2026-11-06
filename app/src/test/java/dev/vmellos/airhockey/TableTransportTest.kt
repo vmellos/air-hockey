@@ -116,6 +116,20 @@ class TableTransportTest {
     }
 
     @Test
+    fun testStartEventWithThemeSerialization() {
+        val startEvent = TableControlEvent.Start(10.5f, 7200f, "MEDIUM", "HARD", "NEO_BASKETBALL")
+        val wire = startEvent.toWireString()
+        assertEquals("START:10.5:7200.0:MEDIUM:HARD:NEO_BASKETBALL", wire)
+
+        val parsed = TableControlEvent.fromWireString(wire) as TableControlEvent.Start
+        assertEquals(10.5f, parsed.gapMm, 0.01f)
+        assertEquals(7200f, parsed.maxSpeed, 0.01f)
+        assertEquals("MEDIUM", parsed.aiDiff1)
+        assertEquals("HARD", parsed.aiDiff2)
+        assertEquals("NEO_BASKETBALL", parsed.themeName)
+    }
+
+    @Test
     fun testStartEventBackwardCompatibilityWithoutAiDifficulties() {
         val wireLegacy = "START:8.0:6800.0"
         val parsed = TableControlEvent.fromWireString(wireLegacy) as TableControlEvent.Start

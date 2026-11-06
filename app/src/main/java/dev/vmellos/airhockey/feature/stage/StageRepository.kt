@@ -3,7 +3,10 @@ package dev.vmellos.airhockey.feature.stage
 import dev.vmellos.airhockey.core.database.StageProgressDao
 import dev.vmellos.airhockey.core.database.StageProgressEntity
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -12,7 +15,8 @@ data class StageConfig(
     val targetScore: Int,
     val aiDifficulty: AiDifficulty,
     val puckSpeed: PuckSpeedPreset,
-    val tierName: String
+    val tierName: String,
+    val tableTheme: TableTheme = TableTheme.CLASSIC_NEON
 )
 
 class StageRepository(private val stageProgressDao: StageProgressDao) {
@@ -20,6 +24,47 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
     val stagesFlow: Flow<List<StageProgressEntity>> = stageProgressDao.getAllStages()
 
     val totalStarsFlow: Flow<Int> = stageProgressDao.getTotalStars().map { it ?: 0 }
+
+    val unlockedThemesFlow: Flow<Set<TableTheme>> = stagesFlow.map { stages ->
+        val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
+        val unlocked = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D)
+        ArenaConquestCatalog.TIERS.forEach { tier ->
+            if (completedStages.contains(tier.unlockStage)) {
+                unlocked.add(tier.theme)
+            }
+        }
+        unlocked
+    }
+
+    val unlockedPuckSkinsFlow: Flow<Set<PuckSkin>> = stagesFlow.map { stages ->
+        val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
+        val unlocked = mutableSetOf(PuckSkin.CLASSIC_PLASMA)
+        ArenaConquestCatalog.TIERS.forEach { tier ->
+            if (completedStages.contains(tier.unlockStage)) {
+                unlocked.add(tier.puckSkin)
+            }
+        }
+        unlocked
+    }
+
+    val unlockedMalletSkinsFlow: Flow<Set<MalletSkin>> = stagesFlow.map { stages ->
+        val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
+        val unlocked = mutableSetOf(MalletSkin.CLASSIC_NEON)
+        ArenaConquestCatalog.TIERS.forEach { tier ->
+            if (completedStages.contains(tier.unlockStage)) {
+                unlocked.add(tier.malletSkin)
+            }
+        }
+        unlocked
+    }
+
+    suspend fun isThemeUnlocked(theme: TableTheme): Boolean {
+        if (ArenaConquestCatalog.isDefaultUnlocked(theme)) return true
+        val requiredStage = ArenaConquestCatalog.getUnlockStageForTheme(theme)
+        if (requiredStage <= 0) return true
+        val stage = stageProgressDao.getStageDirect(requiredStage)
+        return (stage?.starsEarned ?: 0) > 0
+    }
 
     suspend fun ensureStagesInitialized() {
         val count = stageProgressDao.getStagesCount()
@@ -37,48 +82,55 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     fun getStageConfig(stageNumber: Int): StageConfig {
         val validStage = stageNumber.coerceIn(1, 100)
+        val stageTheme = ArenaConquestCatalog.getThemeForStage(validStage)
         return when (validStage) {
             in 1..10 -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 3,
                 aiDifficulty = AiDifficulty.EASY,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Iniciante"
+                tierName = "Iniciante",
+                tableTheme = stageTheme
             )
             in 11..20 -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 5,
                 aiDifficulty = AiDifficulty.EASY,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Iniciante"
+                tierName = "Iniciante",
+                tableTheme = stageTheme
             )
             in 21..50 -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 5,
                 aiDifficulty = AiDifficulty.MEDIUM,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Intermediario"
+                tierName = "Intermediario",
+                tableTheme = stageTheme
             )
             in 51..80 -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 7,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Avancado"
+                tierName = "Avancado",
+                tableTheme = stageTheme
             )
             in 81..90 -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 7,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Mestre"
+                tierName = "Mestre",
+                tableTheme = stageTheme
             )
             else -> StageConfig(
                 stageNumber = validStage,
                 targetScore = 10,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Mestre"
+                tierName = "Mestre",
+                tableTheme = stageTheme
             )
         }
     }

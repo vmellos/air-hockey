@@ -334,6 +334,22 @@ _Avoid_: Skin de batedor, skin de raquete, batedor customizado
 A coleção integrada pré-configurada que combina Tema de Mesa, Aparência de Disco e Aparência de Rebatedor sob uma mesma identidade esportiva retro-futurista (ex: Cyber Futebol, Neo-Tokyo Basquete, Vôlei Gravitacional, Gridiron Sci-Fi e Beisebol Cibernético).
 _Avoid_: Kit de time, pacote de skins, theme pack, bundle de campo
 
+**Desbloqueio Progressivo de Arenas**:
+O sistema de progressão esportiva vinculado ao Modo Fases que mantém as arenas temáticas bloqueadas até que o jogador conclua o respectivo Bloco de Fases Temático de 10 níveis, mantendo a Mesa Clássica permanentemente acessível desde o primeiro momento.
+_Avoid_: Unlock de skins, compras de fases, liberação paga
+
+**Conquista de Arena**:
+O marco competitivo oficial registrado quando o jogador vence a 10ª fase de um bloco temático no Modo Fases (ex: Fases 10, 20, 30... até 100), liberando em definitivo o uso global daquela arena e de seu respectivo Conjunto Temático Esportivo para criação de partidas e customização.
+_Avoid_: Compra de arena, skin ganha, prêmio de fase
+
+**Autoridade de Criação Temática**:
+A diretriz de conectividade em sessões multijogador na qual apenas o Dispositivo Anfitrião necessita ter a Conquista de Arena correspondente para abrir a mesa de jogo, habilitando a participação imediata do Dispositivo Convidado naquela arena mesmo que este ainda não a tenha desbloqueado em sua campanha individual.
+_Avoid_: Restrição cega de sala, trava de convidado, lobby bloqueado
+
+**Sincronização de Arena do Anfitrião**:
+A transmissão do identificador de Tema de Mesa ativo enviada pelo Dispositivo Anfitrião ao Dispositivo Convidado no handshake de abertura da sessão multijogador, garantindo paridade visual na renderização da arena independentemente do progresso individual do convidado.
+_Avoid_: Sync de skin, pacote de campo, tema compartilhado
+
 ## Competição e Classificação
 
 **Placar de Líderes**:

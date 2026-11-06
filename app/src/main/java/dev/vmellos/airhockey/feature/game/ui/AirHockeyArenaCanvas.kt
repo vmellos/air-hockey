@@ -34,7 +34,8 @@ import dev.vmellos.airhockey.feature.physics.TableProjection
 fun AirHockeyArenaCanvas(
     viewModel: GameViewModel,
     mode: GameMode,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tableTheme: TableTheme? = null
 ) {
     val engine = viewModel.engine
     val dimensions = engine.dimensions
@@ -45,6 +46,7 @@ fun AirHockeyArenaCanvas(
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
 
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
+    val activeTheme = tableTheme ?: prefs.tableTheme
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
 
@@ -97,7 +99,7 @@ fun AirHockeyArenaCanvas(
         }
     }
 
-    val themeVisuals = remember(prefs.tableTheme) { dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(prefs.tableTheme) }
+    val themeVisuals = remember(activeTheme) { dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(activeTheme) }
     val arenaBgColor = themeVisuals.backgroundColor
 
     Box(
@@ -153,7 +155,7 @@ fun AirHockeyArenaCanvas(
             lastFrameTime = framePulse
 
             // 1. Drena colisões pendentes e dispara efeitos visuais no pool de partículas
-            val p1ThemeColor = when (prefs.tableTheme) {
+            val p1ThemeColor = when (activeTheme) {
                 TableTheme.CYBER_SOCCER -> NeonEmerald
                 TableTheme.NEO_BASKETBALL -> NeonAmber
                 TableTheme.GRAVITY_VOLLEY -> NeonViolet
@@ -166,7 +168,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.CYBER_COLOSSEUM -> ColosseumGold
                 TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonCyan
             }
-            val p2ThemeColor = when (prefs.tableTheme) {
+            val p2ThemeColor = when (activeTheme) {
                 TableTheme.CYBER_SOCCER -> NeonRuby
                 TableTheme.NEO_BASKETBALL -> NeonCyan
                 TableTheme.GRAVITY_VOLLEY -> NeonMagenta
@@ -179,7 +181,7 @@ fun AirHockeyArenaCanvas(
                 TableTheme.CYBER_COLOSSEUM -> ColosseumCrimson
                 TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonOrange
             }
-            val wallHitColor = when (prefs.tableTheme) {
+            val wallHitColor = when (activeTheme) {
                 TableTheme.CYBER_SOCCER -> CyberSoccerGold
                 TableTheme.NEO_BASKETBALL -> NeonAmberBright
                 TableTheme.GRAVITY_VOLLEY -> VolleyYellow
@@ -225,7 +227,7 @@ fun AirHockeyArenaCanvas(
             // 2. Desenha arena da mesa completa para todos os 11 temas
             Arena2DRenderer.run {
                 drawTableSurface(
-                    theme = prefs.tableTheme,
+                    theme = activeTheme,
                     left = offsetX,
                     top = offsetY,
                     width = vWidth * scale,
@@ -245,7 +247,7 @@ fun AirHockeyArenaCanvas(
 
             Arena2DRenderer.run {
                 drawTableGoals(
-                    theme = prefs.tableTheme,
+                    theme = activeTheme,
                     goalLeft = goalLeft,
                     goalWidth = goalW,
                     topY = offsetY,

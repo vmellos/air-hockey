@@ -68,7 +68,8 @@ data class LobbyState(
     val errorMessageRes: Int? = null,
     val errorMessageArgs: List<String> = emptyList(),
     val peerPlayerName: String = "",
-    val selfPlayerName: String = ""
+    val selfPlayerName: String = "",
+    val hostThemeName: String? = null
 )
 
 class LobbyViewModel : ViewModel() {
@@ -202,10 +203,10 @@ class LobbyViewModel : ViewModel() {
         nsdManager.sendDirectedDiscoveryProbe()
     }
 
-    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "") {
+    fun startHostMatch(gapMm: Float, maxSpeed: Float = 6800f, aiDiff1: String = "", aiDiff2: String = "", themeName: String = "") {
         val d1 = if (aiDiff1.isNotBlank()) aiDiff1 else _state.value.aiDifficulty1
         val d2 = if (aiDiff2.isNotBlank()) aiDiff2 else _state.value.aiDifficulty2
-        coordinator?.startMatch(gapMm, maxSpeed, d1, d2)
+        coordinator?.startMatch(gapMm, maxSpeed, d1, d2, themeName)
     }
 
     fun resetToRoleSelection() {
@@ -264,6 +265,7 @@ class LobbyViewModel : ViewModel() {
                         calibratedGapMm = cState.calibratedGapMm,
                         synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
                         peerPlayerName = cState.peerPlayerName.ifBlank { it.peerPlayerName },
+                        hostThemeName = cState.hostThemeName,
                         connectionStatus = when (cState.connectionState) {
                             TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
                             TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING
@@ -497,6 +499,12 @@ class LobbyViewModel : ViewModel() {
             if (isHost) userPrefs.bezelGapMm else if (s.calibratedGapMm > 0f) s.calibratedGapMm else userPrefs.bezelGapMm
         }
 
+        val effectiveTheme = if (isHost) {
+            userPrefs.tableTheme
+        } else {
+            s.hostThemeName?.let { name -> runCatching { dev.vmellos.airhockey.core.preferences.TableTheme.valueOf(name) }.getOrNull() } ?: userPrefs.tableTheme
+        }
+
         return MatchSpec(
             mode = gameMode,
             bezelGapMm = effectiveGapMm,
@@ -508,7 +516,8 @@ class LobbyViewModel : ViewModel() {
             puckMaxSpeed = effectivePuckSpeed,
             airFriction = userPrefs.puckSpeed.airFriction,
             player1Name = p1Label,
-            player2Name = p2Label
+            player2Name = p2Label,
+            tableTheme = effectiveTheme
         )
     }
 
