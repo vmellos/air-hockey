@@ -19,6 +19,10 @@ class LeaderboardRepository(
 
     fun getPlayerStats(name: String): Flow<PlayerProfileStatsEntity?> = dao.getProfileStats(name)
 
+    suspend fun getPlayerStatsDirect(name: String): PlayerProfileStatsEntity? = withContext(Dispatchers.IO) {
+        dao.getProfileStatsDirect(name)
+    }
+
     fun getMatchesByMode(mode: String): Flow<List<MatchRecordEntity>> = dao.getMatchesByMode(mode)
 
     suspend fun recordMatch(

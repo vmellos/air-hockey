@@ -90,7 +90,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        AirHockeyApp.instance.playGamesManager.attachActivity(this)
         AirHockeyApp.instance.inAppUpdateEngine.checkDownloadedStatus()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AirHockeyApp.instance.playGamesManager.detachActivity(this)
     }
 
     override fun onPause() {

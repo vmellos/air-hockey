@@ -364,9 +364,13 @@ _Avoid_: Câmera inclinada, visão torta, 3D assimétrico, top-down fake
 
 ## Competição e Classificação
 
-**Placar de Líderes**:
-O sistema de classificação competitivo que ranqueia os participantes em abas por modo de jogo, ordenando por pontuação Elo, vitórias, sequência invicta e saldo de gols.
-_Avoid_: Hanking, ranking, tabela de pontos, leaderboard
+**Central de Estatísticas & Histórico**:
+A interface dedicada no aplicativo que consolida as estatísticas acumuladas da carreira do jogador (Pontuação Elo, taxa de vitórias, saldo de gols, sequência de vitórias) e o Registro de Partida detalhado das últimas 50 disputas locais, integrando o botão de lançamento dos Placares Globais da Google Play.
+_Avoid_: Tela de ranking local, placar local, tabela de líderes, ranking tab
+
+**Placar Global da Google Play**:
+O sistema oficial de classificação competitivo mundial e entre amigos provido pelo Google Play Games Services v2, no qual as pontuações oficiais (Pontuação Elo e Conquistas de Fases) são sincronizadas e exibidas na sobreposição nativa em nuvem.
+_Avoid_: Ranking interno, ranking próprio, tabela web, leaderboard do servidor
 
 **Pontuação Elo**:
 A pontuação numérica dinâmica atribuída a cada perfil (iniciada em 1.000 pontos) ajustada ao final de cada partida com base na probabilidade matemática de vitória e nível do oponente.
@@ -375,6 +379,10 @@ _Avoid_: MMR, rank points, troféus, score
 **Registro de Partida**:
 A entrada histórica imutável gravada no banco de dados local contendo os participantes, modo de jogo, placar final, duração e variação de Elo.
 _Avoid_: Histórico, log de jogo, match log, súmula
+
+**Abas de Classificação Local** (Descontinuado):
+As antigas abas da tela de classificação que tentavam ranquear jogadores locais no mesmo aparelho, descontinuadas em favor da Central de Estatísticas & Histórico pessoal e da delegação da liderança competitiva ao Placar Global da Google Play.
+_Avoid_: Abas de ranking, top players local, listas de jogadores offline
 
 ## Monetização e Infraestrutura Web
 
