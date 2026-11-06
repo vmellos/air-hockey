@@ -193,7 +193,7 @@ fun AirHockeyAppNavigation(
             // Início direto da partida para todos os modos em rede (Mesa Conectada, Mesa Estendida e IA x IA Estendida)
             LaunchedEffect(lobbyState.startMatchTrigger) {
                 if (lobbyState.startMatchTrigger > 0L) {
-                    val isAiExtended = lobbyState.targetMode == "AI_EXTENDED"
+                    val isAiExtended = lobbyState.targetMode == "AI_EXTENDED" || lobbyState.targetMode == "AI_CONNECTED"
                     val p1Label = if (isAiExtended) {
                         val d1 = if (isHost) (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: aiExtendedDiff1)
                                  else (AiDifficulty.entries.find { it.name.equals(lobbyState.aiDifficulty1, ignoreCase = true) } ?: AiDifficulty.MEDIUM)
@@ -227,11 +227,11 @@ fun AirHockeyAppNavigation(
             LobbyScreen(
                 viewModel = lobbyViewModel,
                 onStartHostMatch = {
-                    val gap = if (lobbyState.targetMode == "CONNECTED") 0f else userPrefs.bezelGapMm
-                    val d1 = if (lobbyState.targetMode == "AI_EXTENDED") {
+                    val gap = if (lobbyState.targetMode == "CONNECTED" || lobbyState.targetMode == "AI_CONNECTED") 0f else userPrefs.bezelGapMm
+                    val d1 = if (lobbyState.targetMode == "AI_EXTENDED" || lobbyState.targetMode == "AI_CONNECTED") {
                         if (lobbyState.aiDifficulty1.isNotBlank()) lobbyState.aiDifficulty1 else aiExtendedDiff1.name
                     } else ""
-                    val d2 = if (lobbyState.targetMode == "AI_EXTENDED") {
+                    val d2 = if (lobbyState.targetMode == "AI_EXTENDED" || lobbyState.targetMode == "AI_CONNECTED") {
                         if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
                     } else ""
                     val dim = lobbyState.hostArenaDimension ?: userPrefs.arenaDimension.name

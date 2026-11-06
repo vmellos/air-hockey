@@ -15,7 +15,9 @@ enum class GameMode {
     AI_VS_AI_LOCAL,
     AI_VS_AI_EXTENDED,
     AI_VS_AI_EXTENDED_HOST,
-    AI_VS_AI_EXTENDED_GUEST
+    AI_VS_AI_EXTENDED_GUEST,
+    AI_VS_AI_CONNECTED_HOST,
+    AI_VS_AI_CONNECTED_GUEST
 }
 
 enum class MatchStatus {
@@ -53,7 +55,9 @@ data class MatchState(
         get() = mode == GameMode.AI_VS_AI_LOCAL ||
                 mode == GameMode.AI_VS_AI_EXTENDED ||
                 mode == GameMode.AI_VS_AI_EXTENDED_HOST ||
-                mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+                mode == GameMode.AI_VS_AI_EXTENDED_GUEST ||
+                mode == GameMode.AI_VS_AI_CONNECTED_HOST ||
+                mode == GameMode.AI_VS_AI_CONNECTED_GUEST
 
     val isExtendedMode: Boolean
         get() = mode == GameMode.EXTENDED_HOST ||

@@ -368,6 +368,8 @@
     <string name="pre_match_start_game">Start Match</string>
     <string name="pre_match_mode_2d">2D Flat</string>
     <string name="pre_match_mode_3d">3D Arena</string>
+    <string name="pre_match_badge_soon">SOON</string>
+    <string name="extended_table_3d_in_dev">Mesa Estendida em 3D em desenvolvimento. Jogue em 2D com a junção física dos aparelhos.</string>
 
     <!-- Google Play Games Services -->
     <string name="game_services_project_id" translatable="false">925142400705</string>

@@ -473,11 +473,13 @@ class LobbyViewModel : ViewModel() {
     ): MatchSpec {
         val s = _state.value
         val isHost = s.role == LobbyRole.HOST
-        val isConnected = s.targetMode == "CONNECTED"
+        val isConnected = s.targetMode == "CONNECTED" || s.targetMode == "AI_CONNECTED"
         val isAiExtended = s.targetMode == "AI_EXTENDED"
+        val isAiConnected = s.targetMode == "AI_CONNECTED"
 
         val gameMode = when {
-            isConnected -> if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
+            isConnected && !isAiConnected -> if (isHost) GameMode.CONNECTED_HOST else GameMode.CONNECTED_GUEST
+            isAiConnected -> if (isHost) GameMode.AI_VS_AI_CONNECTED_HOST else GameMode.AI_VS_AI_CONNECTED_GUEST
             isAiExtended -> if (isHost) GameMode.AI_VS_AI_EXTENDED_HOST else GameMode.AI_VS_AI_EXTENDED_GUEST
             else -> if (isHost) GameMode.EXTENDED_HOST else GameMode.EXTENDED_GUEST
         }

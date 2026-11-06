@@ -121,7 +121,7 @@ class ArbitroVirtual(
     )
 
     val mode: GameMode = spec.mode
-    val isGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
     val isHost: Boolean = !isGuest
 
     val engine: AirHockeyPhysicsEngine = AirHockeyPhysicsEngine(
@@ -131,14 +131,14 @@ class ArbitroVirtual(
     )
 
     val aiControllerP1: AirHockeyAiController? = when (mode) {
-        GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true)
+        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true)
         GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true) else null
         else -> null
     }
 
     val aiControllerP2: AirHockeyAiController? = when (mode) {
         GameMode.SOLO -> AirHockeyAiController(spec.aiDifficulty, isPlayer1 = false)
-        GameMode.AI_VS_AI_LOCAL -> AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false)
+        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false)
         GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false) else null
         else -> null
     }

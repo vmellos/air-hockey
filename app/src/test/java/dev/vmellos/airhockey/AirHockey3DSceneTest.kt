@@ -226,4 +226,71 @@ class AirHockey3DSceneTest {
         assertNull(tableToScreen3D(500f, 1000f, 0f, 2400f, 0f, standard.position.y, standard.position.z, standard.rotation.x))
         assertNull(tableToScreen3D(500f, 1000f, 1080f, 0f, 0f, standard.position.y, standard.position.z, standard.rotation.x))
     }
+
+    @Test
+    fun cameraPreset_guest_invertsPositionZAndYaw180() {
+        val hostStandard = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = false, isGuest = false)
+        val guestStandard = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = false, isGuest = true)
+
+        assertEquals("Guest Y position matches Host", hostStandard.position.y, guestStandard.position.y, 1e-4f)
+        assertEquals("Guest Z position is inverted", -hostStandard.position.z, guestStandard.position.z, 1e-4f)
+        assertEquals("Guest pitch angle matches Host", hostStandard.rotation.x, guestStandard.rotation.x, 1e-4f)
+        assertEquals("Guest yaw is rotated 180 degrees", 180f, guestStandard.rotation.y, 1e-4f)
+    }
+
+    @Test
+    fun screenToTable3D_guestPerspective_mapsBottomTouchToPlayer2Half() {
+        val guestPreset = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = false, isGuest = true)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        // Touch near bottom center of the screen on Guest device (where Player 2 defends)
+        val touchX = 540f
+        val touchY = 2050f
+
+        val tablePt = screenToTable3D(
+            screenX = touchX,
+            screenY = touchY,
+            w = screenW,
+            h = screenH,
+            camX = guestPreset.position.x,
+            camY = guestPreset.position.y,
+            camZ = guestPreset.position.z,
+            camPitchDeg = guestPreset.rotation.x,
+            camYawDeg = guestPreset.rotation.y
+        )
+
+        assertNotNull("P2 touch from guest perspective must map to valid table point", tablePt)
+        tablePt?.let { pt ->
+            assertEquals(500f, pt.x, 15f)
+            assertTrue("Touch at bottom of guest screen must map to P2 side (0..1000), got: ${pt.y}", pt.y < 1000f)
+            assertTrue("Touch must be near P2 baseline", pt.y > 50f && pt.y < 600f)
+        }
+    }
+
+    @Test
+    fun tableToScreen3D_guestPerspective_projectsPlayer2MalletNearScreenBottom() {
+        val guestPreset = getCameraPreset(CameraZoom3D.STANDARD, isSplitScreen = false, isGuest = true)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        // Player 2 mallet at (500, 250) on Guest device
+        val p2Screen = tableToScreen3D(
+            tableX = 500f,
+            tableY = 250f,
+            w = screenW,
+            h = screenH,
+            camX = guestPreset.position.x,
+            camY = guestPreset.position.y,
+            camZ = guestPreset.position.z,
+            camPitchDeg = guestPreset.rotation.x,
+            camYawDeg = guestPreset.rotation.y
+        )
+
+        assertNotNull(p2Screen)
+        p2Screen?.let {
+            assertEquals("P2 mallet X should be centered on screen", screenW / 2f, it.x, 20f)
+            assertTrue("P2 mallet Y must be in lower half of screen on guest device, got: ${it.y}", it.y > screenH * 0.5f)
+        }
+    }
 }

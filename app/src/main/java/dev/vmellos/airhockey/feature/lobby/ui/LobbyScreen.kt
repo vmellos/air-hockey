@@ -136,9 +136,12 @@ fun LobbyScreen(
             showCreateHostDialog = true
         }
 
+        val isExtended = mode == "EXTENDED"
+
         PreMatchArenaSelectionScreen(
             confirmButtonText = confirmText,
             isSplitScreen = false,
+            isExtendedTable = isExtended,
             onBack = {
                 showArenaSelection = false
                 showCreateHostDialog = true
@@ -153,7 +156,12 @@ fun LobbyScreen(
                 } else {
                     val d1Str = pendingAiDiff1?.name ?: ""
                     val d2Str = pendingAiDiff2?.name ?: ""
-                    viewModel.startAsHost(mode, d1Str, d2Str, chosenDimension.name)
+                    val effectiveMode = if (mode == "AI_EXTENDED" && chosenDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL) {
+                        "AI_CONNECTED"
+                    } else {
+                        mode
+                    }
+                    viewModel.startAsHost(effectiveMode, d1Str, d2Str, chosenDimension.name)
                 }
             }
         )
@@ -352,7 +360,7 @@ fun LobbyScreen(
                         state.role == LobbyRole.NONE -> stringResource(R.string.menu_mode_network_centralized).uppercase()
                         state.role == LobbyRole.GUEST -> stringResource(R.string.lobby_title).uppercase()
                         state.targetMode == "CONNECTED" -> stringResource(R.string.lobby_title_connected)
-                        state.targetMode == "AI_EXTENDED" -> stringResource(R.string.lobby_title_ai_extended).uppercase()
+                        state.targetMode == "AI_EXTENDED" || state.targetMode == "AI_CONNECTED" -> stringResource(R.string.lobby_title_ai_extended).uppercase()
                         else -> stringResource(R.string.lobby_title_extended)
                     }
                 Text(
@@ -443,7 +451,7 @@ fun LobbyScreen(
                             if (onStartHostMatch != null) {
                                 onStartHostMatch()
                             } else {
-                                val gap = if (state.targetMode == "CONNECTED") 0f else userPrefs.bezelGapMm
+                                val gap = if (state.targetMode == "CONNECTED" || state.targetMode == "AI_CONNECTED") 0f else userPrefs.bezelGapMm
                                 viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed)
                             }
                         }
@@ -699,7 +707,7 @@ private fun HostLobbyView(
     ) {
         val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
             "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
-            "AI_EXTENDED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
+            "AI_EXTENDED", "AI_CONNECTED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
             else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
         }
 
