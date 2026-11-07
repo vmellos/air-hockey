@@ -51,6 +51,7 @@ class GameViewModel : ViewModel() {
     private var countdownPhysicsJob: Job? = null
     private var timerJob: Job? = null
     private var countdownJob: Job? = null
+    private var goalResetJob: Job? = null
     private var matchStateCollectJob: Job? = null
 
     // Callbacks de rede para Mesa Estendida
@@ -195,10 +196,13 @@ class GameViewModel : ViewModel() {
                     stopGameLoops()
                 } else {
                     broadcastState()
-                    viewModelScope.launch {
+                    goalResetJob?.cancel()
+                    goalResetJob = viewModelScope.launch {
                         delay(1200)
-                        arbitro?.resetPositions(scorer)
-                        startCountdown()
+                        if (_matchState.value.status == MatchStatus.GOAL_PAUSE) {
+                            arbitro?.resetPositions(scorer)
+                            startCountdown()
+                        }
                     }
                 }
             }
@@ -214,7 +218,7 @@ class GameViewModel : ViewModel() {
 
         if (!isGuest) {
             broadcastState()
-            if (!spec.hasIntroPresentation) {
+            if (!resolvedSpec.hasIntroPresentation) {
                 startCountdown()
             }
         }
@@ -263,6 +267,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun startCountdownAfterPresentation() {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
         if (_matchState.value.status == MatchStatus.PRESENTATION) {
             arbitro?.finishPresentationAndStartCountdown()
             broadcastState()
@@ -273,6 +278,7 @@ class GameViewModel : ViewModel() {
     }
 
     private fun startCountdown() {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
         countdownJob?.cancel()
         countdownPhysicsJob?.cancel()
 
@@ -282,7 +288,7 @@ class GameViewModel : ViewModel() {
             countdownPhysicsJob = viewModelScope.launch {
                 val dt = 1f / 120f
                 val delayMillis = 8L
-                while (isActive && currentArbitro.matchState.value.status == MatchStatus.COUNTDOWN) {
+                while (isActive && currentArbitro.matchState.value.status == MatchStatus.COUNTDOWN && _matchState.value.status != MatchStatus.PAUSED) {
                     val start = System.currentTimeMillis()
                     currentArbitro.tickMalletsOnly(dt)
 
@@ -303,14 +309,17 @@ class GameViewModel : ViewModel() {
         }
 
         countdownJob = viewModelScope.launch {
+            if (!isActive || _matchState.value.status == MatchStatus.PAUSED) return@launch
             currentArbitro.setCountdown(3)
             broadcastState()
             delay(900)
 
+            if (!isActive || _matchState.value.status == MatchStatus.PAUSED) return@launch
             currentArbitro.setCountdown(2)
             broadcastState()
             delay(900)
 
+            if (!isActive || _matchState.value.status == MatchStatus.PAUSED) return@launch
             currentArbitro.setCountdown(1)
             broadcastState()
             delay(900)
@@ -318,10 +327,13 @@ class GameViewModel : ViewModel() {
             countdownPhysicsJob?.cancel()
             countdownPhysicsJob = null
 
+            if (!isActive || _matchState.value.status == MatchStatus.PAUSED) return@launch
             currentArbitro.setCountdown(0)
             broadcastState()
 
-            startGameLoops()
+            if (_matchState.value.status == MatchStatus.PLAYING) {
+                startGameLoops()
+            }
         }
     }
 
@@ -466,18 +478,22 @@ class GameViewModel : ViewModel() {
         get() = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
 
     fun pauseMatch() {
+        goalResetJob?.cancel()
+        goalResetJob = null
+        countdownJob?.cancel()
+        countdownJob = null
+        countdownPhysicsJob?.cancel()
+        countdownPhysicsJob = null
+        audioEngine.stopAll()
+
         if (_matchState.value.isGuestMode) {
             onGuestSendControl?.invoke(ControlMessages.PAUSE)
-            audioEngine.stopAll()
+            arbitro?.pause()
+            stopGameLoops()
             return
         }
         val currentStatus = _matchState.value.status
         if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE || currentStatus == MatchStatus.PRESENTATION) {
-            countdownJob?.cancel()
-            countdownJob = null
-            countdownPhysicsJob?.cancel()
-            countdownPhysicsJob = null
-            audioEngine.stopAll()
             arbitro?.pause()
             broadcastState()
             stopGameLoops()
@@ -509,6 +525,8 @@ class GameViewModel : ViewModel() {
             return
         }
         stopGameLoops()
+        goalResetJob?.cancel()
+        goalResetJob = null
         countdownJob?.cancel()
         hasRecordedMatch = false
         arbitro?.restart()
@@ -520,12 +538,16 @@ class GameViewModel : ViewModel() {
 
     fun onPeerExited() {
         stopGameLoops()
+        goalResetJob?.cancel()
+        goalResetJob = null
         countdownJob?.cancel()
         arbitro?.setPeerExited()
     }
 
     fun stopMatch() {
         stopGameLoops()
+        goalResetJob?.cancel()
+        goalResetJob = null
         countdownJob?.cancel()
         countdownJob = null
         countdownPhysicsJob?.cancel()

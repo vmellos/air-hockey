@@ -192,53 +192,75 @@ fun ScoreBoardOverlay(
                 .fillMaxHeight()
                 .align(Alignment.Center)
         ) {
-            // Placar Lateral Numérico estilizado por tema na lateral direita da Mesa
-            Surface(
-                color = boardBg,
-                shape = boardShape,
-                border = boardBorder,
+            // Placar Lateral Numérico estilizado por tema na lateral direita da Mesa e Botão de Pausa
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = 8.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                Surface(
+                    color = boardBg,
+                    shape = boardShape,
+                    border = boardBorder
                 ) {
-                    Text(
-                        text = "${matchState.scorePlayer2}",
-                        color = p2Color,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = boardFont
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(22.dp)
-                            .height(1.5.dp)
-                            .background(boardBorder.brush ?: Brush.horizontalGradient(listOf(p2Color.copy(alpha = 0.5f), p1Color.copy(alpha = 0.5f))), RoundedCornerShape(1.dp))
-                    )
-                    Text(
-                        text = "${matchState.scorePlayer1}",
-                        color = p1Color,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = boardFont
-                    )
-                    if (matchState.targetScore > 0) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "${matchState.scorePlayer2}",
+                            color = p2Color,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = boardFont
+                        )
                         Box(
                             modifier = Modifier
-                                .width(16.dp)
-                                .height(1.dp)
-                                .background(Color(0x22FFFFFF), RoundedCornerShape(1.dp))
+                                .width(22.dp)
+                                .height(1.5.dp)
+                                .background(boardBorder.brush ?: Brush.horizontalGradient(listOf(p2Color.copy(alpha = 0.5f), p1Color.copy(alpha = 0.5f))), RoundedCornerShape(1.dp))
                         )
                         Text(
-                            text = stringResource(R.string.scoreboard_target, matchState.targetScore),
-                            color = Color(0x99FFFFFF),
-                            fontSize = 8.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
+                            text = "${matchState.scorePlayer1}",
+                            color = p1Color,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = boardFont
+                        )
+                        if (matchState.targetScore > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .width(16.dp)
+                                    .height(1.dp)
+                                    .background(Color(0x22FFFFFF), RoundedCornerShape(1.dp))
+                            )
+                            Text(
+                                text = stringResource(R.string.scoreboard_target, matchState.targetScore),
+                                color = Color(0x99FFFFFF),
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    onClick = onPauseClick,
+                    shape = CircleShape,
+                    color = boardBg,
+                    border = boardBorder,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Default.Pause,
+                            contentDescription = stringResource(R.string.game_paused),
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

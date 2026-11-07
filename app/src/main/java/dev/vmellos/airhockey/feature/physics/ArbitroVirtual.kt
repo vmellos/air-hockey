@@ -445,9 +445,14 @@ class ArbitroVirtual(
             MatchStatus.PLAYING
         }
         val prev = _matchState.value
+        val effectiveStatus = if (prev.status == MatchStatus.PAUSED && (newStatus == MatchStatus.COUNTDOWN || newStatus == MatchStatus.PLAYING)) {
+            MatchStatus.PAUSED
+        } else {
+            newStatus
+        }
         _matchState.update {
             it.copy(
-                status = newStatus,
+                status = effectiveStatus,
                 scorePlayer1 = remote.scorePlayer1,
                 scorePlayer2 = remote.scorePlayer2,
                 remainingTimeSeconds = remote.remainingTimeSeconds,
@@ -475,8 +480,10 @@ class ArbitroVirtual(
     }
 
     fun setCountdown(number: Int) {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
         audioPort.playCountdownBeep(number)
         _matchState.update {
+            if (it.status == MatchStatus.PAUSED) return@update it
             it.copy(
                 countdownNumber = number,
                 status = if (number == 0) MatchStatus.PLAYING else MatchStatus.COUNTDOWN
@@ -510,7 +517,9 @@ class ArbitroVirtual(
     }
 
     fun finishPresentationAndStartCountdown() {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
         _matchState.update {
+            if (it.status == MatchStatus.PAUSED) return@update it
             it.copy(
                 status = MatchStatus.COUNTDOWN,
                 countdownNumber = 3

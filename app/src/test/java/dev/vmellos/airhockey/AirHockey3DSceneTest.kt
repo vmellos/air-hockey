@@ -301,15 +301,15 @@ class AirHockey3DSceneTest {
     fun cameraPreset_extendedTable_usesZenithViewAtHalfTableHeight() {
         val stdPreset = getCameraPreset(CameraZoom3D.STANDARD, isExtended = true)
         assertEquals(0f, stdPreset.position.x, 1e-4f)
-        assertEquals(1.55f, stdPreset.position.y, 1e-4f)
+        assertEquals(3.50f, stdPreset.position.y, 1e-4f)
         assertEquals(0f, stdPreset.position.z, 1e-4f)
         assertEquals(-90f, stdPreset.rotation.x, 1e-4f)
         assertEquals(0f, stdPreset.rotation.y, 1e-4f)
 
         val closePreset = getCameraPreset(CameraZoom3D.CLOSE, isExtended = true)
         val widePreset = getCameraPreset(CameraZoom3D.WIDE, isExtended = true)
-        assertEquals(1.35f, closePreset.position.y, 1e-4f)
-        assertEquals(1.80f, widePreset.position.y, 1e-4f)
+        assertEquals(3.10f, closePreset.position.y, 1e-4f)
+        assertEquals(3.95f, widePreset.position.y, 1e-4f)
         assertEquals(-90f, closePreset.rotation.x, 1e-4f)
         assertEquals(-90f, widePreset.rotation.x, 1e-4f)
     }

@@ -177,7 +177,7 @@ fun PreMatchArenaSelectionScreen(
                         puckSkin = prefs.puckSkin,
                         malletSkin = prefs.player1MalletSkin,
                         neonBloomIntensity = prefs.neonBloomIntensity,
-                        isExtended = isExtendedTable,
+                        isExtended = false,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {

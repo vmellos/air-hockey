@@ -269,4 +269,39 @@ class ArbitroVirtualTest {
             arbitro.matchState.value.arenaDimension
         )
     }
+
+    @Test
+    fun countdownDoesNotRemovePauseState() {
+        val dims = TableDimensions()
+        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.SOLO,
+            hasIntroPresentation = false
+        )
+        val arbitro = ArbitroVirtual(dimensions = dims, spec = spec)
+
+        // Pausa a partida
+        arbitro.pause()
+        assertEquals(MatchStatus.PAUSED, arbitro.matchState.value.status)
+
+        // Tenta disparar setCountdown enquanto pausado
+        arbitro.setCountdown(2)
+        assertEquals("setCountdown não deve remover o estado PAUSED", MatchStatus.PAUSED, arbitro.matchState.value.status)
+
+        arbitro.setCountdown(0)
+        assertEquals("setCountdown(0) não deve iniciar PLAYING enquanto pausado", MatchStatus.PAUSED, arbitro.matchState.value.status)
+
+        // Tenta aplicar remote countdown enquanto pausado
+        arbitro.applyRemoteState(
+            dev.vmellos.airhockey.feature.network.ControlMessages.RemoteMatchState(
+                statusName = MatchStatus.COUNTDOWN.name,
+                scorePlayer1 = 0,
+                scorePlayer2 = 0,
+                remainingTimeSeconds = 180,
+                countdownNumber = 1,
+                winner = 0,
+                lastScorer = 0
+            )
+        )
+        assertEquals("applyRemoteState com COUNTDOWN não deve sobrescrever o estado PAUSED", MatchStatus.PAUSED, arbitro.matchState.value.status)
+    }
 }
