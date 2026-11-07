@@ -22,8 +22,18 @@ object Theme3DAssetResolver {
         isExtended: Boolean = false,
         isPlayer1: Boolean = true
     ): String = when {
-        isExtended -> {
-            if (isPlayer1) "models/mesa_arcade_half_p1.glb" else "models/mesa_arcade_half_p2.glb"
+        isExtended -> when (theme) {
+            TableTheme.CYBER_SOCCER -> if (isPlayer1) "models/mesa_cyber_soccer_half_p1.glb" else "models/mesa_cyber_soccer_half_p2.glb"
+            TableTheme.NEO_BASKETBALL -> if (isPlayer1) "models/mesa_neo_basketball_half_p1.glb" else "models/mesa_neo_basketball_half_p2.glb"
+            TableTheme.GRAVITY_VOLLEY -> if (isPlayer1) "models/mesa_gravity_volley_half_p1.glb" else "models/mesa_gravity_volley_half_p2.glb"
+            TableTheme.GRIDIRON_FOOTBALL -> if (isPlayer1) "models/mesa_gridiron_football_half_p1.glb" else "models/mesa_gridiron_football_half_p2.glb"
+            TableTheme.CYBER_BASEBALL -> if (isPlayer1) "models/mesa_cyber_baseball_half_p1.glb" else "models/mesa_cyber_baseball_half_p2.glb"
+            TableTheme.WASTELAND_APOCALYPSE -> if (isPlayer1) "models/mesa_wasteland_apocalypse_half_p1.glb" else "models/mesa_wasteland_apocalypse_half_p2.glb"
+            TableTheme.RETRO_SYNTHWAVE -> if (isPlayer1) "models/mesa_retro_synthwave_half_p1.glb" else "models/mesa_retro_synthwave_half_p2.glb"
+            TableTheme.TOKAMAK_REACTOR -> if (isPlayer1) "models/mesa_tokamak_reactor_half_p1.glb" else "models/mesa_tokamak_reactor_half_p2.glb"
+            TableTheme.CYBER_PONG -> if (isPlayer1) "models/mesa_cyber_pong_half_p1.glb" else "models/mesa_cyber_pong_half_p2.glb"
+            TableTheme.CYBER_COLOSSEUM -> if (isPlayer1) "models/mesa_cyber_colosseum_half_p1.glb" else "models/mesa_cyber_colosseum_half_p2.glb"
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> if (isPlayer1) "models/mesa_arcade_half_p1.glb" else "models/mesa_arcade_half_p2.glb"
         }
         else -> when (theme) {
             TableTheme.CYBER_SOCCER -> "models/mesa_cyber_soccer.glb"

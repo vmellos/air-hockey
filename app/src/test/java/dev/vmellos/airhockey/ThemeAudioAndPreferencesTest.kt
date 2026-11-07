@@ -120,6 +120,11 @@ class ThemeAudioAndPreferencesTest {
             val tableModel = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme)
             assertTrue("Arquivo da mesa 3D deve existir: $tableModel", File(assetsDir, tableModel).exists())
 
+            val halfTableP1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = true)
+            val halfTableP2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = false)
+            assertTrue("Arquivo da meia-mesa P1 deve existir: $halfTableP1", File(assetsDir, halfTableP1).exists())
+            assertTrue("Arquivo da meia-mesa P2 deve existir: $halfTableP2", File(assetsDir, halfTableP2).exists())
+
             assertTrue("Todos os temas devem possuir suporte 3D nativo",
                 dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.hasNative3DSupport(theme))
         }

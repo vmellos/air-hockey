@@ -63,19 +63,30 @@ fun getCameraPreset(
     isExtended: Boolean = false
 ): CameraPreset =
     if (isExtended) {
+        val tanHalfFov = 12f / 28f
+        val zTop = -1.08f
         when (zoom) {
-            CameraZoom3D.CLOSE -> CameraPreset(
-                position = Float3(0f, 3.10f, 0f),
-                rotation = Float3(-90f, 0f, 0f)
-            )
-            CameraZoom3D.STANDARD -> CameraPreset(
-                position = Float3(0f, 3.50f, 0f),
-                rotation = Float3(-90f, 0f, 0f)
-            )
-            CameraZoom3D.WIDE -> CameraPreset(
-                position = Float3(0f, 3.95f, 0f),
-                rotation = Float3(-90f, 0f, 0f)
-            )
+            CameraZoom3D.CLOSE -> {
+                val y = 3.00f
+                CameraPreset(
+                    position = Float3(0f, y, zTop + y * tanHalfFov),
+                    rotation = Float3(-90f, 0f, 0f)
+                )
+            }
+            CameraZoom3D.STANDARD -> {
+                val y = 3.35f
+                CameraPreset(
+                    position = Float3(0f, y, zTop + y * tanHalfFov),
+                    rotation = Float3(-90f, 0f, 0f)
+                )
+            }
+            CameraZoom3D.WIDE -> {
+                val y = 3.80f
+                CameraPreset(
+                    position = Float3(0f, y, zTop + y * tanHalfFov),
+                    rotation = Float3(-90f, 0f, 0f)
+                )
+            }
         }
     } else if (isSplitScreen) {
         when (zoom) {
@@ -201,7 +212,7 @@ internal fun screenToTable3D(
     val worldX = camX + t * dx
     val worldZ = camZ + t * dz
 
-    val scaleZ = if (isExtended) 0.00048f else 0.00096f
+    val scaleZ = if (isExtended) 0.00108f else 0.00096f
     val lx = 500f + worldX / 0.00108f
     val ly = 1000f + worldZ / scaleZ
 
@@ -247,7 +258,7 @@ internal fun tableToScreen3D(
         if (isExtendedGuest) dimensions.hostHalfBottomY - tableY else tableY - dimensions.guestHalfTopY
     } else tableY
 
-    val scaleZ = if (isExtended) 0.00048f else 0.00096f
+    val scaleZ = if (isExtended) 0.00108f else 0.00096f
     val worldX = (lx - 500f) * 0.00108f
     val worldY = elevationY
     val worldZ = (ly - 1000f) * scaleZ
@@ -690,7 +701,7 @@ fun AirHockeyArena3DScene(
         } else {
             engineY
         }
-        val scaleZ = if (isExtended) 0.00048f else 0.00096f
+        val scaleZ = if (isExtended) 0.00108f else 0.00096f
         return (ly - 1000f) * scaleZ
     }
 
@@ -755,13 +766,23 @@ fun AirHockeyArena3DScene(
 
         val effectiveTargetPreset = remember(targetPreset, isExtended, screenAspect, zoom) {
             if (isExtended && screenAspect > 0.05f) {
+                val tanHalfFov = 12f / 28f
+                val fovCoeff = 2f * tanHalfFov
+                val zTop = -1.08f
+                val targetWidth = 1.28f
+                val targetLength = 2.30f
+                val requiredYForWidth = targetWidth / (fovCoeff * screenAspect)
+                val requiredYForLength = targetLength / fovCoeff
+                val baseY = kotlin.math.max(requiredYForWidth, requiredYForLength)
+
                 val zoomFactor = when (zoom) {
-                    CameraZoom3D.CLOSE -> 0.88f
+                    CameraZoom3D.CLOSE -> 0.90f
                     CameraZoom3D.STANDARD -> 1.0f
-                    CameraZoom3D.WIDE -> 1.13f
+                    CameraZoom3D.WIDE -> 1.15f
                 }
-                val calibratedY = (1.38f / (0.85714f * screenAspect)) * zoomFactor
-                targetPreset.copy(position = Float3(0f, calibratedY, 0f))
+                val calibratedY = baseY * zoomFactor
+                val calibratedZ = zTop + calibratedY * tanHalfFov
+                targetPreset.copy(position = Float3(0f, calibratedY, calibratedZ))
             } else {
                 targetPreset
             }
