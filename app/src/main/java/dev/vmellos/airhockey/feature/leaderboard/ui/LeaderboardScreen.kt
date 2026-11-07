@@ -234,14 +234,14 @@ fun LeaderboardScreen(
                             onOpenGlobalLeaderboards = {
                                 activity?.let { act ->
                                     AirHockeyApp.instance.playGamesManager.showLeaderboards(act) { message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },
                             onOpenAchievements = {
                                 activity?.let { act ->
                                     AirHockeyApp.instance.playGamesManager.showAchievements(act) { message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },

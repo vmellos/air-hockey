@@ -169,6 +169,7 @@
     <string name="stats_global_rankings_cta">Ver Clasificaciones Globales</string>
     <string name="stats_global_achievements_cta">Ver Logros</string>
     <string name="pgs_error_login_required">Inicia sesión en Google Play Games para acceder a clasificaciones y logros.</string>
+    <string name="pgs_error_developer_config">No se pudo autenticar en Play Games. Verifica que el certificado SHA-1 y la cuenta de evaluador estén autorizados en Google Play Console.</string>
     <string name="pgs_error_unavailable">Servicios de Google Play Games no disponibles en este momento.</string>
     <string name="stats_card_wins_title">Victorias</string>
     <string name="stats_card_win_rate_title">Rendimiento</string>

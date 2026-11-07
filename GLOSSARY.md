@@ -377,8 +377,8 @@ A interface dedicada no aplicativo que consolida as estatísticas acumuladas da 
 _Avoid_: Tela de ranking local, placar local, tabela de líderes, ranking tab
 
 **Placar Global da Google Play**:
-O sistema oficial de classificação competitivo mundial e entre amigos provido pelo Google Play Games Services v2, no qual as pontuações oficiais (Pontuação Elo e Conquistas de Fases) são sincronizadas e exibidas na sobreposição nativa em nuvem.
-_Avoid_: Ranking interno, ranking próprio, tabela web, leaderboard do servidor
+O sistema oficial de classificação competitivo mundial e entre amigos provido pelo Google Play Games Services v2, no qual as pontuações oficiais (Pontuação Elo e Conquistas de Fases) são sincronizadas e exibidas na sobreposição nativa em nuvem, condicionado à autorização prévia das impressões digitais de certificado (SHA-1) e da lista de testadores cadastrados no Google Play Console.
+_Avoid_: Ranking interno, ranking próprio, tabela web, leaderboard do servidor, card da play game
 
 **Pontuação Elo**:
 A pontuação numérica dinâmica atribuída a cada perfil (iniciada em 1.000 pontos) ajustada ao final de cada partida com base na probabilidade matemática de vitória e nível do oponente.

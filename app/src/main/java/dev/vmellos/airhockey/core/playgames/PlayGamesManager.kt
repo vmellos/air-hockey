@@ -3,6 +3,8 @@ package dev.vmellos.airhockey.core.playgames
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.PlayGamesSdk
 import kotlinx.coroutines.CoroutineScope
@@ -71,16 +73,26 @@ class PlayGamesManager(
         try {
             val gamesSignInClient = PlayGames.getGamesSignInClient(activity)
             gamesSignInClient.isAuthenticated.addOnCompleteListener { authTask ->
-                val isAuthenticated = authTask.isSuccessful && authTask.result.isAuthenticated
-                if (isAuthenticated) {
-                    fetchPlayerProfile(activity)
+                if (authTask.isSuccessful) {
+                    val authResult = authTask.result
+                    val isAuthenticated = authResult.isAuthenticated
+                    Log.i(TAG, "authenticateSilently: isSuccessful=true, isAuthenticated=$isAuthenticated")
+                    if (isAuthenticated) {
+                        fetchPlayerProfile(activity)
+                    } else {
+                        Log.i(TAG, "authenticateSilently: Jogador não autenticado silenciosamente no Play Games. Modo offline ativo.")
+                        _authState.value = PlayGamesAuthState.Unauthenticated
+                    }
                 } else {
-                    Log.d(TAG, "Jogador não autenticado silenciosamente no Play Games. Modo offline ativo.")
+                    val ex = authTask.exception
+                    val statusCode = (ex as? ApiException)?.statusCode
+                    val statusMessage = statusCode?.let { CommonStatusCodes.getStatusCodeString(it) } ?: "UNKNOWN"
+                    Log.w(TAG, "authenticateSilently falhou: statusCode=$statusCode ($statusMessage), msg=${ex?.message}", ex)
                     _authState.value = PlayGamesAuthState.Unauthenticated
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Exceção ao autenticar no Play Games: ${e.message}")
+            Log.w(TAG, "Exceção ao autenticar no Play Games: ${e.message}", e)
             _authState.value = PlayGamesAuthState.Unauthenticated
         }
     }
@@ -96,20 +108,33 @@ class PlayGamesManager(
         attachActivity(activity)
         try {
             val gamesSignInClient = PlayGames.getGamesSignInClient(activity)
+            Log.i(TAG, "Iniciando signInExplicitly interativo...")
             gamesSignInClient.signIn().addOnCompleteListener { signInTask ->
-                if (signInTask.isSuccessful && signInTask.result.isAuthenticated) {
-                    fetchPlayerProfile(activity) {
-                        onSuccess?.invoke()
+                if (signInTask.isSuccessful) {
+                    val authResult = signInTask.result
+                    val isAuthenticated = authResult.isAuthenticated
+                    Log.i(TAG, "signInExplicitly concluído: isSuccessful=true, isAuthenticated=$isAuthenticated")
+                    if (isAuthenticated) {
+                        fetchPlayerProfile(activity) {
+                            onSuccess?.invoke()
+                        }
+                    } else {
+                        Log.w(TAG, "signInExplicitly: fluxo completou mas isAuthenticated=false (usuário cancelou ou rejeitou)")
+                        _authState.value = PlayGamesAuthState.Unauthenticated
+                        onFailure?.invoke("Login não concluído (isAuthenticated=false)")
                     }
                 } else {
-                    val errorMsg = signInTask.exception?.message ?: "Login cancelado ou indisponível"
-                    Log.d(TAG, "Falha no login interativo do Play Games: $errorMsg")
+                    val ex = signInTask.exception
+                    val statusCode = (ex as? ApiException)?.statusCode
+                    val statusMessage = statusCode?.let { CommonStatusCodes.getStatusCodeString(it) } ?: "UNKNOWN"
+                    val errorMsg = "Código $statusCode: $statusMessage - ${ex?.message}"
+                    Log.e(TAG, "signInExplicitly falhou com exceção: $errorMsg", ex)
                     _authState.value = PlayGamesAuthState.Unauthenticated
                     onFailure?.invoke(errorMsg)
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Exceção no login interativo: ${e.message}")
+            Log.e(TAG, "Exceção no login interativo: ${e.message}", e)
             _authState.value = PlayGamesAuthState.Unauthenticated
             onFailure?.invoke(e.message)
         }
@@ -131,7 +156,9 @@ class PlayGamesManager(
                 saveManager.syncProgressAsync(activity)
                 onComplete?.invoke()
             }.addOnFailureListener { e ->
-                Log.w(TAG, "Não foi possível obter perfil do jogador: ${e.message}")
+                val statusCode = (e as? ApiException)?.statusCode
+                val statusMessage = statusCode?.let { CommonStatusCodes.getStatusCodeString(it) } ?: "UNKNOWN"
+                Log.w(TAG, "Não foi possível obter perfil do jogador: statusCode=$statusCode ($statusMessage), msg=${e.message}", e)
                 _authState.value = PlayGamesAuthState.Authenticated(
                     PlayGamesPlayer("local", "Jogador")
                 )
@@ -139,7 +166,7 @@ class PlayGamesManager(
                 onComplete?.invoke()
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Erro ao buscar dados do jogador: ${e.message}")
+            Log.w(TAG, "Erro ao buscar dados do jogador: ${e.message}", e)
             _authState.value = PlayGamesAuthState.Unauthenticated
             onComplete?.invoke()
         }
@@ -166,8 +193,17 @@ class PlayGamesManager(
                 onSuccess = {
                     launchAchievementsIntent(targetActivity, onFeedback)
                 },
-                onFailure = {
-                    onFeedback?.invoke(targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required))
+                onFailure = { errorReason ->
+                    Log.w(TAG, "showAchievements: falha no login interativo: $errorReason")
+                    val feedbackMsg = if (errorReason?.contains("10") == true ||
+                        errorReason?.contains("DEVELOPER_ERROR") == true ||
+                        errorReason?.contains("isAuthenticated=false") == true
+                    ) {
+                        targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_developer_config)
+                    } else {
+                        targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required)
+                    }
+                    onFeedback?.invoke(feedbackMsg)
                 }
             )
             return
@@ -216,8 +252,17 @@ class PlayGamesManager(
                 onSuccess = {
                     launchLeaderboardsIntent(targetActivity, onFeedback)
                 },
-                onFailure = {
-                    onFeedback?.invoke(targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required))
+                onFailure = { errorReason ->
+                    Log.w(TAG, "showLeaderboards: falha no login interativo: $errorReason")
+                    val feedbackMsg = if (errorReason?.contains("10") == true ||
+                        errorReason?.contains("DEVELOPER_ERROR") == true ||
+                        errorReason?.contains("isAuthenticated=false") == true
+                    ) {
+                        targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_developer_config)
+                    } else {
+                        targetActivity.getString(dev.vmellos.airhockey.R.string.pgs_error_login_required)
+                    }
+                    onFeedback?.invoke(feedbackMsg)
                 }
             )
             return

@@ -169,6 +169,7 @@
     <string name="stats_global_rankings_cta">View Global Rankings</string>
     <string name="stats_global_achievements_cta">View Achievements</string>
     <string name="pgs_error_login_required">Sign in to Google Play Games to access leaderboards and achievements.</string>
+    <string name="pgs_error_developer_config">Play Games could not authenticate. Verify that your SHA-1 certificate and tester account are configured in Google Play Console.</string>
     <string name="pgs_error_unavailable">Google Play Games services are currently unavailable.</string>
     <string name="stats_card_wins_title">Victories</string>
     <string name="stats_card_win_rate_title">Win Rate</string>
