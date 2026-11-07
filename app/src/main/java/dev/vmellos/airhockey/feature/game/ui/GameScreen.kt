@@ -193,59 +193,6 @@ fun GameScreen(
             )
         }
 
-        // Botão de Alternância de Zoom 3D no HUD (Próximo, Padrão, Amplo)
-        if (is3dActive && !is3dPresenting && matchState.status != MatchStatus.PAUSED && matchState.status != MatchStatus.GAME_OVER) {
-            val nextZoom = when (prefs.cameraZoom3d) {
-                CameraZoom3D.STANDARD -> CameraZoom3D.WIDE
-                CameraZoom3D.WIDE -> CameraZoom3D.CLOSE
-                CameraZoom3D.CLOSE -> CameraZoom3D.STANDARD
-            }
-            val zoomLabel = when (prefs.cameraZoom3d) {
-                CameraZoom3D.STANDARD -> stringResource(R.string.camera_zoom_standard)
-                CameraZoom3D.WIDE -> stringResource(R.string.camera_zoom_wide)
-                CameraZoom3D.CLOSE -> stringResource(R.string.camera_zoom_close)
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(start = 16.dp, top = 16.dp),
-                contentAlignment = Alignment.TopStart
-            ) {
-                Surface(
-                    color = Color(0x44000000),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, NeonCyan.copy(alpha = 0.6f)),
-                    modifier = Modifier.clickable {
-                        scope.launch {
-                            AirHockeyApp.instance.preferencesRepository.updateCameraZoom3d(nextZoom)
-                        }
-                    }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Videocam,
-                            contentDescription = null,
-                            tint = NeonCyan,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = zoomLabel,
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-            }
-        }
-
         // Overlay de Gol/Ponto estilizado por tema
         if (matchState.status == MatchStatus.GOAL_PAUSE) {
             val scorerName = if (matchState.lastScorer == 1) matchState.player1Name else matchState.player2Name
@@ -264,6 +211,12 @@ fun GameScreen(
                 isMusicEnabled = isMusicEnabled,
                 onToggleMusic = { viewModel.toggleMusic() },
                 is3dActive = is3dActive,
+                cameraZoom3d = prefs.cameraZoom3d,
+                onCameraZoom3dChange = { newZoom ->
+                    scope.launch {
+                        AirHockeyApp.instance.preferencesRepository.updateCameraZoom3d(newZoom)
+                    }
+                },
                 neonBloomIntensity = prefs.neonBloomIntensity,
                 onNeonBloomIntensityChange = { newVal ->
                     scope.launch {

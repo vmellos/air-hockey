@@ -340,44 +340,7 @@ private fun CareerOverviewContent(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            // Status da Conexão Play Games
-                            if (pgsAuth is PlayGamesAuthState.Authenticated) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CloudDone,
-                                        contentDescription = null,
-                                        tint = Color(0xFF00E5FF),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.stats_status_connected, pgsAuth.player.displayName),
-                                        color = Color(0xFF00E5FF),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CloudOff,
-                                        contentDescription = null,
-                                        tint = Color(0xFF64748B),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.stats_status_offline),
-                                        color = Color(0xFF94A3B8),
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
+
                         }
                     }
 

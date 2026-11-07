@@ -218,186 +218,124 @@ def generate_air_hockey_icon(size=512, is_foreground_only=False):
 def generate_feature_graphic(lang="en"):
     """
     Renders the official 1024x500 Feature Graphic banner for Google Play.
-    Left: Copywriting & Badges (Clean, legible, dynamic width, no FPS reference)
-    Right: Dual Phone Mockup showing the Mesa Estendida experience!
+    Left: Copywriting & Localized Badges/Pills (True claims, no "Zero Ads")
+    Right: Stunning AI-rendered 3D Air Hockey Arena with neon split-screen duel!
     """
     canvas_w, canvas_h = 1024, 500
     banner = Image.new("RGBA", (canvas_w, canvas_h), (10, 14, 26, 255))
 
-    # 1. Ambient Lighting Layer
+    # 1. Composite 3D Arena Artwork (Right Side)
+    arena_path = os.path.join(STORE_DIR, "feature_graphic_arena_3d.jpg")
+    if os.path.exists(arena_path):
+        ai_img = Image.open(arena_path).convert("RGBA")
+        scale_h = canvas_h / float(ai_img.size[1])
+        new_w = int(ai_img.size[0] * scale_h)
+        ai_scaled = ai_img.resize((new_w, canvas_h), Image.Resampling.LANCZOS)
+
+        # Smooth horizontal alpha fade on the left edge to blend seamlessly into solid background
+        fade_len = 320
+        mask = Image.new("L", (new_w, canvas_h), 255)
+        mask_draw = ImageDraw.Draw(mask)
+        for x in range(fade_len):
+            alpha = int(255 * (x / float(fade_len)) ** 1.6)
+            mask_draw.line([(x, 0), (x, canvas_h)], fill=alpha)
+        ai_scaled.putalpha(mask)
+        banner.paste(ai_scaled, (canvas_w - new_w, 0), ai_scaled)
+
+    # 2. Ambient Lighting Layer
     glow = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     glow_draw = ImageDraw.Draw(glow)
-    
-    # Left ambient soft blue
-    glow_draw.ellipse([-80, 80, 480, 620], fill=(0, 100, 255, 35))
-    # Top right crimson glow behind top phone
-    glow_draw.ellipse([640, -60, 960, 260], fill=(255, 42, 109, 65))
-    # Bottom right cyan glow behind bottom phone
-    glow_draw.ellipse([630, 260, 950, 580], fill=(0, 229, 255, 60))
-    # Golden center glow behind seam/puck
-    glow_draw.ellipse([670, 150, 890, 370], fill=(255, 180, 0, 80))
-    
+    # Left ambient soft blue glow behind copywriting
+    glow_draw.ellipse([-80, 60, 440, 580], fill=(0, 100, 255, 30))
+    # Subtle cyan accent behind title
+    glow_draw.ellipse([80, 100, 320, 240], fill=(0, 229, 255, 18))
     glow = glow.filter(ImageFilter.GaussianBlur(55))
     banner = Image.alpha_composite(banner, glow)
 
-    # 2. Subtle Tech Grid Pattern
+    # 3. Subtle Tech Grid Pattern (Left side)
     grid = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
     grid_draw = ImageDraw.Draw(grid)
     for y in range(0, canvas_h, 24):
-        grid_draw.line([(0, y), (canvas_w, y)], fill=(120, 160, 220, 14), width=1)
-    for x in range(0, canvas_w, 24):
-        grid_draw.line([(x, 0), (x, canvas_h)], fill=(120, 160, 220, 14), width=1)
+        grid_draw.line([(0, y), (460, y)], fill=(120, 160, 220, 10), width=1)
+    for x in range(0, 460, 24):
+        grid_draw.line([(x, 0), (x, canvas_h)], fill=(120, 160, 220, 10), width=1)
     banner = Image.alpha_composite(banner, grid)
 
-    # 3. Dual Phone Mockup (Right Side)
-    cx = 780
-    pw = 184
-    ph = 196
-    gap = 8
-    total_h = ph * 2 + gap
-    top_y = (canvas_h - total_h) // 2
-
-    p1_box = [cx - pw//2, top_y, cx + pw//2, top_y + ph]
-    p2_box = [cx - pw//2, top_y + ph + gap, cx + pw//2, top_y + ph + gap + ph]
-
-    # Drop shadows for phones
-    shadow = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
-    s_draw = ImageDraw.Draw(shadow)
-    s_draw.rounded_rectangle([p1_box[0]-6, p1_box[1]+6, p1_box[2]+6, p1_box[3]+10], radius=24, fill=(0, 0, 0, 140))
-    s_draw.rounded_rectangle([p2_box[0]-6, p2_box[1]+6, p2_box[2]+6, p2_box[3]+10], radius=24, fill=(0, 0, 0, 140))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(14))
-    banner = Image.alpha_composite(banner, shadow)
-
     draw = ImageDraw.Draw(banner)
 
-    # ------------------ Phone 1 (Top Device) ------------------
-    draw.rounded_rectangle(p1_box, radius=22, fill=(24, 30, 44), outline=(70, 85, 120), width=2)
-    s1 = [p1_box[0] + 6, p1_box[1] + 6, p1_box[2] - 6, p1_box[3] - 4]
-    draw.rounded_rectangle(s1, radius=16, fill=(8, 12, 22))
-    draw.rounded_rectangle(s1, radius=16, outline=(255, 42, 109, 90), width=2)
-    draw.arc([cx - 44, s1[1] - 18, cx + 44, s1[1] + 46], start=0, end=180, fill=(255, 42, 109), width=3)
-    striker1_y = s1[1] + 55
-    draw.ellipse([cx - 28, striker1_y - 28, cx + 28, striker1_y + 28], fill=(255, 42, 109, 30))
-    draw.ellipse([cx - 24, striker1_y - 24, cx + 24, striker1_y + 24], fill=(180, 20, 60), outline=(255, 120, 160), width=2)
-    draw.ellipse([cx - 11, striker1_y - 11, cx + 11, striker1_y + 11], fill=(255, 60, 100), outline=(255, 210, 230), width=1)
-    draw.rounded_rectangle([cx - 16, p1_box[1] + 2, cx + 16, p1_box[1] + 4], radius=2, fill=(60, 75, 105))
-
-    # ------------------ Phone 2 (Bottom Device) ------------------
-    draw.rounded_rectangle(p2_box, radius=22, fill=(24, 30, 44), outline=(70, 85, 120), width=2)
-    s2 = [p2_box[0] + 6, p2_box[1] + 4, p2_box[2] - 6, p2_box[3] - 6]
-    draw.rounded_rectangle(s2, radius=16, fill=(8, 12, 22))
-    draw.rounded_rectangle(s2, radius=16, outline=(0, 229, 255, 90), width=2)
-    draw.arc([cx - 44, s2[3] - 46, cx + 44, s2[3] + 18], start=180, end=360, fill=(0, 229, 255), width=3)
-    striker2_y = s2[3] - 55
-    draw.ellipse([cx - 28, striker2_y - 28, cx + 28, striker2_y + 28], fill=(0, 229, 255, 30))
-    draw.ellipse([cx - 24, striker2_y - 24, cx + 24, striker2_y + 24], fill=(0, 140, 185), outline=(100, 240, 255), width=2)
-    draw.ellipse([cx - 11, striker2_y - 11, cx + 11, striker2_y + 11], fill=(0, 229, 255), outline=(220, 255, 255), width=1)
-    draw.rounded_rectangle([cx - 22, p2_box[3] - 4, cx + 22, p2_box[3] - 2], radius=2, fill=(60, 75, 105))
-
-    # ------------------ Center Seam Table Graphics ------------------
-    seam_center_y = top_y + ph + gap // 2
-    draw.arc([cx - 40, seam_center_y - 40, cx + 40, seam_center_y + 40], start=180, end=360, fill=(255, 42, 109, 180), width=2)
-    draw.arc([cx - 40, seam_center_y - 40, cx + 40, seam_center_y + 40], start=0, end=180, fill=(0, 229, 255, 180), width=2)
-    draw.line([(s1[0], s1[3]), (s1[2], s1[3])], fill=(255, 42, 109, 220), width=2)
-    draw.line([(s2[0], s2[1]), (s2[2], s2[1])], fill=(0, 229, 255, 220), width=2)
-
-    # Translucent glass reflection sheen
-    sheen = Image.new("RGBA", (canvas_w, canvas_h), (0, 0, 0, 0))
-    sheen_draw = ImageDraw.Draw(sheen)
-    sheen_draw.polygon([(cx - 70, top_y), (cx + 10, top_y), (cx - 30, top_y + total_h), (cx - 110, top_y + total_h)], fill=(255, 255, 255, 15))
-    banner = Image.alpha_composite(banner, sheen)
-    draw = ImageDraw.Draw(banner)
-
-    # Dynamic Motion Trail from bottom to top crossing the seam
-    puck_x = cx + 18
-    puck_y = seam_center_y - 4
-    for i in range(18):
-        t = i / 18.0
-        tx = (cx - 8) + (puck_x - (cx - 8)) * t
-        ty = (striker2_y - 18) + (puck_y - (striker2_y - 18)) * t
-        r = int(5 + 8 * t)
-        alpha = int(190 * (t ** 1.6))
-        draw.ellipse([tx - r, ty - r, tx + r, ty + r], fill=(255, 175, 0, alpha))
-
-    # Glowing Puck crossing the seam!
-    draw.ellipse([puck_x - 22, puck_y - 22, puck_x + 22, puck_y + 22], fill=(255, 160, 0, 60))
-    draw.ellipse([puck_x - 16, puck_y - 16, puck_x + 16, puck_y + 16], fill=(255, 180, 0, 110))
-    draw.ellipse([puck_x - 13, puck_y - 13, puck_x + 13, puck_y + 13], fill=(255, 220, 0, 230), outline=(255, 255, 255), width=2)
-    draw.ellipse([puck_x - 6, puck_y - 6, puck_x + 6, puck_y + 6], fill=(255, 255, 240))
-
-    # Sparks around puck
-    sparks = [(14, -16), (-12, -14), (18, 10), (-16, 14), (10, 18), (-10, -20), (22, -4), (-20, 6)]
-    for dx, dy in sparks:
-        draw.line([(puck_x, puck_y), (puck_x + dx, puck_y + dy)], fill=(255, 255, 210, 220), width=2)
-
-    # 4. Left Side Typography & Elements
+    # 4. Typography & Badges
     font_badge = ImageFont.truetype(FONT_BOLD, 13)
     font_title = ImageFont.truetype(FONT_EXTRABOLD, 46)
-    font_sub = ImageFont.truetype(FONT_BOLD, 21)
-    font_desc = ImageFont.truetype(FONT_MEDIUM, 16)
+    font_sub = ImageFont.truetype(FONT_BOLD, 20)
+    font_desc = ImageFont.truetype(FONT_MEDIUM, 15)
     font_tag = ImageFont.truetype(FONT_BOLD, 12)
 
     if lang == "en":
-        badge_text = "DUAL SCREEN MULTIPLAYER"
+        badge_text = "NEW 3D ARENAS & SPLIT SCREEN"
         title_text = "AIR HOCKEY 2P"
-        sub_text = "EXTENDED TABLE ACROSS 2 PHONES"
-        desc_text = "Place two phones top-to-top to play on one huge table!\n100% offline via local Wi-Fi or Hotspot."
-        tag1 = "100% OFFLINE"
-        tag2 = "ZERO LAG WI-FI"
-        tag3 = "INSTANT QR PAIR"
+        sub_text = "3D ARENAS ON SAME DEVICE OR WI-FI"
+        desc_text = "Battle head-to-head on split screen or connect 2 phones!\n11 futuristic 3D arenas, 100 stages & 100% offline."
+        row1_tags = ["11 3D COURTS", "SPLIT SCREEN"]
+        row2_tags = ["100 STAGES", "100% OFFLINE"]
     elif lang == "es":
-        badge_text = "MULTIJUGADOR EN 2 CELULARES"
+        badge_text = "NUEVAS ARENAS 3D Y PANTALLA DIVIDIDA"
         title_text = "AIR HOCKEY 2P"
-        sub_text = "MESA EXTENDIDA EN 2 PANTALLAS"
-        desc_text = "Conecta dos celulares punta a punta por Wi-Fi o Hotspot.\nEl disco pasa fluidamente de una pantalla a la otra!"
-        tag1 = "100% SIN INTERNET"
-        tag2 = "CERO LAG WI-FI"
-        tag3 = "CONEXION POR QR"
-    else: # pt
-        badge_text = "MULTIJOGADOR EM 2 CELULARES"
+        sub_text = "ARENAS 3D EN UN SOLO CELULAR O WI-FI"
+        desc_text = "¡Duelo de 2 jugadores en pantalla dividida o por Wi-Fi!\n11 arenas 3D futuristas, 100 niveles y 100% offline."
+        row1_tags = ["11 ARENAS 3D", "PANTALLA DIVIDIDA"]
+        row2_tags = ["100 NIVELES", "100% OFFLINE"]
+    else:  # pt
+        badge_text = "NOVO MOTOR 3D & SPLIT SCREEN"
         title_text = "AIR HOCKEY 2P"
-        sub_text = "MESA ESTENDIDA EM 2 TELAS"
-        desc_text = "Encoste dois celulares topo-a-topo para jogar em tela dupla!\n100% offline via Wi-Fi local ou Ponto de Acesso."
-        tag1 = "100% OFFLINE"
-        tag2 = "ZERO LAG WI-FI"
-        tag3 = "PAREAMENTO POR QR"
+        sub_text = "ARENAS 3D NO MESMO APARELHO OU WI-FI"
+        desc_text = "Duelo 2 jogadores na tela dividida ou conecte 2 celulares!\n11 arenas 3D imersivas, 100 fases e 100% offline."
+        row1_tags = ["11 ARENAS 3D", "MESA DIVIDIDA"]
+        row2_tags = ["100 FASES", "100% OFFLINE"]
 
-    margin_x = 64
+    margin_x = 60
 
     # Category Capsule (Pill) with dynamic width
     badge_w = int(draw.textlength(badge_text, font=font_badge))
     pill_w = badge_w + 32
     pill_h = 32
-    pill_y = 60
+    pill_y = 54
     draw.rounded_rectangle([margin_x, pill_y, margin_x + pill_w, pill_y + pill_h], radius=16, fill=(16, 28, 52), outline=(0, 229, 255), width=2)
-    text_x = margin_x + 16
-    text_y = pill_y + 8
-    draw.text((text_x, text_y), badge_text, font=font_badge, fill=(0, 240, 255))
+    draw.text((margin_x + 16, pill_y + 8), badge_text, font=font_badge, fill=(0, 240, 255))
 
-    # Main Title
-    draw.text((margin_x, 112), title_text, font=font_title, fill=(255, 255, 255))
+    # Main Title with subtle shadow
+    draw.text((margin_x + 2, 106), title_text, font=font_title, fill=(0, 100, 255, 120))
+    draw.text((margin_x, 104), title_text, font=font_title, fill=(255, 255, 255))
 
     # Subtitle (Cyan)
-    draw.text((margin_x, 178), sub_text, font=font_sub, fill=(0, 229, 255))
+    draw.text((margin_x, 168), sub_text, font=font_sub, fill=(0, 229, 255))
 
     # Description
     lines = desc_text.split("\n")
-    cur_y = 226
+    cur_y = 212
     for line in lines:
         draw.text((margin_x, cur_y), line, font=font_desc, fill=(185, 205, 230))
-        cur_y += 26
+        cur_y += 24
 
-    # Tags (Pills)
-    tags = [tag1, tag2, tag3]
+    # Feature Pills (2 Rows of 2 Pills)
+    # Row 1 (Crimson / Player 2 theme)
     tx = margin_x
-    ty = 320
-    for tag in tags:
+    ty = 295
+    for tag in row1_tags:
         tw = int(draw.textlength(tag, font=font_tag)) + 24
-        draw.rounded_rectangle([tx, ty, tx + tw, ty + 36], radius=10, fill=(24, 30, 48), outline=(255, 42, 109, 180), width=1)
-        draw.text((tx + 12, ty + 10), tag, font=font_tag, fill=(255, 190, 215))
-        tx += tw + 14
+        draw.rounded_rectangle([tx, ty, tx + tw, ty + 34], radius=10, fill=(24, 30, 48), outline=(255, 42, 109, 200), width=1)
+        draw.text((tx + 12, ty + 9), tag, font=font_tag, fill=(255, 200, 225))
+        tx += tw + 12
 
-    # Convert to pure RGB for Google Play Store compliance
+    # Row 2 (Cyan / Player 1 theme)
+    tx = margin_x
+    ty = 340
+    for tag in row2_tags:
+        tw = int(draw.textlength(tag, font=font_tag)) + 24
+        draw.rounded_rectangle([tx, ty, tx + tw, ty + 34], radius=10, fill=(18, 28, 48), outline=(0, 229, 255, 180), width=1)
+        draw.text((tx + 12, ty + 9), tag, font=font_tag, fill=(180, 240, 255))
+        tx += tw + 12
+
+    # Convert to pure RGB for Google Play Store compliance (no transparency)
     rgb_banner = Image.new("RGB", (canvas_w, canvas_h), (10, 14, 26))
     rgb_banner.paste(banner, (0, 0), banner)
     return rgb_banner

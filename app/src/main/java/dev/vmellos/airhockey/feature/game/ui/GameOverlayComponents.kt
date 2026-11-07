@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.MusicOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Videocam
+import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -630,6 +632,8 @@ fun PauseDialog(
     isMusicEnabled: Boolean = true,
     onToggleMusic: () -> Unit = {},
     is3dActive: Boolean = false,
+    cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
+    onCameraZoom3dChange: ((CameraZoom3D) -> Unit)? = null,
     neonBloomIntensity: Float = 0.10f,
     onNeonBloomIntensityChange: ((Float) -> Unit)? = null,
     onResume: () -> Unit,
@@ -808,6 +812,76 @@ fun PauseDialog(
                                         .fillMaxWidth()
                                         .height(30.dp)
                                 )
+                            }
+                        }
+
+                        // Controle de Zoom da Câmera 3D (quando a Arena 3D estiver ativa)
+                        if (is3dActive && onCameraZoom3dChange != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Color(0x1AFFFFFF))
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Videocam,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00E5FF),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.camera_zoom_title),
+                                        color = Color(0xFFE2E8F0),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    listOf(CameraZoom3D.CLOSE, CameraZoom3D.STANDARD, CameraZoom3D.WIDE).forEach { zoomOption ->
+                                        val isSelected = zoomOption == cameraZoom3d
+                                        val label = when (zoomOption) {
+                                            CameraZoom3D.CLOSE -> stringResource(R.string.camera_zoom_close)
+                                            CameraZoom3D.STANDARD -> stringResource(R.string.camera_zoom_standard)
+                                            CameraZoom3D.WIDE -> stringResource(R.string.camera_zoom_wide)
+                                        }
+                                        Surface(
+                                            onClick = { onCameraZoom3dChange(zoomOption) },
+                                            shape = CutCornerShape(6.dp),
+                                            color = if (isSelected) Color(0x3300E5FF) else Color(0x1AFFFFFF),
+                                            border = BorderStroke(1.dp, if (isSelected) Color(0xFF00E5FF) else Color(0x22FFFFFF)),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(34.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = label,
+                                                    color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                                    fontSize = 10.5.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
