@@ -238,8 +238,9 @@ fun AirHockeyAppNavigation(
                     val d2 = if (lobbyState.targetMode == "AI_EXTENDED" || lobbyState.targetMode == "AI_CONNECTED") {
                         if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
                     } else ""
+                    val theme = lobbyState.hostThemeName ?: userPrefs.tableTheme.name
                     val dim = lobbyState.hostArenaDimension ?: userPrefs.arenaDimension.name
-                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, userPrefs.tableTheme.name, dim)
+                    lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, theme, dim)
                 },
                 onBackToMenu = {
                     lobbyViewModel.stopAll()

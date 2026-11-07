@@ -156,7 +156,7 @@ fun LobbyScreen(
                 } else {
                     val d1Str = pendingAiDiff1?.name ?: ""
                     val d2Str = pendingAiDiff2?.name ?: ""
-                    viewModel.startAsHost(mode, d1Str, d2Str, chosenDimension.name)
+                    viewModel.startAsHost(mode, d1Str, d2Str, chosenDimension.name, chosenTheme.name)
                 }
             }
         )
@@ -441,14 +441,15 @@ fun LobbyScreen(
                     )
                 } else if (state.role == LobbyRole.HOST) {
                     val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-                    val proceedAction = remember(state.targetMode, userPrefs.bezelGapMm, userPrefs.puckSpeed.maxSpeed, onStartHostMatch) {
+                    val proceedAction = remember(state.targetMode, state.hostThemeName, state.hostArenaDimension, userPrefs.bezelGapMm, userPrefs.puckSpeed.maxSpeed, onStartHostMatch) {
                         {
                             if (onStartHostMatch != null) {
                                 onStartHostMatch()
                             } else {
                                 val gap = if (state.targetMode == "CONNECTED" || state.targetMode == "AI_CONNECTED") 0f else userPrefs.bezelGapMm
+                                val theme = state.hostThemeName ?: userPrefs.tableTheme.name
                                 val dim = state.hostArenaDimension ?: userPrefs.arenaDimension.name
-                                viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, arenaDimension = dim)
+                                viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, themeName = theme, arenaDimension = dim)
                             }
                         }
                     }

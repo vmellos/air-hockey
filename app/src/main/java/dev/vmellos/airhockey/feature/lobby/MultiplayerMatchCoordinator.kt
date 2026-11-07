@@ -52,6 +52,8 @@ class MultiplayerMatchCoordinator(
     initialGapMm: Float = 8.0f,
     val initialAiDiff1: String = "",
     val initialAiDiff2: String = "",
+    val initialThemeName: String? = null,
+    val initialArenaDimension: String? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
 
@@ -60,7 +62,9 @@ class MultiplayerMatchCoordinator(
             isHost = isHost,
             calibratedGapMm = initialGapMm,
             aiDifficulty1 = initialAiDiff1,
-            aiDifficulty2 = initialAiDiff2
+            aiDifficulty2 = initialAiDiff2,
+            hostThemeName = initialThemeName,
+            hostArenaDimension = initialArenaDimension
         )
     )
     val state: StateFlow<MultiplayerSessionState> = _state.asStateFlow()
@@ -190,19 +194,21 @@ class MultiplayerMatchCoordinator(
         themeName: String = "",
         arenaDimension: String = ""
     ) {
+        val effectiveTheme = themeName.ifBlank { _state.value.hostThemeName ?: "" }
+        val effectiveDimension = arenaDimension.ifBlank { _state.value.hostArenaDimension ?: "" }
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,
                 synchronizedPuckSpeed = maxSpeed,
                 aiDifficulty1 = aiDiff1,
                 aiDifficulty2 = aiDiff2,
-                hostThemeName = themeName.ifBlank { null },
-                hostArenaDimension = arenaDimension.ifBlank { null },
+                hostThemeName = effectiveTheme.ifBlank { null },
+                hostArenaDimension = effectiveDimension.ifBlank { null },
                 startMatchTrigger = System.currentTimeMillis()
             )
         }
         scope.launch {
-            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, themeName, arenaDimension))
+            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, effectiveTheme, effectiveDimension))
         }
     }
 

@@ -131,7 +131,7 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "", arenaDimension: String = "") {
+    fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "", arenaDimension: String = "", themeName: String = "") {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
         val ip = NsdDiscoveryManager.getLocalIpAddress(context)
         val selfName = _state.value.selfPlayerName.ifBlank {
@@ -149,6 +149,7 @@ class LobbyViewModel : ViewModel() {
                 targetMode = mode,
                 aiDifficulty1 = aiDiff1,
                 aiDifficulty2 = aiDiff2,
+                hostThemeName = themeName.ifBlank { null },
                 hostArenaDimension = arenaDimension.ifBlank { null },
                 tableCode = code,
                 hostIp = ip,
@@ -171,7 +172,9 @@ class LobbyViewModel : ViewModel() {
             selfPlayerName = selfName,
             selfMode = mode,
             initialAiDiff1 = aiDiff1,
-            initialAiDiff2 = aiDiff2
+            initialAiDiff2 = aiDiff2,
+            initialThemeName = themeName.ifBlank { null },
+            initialArenaDimension = arenaDimension.ifBlank { null }
         )
         coordinator = coord
         bindCoordinator(coord)
@@ -222,7 +225,9 @@ class LobbyViewModel : ViewModel() {
     ) {
         val d1 = if (aiDiff1.isNotBlank()) aiDiff1 else _state.value.aiDifficulty1
         val d2 = if (aiDiff2.isNotBlank()) aiDiff2 else _state.value.aiDifficulty2
-        coordinator?.startMatch(gapMm, maxSpeed, d1, d2, themeName, arenaDimension)
+        val effectiveTheme = if (themeName.isNotBlank()) themeName else (_state.value.hostThemeName ?: "")
+        val effectiveDim = if (arenaDimension.isNotBlank()) arenaDimension else (_state.value.hostArenaDimension ?: "")
+        coordinator?.startMatch(gapMm, maxSpeed, d1, d2, effectiveTheme, effectiveDim)
     }
 
     fun resetToRoleSelection() {
@@ -281,8 +286,8 @@ class LobbyViewModel : ViewModel() {
                         calibratedGapMm = cState.calibratedGapMm,
                         synchronizedPuckSpeed = cState.synchronizedPuckSpeed,
                         peerPlayerName = cState.peerPlayerName.ifBlank { it.peerPlayerName },
-                        hostThemeName = cState.hostThemeName,
-                        hostArenaDimension = cState.hostArenaDimension,
+                        hostThemeName = cState.hostThemeName ?: it.hostThemeName,
+                        hostArenaDimension = cState.hostArenaDimension ?: it.hostArenaDimension,
                         connectionStatus = when (cState.connectionState) {
                             TransportConnectionState.CONNECTED -> ConnectionStatus.CONNECTED
                             TransportConnectionState.CONNECTING -> ConnectionStatus.CONNECTING
@@ -518,20 +523,16 @@ class LobbyViewModel : ViewModel() {
             if (isHost) userPrefs.bezelGapMm else if (s.calibratedGapMm > 0f) s.calibratedGapMm else userPrefs.bezelGapMm
         }
 
-        val effectiveTheme = if (isHost) {
-            userPrefs.tableTheme
-        } else {
-            s.hostThemeName?.let { name -> runCatching { dev.vmellos.airhockey.core.preferences.TableTheme.valueOf(name) }.getOrNull() } ?: userPrefs.tableTheme
-        }
+        val effectiveTheme = s.hostThemeName?.let { name ->
+            runCatching { dev.vmellos.airhockey.core.preferences.TableTheme.valueOf(name) }.getOrNull()
+        } ?: userPrefs.tableTheme
 
         val isExtended = gameMode == GameMode.EXTENDED_HOST || gameMode == GameMode.EXTENDED_GUEST ||
                 gameMode == GameMode.AI_VS_AI_EXTENDED_HOST || gameMode == GameMode.AI_VS_AI_EXTENDED_GUEST
 
-        val effectiveDimension = if (isHost) {
-            s.hostArenaDimension?.let { dimName -> runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull() } ?: userPrefs.arenaDimension
-        } else {
-            s.hostArenaDimension?.let { dimName -> runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull() } ?: userPrefs.arenaDimension
-        }
+        val effectiveDimension = s.hostArenaDimension?.let { dimName ->
+            runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull()
+        } ?: userPrefs.arenaDimension
 
         val is3d = effectiveDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
         val hasIntro = !isExtended && is3d && userPrefs.arena3dIntroEnabled

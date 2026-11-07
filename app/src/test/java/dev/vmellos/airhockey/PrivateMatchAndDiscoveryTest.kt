@@ -166,6 +166,45 @@ class PrivateMatchAndDiscoveryTest {
     }
 
     @Test
+    fun testCoordinatorPreservesInitialArenaDimensionAndPropagatesToGuest() = runBlocking {
+        val (hostTransport, guestTransport) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+
+        val hostCoord = MultiplayerMatchCoordinator(
+            transport = hostTransport,
+            isHost = true,
+            expectedTableCode = "9988",
+            selfPlayerName = "Host2D",
+            selfMode = "EXTENDED",
+            initialThemeName = "CYBER_SOCCER",
+            initialArenaDimension = "TWO_DIMENSIONAL"
+        )
+        val guestCoord = MultiplayerMatchCoordinator(
+            transport = guestTransport,
+            isHost = false,
+            expectedTableCode = "9988",
+            selfPlayerName = "Guest2D",
+            selfMode = "EXTENDED"
+        )
+
+        delay(80)
+
+        // Verifica estado inicial do Host
+        assertEquals("TWO_DIMENSIONAL", hostCoord.state.value.hostArenaDimension)
+        assertEquals("CYBER_SOCCER", hostCoord.state.value.hostThemeName)
+
+        // Host inicia partida sem passar dimensao explicitamente na chamada (usa valor inicial)
+        hostCoord.startMatch(10.0f, 6800f)
+        delay(50)
+
+        // Convidado deve receber TWO_DIMENSIONAL e CYBER_SOCCER via pacote de controle de Start
+        assertEquals("TWO_DIMENSIONAL", guestCoord.state.value.hostArenaDimension)
+        assertEquals("CYBER_SOCCER", guestCoord.state.value.hostThemeName)
+
+        hostCoord.terminateSession()
+        guestCoord.terminateSession()
+    }
+
+    @Test
     fun testCompatibleModeLogic() {
         assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("AI_EXTENDED", "EXTENDED"))
         assertTrue(MultiplayerMatchCoordinator.isCompatibleMode("EXTENDED", "AI_EXTENDED"))
