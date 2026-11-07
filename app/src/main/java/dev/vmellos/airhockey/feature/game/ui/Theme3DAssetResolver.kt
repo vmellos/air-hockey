@@ -14,19 +14,30 @@ object Theme3DAssetResolver {
 
     /**
      * Retorna o caminho do arquivo .glb para a Mesa 3D do tema selecionado.
+     * Na Mesa Estendida (isExtended == true), entrega o modelo dedicado de Meia-Mesa (half table),
+     * diferenciando Anfitrião (P1) e Convidado (P2).
      */
-    fun getTable3DAsset(theme: TableTheme): String = when (theme) {
-        TableTheme.CYBER_SOCCER -> "models/mesa_cyber_soccer.glb"
-        TableTheme.NEO_BASKETBALL -> "models/mesa_neo_basketball.glb"
-        TableTheme.GRAVITY_VOLLEY -> "models/mesa_gravity_volley.glb"
-        TableTheme.GRIDIRON_FOOTBALL -> "models/mesa_gridiron_football.glb"
-        TableTheme.CYBER_BASEBALL -> "models/mesa_cyber_baseball.glb"
-        TableTheme.WASTELAND_APOCALYPSE -> "models/mesa_wasteland_apocalypse.glb"
-        TableTheme.RETRO_SYNTHWAVE -> "models/mesa_retro_synthwave.glb"
-        TableTheme.TOKAMAK_REACTOR -> "models/mesa_tokamak_reactor.glb"
-        TableTheme.CYBER_PONG -> "models/mesa_cyber_pong.glb"
-        TableTheme.CYBER_COLOSSEUM -> "models/mesa_cyber_colosseum.glb"
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> "models/mesa_arcade.glb"
+    fun getTable3DAsset(
+        theme: TableTheme,
+        isExtended: Boolean = false,
+        isPlayer1: Boolean = true
+    ): String = when {
+        isExtended -> {
+            if (isPlayer1) "models/mesa_arcade_half_p1.glb" else "models/mesa_arcade_half_p2.glb"
+        }
+        else -> when (theme) {
+            TableTheme.CYBER_SOCCER -> "models/mesa_cyber_soccer.glb"
+            TableTheme.NEO_BASKETBALL -> "models/mesa_neo_basketball.glb"
+            TableTheme.GRAVITY_VOLLEY -> "models/mesa_gravity_volley.glb"
+            TableTheme.GRIDIRON_FOOTBALL -> "models/mesa_gridiron_football.glb"
+            TableTheme.CYBER_BASEBALL -> "models/mesa_cyber_baseball.glb"
+            TableTheme.WASTELAND_APOCALYPSE -> "models/mesa_wasteland_apocalypse.glb"
+            TableTheme.RETRO_SYNTHWAVE -> "models/mesa_retro_synthwave.glb"
+            TableTheme.TOKAMAK_REACTOR -> "models/mesa_tokamak_reactor.glb"
+            TableTheme.CYBER_PONG -> "models/mesa_cyber_pong.glb"
+            TableTheme.CYBER_COLOSSEUM -> "models/mesa_cyber_colosseum.glb"
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> "models/mesa_arcade.glb"
+        }
     }
 
     /**

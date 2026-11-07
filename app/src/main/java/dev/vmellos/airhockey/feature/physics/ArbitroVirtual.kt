@@ -159,7 +159,7 @@ class ArbitroVirtual(
             currentStage = spec.stageNumber,
             starsEarned = 0,
             tableTheme = spec.tableTheme,
-            arenaDimension = if (dimensions.isExtendedMode) dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL else spec.arenaDimension
+            arenaDimension = spec.arenaDimension
         )
     )
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()

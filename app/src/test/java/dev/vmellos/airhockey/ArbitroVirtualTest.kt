@@ -216,25 +216,39 @@ class ArbitroVirtualTest {
     }
 
     @Test
-    fun testExtendedModeForcesTwoDimensionalRendering() {
+    fun testExtendedModeRespectsSelectedArenaDimension() {
         val extDims = TableDimensions(
             width = 1000f,
             viewportHeight = 2000f,
             bezelGapUnits = 50f,
             isExtendedMode = true
         )
-        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+        val spec3D = dev.vmellos.airhockey.feature.game.MatchSpec(
             mode = GameMode.EXTENDED_HOST,
             arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
         )
-        val arbitro = ArbitroVirtual(
+        val arbitro3D = ArbitroVirtual(
             dimensions = extDims,
-            spec = spec
+            spec = spec3D
         )
         assertEquals(
-            "Mesa Estendida deve sempre forçar ArenaDimension.TWO_DIMENSIONAL mesmo se spec pedir 3D",
+            "Mesa Estendida deve respeitar ArenaDimension.THREE_DIMENSIONAL quando especificado",
+            dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL,
+            arbitro3D.matchState.value.arenaDimension
+        )
+
+        val spec2D = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.EXTENDED_HOST,
+            arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL
+        )
+        val arbitro2D = ArbitroVirtual(
+            dimensions = extDims,
+            spec = spec2D
+        )
+        assertEquals(
+            "Mesa Estendida deve respeitar ArenaDimension.TWO_DIMENSIONAL quando especificado",
             dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL,
-            arbitro.matchState.value.arenaDimension
+            arbitro2D.matchState.value.arenaDimension
         )
     }
 

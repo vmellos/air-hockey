@@ -1,9 +1,12 @@
 package dev.vmellos.airhockey
 
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
+import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
 import dev.vmellos.airhockey.feature.game.ui.getCameraPreset
 import dev.vmellos.airhockey.feature.game.ui.screenToTable3D
 import dev.vmellos.airhockey.feature.game.ui.tableToScreen3D
+import dev.vmellos.airhockey.feature.physics.TableDimensions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -292,5 +295,92 @@ class AirHockey3DSceneTest {
             assertEquals("P2 mallet X should be centered on screen", screenW / 2f, it.x, 20f)
             assertTrue("P2 mallet Y must be in lower half of screen on guest device, got: ${it.y}", it.y > screenH * 0.5f)
         }
+    }
+
+    @Test
+    fun cameraPreset_extendedTable_usesZenithViewAtHalfTableHeight() {
+        val stdPreset = getCameraPreset(CameraZoom3D.STANDARD, isExtended = true)
+        assertEquals(0f, stdPreset.position.x, 1e-4f)
+        assertEquals(1.55f, stdPreset.position.y, 1e-4f)
+        assertEquals(0f, stdPreset.position.z, 1e-4f)
+        assertEquals(-90f, stdPreset.rotation.x, 1e-4f)
+        assertEquals(0f, stdPreset.rotation.y, 1e-4f)
+
+        val closePreset = getCameraPreset(CameraZoom3D.CLOSE, isExtended = true)
+        val widePreset = getCameraPreset(CameraZoom3D.WIDE, isExtended = true)
+        assertEquals(1.35f, closePreset.position.y, 1e-4f)
+        assertEquals(1.80f, widePreset.position.y, 1e-4f)
+        assertEquals(-90f, closePreset.rotation.x, 1e-4f)
+        assertEquals(-90f, widePreset.rotation.x, 1e-4f)
+    }
+
+    @Test
+    fun screenToTable3D_extendedHost_mapsCenterAndExtremesAccurately() {
+        val extPreset = getCameraPreset(CameraZoom3D.STANDARD, isExtended = true)
+        val dims = TableDimensions(width = 1000f, viewportHeight = 2000f, bezelGapUnits = 200f, isExtendedMode = true)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        // Center screen maps to center of host half (500, guestHalfTopY + 1000 = 3200)
+        val centerPt = screenToTable3D(
+            screenX = screenW / 2f,
+            screenY = screenH / 2f,
+            w = screenW,
+            h = screenH,
+            camX = extPreset.position.x,
+            camY = extPreset.position.y,
+            camZ = extPreset.position.z,
+            camPitchDeg = extPreset.rotation.x,
+            camYawDeg = extPreset.rotation.y,
+            isExtended = true,
+            isExtendedGuest = false,
+            dimensions = dims
+        )
+        assertNotNull(centerPt)
+        centerPt?.let {
+            assertEquals(500f, it.x, 5f)
+            assertEquals(3200f, it.y, 10f)
+        }
+    }
+
+    @Test
+    fun screenToTable3D_extendedGuest_mapsCenterAndExtremesAccurately() {
+        val extPreset = getCameraPreset(CameraZoom3D.STANDARD, isExtended = true)
+        val dims = TableDimensions(width = 1000f, viewportHeight = 2000f, bezelGapUnits = 200f, isExtendedMode = true)
+        val screenW = 1080f
+        val screenH = 2400f
+
+        // Center screen maps to center of guest half (500, hostHalfBottomY - 1000 = 1000)
+        val centerPt = screenToTable3D(
+            screenX = screenW / 2f,
+            screenY = screenH / 2f,
+            w = screenW,
+            h = screenH,
+            camX = extPreset.position.x,
+            camY = extPreset.position.y,
+            camZ = extPreset.position.z,
+            camPitchDeg = extPreset.rotation.x,
+            camYawDeg = extPreset.rotation.y,
+            isExtended = true,
+            isExtendedGuest = true,
+            dimensions = dims
+        )
+        assertNotNull(centerPt)
+        centerPt?.let {
+            assertEquals(500f, it.x, 5f)
+            assertEquals(1000f, it.y, 10f)
+        }
+    }
+
+    @Test
+    fun theme3DAssetResolver_extendedTable_selectsHalfTableModels() {
+        val p1Asset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = true, isPlayer1 = true)
+        assertEquals("models/mesa_arcade_half_p1.glb", p1Asset)
+
+        val p2Asset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = true, isPlayer1 = false)
+        assertEquals("models/mesa_arcade_half_p2.glb", p2Asset)
+
+        val standardAsset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = false)
+        assertEquals("models/mesa_arcade.glb", standardAsset)
     }
 }

@@ -452,8 +452,7 @@ fun LobbyScreen(
                                 onStartHostMatch()
                             } else {
                                 val gap = if (state.targetMode == "CONNECTED" || state.targetMode == "AI_CONNECTED") 0f else userPrefs.bezelGapMm
-                                val isExt = state.targetMode == "EXTENDED" || state.targetMode == "AI_EXTENDED"
-                                val dim = if (isExt) dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL.name else (state.hostArenaDimension ?: userPrefs.arenaDimension.name)
+                                val dim = state.hostArenaDimension ?: userPrefs.arenaDimension.name
                                 viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, arenaDimension = dim)
                             }
                         }

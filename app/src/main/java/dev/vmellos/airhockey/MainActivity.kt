@@ -238,8 +238,7 @@ fun AirHockeyAppNavigation(
                     val d2 = if (lobbyState.targetMode == "AI_EXTENDED" || lobbyState.targetMode == "AI_CONNECTED") {
                         if (lobbyState.aiDifficulty2.isNotBlank()) lobbyState.aiDifficulty2 else aiExtendedDiff2.name
                     } else ""
-                    val isExt = lobbyState.targetMode == "EXTENDED" || lobbyState.targetMode == "AI_EXTENDED"
-                    val dim = if (isExt) dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL.name else (lobbyState.hostArenaDimension ?: userPrefs.arenaDimension.name)
+                    val dim = lobbyState.hostArenaDimension ?: userPrefs.arenaDimension.name
                     lobbyViewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, d1, d2, userPrefs.tableTheme.name, dim)
                 },
                 onBackToMenu = {
