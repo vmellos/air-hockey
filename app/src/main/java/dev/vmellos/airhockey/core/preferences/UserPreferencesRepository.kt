@@ -118,7 +118,7 @@ class UserPreferencesRepository(private val context: Context) {
             }
             val tableTheme = if (rawTableTheme == TableTheme.ARCADE_3D) TableTheme.CLASSIC_NEON else rawTableTheme
 
-            val rawNeonBloom = preferences[PreferencesKeys.NEON_BLOOM_INTENSITY] ?: 0.05f
+            val rawNeonBloom = preferences[PreferencesKeys.NEON_BLOOM_INTENSITY] ?: 0.01f
             val neonBloomIntensity = rawNeonBloom.coerceIn(0.0f, 0.10f)
             val arena3dIntroEnabled = preferences[PreferencesKeys.ARENA_3D_INTRO_ENABLED] ?: true
             val cameraZoomStr = preferences[PreferencesKeys.CAMERA_ZOOM_3D] ?: CameraZoom3D.STANDARD.name

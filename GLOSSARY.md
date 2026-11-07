@@ -107,7 +107,7 @@ A coleção integrada de arquivos binários glTF otimizados (`.glb`) composta po
 _Avoid_: Pasta de modelos, pack 3D, skins 3D, bundle glb
 
 **Apresentação de Abertura da Mesa 3D**:
-O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus em raio amplo e ângulo oblíquo ao redor da mesa 3D antes do início da partida, ambientando a arena com foco dinâmico e aterrissando com suavidade na perspectiva do Jogador 1 (ou no ângulo zenital na Mesa Dividida). Sincroniza a execução da Música de Fundo (BGM) desde o primeiro segundo do voo e permanece ativa ininterruptamente sem descarte por toques na tela, retendo o Saque de Início e a contagem regressiva até sua finalização completa, preservando o acionamento do botão Voltar para exibição do menu de pausa com opções de continuar, reiniciar ou sair para o menu.
+O voo panorâmico cinematográfico estilo drone que sobrevoa a extensão da arena com foco dinâmico antes do início da partida, iniciando em tomada elevada sobre a meta adversária, descendo em arco rasante ao longo da calha lateral com estabilização vetorial no eixo vertical do mundo (vetor UP em +Y sem roll ou rotação tipo turntable) e aterrissando com suavidade na perspectiva do Jogador 1 (ou no ângulo zenital na Mesa Dividida). Sincroniza a execução da Música de Fundo (BGM) desde o primeiro segundo do voo e permanece ativa ininterruptamente sem descarte por toques na tela, retendo o Saque de Início e a contagem regressiva até sua finalização completa, preservando o acionamento do botão Voltar para exibição do menu de pausa com opções de continuar, reiniciar ou sair para o menu.
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
