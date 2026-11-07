@@ -84,11 +84,14 @@ private class Scene3DState(
     var camZ: Float = initialPreset.position.z
     var camPitch: Float = initialPreset.rotation.x
     var camYaw: Float = initialPreset.rotation.y
+    var camFocusX: Float = 0f
+    var camFocusY: Float = 0f
+    var camFocusZ: Float = 0f
 
     // Giroscópio procedural do disco (rotação em torno do eixo vertical Y)
     var puckYawDeg: Float = 0f
 
-    fun toPose(): CameraPose3D = CameraPose3D(camX, camY, camZ, camPitch, camYaw)
+    fun toPose(): CameraPose3D = CameraPose3D(camX, camY, camZ, camPitch, camYaw, camFocusX, camFocusY, camFocusZ)
 
     fun updateFromPose(pose: CameraPose3D) {
         camX = pose.x
@@ -96,6 +99,9 @@ private class Scene3DState(
         camZ = pose.z
         camPitch = pose.pitch
         camYaw = pose.yaw
+        camFocusX = pose.focusX
+        camFocusY = pose.focusY
+        camFocusZ = pose.focusZ
     }
 }
 
@@ -388,7 +394,7 @@ fun AirHockeyArena3DScene(
             presentationAnim.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
-                    durationMillis = 6500,
+                    durationMillis = 3800,
                     easing = FastOutSlowInEasing
                 )
             ) {
@@ -501,6 +507,26 @@ fun AirHockeyArena3DScene(
         }
     }
 
+    val floorAsset = remember(isExtended) {
+        if (isExtended) null else "models/piso_arena_cyber.glb"
+    }
+    val floorInstance = remember(modelLoader, floorAsset) {
+        floorAsset?.let { path ->
+            try {
+                modelLoader.createModelInstance(path)
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+    val floorNode = remember(floorInstance) {
+        floorInstance?.let {
+            ModelNode(it).apply {
+                position = Float3(0f, -0.045f, 0f)
+            }
+        }
+    }
+
     val tableNode = remember(tableInstance) {
         tableInstance?.let {
             ModelNode(it).apply {
@@ -526,8 +552,8 @@ fun AirHockeyArena3DScene(
         rotation = Float3(sceneState.camPitch, sceneState.camYaw, 0f)
     }
 
-    val childNodes = remember(tableNode, puckNode, p1Node, p2Node) {
-        listOfNotNull(tableNode, puckNode, p1Node, p2Node)
+    val childNodes = remember(floorNode, tableNode, puckNode, p1Node, p2Node) {
+        listOfNotNull(floorNode, tableNode, puckNode, p1Node, p2Node)
     }
 
     // Frame pulse acoplado ao vsync nativo do display
@@ -614,7 +640,11 @@ fun AirHockeyArena3DScene(
                     val pose = projection3D.computePresentationPose(p, effectiveTargetPreset)
                     sceneState.updateFromPose(pose)
                     cameraNode.position = pose.toPosition()
-                    cameraNode.rotation = pose.toRotation()
+                    cameraNode.lookAt(
+                        targetWorldPosition = pose.toFocus(),
+                        upDirection = Float3(0f, 1f, 0f),
+                        smooth = false
+                    )
                 } else {
                     val pose = projection3D.stepSmoothPose(sceneState.toPose(), effectiveTargetPreset)
                     sceneState.updateFromPose(pose)
