@@ -194,15 +194,22 @@ class LobbyViewModel : ViewModel() {
         nsdManager.startDiscovery()
         discoveryPeriodicJob?.cancel()
         discoveryPeriodicJob = viewModelScope.launch {
+            var cycleCount = 0
             while (isActive && _state.value.role == LobbyRole.GUEST && _state.value.connectionStatus == ConnectionStatus.DISCOVERING) {
-                delay(2500)
+                delay(1500)
+                cycleCount++
                 nsdManager.sendDirectedDiscoveryProbe()
+                // Se nenhuma mesa for encontrada, reinicia descoberta NSD a cada ~6s para forçar nova consulta mDNS PTR
+                if (cycleCount % 4 == 0 && _state.value.discoveredTables.isEmpty()) {
+                    nsdManager.restartNsdDiscovery()
+                }
             }
         }
     }
 
     fun refreshDiscovery() {
         nsdManager.sendDirectedDiscoveryProbe()
+        nsdManager.restartNsdDiscovery()
     }
 
     fun startHostMatch(
