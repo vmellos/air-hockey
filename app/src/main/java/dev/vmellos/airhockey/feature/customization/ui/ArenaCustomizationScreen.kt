@@ -156,11 +156,6 @@ private data class MalletItem(
     val primaryColor: Color
 )
 
-private data class LockedDialogInfo(
-    val titleRes: Int,
-    val unlockStage: Int
-)
-
 @Composable
 fun ArenaCustomizationScreen(
     onBack: () -> Unit,
@@ -177,7 +172,7 @@ fun ArenaCustomizationScreen(
     val unlockedPucks by stageRepo.unlockedPuckSkinsFlow.collectAsState(initial = setOf(PuckSkin.CLASSIC_PLASMA))
     val unlockedMallets by stageRepo.unlockedMalletSkinsFlow.collectAsState(initial = setOf(MalletSkin.CLASSIC_NEON))
 
-    var lockedDialogInfo by remember { mutableStateOf<LockedDialogInfo?>(null) }
+    var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
     // Estado da categoria selecionada (0: Conjuntos, 1: Mesas, 2: Discos, 3: Rebatedores)
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
@@ -197,216 +192,47 @@ fun ArenaCustomizationScreen(
     }
 
     val bundleItems = remember {
-        listOf(
+        ArenaConquestCatalog.ALL_THEMES.map { tier ->
             ThemeBundleItem(
-                id = "classic",
-                titleRes = R.string.theme_preset_classic,
-                descRes = R.string.theme_preset_classic_desc,
-                icon = Icons.Default.SportsHockey,
-                primaryColor = NeonCyan,
-                secondaryColor = NeonOrange,
-                tableTheme = TableTheme.CLASSIC_NEON,
-                puckSkin = PuckSkin.CLASSIC_PLASMA,
-                malletSkin = MalletSkin.CLASSIC_NEON
-            ),
-            ThemeBundleItem(
-                id = "cyber_soccer",
-                titleRes = R.string.theme_preset_cyber_soccer,
-                descRes = R.string.theme_preset_cyber_soccer_desc,
-                icon = Icons.Default.SportsSoccer,
-                primaryColor = NeonEmerald,
-                secondaryColor = NeonRuby,
-                tableTheme = TableTheme.CYBER_SOCCER,
-                puckSkin = PuckSkin.CYBER_SOCCER_BALL,
-                malletSkin = MalletSkin.MAGNETIC_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "neo_basketball",
-                titleRes = R.string.theme_preset_neo_basketball,
-                descRes = R.string.theme_preset_neo_basketball_desc,
-                icon = Icons.Default.SportsBasketball,
-                primaryColor = NeonAmber,
-                secondaryColor = NeonCyan,
-                tableTheme = TableTheme.NEO_BASKETBALL,
-                puckSkin = PuckSkin.NEO_BASKETBALL,
-                malletSkin = MalletSkin.DUNK_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "gravity_volley",
-                titleRes = R.string.theme_preset_gravity_volley,
-                descRes = R.string.theme_preset_gravity_volley_desc,
-                icon = Icons.Default.SportsVolleyball,
-                primaryColor = NeonViolet,
-                secondaryColor = NeonMagenta,
-                tableTheme = TableTheme.GRAVITY_VOLLEY,
-                puckSkin = PuckSkin.GRAVITY_VOLLEY,
-                malletSkin = MalletSkin.SPIKE_EMITTER
-            ),
-            ThemeBundleItem(
-                id = "gridiron_football",
-                titleRes = R.string.theme_preset_gridiron,
-                descRes = R.string.theme_preset_gridiron_desc,
-                icon = Icons.Default.SportsFootball,
-                primaryColor = GridironCyan,
-                secondaryColor = GridironGold,
-                tableTheme = TableTheme.GRIDIRON_FOOTBALL,
-                puckSkin = PuckSkin.GRIDIRON_FOOTBALL,
-                malletSkin = MalletSkin.LINEBACKER_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "cyber_baseball",
-                titleRes = R.string.theme_preset_baseball,
-                descRes = R.string.theme_preset_baseball_desc,
-                icon = Icons.Default.SportsBaseball,
-                primaryColor = BaseballRed,
-                secondaryColor = BaseballCyan,
-                tableTheme = TableTheme.CYBER_BASEBALL,
-                puckSkin = PuckSkin.CYBER_BASEBALL,
-                malletSkin = MalletSkin.SLUGGER_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "wasteland",
-                titleRes = R.string.theme_preset_wasteland,
-                descRes = R.string.theme_preset_wasteland_desc,
-                icon = Icons.Default.Whatshot,
-                primaryColor = WastelandFlame,
-                secondaryColor = WastelandHazardYellow,
-                tableTheme = TableTheme.WASTELAND_APOCALYPSE,
-                puckSkin = PuckSkin.SAWBLADE,
-                malletSkin = MalletSkin.RIPPER_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "synthwave",
-                titleRes = R.string.theme_preset_synthwave,
-                descRes = R.string.theme_preset_synthwave_desc,
-                icon = Icons.Default.WbSunny,
-                primaryColor = SynthPink,
-                secondaryColor = SynthCyan,
-                tableTheme = TableTheme.RETRO_SYNTHWAVE,
-                puckSkin = PuckSkin.SYNTH_DISC,
-                malletSkin = MalletSkin.OUTRUN_STRIKER
-            ),
-            ThemeBundleItem(
-                id = "tokamak",
-                titleRes = R.string.theme_preset_tokamak,
-                descRes = R.string.theme_preset_tokamak_desc,
-                icon = Icons.Default.Bolt,
-                primaryColor = TokamakRadiation,
-                secondaryColor = TokamakPlasma,
-                tableTheme = TableTheme.TOKAMAK_REACTOR,
-                puckSkin = PuckSkin.ATOMIC_CORE,
-                malletSkin = MalletSkin.MAGNETIC_COIL
-            ),
-            ThemeBundleItem(
-                id = "cyber_pong",
-                titleRes = R.string.theme_preset_pong,
-                descRes = R.string.theme_preset_pong_desc,
-                icon = Icons.Default.VideogameAsset,
-                primaryColor = PongGreen,
-                secondaryColor = PongAmber,
-                tableTheme = TableTheme.CYBER_PONG,
-                puckSkin = PuckSkin.PONG_SQUARE,
-                malletSkin = MalletSkin.PONG_PADDLE
-            ),
-            ThemeBundleItem(
-                id = "colosseum",
-                titleRes = R.string.theme_preset_colosseum,
-                descRes = R.string.theme_preset_colosseum_desc,
-                icon = Icons.Default.Shield,
-                primaryColor = ColosseumGold,
-                secondaryColor = ColosseumCrimson,
-                tableTheme = TableTheme.CYBER_COLOSSEUM,
-                puckSkin = PuckSkin.GLADIATOR_SHIELD,
-                malletSkin = MalletSkin.SPARTAN_AEGIS
+                id = tier.theme.name.lowercase(),
+                titleRes = tier.titleRes,
+                descRes = tier.descRes,
+                icon = tier.icon,
+                primaryColor = tier.primaryColor,
+                secondaryColor = tier.secondaryColor,
+                tableTheme = tier.theme,
+                puckSkin = tier.puckSkin,
+                malletSkin = tier.malletSkin
             )
-        )
+        }
     }
 
     val tableItems = remember {
-        listOf(
-            TableItem(TableTheme.CLASSIC_NEON, R.string.theme_preset_classic, R.string.theme_preset_classic_desc, Icons.Default.SportsHockey, NeonCyan, NeonOrange),
-            TableItem(TableTheme.CYBER_SOCCER, R.string.theme_preset_cyber_soccer, R.string.theme_preset_cyber_soccer_desc, Icons.Default.SportsSoccer, NeonEmerald, NeonRuby),
-            TableItem(TableTheme.NEO_BASKETBALL, R.string.theme_preset_neo_basketball, R.string.theme_preset_neo_basketball_desc, Icons.Default.SportsBasketball, NeonAmber, NeonCyan),
-            TableItem(TableTheme.GRAVITY_VOLLEY, R.string.theme_preset_gravity_volley, R.string.theme_preset_gravity_volley_desc, Icons.Default.SportsVolleyball, NeonViolet, NeonMagenta),
-            TableItem(TableTheme.GRIDIRON_FOOTBALL, R.string.theme_preset_gridiron, R.string.theme_preset_gridiron_desc, Icons.Default.SportsFootball, GridironCyan, GridironGold),
-            TableItem(TableTheme.CYBER_BASEBALL, R.string.theme_preset_baseball, R.string.theme_preset_baseball_desc, Icons.Default.SportsBaseball, BaseballRed, BaseballCyan),
-            TableItem(TableTheme.WASTELAND_APOCALYPSE, R.string.theme_preset_wasteland, R.string.theme_preset_wasteland_desc, Icons.Default.Whatshot, WastelandFlame, WastelandHazardYellow),
-            TableItem(TableTheme.RETRO_SYNTHWAVE, R.string.theme_preset_synthwave, R.string.theme_preset_synthwave_desc, Icons.Default.WbSunny, SynthPink, SynthCyan),
-            TableItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, R.string.theme_preset_tokamak_desc, Icons.Default.Bolt, TokamakRadiation, TokamakPlasma),
-            TableItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, R.string.theme_preset_pong_desc, Icons.Default.VideogameAsset, PongGreen, PongAmber),
-            TableItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, R.string.theme_preset_colosseum_desc, Icons.Default.Shield, ColosseumGold, ColosseumCrimson)
-        )
+        ArenaConquestCatalog.ALL_THEMES.map { tier ->
+            TableItem(tier.theme, tier.titleRes, tier.descRes, tier.icon, tier.primaryColor, tier.secondaryColor)
+        }
     }
 
     val puckItems = remember {
-        listOf(
-            PuckItem(PuckSkin.CLASSIC_PLASMA, R.string.skin_puck_classic, Icons.Default.SportsHockey, NeonCyan),
-            PuckItem(PuckSkin.CYBER_SOCCER_BALL, R.string.skin_puck_soccer, Icons.Default.SportsSoccer, NeonEmerald),
-            PuckItem(PuckSkin.NEO_BASKETBALL, R.string.skin_puck_basketball, Icons.Default.SportsBasketball, NeonAmber),
-            PuckItem(PuckSkin.GRAVITY_VOLLEY, R.string.skin_puck_volley, Icons.Default.SportsVolleyball, NeonViolet),
-            PuckItem(PuckSkin.GRIDIRON_FOOTBALL, R.string.skin_puck_gridiron, Icons.Default.SportsFootball, GridironCyan),
-            PuckItem(PuckSkin.CYBER_BASEBALL, R.string.skin_puck_baseball, Icons.Default.SportsBaseball, BaseballRed),
-            PuckItem(PuckSkin.SAWBLADE, R.string.skin_puck_wasteland, Icons.Default.Whatshot, WastelandFlame),
-            PuckItem(PuckSkin.SYNTH_DISC, R.string.skin_puck_synthwave, Icons.Default.WbSunny, SynthPink),
-            PuckItem(PuckSkin.ATOMIC_CORE, R.string.skin_puck_tokamak, Icons.Default.Bolt, TokamakRadiation),
-            PuckItem(PuckSkin.PONG_SQUARE, R.string.skin_puck_pong, Icons.Default.VideogameAsset, PongGreen),
-            PuckItem(PuckSkin.GLADIATOR_SHIELD, R.string.skin_puck_colosseum, Icons.Default.Shield, ColosseumGold)
-        )
+        ArenaConquestCatalog.ALL_THEMES.map { tier ->
+            PuckItem(tier.puckSkin, tier.puckTitleRes, tier.icon, tier.primaryColor)
+        }
     }
 
     val malletItems = remember {
-        listOf(
-            MalletItem(MalletSkin.CLASSIC_NEON, R.string.skin_mallet_classic, Icons.Default.SportsHockey, NeonCyan),
-            MalletItem(MalletSkin.MAGNETIC_STRIKER, R.string.skin_mallet_soccer, Icons.Default.SportsSoccer, NeonEmerald),
-            MalletItem(MalletSkin.DUNK_STRIKER, R.string.skin_mallet_basketball, Icons.Default.SportsBasketball, NeonAmber),
-            MalletItem(MalletSkin.SPIKE_EMITTER, R.string.skin_mallet_volley, Icons.Default.SportsVolleyball, NeonViolet),
-            MalletItem(MalletSkin.LINEBACKER_STRIKER, R.string.skin_mallet_gridiron, Icons.Default.SportsFootball, GridironCyan),
-            MalletItem(MalletSkin.SLUGGER_STRIKER, R.string.skin_mallet_baseball, Icons.Default.SportsBaseball, BaseballRed),
-            MalletItem(MalletSkin.RIPPER_STRIKER, R.string.skin_mallet_wasteland, Icons.Default.Whatshot, WastelandFlame),
-            MalletItem(MalletSkin.OUTRUN_STRIKER, R.string.skin_mallet_synthwave, Icons.Default.WbSunny, SynthPink),
-            MalletItem(MalletSkin.MAGNETIC_COIL, R.string.skin_mallet_tokamak, Icons.Default.Bolt, TokamakRadiation),
-            MalletItem(MalletSkin.PONG_PADDLE, R.string.skin_mallet_pong, Icons.Default.VideogameAsset, PongGreen),
-            MalletItem(MalletSkin.SPARTAN_AEGIS, R.string.skin_mallet_colosseum, Icons.Default.Shield, ColosseumGold)
-        )
+        ArenaConquestCatalog.ALL_THEMES.map { tier ->
+            MalletItem(tier.malletSkin, tier.malletTitleRes, tier.icon, tier.primaryColor)
+        }
     }
 
-    // Nome descritivo do kit atualmente ativo
-    val currentActivePresetName = when {
-        prefs.tableTheme == TableTheme.CLASSIC_NEON &&
-                prefs.puckSkin == PuckSkin.CLASSIC_PLASMA &&
-                prefs.player1MalletSkin == MalletSkin.CLASSIC_NEON -> stringResource(R.string.theme_preset_classic)
-        prefs.tableTheme == TableTheme.CYBER_SOCCER &&
-                prefs.puckSkin == PuckSkin.CYBER_SOCCER_BALL &&
-                prefs.player1MalletSkin == MalletSkin.MAGNETIC_STRIKER -> stringResource(R.string.theme_preset_cyber_soccer)
-        prefs.tableTheme == TableTheme.NEO_BASKETBALL &&
-                prefs.puckSkin == PuckSkin.NEO_BASKETBALL &&
-                prefs.player1MalletSkin == MalletSkin.DUNK_STRIKER -> stringResource(R.string.theme_preset_neo_basketball)
-        prefs.tableTheme == TableTheme.GRAVITY_VOLLEY &&
-                prefs.puckSkin == PuckSkin.GRAVITY_VOLLEY &&
-                prefs.player1MalletSkin == MalletSkin.SPIKE_EMITTER -> stringResource(R.string.theme_preset_gravity_volley)
-        prefs.tableTheme == TableTheme.GRIDIRON_FOOTBALL &&
-                prefs.puckSkin == PuckSkin.GRIDIRON_FOOTBALL &&
-                prefs.player1MalletSkin == MalletSkin.LINEBACKER_STRIKER -> stringResource(R.string.theme_preset_gridiron)
-        prefs.tableTheme == TableTheme.CYBER_BASEBALL &&
-                prefs.puckSkin == PuckSkin.CYBER_BASEBALL &&
-                prefs.player1MalletSkin == MalletSkin.SLUGGER_STRIKER -> stringResource(R.string.theme_preset_baseball)
-        prefs.tableTheme == TableTheme.WASTELAND_APOCALYPSE &&
-                prefs.puckSkin == PuckSkin.SAWBLADE &&
-                prefs.player1MalletSkin == MalletSkin.RIPPER_STRIKER -> stringResource(R.string.theme_preset_wasteland)
-        prefs.tableTheme == TableTheme.RETRO_SYNTHWAVE &&
-                prefs.puckSkin == PuckSkin.SYNTH_DISC &&
-                prefs.player1MalletSkin == MalletSkin.OUTRUN_STRIKER -> stringResource(R.string.theme_preset_synthwave)
-        prefs.tableTheme == TableTheme.TOKAMAK_REACTOR &&
-                prefs.puckSkin == PuckSkin.ATOMIC_CORE &&
-                prefs.player1MalletSkin == MalletSkin.MAGNETIC_COIL -> stringResource(R.string.theme_preset_tokamak)
-        prefs.tableTheme == TableTheme.CYBER_PONG &&
-                prefs.puckSkin == PuckSkin.PONG_SQUARE &&
-                prefs.player1MalletSkin == MalletSkin.PONG_PADDLE -> stringResource(R.string.theme_preset_pong)
-        prefs.tableTheme == TableTheme.CYBER_COLOSSEUM &&
-                prefs.puckSkin == PuckSkin.GLADIATOR_SHIELD &&
-                prefs.player1MalletSkin == MalletSkin.SPARTAN_AEGIS -> stringResource(R.string.theme_preset_colosseum)
-        else -> stringResource(R.string.customization_custom_preset)
-    }
+    // Nome descritivo do kit atualmente ativo resolvido pelo Catálogo Canônico
+    val currentActivePresetName = stringResource(
+        ArenaConquestCatalog.resolveActivePresetTitleRes(
+            prefs.tableTheme,
+            prefs.puckSkin,
+            prefs.player1MalletSkin
+        )
+    )
 
     Column(
         modifier = modifier
@@ -755,7 +581,7 @@ fun ArenaCustomizationScreen(
                             isLocked = isLocked,
                             unlockStage = unlockStage,
                             onLockedClick = {
-                                lockedDialogInfo = LockedDialogInfo(bundle.titleRes, unlockStage)
+                                lockedDialogInfo = LockedArenaInfo(bundle.titleRes, unlockStage)
                             },
                             onPreview = {
                                 previewTableTheme = bundle.tableTheme
@@ -791,7 +617,7 @@ fun ArenaCustomizationScreen(
                             isLocked = isLocked,
                             unlockStage = unlockStage,
                             onLockedClick = {
-                                lockedDialogInfo = LockedDialogInfo(tableItem.titleRes, unlockStage)
+                                lockedDialogInfo = LockedArenaInfo(tableItem.titleRes, unlockStage)
                             },
                             onPreview = {
                                 previewTableTheme = tableItem.theme
@@ -823,7 +649,7 @@ fun ArenaCustomizationScreen(
                             isLocked = isLocked,
                             unlockStage = unlockStage,
                             onLockedClick = {
-                                lockedDialogInfo = LockedDialogInfo(puckItem.titleRes, unlockStage)
+                                lockedDialogInfo = LockedArenaInfo(puckItem.titleRes, unlockStage)
                             },
                             onPreview = {
                                 previewPuckSkin = puckItem.skin
@@ -855,7 +681,7 @@ fun ArenaCustomizationScreen(
                             isLocked = isLocked,
                             unlockStage = unlockStage,
                             onLockedClick = {
-                                lockedDialogInfo = LockedDialogInfo(malletItem.titleRes, unlockStage)
+                                lockedDialogInfo = LockedArenaInfo(malletItem.titleRes, unlockStage)
                             },
                             onPreview = {
                                 previewMalletSkin = malletItem.skin
@@ -885,65 +711,12 @@ fun ArenaCustomizationScreen(
 
         val dialogInfo = lockedDialogInfo
         if (dialogInfo != null) {
-            AlertDialog(
-                onDismissRequest = { lockedDialogInfo = null },
-                shape = CutCornerShape(16.dp),
-                containerColor = Color(0xF20B0F1C),
-                titleContentColor = Color.White,
-                textContentColor = Color(0xFF94A3B8),
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = Color(0xFFFFB800),
-                        modifier = Modifier.size(36.dp)
-                    )
-                },
-                title = {
-                    Text(
-                        text = stringResource(R.string.arena_locked_dialog_title),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                },
-                text = {
-                    Text(
-                        text = stringResource(R.string.arena_locked_dialog_desc, dialogInfo.unlockStage),
-                        fontSize = 14.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            lockedDialogInfo = null
-                            onNavigateToStages()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                        shape = CutCornerShape(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.play_stages_mode).uppercase(),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { lockedDialogInfo = null }) {
-                        Text(
-                            text = stringResource(R.string.close),
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
+            LockedArenaDialog(
+                info = dialogInfo,
+                onDismiss = { lockedDialogInfo = null },
+                onNavigateToStages = {
+                    lockedDialogInfo = null
+                    onNavigateToStages()
                 }
             )
         }

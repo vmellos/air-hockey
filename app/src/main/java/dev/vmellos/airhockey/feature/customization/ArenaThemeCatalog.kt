@@ -11,7 +11,8 @@ data class ThemeVisuals(
     val primaryColor: Color,
     val secondaryColor: Color,
     val primaryRimColor: Color = primaryColor,
-    val secondaryRimColor: Color = secondaryColor
+    val secondaryRimColor: Color = secondaryColor,
+    val wallHitColor: Color = Color(0xFFE2E8F0)
 )
 
 data class MalletSkinVisuals(
@@ -28,17 +29,17 @@ data class MalletSkinVisuals(
 object ArenaThemeCatalog {
 
     fun getVisuals(theme: TableTheme): ThemeVisuals = when (theme) {
-        TableTheme.CYBER_SOCCER -> ThemeVisuals(CyberTurfDark, NeonEmerald, NeonEmeraldBright)
-        TableTheme.NEO_BASKETBALL -> ThemeVisuals(CourtDark, NeonAmber, NeonAmberBright)
-        TableTheme.GRAVITY_VOLLEY -> ThemeVisuals(VolleySpaceDark, NeonViolet, NeonVioletBright)
-        TableTheme.GRIDIRON_FOOTBALL -> ThemeVisuals(GridironDark, GridironCyan, GridironGold)
-        TableTheme.CYBER_BASEBALL -> ThemeVisuals(BaseballDark, BaseballRed, BaseballRedBright)
-        TableTheme.WASTELAND_APOCALYPSE -> ThemeVisuals(WastelandDark, WastelandFlame, WastelandFlameBright)
-        TableTheme.RETRO_SYNTHWAVE -> ThemeVisuals(SynthDark, SynthPink, SynthPinkBright)
-        TableTheme.TOKAMAK_REACTOR -> ThemeVisuals(TokamakDark, TokamakRadiation, TokamakRadiationBright)
-        TableTheme.CYBER_PONG -> ThemeVisuals(PongDark, PongGreen, PongGreenBright)
-        TableTheme.CYBER_COLOSSEUM -> ThemeVisuals(ColosseumDark, ColosseumGold, ColosseumGoldBright)
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> ThemeVisuals(TableBgDark, NeonCyan, NeonOrange)
+        TableTheme.CYBER_SOCCER -> ThemeVisuals(CyberTurfDark, NeonEmerald, NeonRuby, wallHitColor = CyberSoccerGold)
+        TableTheme.NEO_BASKETBALL -> ThemeVisuals(CourtDark, NeonAmber, NeonCyan, wallHitColor = NeonAmberBright)
+        TableTheme.GRAVITY_VOLLEY -> ThemeVisuals(VolleySpaceDark, NeonViolet, NeonMagenta, wallHitColor = VolleyYellow)
+        TableTheme.GRIDIRON_FOOTBALL -> ThemeVisuals(GridironDark, GridironCyan, GridironGold, wallHitColor = GridironGoldBright)
+        TableTheme.CYBER_BASEBALL -> ThemeVisuals(BaseballDark, BaseballRed, BaseballCyan, wallHitColor = BaseballRedBright)
+        TableTheme.WASTELAND_APOCALYPSE -> ThemeVisuals(WastelandDark, WastelandFlame, WastelandFlameBright, wallHitColor = WastelandHazardYellow)
+        TableTheme.RETRO_SYNTHWAVE -> ThemeVisuals(SynthDark, SynthPink, SynthCyan, wallHitColor = SynthSunYellow)
+        TableTheme.TOKAMAK_REACTOR -> ThemeVisuals(TokamakDark, TokamakRadiation, TokamakPlasma, wallHitColor = TokamakRadiationBright)
+        TableTheme.CYBER_PONG -> ThemeVisuals(PongDark, PongGreen, PongGreenBright, wallHitColor = PongGreenBright)
+        TableTheme.CYBER_COLOSSEUM -> ThemeVisuals(ColosseumDark, ColosseumGold, ColosseumCrimson, wallHitColor = ColosseumGoldBright)
+        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> ThemeVisuals(TableBgDark, NeonCyan, NeonOrange, wallHitColor = Color(0xFFE2E8F0))
     }
 
     fun getMalletSkinVisuals(skin: MalletSkin, isPlayer1: Boolean): MalletSkinVisuals {

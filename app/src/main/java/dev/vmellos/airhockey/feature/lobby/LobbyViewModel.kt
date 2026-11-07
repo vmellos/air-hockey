@@ -537,12 +537,12 @@ class LobbyViewModel : ViewModel() {
         val is3d = effectiveDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
         val hasIntro = !isExtended && is3d && userPrefs.arena3dIntroEnabled
 
-        return MatchSpec(
-            mode = gameMode,
+        return MatchSpec.forMultiplayer(
+            gameMode = gameMode,
+            userPrefs = userPrefs,
             bezelGapMm = effectiveGapMm,
             targetScore = userPrefs.targetScore,
             matchTimeSeconds = if (isConnected) userPrefs.matchTimeSeconds else 0,
-            aiDifficulty = effectiveAiDiff1,
             aiDifficultyPlayer1 = effectiveAiDiff1,
             aiDifficultyPlayer2 = effectiveAiDiff2,
             puckMaxSpeed = effectivePuckSpeed,
@@ -550,8 +550,8 @@ class LobbyViewModel : ViewModel() {
             player1Name = p1Label,
             player2Name = p2Label,
             tableTheme = effectiveTheme,
-            hasIntroPresentation = hasIntro,
-            arenaDimension = effectiveDimension
+            arenaDimension = effectiveDimension,
+            hasIntroPresentation = hasIntro
         )
     }
 

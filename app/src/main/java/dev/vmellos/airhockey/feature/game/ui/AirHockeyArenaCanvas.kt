@@ -24,6 +24,7 @@ import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
+import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
@@ -155,45 +156,10 @@ fun AirHockeyArenaCanvas(
             lastFrameTime = framePulse
 
             // 1. Drena colisões pendentes e dispara efeitos visuais no pool de partículas
-            val p1ThemeColor = when (activeTheme) {
-                TableTheme.CYBER_SOCCER -> NeonEmerald
-                TableTheme.NEO_BASKETBALL -> NeonAmber
-                TableTheme.GRAVITY_VOLLEY -> NeonViolet
-                TableTheme.GRIDIRON_FOOTBALL -> GridironCyan
-                TableTheme.CYBER_BASEBALL -> BaseballRed
-                TableTheme.WASTELAND_APOCALYPSE -> WastelandFlame
-                TableTheme.RETRO_SYNTHWAVE -> SynthPink
-                TableTheme.TOKAMAK_REACTOR -> TokamakRadiation
-                TableTheme.CYBER_PONG -> PongGreen
-                TableTheme.CYBER_COLOSSEUM -> ColosseumGold
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonCyan
-            }
-            val p2ThemeColor = when (activeTheme) {
-                TableTheme.CYBER_SOCCER -> NeonRuby
-                TableTheme.NEO_BASKETBALL -> NeonCyan
-                TableTheme.GRAVITY_VOLLEY -> NeonMagenta
-                TableTheme.GRIDIRON_FOOTBALL -> GridironGold
-                TableTheme.CYBER_BASEBALL -> BaseballCyan
-                TableTheme.WASTELAND_APOCALYPSE -> WastelandFlameBright
-                TableTheme.RETRO_SYNTHWAVE -> SynthCyan
-                TableTheme.TOKAMAK_REACTOR -> TokamakPlasma
-                TableTheme.CYBER_PONG -> PongGreenBright
-                TableTheme.CYBER_COLOSSEUM -> ColosseumCrimson
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> NeonOrange
-            }
-            val wallHitColor = when (activeTheme) {
-                TableTheme.CYBER_SOCCER -> CyberSoccerGold
-                TableTheme.NEO_BASKETBALL -> NeonAmberBright
-                TableTheme.GRAVITY_VOLLEY -> VolleyYellow
-                TableTheme.GRIDIRON_FOOTBALL -> GridironGoldBright
-                TableTheme.CYBER_BASEBALL -> BaseballRedBright
-                TableTheme.WASTELAND_APOCALYPSE -> WastelandHazardYellow
-                TableTheme.RETRO_SYNTHWAVE -> SynthSunYellow
-                TableTheme.TOKAMAK_REACTOR -> TokamakRadiationBright
-                TableTheme.CYBER_PONG -> PongGreenBright
-                TableTheme.CYBER_COLOSSEUM -> ColosseumGoldBright
-                TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xFFE2E8F0)
-            }
+            val themeVisuals = ArenaThemeCatalog.getVisuals(activeTheme)
+            val p1ThemeColor = themeVisuals.primaryColor
+            val p2ThemeColor = themeVisuals.secondaryColor
+            val wallHitColor = themeVisuals.wallHitColor
 
             synchronized(pendingCollisions) {
                 while (pendingCollisions.isNotEmpty()) {
