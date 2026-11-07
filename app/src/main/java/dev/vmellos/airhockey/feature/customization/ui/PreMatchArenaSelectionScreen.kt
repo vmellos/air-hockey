@@ -95,7 +95,7 @@ fun PreMatchArenaSelectionScreen(
 
     var selectedTheme by remember { mutableStateOf(prefs.tableTheme) }
     var selectedDimension by remember {
-        mutableStateOf(if (isExtendedTable) ArenaDimension.TWO_DIMENSIONAL else prefs.arenaDimension)
+        mutableStateOf(prefs.arenaDimension)
     }
     var lockedDialogInfo by remember { mutableStateOf<PreMatchLockedDialogInfo?>(null) }
 
@@ -177,6 +177,7 @@ fun PreMatchArenaSelectionScreen(
                         puckSkin = prefs.puckSkin,
                         malletSkin = prefs.player1MalletSkin,
                         neonBloomIntensity = prefs.neonBloomIntensity,
+                        isExtended = isExtendedTable,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
@@ -230,25 +231,10 @@ fun PreMatchArenaSelectionScreen(
                 }
 
                 Surface(
-                    onClick = {
-                        if (!isExtendedTable) {
-                            selectedDimension = ArenaDimension.THREE_DIMENSIONAL
-                        }
-                    },
+                    onClick = { selectedDimension = ArenaDimension.THREE_DIMENSIONAL },
                     shape = CutCornerShape(8.dp),
-                    color = when {
-                        isExtendedTable -> Color(0xFF0F172A).copy(alpha = 0.5f)
-                        is3D -> Color(0xFF00E5FF).copy(alpha = 0.15f)
-                        else -> Color(0xFF0D1424)
-                    },
-                    border = BorderStroke(
-                        1.2.dp,
-                        when {
-                            isExtendedTable -> Color(0x3364748B)
-                            is3D -> Color(0xFF00E5FF)
-                            else -> Color(0xFF1E293B)
-                        }
-                    ),
+                    color = if (is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
+                    border = BorderStroke(1.2.dp, if (is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
@@ -257,65 +243,18 @@ fun PreMatchArenaSelectionScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = if (isExtendedTable) Icons.Default.Lock else Icons.Default.Layers,
+                            imageVector = Icons.Default.Layers,
                             contentDescription = null,
-                            tint = if (isExtendedTable) Color(0xFF64748B) else if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            tint = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.pre_match_mode_3d).uppercase(),
-                            color = if (isExtendedTable) Color(0xFF64748B) else if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                            color = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
-                        )
-                        if (isExtendedTable) {
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0x33FF9800),
-                                border = BorderStroke(0.8.dp, Color(0x88FF9800))
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.pre_match_badge_soon),
-                                    color = Color(0xFFFFB74D),
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Black,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (isExtendedTable) {
-                Surface(
-                    color = Color(0x1AFF9800),
-                    border = BorderStroke(1.dp, Color(0x55FF9800)),
-                    shape = CutCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color(0xFFFFB74D),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.extended_table_3d_in_dev),
-                            color = Color(0xFFFFE0B2),
-                            fontSize = 11.5.sp,
-                            lineHeight = 15.sp,
-                            fontWeight = FontWeight.Medium
                         )
                     }
                 }

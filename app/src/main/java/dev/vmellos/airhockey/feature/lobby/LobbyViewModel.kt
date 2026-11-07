@@ -520,9 +520,7 @@ class LobbyViewModel : ViewModel() {
         val isExtended = gameMode == GameMode.EXTENDED_HOST || gameMode == GameMode.EXTENDED_GUEST ||
                 gameMode == GameMode.AI_VS_AI_EXTENDED_HOST || gameMode == GameMode.AI_VS_AI_EXTENDED_GUEST
 
-        val effectiveDimension = if (isExtended) {
-            dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL
-        } else if (isHost) {
+        val effectiveDimension = if (isHost) {
             s.hostArenaDimension?.let { dimName -> runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull() } ?: userPrefs.arenaDimension
         } else {
             s.hostArenaDimension?.let { dimName -> runCatching { dev.vmellos.airhockey.core.preferences.ArenaDimension.valueOf(dimName) }.getOrNull() } ?: userPrefs.arenaDimension

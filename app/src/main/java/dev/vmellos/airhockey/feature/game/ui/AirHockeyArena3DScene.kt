@@ -34,7 +34,9 @@ import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
+import dev.vmellos.airhockey.feature.physics.TableDimensions
 import dev.vmellos.airhockey.feature.physics.TablePoint
+import dev.vmellos.airhockey.feature.physics.TableProjection
 import io.github.sceneview.Scene
 import io.github.sceneview.SceneView
 import io.github.sceneview.node.ModelNode
@@ -56,9 +58,25 @@ data class CameraPreset(
 fun getCameraPreset(
     zoom: CameraZoom3D,
     isSplitScreen: Boolean = false,
-    isGuest: Boolean = false
+    isGuest: Boolean = false,
+    isExtended: Boolean = false
 ): CameraPreset =
-    if (isSplitScreen) {
+    if (isExtended) {
+        when (zoom) {
+            CameraZoom3D.CLOSE -> CameraPreset(
+                position = Float3(0f, 1.35f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+            CameraZoom3D.STANDARD -> CameraPreset(
+                position = Float3(0f, 1.55f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+            CameraZoom3D.WIDE -> CameraPreset(
+                position = Float3(0f, 1.80f, 0f),
+                rotation = Float3(-90f, 0f, 0f)
+            )
+        }
+    } else if (isSplitScreen) {
         when (zoom) {
             CameraZoom3D.CLOSE -> CameraPreset(
                 position = Float3(0f, 2.35f, 0f),
@@ -140,7 +158,10 @@ internal fun screenToTable3D(
     camY: Float,
     camZ: Float,
     camPitchDeg: Float,
-    camYawDeg: Float = 0f
+    camYawDeg: Float = 0f,
+    isExtended: Boolean = false,
+    isExtendedGuest: Boolean = false,
+    dimensions: TableDimensions? = null
 ): TablePoint? {
     if (w <= 0f || h <= 0f) return null
     val aspect = w / h
@@ -179,13 +200,21 @@ internal fun screenToTable3D(
     val worldX = camX + t * dx
     val worldZ = camZ + t * dz
 
-    val tx = 500f + worldX / 0.00108f
-    val ty = 1000f + worldZ / 0.00096f
-    return TablePoint(tx, ty)
+    val scaleZ = if (isExtended) 0.00048f else 0.00096f
+    val lx = 500f + worldX / 0.00108f
+    val ly = 1000f + worldZ / scaleZ
+
+    if (isExtended && dimensions != null) {
+        val globalX = if (isExtendedGuest) 1000f - lx else lx
+        val globalY = if (isExtendedGuest) dimensions.hostHalfBottomY - ly else dimensions.guestHalfTopY + ly
+        return TablePoint(globalX, globalY)
+    }
+
+    return TablePoint(lx, ly)
 }
 
 /**
- * Projeta um ponto métrico da mesa (0..1000 x 0..2000) para coordenadas de tela em pixels
+ * Projeta um ponto métrico da mesa (0..1000 x 0..2000 ou mesa estendida) para coordenadas de tela em pixels
  * sob a perspectiva exata da câmera 3D (World-to-Screen).
  */
 internal fun tableToScreen3D(
@@ -198,7 +227,10 @@ internal fun tableToScreen3D(
     camZ: Float,
     camPitchDeg: Float,
     camYawDeg: Float = 0f,
-    elevationY: Float = 0.0075f
+    elevationY: Float = 0.0075f,
+    isExtended: Boolean = false,
+    isExtendedGuest: Boolean = false,
+    dimensions: TableDimensions? = null
 ): Offset? {
     if (w <= 0f || h <= 0f) return null
     val aspect = w / h
@@ -206,9 +238,18 @@ internal fun tableToScreen3D(
     val fovY = 2f * kotlin.math.atan(12f / 28f)
     val tanHalfFov = kotlin.math.tan(fovY / 2f)
 
-    val worldX = (tableX - 500f) * 0.00108f
+    val lx = if (isExtended && dimensions != null) {
+        if (isExtendedGuest) 1000f - tableX else tableX
+    } else tableX
+
+    val ly = if (isExtended && dimensions != null) {
+        if (isExtendedGuest) dimensions.hostHalfBottomY - tableY else tableY - dimensions.guestHalfTopY
+    } else tableY
+
+    val scaleZ = if (isExtended) 0.00048f else 0.00096f
+    val worldX = (lx - 500f) * 0.00108f
     val worldY = elevationY
-    val worldZ = (tableY - 1000f) * 0.00096f
+    val worldZ = (ly - 1000f) * scaleZ
 
     val dx = worldX - camX
     val dy = worldY - camY
@@ -373,13 +414,16 @@ private class ParticlePool3D(
         camY: Float,
         camZ: Float,
         camPitchDeg: Float,
-        camYawDeg: Float = 0f
+        camYawDeg: Float = 0f,
+        isExtended: Boolean = false,
+        isExtendedGuest: Boolean = false,
+        dimensions: TableDimensions? = null
     ) {
         for (sw in shockwaves) {
             if (!sw.active) continue
-            val center = tableToScreen3D(sw.x, sw.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg) ?: continue
+            val center = tableToScreen3D(sw.x, sw.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg, isExtended = isExtended, isExtendedGuest = isExtendedGuest, dimensions = dimensions) ?: continue
             val currentR = sw.maxRadius * sw.progress
-            val edge = tableToScreen3D(sw.x + currentR, sw.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg)
+            val edge = tableToScreen3D(sw.x + currentR, sw.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg, isExtended = isExtended, isExtendedGuest = isExtendedGuest, dimensions = dimensions)
             val screenR = if (edge != null) abs(edge.x - center.x).coerceAtLeast(4f) else (sw.maxRadius * 0.5f * sw.progress)
             val alpha = (1f - sw.progress).coerceIn(0f, 1f)
 
@@ -393,7 +437,7 @@ private class ParticlePool3D(
 
         for (p in sparks) {
             if (!p.active) continue
-            val pos = tableToScreen3D(p.x, p.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg) ?: continue
+            val pos = tableToScreen3D(p.x, p.y, w, h, camX, camY, camZ, camPitchDeg, camYawDeg, isExtended = isExtended, isExtendedGuest = isExtendedGuest, dimensions = dimensions) ?: continue
             val alpha = (1f - (p.life / p.maxLife)).coerceIn(0f, 1f)
             drawScope.drawCircle(
                 color = p.color.copy(alpha = alpha),
@@ -433,13 +477,15 @@ fun AirHockeyArena3DScene(
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val matchState by viewModel.matchState.collectAsState()
 
-    val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
-            mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isExtendedHost = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
+    val isExtendedGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isExtended = isExtendedHost || isExtendedGuest || mode == GameMode.AI_VS_AI_EXTENDED
     val isSplitScreen = mode == GameMode.SPLIT_SCREEN
     val isGuestCamera = mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
+    val projection = remember(dimensions, mode) { TableProjection(dimensions, mode) }
     val canPresentIntro = !isExtended && prefs.arena3dIntroEnabled
-    val targetPreset = remember(zoom, isSplitScreen, isGuestCamera) {
-        getCameraPreset(zoom, isSplitScreen, isGuestCamera)
+    val targetPreset = remember(zoom, isSplitScreen, isGuestCamera, isExtended) {
+        getCameraPreset(zoom, isSplitScreen, isGuestCamera, isExtended)
     }
     val sceneState = remember(isSplitScreen, isExtended, isGuestCamera) {
         Scene3DState(targetPreset, initialPresenting = canPresentIntro)
@@ -542,8 +588,8 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    val tableAsset = remember(activeTheme) {
-        Theme3DAssetResolver.getTable3DAsset(activeTheme)
+    val tableAsset = remember(activeTheme, isExtended, isExtendedHost) {
+        Theme3DAssetResolver.getTable3DAsset(activeTheme, isExtended = isExtended, isPlayer1 = isExtendedHost)
     }
     val puckAsset = remember(prefs.puckSkin, activeTheme) {
         Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, activeTheme)
@@ -628,8 +674,24 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    fun mapX(engineX: Float): Float = (engineX - 500f) * 0.00108f
-    fun mapZ(engineY: Float): Float = (engineY - 1000f) * 0.00096f
+    fun mapEngineX(engineX: Float): Float {
+        val lx = if (isExtended) {
+            if (isExtendedGuest) 1000f - engineX else engineX
+        } else {
+            engineX
+        }
+        return (lx - 500f) * 0.00108f
+    }
+
+    fun mapEngineZ(engineY: Float): Float {
+        val ly = if (isExtended) {
+            if (isExtendedGuest) dimensions.hostHalfBottomY - engineY else engineY - dimensions.guestHalfTopY
+        } else {
+            engineY
+        }
+        val scaleZ = if (isExtended) 0.00048f else 0.00096f
+        return (ly - 1000f) * scaleZ
+    }
 
     Box(
         modifier = modifier
@@ -672,7 +734,10 @@ fun AirHockeyArena3DScene(
                                     camY = sceneState.camY,
                                     camZ = sceneState.camZ,
                                     camPitchDeg = sceneState.camPitch,
-                                    camYawDeg = sceneState.camYaw
+                                    camYawDeg = sceneState.camYaw,
+                                    isExtended = isExtended,
+                                    isExtendedGuest = isExtendedGuest,
+                                    dimensions = dimensions
                                 )
                             },
                             onTouchP1 = { x, y -> viewModel.onTouchPlayer1(x, y) },
@@ -743,11 +808,16 @@ fun AirHockeyArena3DScene(
                 }
 
                 // Sincronização em tempo real das coordenadas físicas
-                puckNode?.position = Float3(
-                    mapX(engine.puck.x),
-                    0.0075f,
-                    mapZ(engine.puck.y)
-                )
+                val puckVisible = if (isExtended) projection.isVisibleInViewport(engine.puck.x, engine.puck.y, engine.puck.radius) else true
+                if (puckVisible) {
+                    puckNode?.position = Float3(
+                        mapEngineX(engine.puck.x),
+                        0.0075f,
+                        mapEngineZ(engine.puck.y)
+                    )
+                } else {
+                    puckNode?.position = Float3(0f, -5f, 0f)
+                }
 
                 // Rotação Giroscópica do Disco: rotação contínua proporcional à velocidade
                 val spd = engine.puck.speed()
@@ -756,17 +826,27 @@ fun AirHockeyArena3DScene(
                 }
                 puckNode?.rotation = Float3(0f, sceneState.puckYawDeg, 0f)
 
-                p1Node?.position = Float3(
-                    mapX(engine.player1Mallet.x),
-                    0.0f,
-                    mapZ(engine.player1Mallet.y)
-                )
+                val p1Visible = if (isExtended) projection.isVisibleInViewport(engine.player1Mallet.x, engine.player1Mallet.y, engine.player1Mallet.radius) else true
+                if (p1Visible) {
+                    p1Node?.position = Float3(
+                        mapEngineX(engine.player1Mallet.x),
+                        0.0f,
+                        mapEngineZ(engine.player1Mallet.y)
+                    )
+                } else {
+                    p1Node?.position = Float3(0f, -5f, 0f)
+                }
 
-                p2Node?.position = Float3(
-                    mapX(engine.player2Mallet.x),
-                    0.0f,
-                    mapZ(engine.player2Mallet.y)
-                )
+                val p2Visible = if (isExtended) projection.isVisibleInViewport(engine.player2Mallet.x, engine.player2Mallet.y, engine.player2Mallet.radius) else true
+                if (p2Visible) {
+                    p2Node?.position = Float3(
+                        mapEngineX(engine.player2Mallet.x),
+                        0.0f,
+                        mapEngineZ(engine.player2Mallet.y)
+                    )
+                } else {
+                    p2Node?.position = Float3(0f, -5f, 0f)
+                }
             }
         )
 
@@ -789,9 +869,25 @@ fun AirHockeyArena3DScene(
             if (matchState.status == MatchStatus.GOAL_PAUSE) {
                 val scorer = matchState.lastScorer
                 val goalColor = if (scorer == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
-                val goalTableY = if (scorer == 2) 200f else 1800f
-                val goalScreenCenter = tableToScreen3D(500f, goalTableY, w, h, camX, camY, camZ, camPitch, camYaw)
-                    ?: Offset(w / 2f, if (scorer == 2) h * 0.25f else h * 0.75f)
+                val goalTableY = if (isExtended) {
+                    if (scorer == 2) dimensions.totalHeight - 150f else 150f
+                } else {
+                    if (scorer == 2) 200f else 1800f
+                }
+                val goalScreenCenter = tableToScreen3D(
+                    500f,
+                    goalTableY,
+                    w,
+                    h,
+                    camX,
+                    camY,
+                    camZ,
+                    camPitch,
+                    camYaw,
+                    isExtended = isExtended,
+                    isExtendedGuest = isExtendedGuest,
+                    dimensions = dimensions
+                ) ?: Offset(w / 2f, if (scorer == 2) h * 0.25f else h * 0.75f)
 
                 drawCircle(
                     brush = Brush.radialGradient(
@@ -824,7 +920,21 @@ fun AirHockeyArena3DScene(
             if (puckTrail.size >= 2) {
                 val trailColor = if (engine.puck.lastHitBy == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
                 val points = puckTrail.mapNotNull { pt ->
-                    tableToScreen3D(pt.x, pt.y, w, h, camX, camY, camZ, camPitch, camYaw)
+                    if (isExtended && !projection.isVisibleInViewport(pt.x, pt.y, 10f)) null
+                    else tableToScreen3D(
+                        pt.x,
+                        pt.y,
+                        w,
+                        h,
+                        camX,
+                        camY,
+                        camZ,
+                        camPitch,
+                        camYaw,
+                        isExtended = isExtended,
+                        isExtendedGuest = isExtendedGuest,
+                        dimensions = dimensions
+                    )
                 }
                 for (i in 0 until points.size - 1) {
                     val pA = points[i]
@@ -862,7 +972,19 @@ fun AirHockeyArena3DScene(
 
             // 4. Desenha Ondas de Choque e Faíscas com Perspectiva 3D
             particlePool.update(dt)
-            particlePool.draw(this, w, h, camX, camY, camZ, camPitch, camYaw)
+            particlePool.draw(
+                this,
+                w,
+                h,
+                camX,
+                camY,
+                camZ,
+                camPitch,
+                camYaw,
+                isExtended = isExtended,
+                isExtendedGuest = isExtendedGuest,
+                dimensions = dimensions
+            )
         }
     }
 }

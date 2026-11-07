@@ -147,8 +147,8 @@ fun GameScreen(
     }
 
     val isExtended = matchState.isExtendedMode
-    val is3dActive = !isExtended && matchState.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled
+    val is3dActive = matchState.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+    val shouldPresent = is3dActive && prefs.arena3dIntroEnabled && !isExtended
     var is3dPresenting by remember(matchState.status) {
         mutableStateOf(matchState.status == MatchStatus.PRESENTATION)
     }

@@ -176,7 +176,6 @@ class GameViewModel : ViewModel() {
             )
         } else if (isExtended) {
             spec.copy(
-                arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL,
                 hasIntroPresentation = false
             )
         } else {

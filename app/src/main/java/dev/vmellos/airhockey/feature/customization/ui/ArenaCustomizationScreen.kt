@@ -960,6 +960,7 @@ internal fun Arena3DLivePreview(
     puckSkin: PuckSkin,
     malletSkin: MalletSkin,
     neonBloomIntensity: Float,
+    isExtended: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val engine3d = rememberEngine()
@@ -986,8 +987,8 @@ internal fun Arena3DLivePreview(
         }
     }
 
-    val tableAsset = remember(tableTheme) {
-        Theme3DAssetResolver.getTable3DAsset(tableTheme)
+    val tableAsset = remember(tableTheme, isExtended) {
+        Theme3DAssetResolver.getTable3DAsset(tableTheme, isExtended = isExtended, isPlayer1 = true)
     }
     val puckAsset = remember(puckSkin, tableTheme) {
         Theme3DAssetResolver.getPuck3DAsset(puckSkin, tableTheme)
