@@ -987,8 +987,8 @@ internal fun Arena3DLivePreview(
         }
     }
 
-    val tableAsset = remember(tableTheme, isExtended) {
-        Theme3DAssetResolver.getTable3DAsset(tableTheme, isExtended = isExtended, isPlayer1 = true)
+    val tableAsset = remember(tableTheme) {
+        Theme3DAssetResolver.getTable3DAsset(tableTheme, isExtended = false)
     }
     val puckAsset = remember(puckSkin, tableTheme) {
         Theme3DAssetResolver.getPuck3DAsset(puckSkin, tableTheme)

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -64,15 +65,15 @@ fun getCameraPreset(
     if (isExtended) {
         when (zoom) {
             CameraZoom3D.CLOSE -> CameraPreset(
-                position = Float3(0f, 1.35f, 0f),
+                position = Float3(0f, 3.10f, 0f),
                 rotation = Float3(-90f, 0f, 0f)
             )
             CameraZoom3D.STANDARD -> CameraPreset(
-                position = Float3(0f, 1.55f, 0f),
+                position = Float3(0f, 3.50f, 0f),
                 rotation = Float3(-90f, 0f, 0f)
             )
             CameraZoom3D.WIDE -> CameraPreset(
-                position = Float3(0f, 1.80f, 0f),
+                position = Float3(0f, 3.95f, 0f),
                 rotation = Float3(-90f, 0f, 0f)
             )
         }
@@ -693,7 +694,7 @@ fun AirHockeyArena3DScene(
         return (ly - 1000f) * scaleZ
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF030712))
@@ -748,6 +749,23 @@ fun AirHockeyArena3DScene(
                 }
             }
     ) {
+        val screenW = constraints.maxWidth.toFloat()
+        val screenH = constraints.maxHeight.toFloat()
+        val screenAspect = if (screenH > 0f) screenW / screenH else 9f / 19.5f
+
+        val effectiveTargetPreset = remember(targetPreset, isExtended, screenAspect, zoom) {
+            if (isExtended && screenAspect > 0.05f) {
+                val zoomFactor = when (zoom) {
+                    CameraZoom3D.CLOSE -> 0.88f
+                    CameraZoom3D.STANDARD -> 1.0f
+                    CameraZoom3D.WIDE -> 1.13f
+                }
+                val calibratedY = (1.38f / (0.85714f * screenAspect)) * zoomFactor
+                targetPreset.copy(position = Float3(0f, calibratedY, 0f))
+            } else {
+                targetPreset
+            }
+        }
         Scene(
             modifier = Modifier.fillMaxSize(),
             engine = engine3d,
@@ -763,14 +781,14 @@ fun AirHockeyArena3DScene(
                     val totalAngleRad = 2f * Math.PI.toFloat()
                     val currentAngleRad = (1f - t) * totalAngleRad
 
-                    val y = 1.70f * (1f - t) + targetPreset.position.y * t
+                    val y = 1.70f * (1f - t) + effectiveTargetPreset.position.y * t
                     val rx = 3.60f * (1f - t) + 1.20f * t
-                    val rz = 4.20f * (1f - t) + targetPreset.position.z * t
+                    val rz = 4.20f * (1f - t) + effectiveTargetPreset.position.z * t
 
                     val x = rx * sin(currentAngleRad)
                     val z = rz * cos(currentAngleRad)
 
-                    val finalFocusZ = targetPreset.position.z - (targetPreset.position.y / kotlin.math.tan(Math.toRadians(-targetPreset.rotation.x.toDouble()).toFloat()))
+                    val finalFocusZ = effectiveTargetPreset.position.z - (effectiveTargetPreset.position.y / kotlin.math.tan(Math.toRadians(-effectiveTargetPreset.rotation.x.toDouble()).toFloat()))
                     val focusZ = finalFocusZ * t
                     val focusY = 0.05f * (1f - t)
 
@@ -780,14 +798,14 @@ fun AirHockeyArena3DScene(
                     if (isSplitScreen && t > 0.60f) {
                         val blend = ((t - 0.60f) / 0.40f).coerceIn(0f, 1f)
                         val blendSmooth = blend * blend * (3f - 2f * blend)
-                        val pitch = cameraNode.rotation.x * (1f - blendSmooth) + targetPreset.rotation.x * blendSmooth
+                        val pitch = cameraNode.rotation.x * (1f - blendSmooth) + effectiveTargetPreset.rotation.x * blendSmooth
                         val yaw = cameraNode.rotation.y * (1f - blendSmooth)
                         cameraNode.rotation = Float3(pitch, yaw, 0f)
                     } else if (isGuestCamera && t > 0.60f) {
                         val blend = ((t - 0.60f) / 0.40f).coerceIn(0f, 1f)
                         val blendSmooth = blend * blend * (3f - 2f * blend)
-                        val pitch = cameraNode.rotation.x * (1f - blendSmooth) + targetPreset.rotation.x * blendSmooth
-                        val yaw = cameraNode.rotation.y * (1f - blendSmooth) + targetPreset.rotation.y * blendSmooth
+                        val pitch = cameraNode.rotation.x * (1f - blendSmooth) + effectiveTargetPreset.rotation.x * blendSmooth
+                        val yaw = cameraNode.rotation.y * (1f - blendSmooth) + effectiveTargetPreset.rotation.y * blendSmooth
                         cameraNode.rotation = Float3(pitch, yaw, 0f)
                     }
 
@@ -797,11 +815,11 @@ fun AirHockeyArena3DScene(
                     sceneState.camPitch = cameraNode.rotation.x
                     sceneState.camYaw = cameraNode.rotation.y
                 } else {
-                    sceneState.camX += (targetPreset.position.x - sceneState.camX) * 0.15f
-                    sceneState.camY += (targetPreset.position.y - sceneState.camY) * 0.15f
-                    sceneState.camZ += (targetPreset.position.z - sceneState.camZ) * 0.15f
-                    sceneState.camPitch += (targetPreset.rotation.x - sceneState.camPitch) * 0.15f
-                    sceneState.camYaw += (targetPreset.rotation.y - sceneState.camYaw) * 0.15f
+                    sceneState.camX += (effectiveTargetPreset.position.x - sceneState.camX) * 0.15f
+                    sceneState.camY += (effectiveTargetPreset.position.y - sceneState.camY) * 0.15f
+                    sceneState.camZ += (effectiveTargetPreset.position.z - sceneState.camZ) * 0.15f
+                    sceneState.camPitch += (effectiveTargetPreset.rotation.x - sceneState.camPitch) * 0.15f
+                    sceneState.camYaw += (effectiveTargetPreset.rotation.y - sceneState.camYaw) * 0.15f
 
                     cameraNode.position = Float3(sceneState.camX, sceneState.camY, sceneState.camZ)
                     cameraNode.rotation = Float3(sceneState.camPitch, sceneState.camYaw, 0f)
