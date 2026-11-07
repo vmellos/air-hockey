@@ -20,7 +20,7 @@
 }
 
 # -------------------------------------------------------------------
-# 3. AndroidX Compose & Lifecycle
+# 3. AndroidX Compose, Lifecycle & Edge-to-Edge
 # -------------------------------------------------------------------
 -keep class * extends androidx.lifecycle.ViewModel {
     <init>(...);
@@ -28,6 +28,8 @@
 -keep class androidx.compose.material.icons.** { *; }
 -keepclassmembers class androidx.compose.material.icons.** { *; }
 -keep class androidx.compose.ui.graphics.vector.** { *; }
+-keep class androidx.activity.EdgeToEdge* { *; }
+-keepclassmembers class androidx.activity.EdgeToEdge* { *; }
 
 # -------------------------------------------------------------------
 # 4. AndroidX DataStore Preferences
