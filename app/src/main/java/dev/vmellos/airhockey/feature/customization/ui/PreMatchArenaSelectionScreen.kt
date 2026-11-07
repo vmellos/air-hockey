@@ -441,7 +441,9 @@ fun PreMatchArenaSelectionScreen(
 
                     coroutineScope.launch {
                         preferencesRepo.applyThemePreset(finalTheme)
-                        preferencesRepo.updateArenaDimension(selectedDimension)
+                        if (!isExtendedTable) {
+                            preferencesRepo.updateArenaDimension(selectedDimension)
+                        }
                     }
                     onConfirm(finalTheme, selectedDimension)
                 },

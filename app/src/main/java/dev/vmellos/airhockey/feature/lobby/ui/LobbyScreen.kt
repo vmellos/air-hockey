@@ -136,7 +136,7 @@ fun LobbyScreen(
             showCreateHostDialog = true
         }
 
-        val isExtended = mode == "EXTENDED"
+        val isExtended = mode == "EXTENDED" || mode == "AI_EXTENDED"
 
         PreMatchArenaSelectionScreen(
             confirmButtonText = confirmText,
@@ -452,7 +452,9 @@ fun LobbyScreen(
                                 onStartHostMatch()
                             } else {
                                 val gap = if (state.targetMode == "CONNECTED" || state.targetMode == "AI_CONNECTED") 0f else userPrefs.bezelGapMm
-                                viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed)
+                                val isExt = state.targetMode == "EXTENDED" || state.targetMode == "AI_EXTENDED"
+                                val dim = if (isExt) dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL.name else (state.hostArenaDimension ?: userPrefs.arenaDimension.name)
+                                viewModel.startHostMatch(gap, userPrefs.puckSpeed.maxSpeed, arenaDimension = dim)
                             }
                         }
                     }

@@ -152,13 +152,14 @@ class PrivateMatchAndDiscoveryTest {
         assertEquals("GuestSpectator", hostCoord.state.value.peerPlayerName)
         assertEquals("AI_EXTENDED", guestCoord.state.value.mode)
 
-        // Sincronização de Start com IAs
-        hostCoord.startMatch(11.0f, 7000f, "EASY", "HARD")
+        // Sincronização de Start com IAs e dimensão 2D
+        hostCoord.startMatch(11.0f, 7000f, "EASY", "HARD", themeName = "CLASSIC_NEON", arenaDimension = "TWO_DIMENSIONAL")
         delay(50)
 
         assertEquals("EASY", guestCoord.state.value.aiDifficulty1)
         assertEquals("HARD", guestCoord.state.value.aiDifficulty2)
         assertEquals(11.0f, guestCoord.state.value.calibratedGapMm, 0.01f)
+        assertEquals("TWO_DIMENSIONAL", guestCoord.state.value.hostArenaDimension)
 
         hostCoord.terminateSession()
         guestCoord.terminateSession()
