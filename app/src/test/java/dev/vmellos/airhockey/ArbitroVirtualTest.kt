@@ -304,4 +304,77 @@ class ArbitroVirtualTest {
         )
         assertEquals("applyRemoteState com COUNTDOWN não deve sobrescrever o estado PAUSED", MatchStatus.PAUSED, arbitro.matchState.value.status)
     }
+
+    @Test
+    fun testDeterministicCountdownProgression_advancesViaTick() {
+        val dims = TableDimensions()
+        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.SOLO,
+            hasIntroPresentation = false
+        )
+        val arbitro = ArbitroVirtual(dimensions = dims, spec = spec)
+
+        assertEquals(MatchStatus.COUNTDOWN, arbitro.matchState.value.status)
+        assertEquals(3, arbitro.matchState.value.countdownNumber)
+
+        // Ticking less than 0.9s stays at 3
+        arbitro.tick(0.50f)
+        assertEquals(3, arbitro.matchState.value.countdownNumber)
+
+        // Crossing 0.9s moves to 2
+        arbitro.tick(0.45f)
+        assertEquals(2, arbitro.matchState.value.countdownNumber)
+
+        // Next 0.9s step moves to 1
+        arbitro.tick(0.91f)
+        assertEquals(1, arbitro.matchState.value.countdownNumber)
+
+        // Next 0.9s step moves to 0 and starts PLAYING
+        arbitro.tick(0.91f)
+        assertEquals(0, arbitro.matchState.value.countdownNumber)
+        assertEquals(MatchStatus.PLAYING, arbitro.matchState.value.status)
+    }
+
+    @Test
+    fun testDeterministicGoalPauseProgression_resetsAndCountsDownViaTick() {
+        val audio = TestAudioPort()
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SOLO, targetScore = 5, audioPort = audio)
+        arbitro.setCountdown(0) // PLAYING
+
+        // Simulate goal for Player 1
+        arbitro.engine.puck.x = 500f
+        arbitro.engine.puck.y = 20f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = -1200f
+        arbitro.tick(0.05f)
+
+        assertEquals(MatchStatus.GOAL_PAUSE, arbitro.matchState.value.status)
+        assertEquals(1, arbitro.matchState.value.scorePlayer1)
+
+        // Ticking halfway through goal pause (0.6s)
+        arbitro.tick(0.60f)
+        assertEquals("Still in goal pause", MatchStatus.GOAL_PAUSE, arbitro.matchState.value.status)
+
+        // Ticking past 1.2s threshold automatically starts countdown and resets positions
+        arbitro.tick(0.65f)
+        assertEquals("Should transition to COUNTDOWN", MatchStatus.COUNTDOWN, arbitro.matchState.value.status)
+        assertEquals(3, arbitro.matchState.value.countdownNumber)
+    }
+
+    @Test
+    fun testDeterministicTimer_advancesViaTick() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SOLO)
+        arbitro.setCountdown(0) // PLAYING
+
+        assertEquals(0, arbitro.matchState.value.remainingTimeSeconds)
+
+        // Ticking 1.05s increments remaining seconds
+        arbitro.tick(1.05f)
+        assertEquals(1, arbitro.matchState.value.remainingTimeSeconds)
+
+        arbitro.tick(2.10f)
+        assertEquals(3, arbitro.matchState.value.remainingTimeSeconds)
+    }
 }

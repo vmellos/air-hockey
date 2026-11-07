@@ -172,6 +172,16 @@ class ArbitroVirtual(
     var pendingCollisionIntensity: Float = 0f
         private set
 
+    // Acumuladores de tempo determinísticos desacoplados de corrotinas externas
+    private var goalPauseAccumulator: Float = 0f
+    private var countdownStepAccumulator: Float = 0f
+    private var secondTimerAccumulator: Float = 0f
+
+    companion object {
+        const val GOAL_PAUSE_DURATION_SEC: Float = 1.20f
+        const val COUNTDOWN_STEP_DURATION_SEC: Float = 0.90f
+    }
+
     init {
         setupCollisionListeners()
         engine.resetPositions(0)
@@ -262,6 +272,7 @@ class ArbitroVirtual(
                 )
             }
         } else {
+            goalPauseAccumulator = 0f
             _matchState.update {
                 it.copy(
                     scorePlayer1 = p1,
@@ -289,8 +300,48 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
+    /**
+     * Avança o tempo de forma estritamente determinística no seam do Árbitro Virtual.
+     *
+     * Unifica a simulação física a 120 Hz, contagem regressiva de início/retomada,
+     * pausa pós-gol e acumulador de segundos da partida em uma única linha do tempo sem corrotinas soltas.
+     */
     fun tick(dt: Float) {
-        tickPhysics(dt)
+        when (_matchState.value.status) {
+            MatchStatus.PLAYING -> {
+                tickPhysics(dt)
+                if (isHost) {
+                    secondTimerAccumulator += dt
+                    if (secondTimerAccumulator >= 1.0f) {
+                        val elapsedSec = secondTimerAccumulator.toInt()
+                        secondTimerAccumulator -= elapsedSec
+                        repeat(elapsedSec) { tickTimer() }
+                    }
+                }
+            }
+            MatchStatus.COUNTDOWN -> {
+                if (isHost) {
+                    tickMalletsOnly(dt)
+                    countdownStepAccumulator += dt
+                    if (countdownStepAccumulator >= COUNTDOWN_STEP_DURATION_SEC) {
+                        countdownStepAccumulator -= COUNTDOWN_STEP_DURATION_SEC
+                        val next = _matchState.value.countdownNumber - 1
+                        setCountdown(next)
+                    }
+                }
+            }
+            MatchStatus.GOAL_PAUSE -> {
+                if (isHost) {
+                    goalPauseAccumulator += dt
+                    if (goalPauseAccumulator >= GOAL_PAUSE_DURATION_SEC) {
+                        goalPauseAccumulator = 0f
+                        resetPositions(_matchState.value.lastScorer)
+                        startCountdown()
+                    }
+                }
+            }
+            else -> {}
+        }
     }
 
     fun tickMalletsOnly(dt: Float) {
@@ -481,6 +532,7 @@ class ArbitroVirtual(
 
     fun setCountdown(number: Int) {
         if (_matchState.value.status == MatchStatus.PAUSED) return
+        countdownStepAccumulator = 0f
         audioPort.playCountdownBeep(number)
         _matchState.update {
             if (it.status == MatchStatus.PAUSED) return@update it
@@ -490,6 +542,12 @@ class ArbitroVirtual(
             )
         }
         publishSnapshot()
+    }
+
+    fun startCountdown() {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
+        countdownStepAccumulator = 0f
+        setCountdown(3)
     }
 
     fun tickTimer() {
@@ -511,6 +569,8 @@ class ArbitroVirtual(
 
     fun resume() {
         if (_matchState.value.status == MatchStatus.PAUSED) {
+            countdownStepAccumulator = 0f
+            audioPort.playCountdownBeep(3)
             _matchState.update { it.copy(status = MatchStatus.COUNTDOWN, countdownNumber = 3) }
         }
         publishSnapshot()
@@ -518,17 +578,13 @@ class ArbitroVirtual(
 
     fun finishPresentationAndStartCountdown() {
         if (_matchState.value.status == MatchStatus.PAUSED) return
-        _matchState.update {
-            if (it.status == MatchStatus.PAUSED) return@update it
-            it.copy(
-                status = MatchStatus.COUNTDOWN,
-                countdownNumber = 3
-            )
-        }
-        publishSnapshot()
+        startCountdown()
     }
 
     fun restart() {
+        goalPauseAccumulator = 0f
+        countdownStepAccumulator = 0f
+        secondTimerAccumulator = 0f
         engine.resetPositions(0)
         _matchState.update {
             it.copy(

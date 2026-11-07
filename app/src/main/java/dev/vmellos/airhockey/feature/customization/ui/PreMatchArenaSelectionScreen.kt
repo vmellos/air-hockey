@@ -53,19 +53,6 @@ import dev.vmellos.airhockey.feature.game.ui.*
 import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import kotlinx.coroutines.launch
 
-private data class PreMatchArenaItem(
-    val theme: TableTheme,
-    val titleRes: Int,
-    val icon: ImageVector,
-    val primaryColor: Color,
-    val unlockStage: Int
-)
-
-private data class PreMatchLockedDialogInfo(
-    val titleRes: Int,
-    val unlockStage: Int
-)
-
 /**
  * Seletor Pré-Jogo de Arenas (GLOSSARY.md).
  * 
@@ -97,23 +84,9 @@ fun PreMatchArenaSelectionScreen(
     var selectedDimension by remember {
         mutableStateOf(prefs.arenaDimension)
     }
-    var lockedDialogInfo by remember { mutableStateOf<PreMatchLockedDialogInfo?>(null) }
+    var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
-    val arenaItems = remember {
-        listOf(
-            PreMatchArenaItem(TableTheme.CLASSIC_NEON, R.string.theme_preset_classic, Icons.Default.SportsHockey, NeonCyan, 0),
-            PreMatchArenaItem(TableTheme.CYBER_PONG, R.string.theme_preset_pong, Icons.Default.VideogameAsset, PongGreen, 10),
-            PreMatchArenaItem(TableTheme.CYBER_SOCCER, R.string.theme_preset_cyber_soccer, Icons.Default.SportsSoccer, NeonEmerald, 20),
-            PreMatchArenaItem(TableTheme.NEO_BASKETBALL, R.string.theme_preset_neo_basketball, Icons.Default.SportsBasketball, NeonAmber, 30),
-            PreMatchArenaItem(TableTheme.CYBER_BASEBALL, R.string.theme_preset_baseball, Icons.Default.SportsBaseball, BaseballRed, 40),
-            PreMatchArenaItem(TableTheme.GRIDIRON_FOOTBALL, R.string.theme_preset_gridiron, Icons.Default.SportsFootball, GridironCyan, 50),
-            PreMatchArenaItem(TableTheme.GRAVITY_VOLLEY, R.string.theme_preset_gravity_volley, Icons.Default.SportsVolleyball, NeonViolet, 60),
-            PreMatchArenaItem(TableTheme.RETRO_SYNTHWAVE, R.string.theme_preset_synthwave, Icons.Default.WbSunny, SynthPink, 70),
-            PreMatchArenaItem(TableTheme.WASTELAND_APOCALYPSE, R.string.theme_preset_wasteland, Icons.Default.Whatshot, WastelandFlame, 80),
-            PreMatchArenaItem(TableTheme.TOKAMAK_REACTOR, R.string.theme_preset_tokamak, Icons.Default.Bolt, TokamakRadiation, 90),
-            PreMatchArenaItem(TableTheme.CYBER_COLOSSEUM, R.string.theme_preset_colosseum, Icons.Default.Shield, ColosseumGold, 100)
-        )
-    }
+    val arenaItems = ArenaConquestCatalog.ALL_THEMES
 
     Box(
         modifier = modifier
@@ -292,7 +265,7 @@ fun PreMatchArenaSelectionScreen(
                             .clickable {
                                 selectedTheme = item.theme
                                 if (isLocked) {
-                                    lockedDialogInfo = PreMatchLockedDialogInfo(item.titleRes, item.unlockStage)
+                                    lockedDialogInfo = LockedArenaInfo(item.titleRes, item.unlockStage)
                                 }
                             }
                     ) {
@@ -419,65 +392,12 @@ fun PreMatchArenaSelectionScreen(
         // Diálogo Orientativo de Arena Bloqueada
         val dialogInfo = lockedDialogInfo
         if (dialogInfo != null) {
-            AlertDialog(
-                onDismissRequest = { lockedDialogInfo = null },
-                shape = CutCornerShape(16.dp),
-                containerColor = Color(0xF20B0F1C),
-                titleContentColor = Color.White,
-                textContentColor = Color(0xFF94A3B8),
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = Color(0xFFFFB800),
-                        modifier = Modifier.size(36.dp)
-                    )
-                },
-                title = {
-                    Text(
-                        text = stringResource(R.string.arena_locked_dialog_title),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                text = {
-                    Text(
-                        text = stringResource(R.string.arena_locked_dialog_desc, dialogInfo.unlockStage),
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            lockedDialogInfo = null
-                            onNavigateToStages()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                        shape = CutCornerShape(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.play_stages_mode).uppercase(),
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { lockedDialogInfo = null }) {
-                        Text(
-                            text = stringResource(R.string.close),
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
+            LockedArenaDialog(
+                info = dialogInfo,
+                onDismiss = { lockedDialogInfo = null },
+                onNavigateToStages = {
+                    lockedDialogInfo = null
+                    onNavigateToStages()
                 }
             )
         }

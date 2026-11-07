@@ -2,10 +2,13 @@ package dev.vmellos.airhockey
 
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
 import dev.vmellos.airhockey.feature.game.ui.getCameraPreset
 import dev.vmellos.airhockey.feature.game.ui.screenToTable3D
 import dev.vmellos.airhockey.feature.game.ui.tableToScreen3D
+import dev.vmellos.airhockey.feature.physics.CameraPose3D
+import dev.vmellos.airhockey.feature.physics.Table3DCameraProjection
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -440,5 +443,86 @@ class AirHockey3DSceneTest {
 
         val standardAsset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = false)
         assertEquals("models/mesa_arcade.glb", standardAsset)
+    }
+
+    @Test
+    fun table3DCameraProjection_computeEffectiveTargetPreset_adaptsToScreenAspect() {
+        val dims = TableDimensions(isExtendedMode = true, bezelGapUnits = 200f)
+        val proj = Table3DCameraProjection(dims, GameMode.EXTENDED_HOST)
+
+        // Tall narrow phone (9:19.5 -> aspect 0.4615)
+        val tallPreset = proj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f)
+        // Wider screen (9:16 -> aspect 0.5625)
+        val widePreset = proj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 1920f)
+
+        // A narrower phone requires higher camera altitude (Y) to fit the table width
+        assertTrue(tallPreset.position.y > widePreset.position.y)
+
+        // Top anchoring: z = zTop + y * tanHalfFov
+        val expectedZTall = Table3DCameraProjection.Z_TOP_EXTENDED + tallPreset.position.y * Table3DCameraProjection.TAN_HALF_FOV
+        assertEquals(expectedZTall, tallPreset.position.z, 1e-4f)
+
+        // For non-extended modes, base preset is preserved unchanged
+        val soloProj = Table3DCameraProjection(TableDimensions(), GameMode.SOLO)
+        val soloPreset = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f)
+        assertEquals(soloProj.getBasePreset(CameraZoom3D.STANDARD), soloPreset)
+    }
+
+    @Test
+    fun table3DCameraProjection_computePresentationPose_interpolatesSmoothlyToTarget() {
+        val dims = TableDimensions()
+        val proj = Table3DCameraProjection(dims, GameMode.SOLO)
+        val target = proj.getBasePreset(CameraZoom3D.STANDARD)
+
+        val poseStart = proj.computePresentationPose(0f, target)
+        val poseMid = proj.computePresentationPose(0.5f, target)
+        val poseEnd = proj.computePresentationPose(1f, target)
+
+        // At p=0, drone starts high and elevated
+        assertEquals(1.70f, poseStart.y, 0.05f)
+
+        // At p=1, pose matches target preset position and pitch
+        assertEquals(target.position.x, poseEnd.x, 0.05f)
+        assertEquals(target.position.y, poseEnd.y, 0.05f)
+        assertEquals(target.position.z, poseEnd.z, 0.05f)
+        assertEquals(target.rotation.x, poseEnd.pitch, 0.5f)
+
+        // Mid progression is valid and distinct
+        assertTrue(poseMid.y > 0f)
+    }
+
+    @Test
+    fun table3DCameraProjection_stepSmoothPose_convergesToTarget() {
+        val dims = TableDimensions()
+        val proj = Table3DCameraProjection(dims, GameMode.SOLO)
+        val target = proj.getBasePreset(CameraZoom3D.STANDARD)
+
+        var current = CameraPose3D(0f, 1.0f, 0f, -30f, 0f)
+        for (i in 0 until 50) {
+            current = proj.stepSmoothPose(current, target, factor = 0.15f)
+        }
+
+        assertEquals(target.position.y, current.y, 0.01f)
+        assertEquals(target.position.z, current.z, 0.01f)
+        assertEquals(target.rotation.x, current.pitch, 0.01f)
+    }
+
+    @Test
+    fun table3DCameraProjection_mapEngineCoordinates_mapsHostAndGuestConsistently() {
+        val dims = TableDimensions(isExtendedMode = true, bezelGapUnits = 200f)
+        val hostProj = Table3DCameraProjection(dims, GameMode.EXTENDED_HOST)
+        val guestProj = Table3DCameraProjection(dims, GameMode.EXTENDED_GUEST)
+
+        // Center line X = 500 should map to Filament world X = 0
+        assertEquals(0f, hostProj.mapEngineX(500f), 1e-4f)
+        assertEquals(0f, guestProj.mapEngineX(500f), 1e-4f)
+
+        // Host top of visible half is guestHalfTopY (1800) -> should map to -1.08
+        val hostTopZ = hostProj.mapEngineZ(dims.guestHalfTopY)
+        assertEquals(-1.08f, hostTopZ, 1e-4f)
+
+        // Guest top of visible half is hostHalfBottomY (2200) -> should map to -1.08 from guest's inverted perspective
+        val guestTopZ = guestProj.mapEngineZ(dims.hostHalfBottomY)
+        assertEquals(-1.08f, guestTopZ, 1e-4f)
     }
 }

@@ -35,6 +35,7 @@ import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
+import dev.vmellos.airhockey.feature.game.MatchSpec
 import dev.vmellos.airhockey.feature.game.ui.GameScreen
 import dev.vmellos.airhockey.feature.leaderboard.ui.LeaderboardScreen
 import dev.vmellos.airhockey.feature.lobby.LobbyRole
@@ -267,31 +268,20 @@ fun AirHockeyAppNavigation(
                     }
                 },
                 onStartAiVsAiLocal = { diff1, diff2, chosenTheme, chosenDimension ->
-                    val puckPreset = when (diff1) {
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.EASY -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.SLOW
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.MEDIUM -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
-                        dev.vmellos.airhockey.core.preferences.AiDifficulty.HARD -> dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.FAST
-                    }
                     val d1Str = getAiDiffLabel(diff1)
                     val d2Str = getAiDiffLabel(diff2)
-                    val is3d = chosenDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.AI_VS_AI_LOCAL,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        targetScore = userPrefs.targetScore,
-                        matchTimeSeconds = userPrefs.matchTimeSeconds,
-                        aiDifficulty = diff1,
-                        aiDifficultyPlayer1 = diff1,
-                        aiDifficultyPlayer2 = diff2,
-                        puckMaxSpeed = puckPreset.maxSpeed,
-                        airFriction = puckPreset.airFriction,
-                        player1Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), d1Str),
-                        player2Name = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str),
-                        tableTheme = chosenTheme,
-                        hasIntroPresentation = hasIntro,
-                        arenaDimension = chosenDimension
+                    val p1 = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_1_label), d1Str)
+                    val p2 = context.getString(R.string.bot_name_with_difficulty, context.getString(R.string.bot_2_label), d2Str)
+                    val spec = MatchSpec.forAiVsAiLocal(
+                        userPrefs = userPrefs,
+                        diff1 = diff1,
+                        diff2 = diff2,
+                        chosenTheme = chosenTheme,
+                        chosenDimension = chosenDimension,
+                        player1Name = p1,
+                        player2Name = p2
                     )
+                    gameViewModel.initializeMatch(spec)
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
                     }
@@ -314,22 +304,14 @@ fun AirHockeyAppNavigation(
                 },
                 onConfirm = { chosenTheme, chosenDimension ->
                     if (isSplit) {
-                        val puckPreset = dev.vmellos.airhockey.core.preferences.PuckSpeedPreset.NORMAL
-                        val is3d = chosenDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-                        val hasIntro = is3d && userPrefs.arena3dIntroEnabled
-                        gameViewModel.initializeMatch(
-                            mode = GameMode.SPLIT_SCREEN,
-                            bezelGapMm = userPrefs.bezelGapMm,
-                            targetScore = userPrefs.targetScore,
-                            matchTimeSeconds = userPrefs.matchTimeSeconds,
-                            puckMaxSpeed = puckPreset.maxSpeed,
-                            airFriction = puckPreset.airFriction,
+                        val spec = MatchSpec.forSplitScreen(
+                            userPrefs = userPrefs,
+                            chosenTheme = chosenTheme,
+                            chosenDimension = chosenDimension,
                             player1Name = context.getString(R.string.player_1_default),
-                            player2Name = context.getString(R.string.player_2_default),
-                            tableTheme = chosenTheme,
-                            arenaDimension = chosenDimension,
-                            hasIntroPresentation = hasIntro
+                            player2Name = context.getString(R.string.player_2_default)
                         )
+                        gameViewModel.initializeMatch(spec)
                         navController.navigate("game/SPLIT_SCREEN") {
                             popUpTo("menu")
                         }
@@ -342,17 +324,13 @@ fun AirHockeyAppNavigation(
             StageSelectionScreen(
                 onSelectStage = { stageNum ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val is3d = userPrefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.SOLO,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        player1Name = p1,
-                        player2Name = context.getString(R.string.player_ai),
+                    val spec = MatchSpec.forStage(
                         stageNumber = stageNum,
-                        hasIntroPresentation = hasIntro,
-                        arenaDimension = userPrefs.arenaDimension
+                        userPrefs = userPrefs,
+                        player1Name = p1,
+                        player2Name = context.getString(R.string.player_ai)
                     )
+                    gameViewModel.initializeMatch(spec)
                     navController.navigate("game/SOLO")
                 },
                 onBack = {
@@ -391,17 +369,13 @@ fun AirHockeyAppNavigation(
                 },
                 onStartNextStage = { nextStage ->
                     val p1 = userPrefs.playerName.ifBlank { context.getString(R.string.player_you) }
-                    val is3d = userPrefs.arenaDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
-                    val hasIntro = is3d && userPrefs.arena3dIntroEnabled
-                    gameViewModel.initializeMatch(
-                        mode = GameMode.SOLO,
-                        bezelGapMm = userPrefs.bezelGapMm,
-                        player1Name = p1,
-                        player2Name = context.getString(R.string.player_ai),
+                    val spec = MatchSpec.forStage(
                         stageNumber = nextStage,
-                        hasIntroPresentation = hasIntro,
-                        arenaDimension = userPrefs.arenaDimension
+                        userPrefs = userPrefs,
+                        player1Name = p1,
+                        player2Name = context.getString(R.string.player_ai)
                     )
+                    gameViewModel.initializeMatch(spec)
                 }
             )
         }

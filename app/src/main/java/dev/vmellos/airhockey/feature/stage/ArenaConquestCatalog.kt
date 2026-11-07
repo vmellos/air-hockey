@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
 import androidx.compose.material.icons.filled.SportsFootball
+import androidx.compose.material.icons.filled.SportsHockey
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material.icons.filled.VideogameAsset
@@ -38,7 +39,25 @@ object ArenaConquestCatalog {
         val descRes: Int,
         val icon: ImageVector,
         val primaryColor: Color,
-        val secondaryColor: Color
+        val secondaryColor: Color,
+        val puckTitleRes: Int,
+        val malletTitleRes: Int
+    )
+
+    val TIER_CLASSIC = ArenaTier(
+        tierIndex = 0,
+        stageRange = 0..0,
+        unlockStage = 0,
+        theme = TableTheme.CLASSIC_NEON,
+        puckSkin = PuckSkin.CLASSIC_PLASMA,
+        malletSkin = MalletSkin.CLASSIC_NEON,
+        titleRes = R.string.theme_preset_classic,
+        descRes = R.string.theme_preset_classic_desc,
+        icon = Icons.Default.SportsHockey,
+        primaryColor = NeonCyan,
+        secondaryColor = NeonOrange,
+        puckTitleRes = R.string.skin_puck_classic,
+        malletTitleRes = R.string.skin_mallet_classic
     )
 
     val TIERS: List<ArenaTier> = listOf(
@@ -53,7 +72,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_pong_desc,
             icon = Icons.Default.VideogameAsset,
             primaryColor = PongGreen,
-            secondaryColor = PongAmber
+            secondaryColor = PongAmber,
+            puckTitleRes = R.string.skin_puck_pong,
+            malletTitleRes = R.string.skin_mallet_pong
         ),
         ArenaTier(
             tierIndex = 2,
@@ -66,7 +87,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_cyber_soccer_desc,
             icon = Icons.Default.SportsSoccer,
             primaryColor = NeonEmerald,
-            secondaryColor = NeonRuby
+            secondaryColor = NeonRuby,
+            puckTitleRes = R.string.skin_puck_soccer,
+            malletTitleRes = R.string.skin_mallet_soccer
         ),
         ArenaTier(
             tierIndex = 3,
@@ -79,7 +102,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_neo_basketball_desc,
             icon = Icons.Default.SportsBasketball,
             primaryColor = NeonAmber,
-            secondaryColor = NeonCyan
+            secondaryColor = NeonCyan,
+            puckTitleRes = R.string.skin_puck_basketball,
+            malletTitleRes = R.string.skin_mallet_basketball
         ),
         ArenaTier(
             tierIndex = 4,
@@ -92,7 +117,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_baseball_desc,
             icon = Icons.Default.SportsBaseball,
             primaryColor = BaseballRed,
-            secondaryColor = BaseballCyan
+            secondaryColor = BaseballCyan,
+            puckTitleRes = R.string.skin_puck_baseball,
+            malletTitleRes = R.string.skin_mallet_baseball
         ),
         ArenaTier(
             tierIndex = 5,
@@ -105,7 +132,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_gridiron_desc,
             icon = Icons.Default.SportsFootball,
             primaryColor = GridironCyan,
-            secondaryColor = GridironGold
+            secondaryColor = GridironGold,
+            puckTitleRes = R.string.skin_puck_gridiron,
+            malletTitleRes = R.string.skin_mallet_gridiron
         ),
         ArenaTier(
             tierIndex = 6,
@@ -118,7 +147,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_gravity_volley_desc,
             icon = Icons.Default.SportsVolleyball,
             primaryColor = NeonViolet,
-            secondaryColor = NeonMagenta
+            secondaryColor = NeonMagenta,
+            puckTitleRes = R.string.skin_puck_volley,
+            malletTitleRes = R.string.skin_mallet_volley
         ),
         ArenaTier(
             tierIndex = 7,
@@ -131,7 +162,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_synthwave_desc,
             icon = Icons.Default.WbSunny,
             primaryColor = SynthPink,
-            secondaryColor = SynthCyan
+            secondaryColor = SynthCyan,
+            puckTitleRes = R.string.skin_puck_synthwave,
+            malletTitleRes = R.string.skin_mallet_synthwave
         ),
         ArenaTier(
             tierIndex = 8,
@@ -144,7 +177,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_wasteland_desc,
             icon = Icons.Default.Whatshot,
             primaryColor = WastelandFlame,
-            secondaryColor = WastelandHazardYellow
+            secondaryColor = WastelandHazardYellow,
+            puckTitleRes = R.string.skin_puck_wasteland,
+            malletTitleRes = R.string.skin_mallet_wasteland
         ),
         ArenaTier(
             tierIndex = 9,
@@ -157,7 +192,9 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_tokamak_desc,
             icon = Icons.Default.Bolt,
             primaryColor = TokamakRadiation,
-            secondaryColor = TokamakPlasma
+            secondaryColor = TokamakPlasma,
+            puckTitleRes = R.string.skin_puck_tokamak,
+            malletTitleRes = R.string.skin_mallet_tokamak
         ),
         ArenaTier(
             tierIndex = 10,
@@ -170,9 +207,21 @@ object ArenaConquestCatalog {
             descRes = R.string.theme_preset_colosseum_desc,
             icon = Icons.Default.Shield,
             primaryColor = ColosseumGold,
-            secondaryColor = ColosseumCrimson
+            secondaryColor = ColosseumCrimson,
+            puckTitleRes = R.string.skin_puck_colosseum,
+            malletTitleRes = R.string.skin_mallet_colosseum
         )
     )
+
+    /**
+     * Catálogo completo de todos os 11 Conjuntos Temáticos Esportivos (incluindo Clássico).
+     */
+    val ALL_THEMES: List<ArenaTier> = listOf(TIER_CLASSIC) + TIERS
+
+    fun resolveActivePresetTitleRes(theme: TableTheme, puck: PuckSkin, mallet: MalletSkin): Int {
+        val match = ALL_THEMES.firstOrNull { it.theme == theme && it.puckSkin == puck && it.malletSkin == mallet }
+        return match?.titleRes ?: R.string.customization_custom_preset
+    }
 
     fun getTierForStage(stageNumber: Int): ArenaTier {
         val validStage = stageNumber.coerceIn(1, 100)
