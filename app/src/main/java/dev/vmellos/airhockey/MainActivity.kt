@@ -60,6 +60,12 @@ class MainActivity : ComponentActivity() {
         AirHockeyApp.instance.adManager.initialize(this)
 
         deepLinkUri = intent?.dataString
+        val langExtra = intent?.getStringExtra("override_lang")
+        if (!langExtra.isNullOrBlank()) {
+            lifecycleScope.launch {
+                AirHockeyApp.instance.preferencesRepository.setAppLanguage(langExtra)
+            }
+        }
 
         // Autenticação silenciosa e conexão do Google Play Games Services v2
         AirHockeyApp.instance.playGamesManager.authenticateSilently(this)
@@ -126,6 +132,12 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         deepLinkUri = intent.dataString
+        val langExtra = intent.getStringExtra("override_lang")
+        if (!langExtra.isNullOrBlank()) {
+            lifecycleScope.launch {
+                AirHockeyApp.instance.preferencesRepository.setAppLanguage(langExtra)
+            }
+        }
     }
 }
 

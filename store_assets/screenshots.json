@@ -5,100 +5,120 @@
     {
       "id": "01_extended_table",
       "file": "01_extended_table.png",
-      "description": "Mesa Estendida em dois celulares topo-a-topo via Wi-Fi local",
+      "description": "Mesa Estendida em dois celulares topo-a-topo via Wi-Fi",
       "accent": "#00E5FF",
       "translations": {
         "pt": {
           "title": "MESA ESTENDIDA",
-          "sub": "Junte 2 celulares em uma única mesa via Wi-Fi"
+          "sub": "2 celulares topo-a-topo viram uma única mesa via Wi-Fi"
         },
         "en": {
           "title": "EXTENDED TABLE",
-          "sub": "Connect 2 phones into 1 giant table via Wi-Fi"
+          "sub": "Connect 2 phones into 1 giant table via local Wi-Fi"
         },
         "es": {
           "title": "MESA EXTENDIDA",
-          "sub": "Une 2 celulares en una sola mesa por Wi-Fi"
+          "sub": "Une 2 celulares punta a punta en una sola mesa por Wi-Fi"
         }
       }
     },
     {
-      "id": "02_split_screen",
-      "file": "02_split_screen.png",
-      "description": "Mesa Dividida para 2 jogadores no mesmo aparelho",
-      "accent": "#FF2A6D",
-      "translations": {
-        "pt": {
-          "title": "MESA DIVIDIDA",
-          "sub": "2 jogadores frente a frente no mesmo celular"
-        },
-        "en": {
-          "title": "SPLIT SCREEN DUEL",
-          "sub": "2 players face-to-face on a single device"
-        },
-        "es": {
-          "title": "PANTALLA DIVIDIDA",
-          "sub": "2 jugadores cara a cara en un solo dispositivo"
-        }
-      }
-    },
-    {
-      "id": "03_solo_game",
-      "file": "03_solo_game.png",
-      "description": "Partida individual contra Inteligência Artificial com 100 fases",
-      "accent": "#FFB400",
-      "translations": {
-        "pt": {
-          "title": "SOLO CONTRA A IA",
-          "sub": "Física realista, jogadas de tabela e IA esperta"
-        },
-        "en": {
-          "title": "SOLO VS SMART AI",
-          "sub": "Realistic physics, ricochets & adaptive AI"
-        },
-        "es": {
-          "title": "MODO SOLO VS IA",
-          "sub": "Física realista, rebotes y dificultad adaptable"
-        }
-      }
-    },
-    {
-      "id": "04_leaderboard",
-      "file": "04_leaderboard.png",
-      "description": "Tela de ranking ELO e estatísticas de vitória",
+      "id": "02_arenas_3d",
+      "file": "02_arenas_3d.png",
+      "description": "Partida Solo em Perspectiva 3D com física realista e neon",
       "accent": "#00E5FF",
       "translations": {
         "pt": {
-          "title": "RANKING ELO",
-          "sub": "Acompanhe seu nível, vitórias e estatísticas"
+          "title": "ARENAS 3D IMERSIVAS",
+          "sub": "Física realista, iluminação neon e ação a 60 FPS"
         },
         "en": {
-          "title": "ELO LEADERBOARD",
-          "sub": "Track skill rating, win streaks & match stats"
+          "title": "IMMERSIVE 3D ARENAS",
+          "sub": "Realistic physics, dynamic neon lights & smooth 60 FPS"
         },
         "es": {
-          "title": "RANKING ELO",
-          "sub": "Sigue tu nivel, victorias y estadísticas"
+          "title": "ARENAS 3D INMERSIVAS",
+          "sub": "Física realista, luces de neón y acción fluida a 60 FPS"
         }
       }
     },
     {
-      "id": "05_settings",
-      "file": "05_settings.png",
-      "description": "Configurações ergonômicas, touch offset e zero anúncios",
+      "id": "03_split_screen",
+      "file": "03_split_screen.png",
+      "description": "Mesa Dividida para 2 jogadores com Câmera Zenital 3D",
       "accent": "#FF2A6D",
       "translations": {
         "pt": {
-          "title": "CONTROLE ERGONÔMICO",
-          "sub": "Deslocamento de toque, velocidade e sem anúncios"
+          "title": "MESA DIVIDIDA 2P",
+          "sub": "Duelo frente a frente no mesmo aparelho com Câmera Zenital 3D"
         },
         "en": {
-          "title": "PRECISION CONTROLS",
-          "sub": "Touch offset, puck speed and zero ads"
+          "title": "SPLIT-SCREEN DUEL",
+          "sub": "2 players on 1 phone with top-down 3D camera symmetry"
         },
         "es": {
-          "title": "CONTROL ERGONÓMICO",
-          "sub": "Desplazamiento táctil, velocidad y sin anuncios"
+          "title": "PANTALLA DIVIDIDA 2P",
+          "sub": "2 jugadores en 1 celular con cámara cenital 3D simétrica"
+        }
+      }
+    },
+    {
+      "id": "04_customization",
+      "file": "04_customization.png",
+      "description": "Vitrine 3D interativa com 11 conjuntos temáticos esportivos",
+      "accent": "#00E5FF",
+      "translations": {
+        "pt": {
+          "title": "VITRINE DE ARENAS 3D",
+          "sub": "11 conjuntos temáticos: Cyber Futebol, Neo-Tokyo e mais"
+        },
+        "en": {
+          "title": "3D THEMED SHOWCASE",
+          "sub": "11 sports themes: Cyber Soccer, Neo-Tokyo, Gridiron & more"
+        },
+        "es": {
+          "title": "VITRINA DE ARENAS 3D",
+          "sub": "11 temas deportivos: Cyber Fútbol, Neo-Tokyo y más"
+        }
+      }
+    },
+    {
+      "id": "05_stage_mode",
+      "file": "05_stage_mode.png",
+      "description": "Modo 100 Fases sequenciais com desbloqueio progressivo de arenas",
+      "accent": "#FFB400",
+      "translations": {
+        "pt": {
+          "title": "MODO 100 FASES",
+          "sub": "Conquiste 3 estrelas, derrote IAs e libere novas arenas"
+        },
+        "en": {
+          "title": "100-STAGE CHALLENGE",
+          "sub": "Earn 3 stars, defeat smart AI and unlock new arenas"
+        },
+        "es": {
+          "title": "MODO 100 NIVELES",
+          "sub": "Gana 3 estrellas, vence IAs inteligentes y libera arenas"
+        }
+      }
+    },
+    {
+      "id": "06_leaderboard",
+      "file": "06_leaderboard.png",
+      "description": "Central de Estatísticas e Ranking Elo competitivo",
+      "accent": "#FFB400",
+      "translations": {
+        "pt": {
+          "title": "RANKING ELO & HISTÓRICO",
+          "sub": "Acompanhe sua pontuação e placares da Google Play"
+        },
+        "en": {
+          "title": "ELO RANKING & STATS",
+          "sub": "Track your competitive skill rating & Google Play leaderboards"
+        },
+        "es": {
+          "title": "RANKING ELO Y HISTÓRICO",
+          "sub": "Sigue tu puntuación y clasificaciones de Google Play"
         }
       }
     }

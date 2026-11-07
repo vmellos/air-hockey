@@ -434,6 +434,14 @@ _Avoid_: Site somente em português, landing page estática monolíngue
 O botão de chamada para ação (CTA) principal do Portal Oficial que direciona os jogadores à Google Play Store oficial (`dev.vmellos.airhockey`) com o logotipo vetorial de 4 cores do Google Play, suprimindo links manuais de APK e repositório GitHub.
 _Avoid_: Download de APK direto, link para GitHub, release button
 
+**Capturas Oficiais de Loja**:
+O conjunto diagramado de imagens verticais de alta conversão (1080 x 2340 px, proporção 19.5:9) para a ficha do aplicativo na Google Play Store, apresentando mockups 3D realistas de smartphones com chassi de titânio escuro, iluminação radial neon, grade tecnológica e cabeçalhos tipográficos traduzidos nos 3 idiomas suportados (Português, Inglês e Espanhol).
+_Avoid_: Prints soltos, telas brutas, screenshots sem tratamento, capturas 2D antigas
+
+**Imagem de Destaque**:
+A peça gráfica panorâmica oficial de topo de ficha na Google Play Store (1024 x 500 px, proporção 2:1), combinando o Título Arcade Volumétrico ("AIR HOCKEY 2P"), o Disco Flamejante e a representação de dispositivos em Mesa Estendida com Meia-Mesa 3D e pílulas de recursos multilíngues em alta conversão.
+_Avoid_: Foto de destaque, banner comum, capa do jogo, feature graphic genérica
+
 ## Áudio Procedural e Acústica Temática
 
 **Síntese Procedural Temática**:

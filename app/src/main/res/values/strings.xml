@@ -343,6 +343,7 @@
     <string name="quick_audio_music">Background Music</string>
     <string name="quick_audio_haptics">Vibration</string>
     <string name="quick_audio_close">Done</string>
+    <string name="camera_zoom_title">3D Camera View</string>
     <string name="camera_zoom_standard">Standard (1.0x)</string>
     <string name="camera_zoom_wide">Wide (1.3x)</string>
     <string name="camera_zoom_close">Close (0.8x)</string>

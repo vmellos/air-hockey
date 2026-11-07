@@ -195,54 +195,7 @@ fun MainMenuScreen(
                         )
                     }
 
-                    val pgsAuth by AirHockeyApp.instance.playGamesManager.authState.collectAsState()
-                    val pgsSync by AirHockeyApp.instance.playGamesSaveManager.syncState.collectAsState()
 
-                    if (pgsAuth is dev.vmellos.airhockey.core.playgames.PlayGamesAuthState.Authenticated) {
-                        val player = (pgsAuth as dev.vmellos.airhockey.core.playgames.PlayGamesAuthState.Authenticated).player
-                        Surface(
-                            onClick = {
-                                activity?.let {
-                                    AirHockeyApp.instance.playGamesSaveManager.syncProgressAsync(it)
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        context.getString(R.string.pgs_sync_in_progress),
-                                        android.widget.Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xCC070D1A),
-                            border = BorderStroke(1.2.dp, Color(0x6600E5FF)),
-                            modifier = Modifier.height(38.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.padding(horizontal = 10.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (pgsSync is dev.vmellos.airhockey.core.playgames.CloudSyncState.Syncing) {
-                                        Icons.Default.CloudSync
-                                    } else {
-                                        Icons.Default.CloudDone
-                                    },
-                                    contentDescription = stringResource(R.string.pgs_saved_games_title),
-                                    tint = if (pgsSync is dev.vmellos.airhockey.core.playgames.CloudSyncState.Error) Color(0xFFFF5252) else Color(0xFF00E5FF),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    text = player.displayName,
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 105.dp)
-                                )
-                            }
-                        }
-                    }
                 }
 
                 // Ações da Direita
