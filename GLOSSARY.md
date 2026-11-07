@@ -91,8 +91,16 @@ _Avoid_: Tiro mirado, mira automática, exploit de IA
 ## Experiência Visual e Câmera 3D
 
 **Dimensão de Renderização**:
-A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e configurável nos modos Solo, Fases, Mesa Dividida, Mesa Conectada e IA x IA Local, sendo mantida estritamente em 2D na Mesa Estendida por requisitos geométricos de continuidade da junção física topo-a-topo.
+A seleção de apresentação visual da arena que alterna entre a perspectiva plana 2D (baseada em Jetpack Compose Canvas com gradientes e shaders) e a perspectiva espacial 3D imersiva (baseada em Sceneview e motor Filament com malhas PBR `.glb`), desacoplada da escolha estética do Tema de Mesa e configurável em todas as modalidades esportivas (Solo, Fases, Mesa Dividida, Mesa Conectada, Modo IA x IA e Mesa Estendida com Meia-Mesa 3D e Câmera Zenital Ancorada).
 _Avoid_: Modo de câmera, visual 3d isolado, tema 3d, switch de gráfico
+
+**Meia-Mesa 3D**:
+A malha tridimensional otimizada (`.glb`) representativa de uma metade da arena esportiva na Mesa Estendida, construída na proporção geométrica 1:2 (1.08m de largura por 2.16m de comprimento) com a extremidade central aberta e arco neon de passagem para cobrir a extensão vertical da tela de cada dispositivo na Disposição Topo-a-Topo.
+_Avoid_: Mesa cortada, modelo parcial, meia arena, mesa 3d curta, mini mesa
+
+**Ancoragem de Topo na Mesa Estendida 3D**:
+O alinhamento analítico da Câmera 3D Zenital que ancora a extremidade aberta da Meia-Mesa 3D no limite superior físico do display (`offsetY = 0`), mantendo a linha central colada na borda física do aparelho para continuidade com o segundo dispositivo e absorvendo variações de proporção de tela ou Níveis de Enquadramento 3D na margem inferior da meta.
+_Avoid_: Centralização vertical, câmera solta, offset fixo, topo flutuante
 
 **Kit de Ativos 3D**:
 A coleção integrada de arquivos binários glTF otimizados (`.glb`) composta por Mesa Temática, Disco Temático e Rebatedores P1/P2 correspondentes a uma identidade visual de Conjunto Temático Esportivo, carregada dinamicamente pelo motor Sceneview com fallback automático para o conjunto clássico.
@@ -103,7 +111,7 @@ O voo panorâmico cinematográfico estilo drone com um giro fluido de 360 graus 
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
-Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1 e para a Câmera 3D Zenital no Modo Tela Dividida (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e sem bordas excessivas, alternáveis por controle no HUD e persistidos nas preferências do usuário.
+Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1, para a Câmera 3D Zenital no Modo Tela Dividida e para a Mesa Estendida com ancoragem no topo físico (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e segundo a preferência visual do usuário, alternáveis por controle no HUD e persistidos nas preferências.
 _Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto
 
 **Desprojeção em Perspectiva 3D**:

@@ -3,7 +3,7 @@ import os
 import math
 
 OUTPUT_MODELS_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/assets/models"
-OUTPUT_RENDER_DIR = "/home/vinicius/.gemini/antigravity-cli/brain/8604706b-0282-49d7-a48b-f431e9edc2f4"
+OUTPUT_RENDER_DIR = "/home/vinicius/.gemini/antigravity-cli/brain/92d27fd2-ddb9-4ed4-a0f8-06939303b080"
 
 os.makedirs(OUTPUT_MODELS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_RENDER_DIR, exist_ok=True)
@@ -60,13 +60,13 @@ def create_semicircle_mesh(name, center_x, center_y, z_pos, r_out, r_in, n_segme
 def build_half_table(name, faction_color, is_p1=True):
     """
     Constrói a Meia-Mesa 3D com extremidade superior aberta para Mesa Estendida.
-    Dimensões métricas calibradas: Largura = 1.08m, Comprimento da metade = 0.96m.
-    Origem no centro da meia-mesa: X em [-0.54, 0.54], Y em [-0.48, +0.48].
-    - Fundo (Y = -0.48): Meta, Barreira Laser e Protetores de Canto.
-    - Topo (Y = +0.48): ABERTO (sem trilho), com arco neon semicircular de junção.
+    Dimensões métricas calibradas: Largura = 1.08m, Comprimento da metade = 2.16m (Proporção 1:2).
+    Origem no centro da meia-mesa: X em [-0.54, 0.54], Y em [-1.08, +1.08].
+    - Fundo (Y = -1.08): Meta, Barreira Laser e Protetores de Canto.
+    - Topo (Y = +1.08): ABERTO (sem trilho), com arco neon semicircular de junção.
     """
     w = 1.08
-    l_half = 0.96
+    l_half = 2.16
     h_surface = 0.04
     rail_w = 0.075
     rail_h = 0.065
@@ -262,7 +262,7 @@ def main():
     setup_render_lighting(is_zenital=False)
     render_image(
         filepath=os.path.join(OUTPUT_RENDER_DIR, "render_half_table_perspective.png"),
-        cam_loc=(0.0, -1.35, 1.15),
+        cam_loc=(0.0, -2.6, 2.2),
         cam_rot_euler=(math.radians(52), 0, 0),
         res_x=1080,
         res_y=1920
@@ -272,12 +272,12 @@ def main():
     print("=== Renderizando Visão Zenital 90° ===")
     render_image(
         filepath=os.path.join(OUTPUT_RENDER_DIR, "render_half_table_zenital.png"),
-        cam_loc=(0.0, 0.0, 2.2),
+        cam_loc=(0.0, 0.0, 4.0),
         cam_rot_euler=(0, 0, 0),
         res_x=1080,
         res_y=1920,
         is_ortho=True,
-        ortho_scale=1.35
+        ortho_scale=2.45
     )
 
     # 5. Render 3: Simulação Dual-Phone (Dois Celulares Topo-a-Topo no Vão Físico)
@@ -307,12 +307,12 @@ def main():
     # Render Dual-Phone na vertical
     render_image(
         filepath=os.path.join(OUTPUT_RENDER_DIR, "render_mesa_estendida_joined.png"),
-        cam_loc=(0.0, 0.0, 3.8),
+        cam_loc=(0.0, 0.0, 7.5),
         cam_rot_euler=(0, 0, 0),
         res_x=1080,
         res_y=1920,
         is_ortho=True,
-        ortho_scale=2.4
+        ortho_scale=4.9
     )
 
     print(">>> TODAS AS MALHAS E RENDERS FORAM GERADOS COM SUCESSO!")
