@@ -85,6 +85,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -121,6 +123,9 @@ fun LobbyScreen(
     var pendingHostMode by remember { mutableStateOf<String?>(null) }
     var pendingAiDiff1 by remember { mutableStateOf<dev.vmellos.airhockey.core.preferences.AiDifficulty?>(null) }
     var pendingAiDiff2 by remember { mutableStateOf<dev.vmellos.airhockey.core.preferences.AiDifficulty?>(null) }
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (showArenaSelection && pendingHostMode != null) {
         val mode = pendingHostMode!!
@@ -326,10 +331,10 @@ fun LobbyScreen(
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .widthIn(max = 560.dp)
+                    .widthIn(max = if (isLandscape) 700.dp else 560.dp)
                     .fillMaxWidth()
                     .safeDrawingPadding()
-                    .padding(20.dp)
+                    .padding(horizontal = 20.dp, vertical = if (isLandscape) 8.dp else 20.dp)
             ) {
                 // Linha 1: Botão Voltar e Título da Tela
                 Row(
@@ -339,7 +344,7 @@ fun LobbyScreen(
                     IconButton(
                         onClick = handleBack,
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(if (isLandscape) 38.dp else 44.dp)
                             .background(Color(0xB3070D1A), CircleShape)
                             .border(1.2.dp, Color(0x6600E5FF), CircleShape)
                     ) {
@@ -347,7 +352,7 @@ fun LobbyScreen(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
                             tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(if (isLandscape) 18.dp else 20.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -361,7 +366,7 @@ fun LobbyScreen(
                 Text(
                     text = titleText,
                     color = Color.White,
-                    fontSize = 20.sp,
+                    fontSize = if (isLandscape) 17.sp else 20.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.5.sp,
                     maxLines = 1,
@@ -369,7 +374,7 @@ fun LobbyScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 8.dp else 14.dp))
 
             // Linha 2: Card / Chip com Nome do Dispositivo / Jogador com largura total
             Surface(
@@ -386,7 +391,7 @@ fun LobbyScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = if (isLandscape) 6.dp else 10.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -410,7 +415,7 @@ fun LobbyScreen(
                             Text(
                                 text = state.selfPlayerName.ifBlank { stringResource(R.string.player_1_default) },
                                 color = Color.White,
-                                fontSize = 15.sp,
+                                fontSize = if (isLandscape) 14.sp else 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -426,7 +431,7 @@ fun LobbyScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 10.dp else 20.dp))
 
             Box(
                 modifier = Modifier
@@ -550,16 +555,18 @@ private fun RoleSelectionCards(
     onSelectGuest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val hostShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
     val guestShape = CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp, topEnd = 4.dp, bottomStart = 4.dp)
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    val hostCard = @Composable { cardModifier: Modifier ->
         Card(
             onClick = onSelectHost,
             colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
             shape = hostShape,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = cardModifier
                 .border(
                     width = 1.2.dp,
                     brush = Brush.horizontalGradient(
@@ -575,7 +582,7 @@ private fun RoleSelectionCards(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .padding(horizontal = 16.dp, vertical = if (isLandscape) 12.dp else 14.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -589,26 +596,26 @@ private fun RoleSelectionCards(
                         )
                 )
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.lobby_role_host).uppercase(),
                         color = Color.White,
-                        fontSize = 17.sp,
+                        fontSize = if (isLandscape) 15.sp else 17.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.8.sp
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = stringResource(R.string.lobby_role_host_desc),
                         color = Color(0xFF94A3B8),
-                        fontSize = 12.5.sp,
-                        lineHeight = 16.sp
+                        fontSize = if (isLandscape) 11.5.sp else 12.5.sp,
+                        lineHeight = 15.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
@@ -618,15 +625,14 @@ private fun RoleSelectionCards(
                 )
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+    val guestCard = @Composable { cardModifier: Modifier ->
         Card(
             onClick = onSelectGuest,
             colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
             shape = guestShape,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = cardModifier
                 .border(
                     width = 1.2.dp,
                     brush = Brush.horizontalGradient(
@@ -642,7 +648,7 @@ private fun RoleSelectionCards(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .padding(horizontal = 16.dp, vertical = if (isLandscape) 12.dp else 14.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -656,26 +662,26 @@ private fun RoleSelectionCards(
                         )
                 )
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.lobby_role_guest).uppercase(),
                         color = Color.White,
-                        fontSize = 17.sp,
+                        fontSize = if (isLandscape) 15.sp else 17.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.8.sp
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = stringResource(R.string.lobby_role_guest_desc),
                         color = Color(0xFF94A3B8),
-                        fontSize = 12.5.sp,
-                        lineHeight = 16.sp
+                        fontSize = if (isLandscape) 11.5.sp else 12.5.sp,
+                        lineHeight = 15.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
@@ -684,6 +690,24 @@ private fun RoleSelectionCards(
                     modifier = Modifier.size(18.dp)
                 )
             }
+        }
+    }
+
+    if (isLandscape) {
+        // Layout Lado a Lado no Modo Paisagem (ADR 0037)
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            hostCard(Modifier.weight(1f))
+            guestCard(Modifier.weight(1f))
+        }
+    } else {
+        Column(modifier = modifier.fillMaxWidth()) {
+            hostCard(Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(12.dp))
+            guestCard(Modifier.fillMaxWidth())
         }
     }
 }
@@ -695,22 +719,23 @@ private fun HostLobbyView(
     onProceed: () -> Unit
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-    ) {
-        val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
-            "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
-            "AI_EXTENDED", "AI_CONNECTED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
-            else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
-        }
+    val (hostModeColor, hostModeLabel, hostModeIcon) = when (state.targetMode) {
+        "CONNECTED" -> Triple(Color(0xFF00E5FF), stringResource(R.string.lobby_mode_badge_connected), Icons.Default.Wifi)
+        "AI_EXTENDED", "AI_CONNECTED" -> Triple(Color(0xFFA855F7), stringResource(R.string.lobby_mode_badge_ai), Icons.Default.SmartToy)
+        else -> Triple(Color(0xFF818CF8), stringResource(R.string.lobby_mode_badge_extended), Icons.Default.PhoneAndroid)
+    }
 
-        val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-        val arenaTier = remember(userPrefs.tableTheme) { ArenaConquestCatalog.getTierForTheme(userPrefs.tableTheme) }
+    val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
+    val arenaTier = remember(userPrefs.tableTheme) { ArenaConquestCatalog.getTierForTheme(userPrefs.tableTheme) }
 
+    val qrBitmap = remember(state.qrContent) {
+        if (state.qrContent.isNotBlank()) QrCodeGenerator.generateQrBitmap(state.qrContent, 400) else null
+    }
+
+    val badgesRow = @Composable {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -773,46 +798,41 @@ private fun HostLobbyView(
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
+    val tableCodeSection = @Composable {
         Text(
             text = stringResource(R.string.lobby_host_table_code),
             color = Color(0xFF94A3B8),
-            fontSize = 14.sp
+            fontSize = if (isLandscape) 12.sp else 14.sp
         )
         Text(
             text = state.tableCode,
             color = Color(0xFF00E5FF),
-            fontSize = 44.sp,
+            fontSize = if (isLandscape) 32.sp else 44.sp,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.Monospace,
-            letterSpacing = 6.sp
+            letterSpacing = if (isLandscape) 4.sp else 6.sp
         )
+    }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // QR Code gerado offline
-        val qrBitmap = remember(state.qrContent) {
-            if (state.qrContent.isNotBlank()) QrCodeGenerator.generateQrBitmap(state.qrContent, 400) else null
-        }
-
+    val qrSection = @Composable {
         if (qrBitmap != null) {
             Surface(
                 color = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(190.dp)
+                modifier = Modifier.size(if (isLandscape) 130.dp else 190.dp)
             ) {
                 Image(
                     bitmap = qrBitmap,
                     contentDescription = stringResource(R.string.content_desc_qr_code),
-                    modifier = Modifier.fillMaxSize().padding(12.dp)
+                    modifier = Modifier.fillMaxSize().padding(if (isLandscape) 8.dp else 12.dp)
                 )
             }
         }
 
         if (state.hostIp.isNotBlank()) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -820,21 +840,20 @@ private fun HostLobbyView(
                 Text(
                     text = stringResource(R.string.lobby_table_ip_label),
                     color = Color(0xFF94A3B8),
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
                 Text(
                     text = "${state.hostIp}:8888",
                     color = Color(0xFF00E5FF),
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
                 )
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Card de Instruções e Status da Rede Wi-Fi
+    val wifiAndStatusSection = @Composable {
         val wifiCardShape = CutCornerShape(12.dp)
         Card(
             colors = CardDefaults.cardColors(containerColor = Color(0xD9080E1A)),
@@ -843,7 +862,7 @@ private fun HostLobbyView(
                 .fillMaxWidth()
                 .border(1.dp, Color(0x3300E5FF), wifiCardShape)
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(if (isLandscape) 10.dp else 14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Wifi,
@@ -867,16 +886,16 @@ private fun HostLobbyView(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = stringResource(R.string.lobby_network_same_wifi),
                     color = Color(0xFF94A3B8),
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedButton(
                     onClick = {
@@ -908,14 +927,14 @@ private fun HostLobbyView(
                     Text(
                         text = stringResource(R.string.lobby_network_open_hotspot),
                         color = Color(0xFF00E5FF),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(if (isLandscape) 10.dp else 16.dp))
 
         if (state.connectionStatus == ConnectionStatus.CONNECTED) {
             Text(
@@ -924,7 +943,7 @@ private fun HostLobbyView(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Button(
                 onClick = onProceed,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
@@ -935,14 +954,56 @@ private fun HostLobbyView(
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(color = Color(0xFF00E5FF), modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Spacer(modifier = Modifier.width(12.dp))
+                CircularProgressIndicator(color = Color(0xFF00E5FF), modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.lobby_status_waiting_guest),
                     color = Color(0xFF94A3B8),
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
             }
+        }
+    }
+
+    if (isLandscape) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                badgesRow()
+                Spacer(modifier = Modifier.height(6.dp))
+                tableCodeSection()
+                Spacer(modifier = Modifier.height(8.dp))
+                qrSection()
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                wifiAndStatusSection()
+            }
+        }
+    } else {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            badgesRow()
+            Spacer(modifier = Modifier.height(10.dp))
+            tableCodeSection()
+            Spacer(modifier = Modifier.height(12.dp))
+            qrSection()
+            Spacer(modifier = Modifier.height(12.dp))
+            wifiAndStatusSection()
         }
     }
 }
@@ -957,6 +1018,9 @@ private fun GuestLobbyView(
     onRefreshDiscovery: () -> Unit = {},
     onScanQrClick: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     var selectedTableForPin by remember { mutableStateOf<dev.vmellos.airhockey.feature.network.DiscoveredTable?>(null) }
     var pinDialogInput by remember { mutableStateOf("") }
 
@@ -1134,51 +1198,105 @@ private fun GuestLobbyView(
             }
         }
 
-        // Botão de Escanear QR Code
-        Button(
-            onClick = onScanQrClick,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
-            shape = CutCornerShape(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.lobby_scan_qr), color = Color.White, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Digitação manual de código de 4 dígitos ou endereço IP direto
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = inputCode,
-                onValueChange = onInputCodeChange,
-                placeholder = { Text(stringResource(R.string.lobby_code_or_ip_placeholder), color = Color(0xFF64748B), fontSize = 13.sp) },
-                singleLine = true,
-                shape = CutCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color(0xFF00E5FF),
-                    unfocusedBorderColor = Color(0xFF475569)
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Button(
-                onClick = onConnectCode,
-                enabled = inputCode.length >= 4,
-                shape = CutCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+        if (isLandscape) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = onScanQrClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
+                    shape = CutCornerShape(10.dp),
+                    modifier = Modifier.weight(0.4f)
+                ) {
+                    Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.lobby_scan_qr),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(0.6f)
+                ) {
+                    OutlinedTextField(
+                        value = inputCode,
+                        onValueChange = onInputCodeChange,
+                        placeholder = { Text(stringResource(R.string.lobby_code_or_ip_placeholder), color = Color(0xFF64748B), fontSize = 12.sp) },
+                        singleLine = true,
+                        shape = CutCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF00E5FF),
+                            unfocusedBorderColor = Color(0xFF475569)
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onConnectCode,
+                        enabled = inputCode.length >= 4,
+                        shape = CutCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+                    ) {
+                        Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+            }
+        } else {
+            // Botão de Escanear QR Code
+            Button(
+                onClick = onScanQrClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
+                shape = CutCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.lobby_scan_qr), color = Color.White, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Digitação manual de código de 4 dígitos ou endereço IP direto
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = inputCode,
+                    onValueChange = onInputCodeChange,
+                    placeholder = { Text(stringResource(R.string.lobby_code_or_ip_placeholder), color = Color(0xFF64748B), fontSize = 13.sp) },
+                    singleLine = true,
+                    shape = CutCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF00E5FF),
+                        unfocusedBorderColor = Color(0xFF475569)
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Button(
+                    onClick = onConnectCode,
+                    enabled = inputCode.length >= 4,
+                    shape = CutCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
+                ) {
+                    Text(stringResource(R.string.lobby_connect_btn), color = Color(0xFF0A0E1A), fontWeight = FontWeight.Bold)
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(if (isLandscape) 10.dp else 24.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1318,6 +1436,9 @@ fun HostCreateModeDialog(
     onSelectAiExtended: (dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit,
     onSelectAiLocal: ((dev.vmellos.airhockey.core.preferences.AiDifficulty, dev.vmellos.airhockey.core.preferences.AiDifficulty) -> Unit)? = null
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     var showAiConfig by remember { mutableStateOf(false) }
     var diffBot1 by remember { mutableStateOf(initialDifficulty) }
     var diffBot2 by remember { mutableStateOf(initialDifficulty) }
@@ -1341,13 +1462,15 @@ fun HostCreateModeDialog(
             ),
             shadowElevation = 24.dp,
             modifier = Modifier
+                .widthIn(max = if (isLandscape) 640.dp else 480.dp)
                 .fillMaxWidth(0.92f)
-                .padding(vertical = 16.dp)
+                .padding(vertical = if (isLandscape) 8.dp else 16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
+                    .padding(if (isLandscape) 14.dp else 20.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header com Botão Fechar
@@ -1376,7 +1499,7 @@ fun HostCreateModeDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if (isLandscape) 10.dp else 16.dp))
 
                 if (!showAiConfig) {
                     // Opção 1: Mesa Estendida
@@ -1431,43 +1554,84 @@ fun HostCreateModeDialog(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(if (isLandscape) 8.dp else 14.dp))
 
-                    // Bot 1 (Ciano)
-                    Text(
-                        text = stringResource(R.string.bot_1_cyan),
-                        color = Color(0xFF00E5FF),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    DifficultySelectorRow(
-                        selected = diffBot1,
-                        activeColor = Color(0xFF00E5FF),
-                        onSelect = { diffBot1 = it }
-                    )
+                    if (isLandscape) {
+                        // Disposição lado a lado das dificuldades dos bots em modo paisagem
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.bot_1_cyan),
+                                    color = Color(0xFF00E5FF),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                DifficultySelectorRow(
+                                    selected = diffBot1,
+                                    activeColor = Color(0xFF00E5FF),
+                                    onSelect = { diffBot1 = it }
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.bot_2_orange),
+                                    color = Color(0xFFFF5722),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                DifficultySelectorRow(
+                                    selected = diffBot2,
+                                    activeColor = Color(0xFFFF5722),
+                                    onSelect = { diffBot2 = it }
+                                )
+                            }
+                        }
+                    } else {
+                        // Bot 1 (Ciano)
+                        Text(
+                            text = stringResource(R.string.bot_1_cyan),
+                            color = Color(0xFF00E5FF),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        DifficultySelectorRow(
+                            selected = diffBot1,
+                            activeColor = Color(0xFF00E5FF),
+                            onSelect = { diffBot1 = it }
+                        )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                    // Bot 2 (Laranja)
-                    Text(
-                        text = stringResource(R.string.bot_2_orange),
-                        color = Color(0xFFFF5722),
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    DifficultySelectorRow(
-                        selected = diffBot2,
-                        activeColor = Color(0xFFFF5722),
-                        onSelect = { diffBot2 = it }
-                    )
+                        // Bot 2 (Laranja)
+                        Text(
+                            text = stringResource(R.string.bot_2_orange),
+                            color = Color(0xFFFF5722),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        DifficultySelectorRow(
+                            selected = diffBot2,
+                            activeColor = Color(0xFFFF5722),
+                            onSelect = { diffBot2 = it }
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(if (isLandscape) 12.dp else 20.dp))
 
                     // Botão Primário: Criar Mesa em 2 Celulares
                     Button(
@@ -1492,7 +1656,7 @@ fun HostCreateModeDialog(
                     }
 
                     if (onSelectAiLocal != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         TextButton(
                             onClick = { onSelectAiLocal(diffBot1, diffBot2) },
                             modifier = Modifier.fillMaxWidth()

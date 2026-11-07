@@ -5,10 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Star
@@ -58,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -185,22 +189,16 @@ fun ScoreBoardOverlay(
     ) {
         val screenW = constraints.maxWidth.toFloat()
         val screenH = constraints.maxHeight.toFloat()
+        val isLandscape = screenW > screenH
         val scale = kotlin.math.min(screenW / 1000f, screenH / 2000f)
         val tableWidthDp = with(LocalDensity.current) { (1000f * scale).toDp() }
 
-        Box(
-            modifier = Modifier
-                .width(tableWidthDp)
-                .fillMaxHeight()
-                .align(Alignment.Center)
-        ) {
-            // Placar Lateral Numérico estilizado por tema na lateral direita da Mesa e Botão de Pausa
+        // Placar Lateral Numérico estilizado por tema na lateral da Mesa e Botão de Pausa
+        val scoreboardAndControls = @Composable {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 8.dp)
+                modifier = Modifier.padding(end = if (isLandscape) 14.dp else 8.dp)
             ) {
                 Surface(
                     color = boardBg,
@@ -265,6 +263,31 @@ fun ScoreBoardOverlay(
                             modifier = Modifier.size(18.dp)
                         )
                     }
+                }
+            }
+        }
+
+        if (isLandscape) {
+            // Em modo paisagem: ancoragem na Calha Lateral Direita externa à mesa (ADR 0037)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                scoreboardAndControls()
+            }
+        } else {
+            // Em modo retrato: ancoragem adjacente ao trilho direito da arena virtual
+            Box(
+                modifier = Modifier
+                    .width(tableWidthDp)
+                    .fillMaxHeight()
+                    .align(Alignment.Center)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    scoreboardAndControls()
                 }
             }
         }
@@ -626,6 +649,225 @@ fun PeerExitedDialog(
 }
 
 @Composable
+private fun AudioAndVisualControlsSurface(
+    isSoundEnabled: Boolean,
+    onToggleSound: () -> Unit,
+    isMusicEnabled: Boolean,
+    onToggleMusic: () -> Unit,
+    is3dActive: Boolean,
+    cameraZoom3d: CameraZoom3D,
+    onCameraZoom3dChange: ((CameraZoom3D) -> Unit)?,
+    neonBloomIntensity: Float,
+    onNeonBloomIntensityChange: ((Float) -> Unit)?
+) {
+    Surface(
+        color = Color(0xD9080E1A),
+        shape = CutCornerShape(10.dp),
+        border = BorderStroke(1.dp, Color(0x3300E5FF)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Sound Effects
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_sound_effects),
+                    color = Color(0xFFE2E8F0),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Surface(
+                    onClick = onToggleSound,
+                    shape = CutCornerShape(8.dp),
+                    color = if (isSoundEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
+                    border = BorderStroke(1.dp, if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
+                            tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // Divisor sutil
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color(0x1AFFFFFF))
+            )
+
+            // Game Music
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_music),
+                    color = Color(0xFFE2E8F0),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Surface(
+                    onClick = onToggleMusic,
+                    shape = CutCornerShape(8.dp),
+                    color = if (isMusicEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
+                    border = BorderStroke(1.dp, if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (isMusicEnabled) Icons.Default.MusicNote else Icons.Default.MusicOff,
+                            contentDescription = if (isMusicEnabled) "Silenciar música" else "Tocar música",
+                            tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            // Controle de Brilho do Neon (quando o 3D estiver em execução)
+            if (is3dActive && onNeonBloomIntensityChange != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0x1AFFFFFF))
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.neon_bloom_intensity_title),
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        val pct = kotlin.math.round((neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
+                        val intensityLabel = when {
+                            pct == 0 -> stringResource(R.string.neon_bloom_off)
+                            pct <= 30 -> stringResource(R.string.neon_bloom_soft)
+                            pct <= 70 -> stringResource(R.string.neon_bloom_normal)
+                            else -> stringResource(R.string.neon_bloom_vibrant)
+                        }
+                        Text(
+                            text = "$pct% • $intensityLabel",
+                            color = Color(0xFF00E5FF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Slider(
+                        value = neonBloomIntensity.coerceIn(0.0f, 0.10f),
+                        onValueChange = onNeonBloomIntensityChange,
+                        valueRange = 0.0f..0.10f,
+                        steps = 9,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color(0xFF00E5FF),
+                            activeTrackColor = Color(0xFF00E5FF),
+                            inactiveTrackColor = Color(0xFF1E293B)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(30.dp)
+                    )
+                }
+            }
+
+            // Controle de Zoom da Câmera 3D (quando a Arena 3D estiver ativa)
+            if (is3dActive && onCameraZoom3dChange != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0x1AFFFFFF))
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = null,
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.camera_zoom_title),
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf(CameraZoom3D.CLOSE, CameraZoom3D.STANDARD, CameraZoom3D.WIDE).forEach { zoomOption ->
+                            val isSelected = zoomOption == cameraZoom3d
+                            val label = when (zoomOption) {
+                                CameraZoom3D.CLOSE -> stringResource(R.string.camera_zoom_close)
+                                CameraZoom3D.STANDARD -> stringResource(R.string.camera_zoom_standard)
+                                CameraZoom3D.WIDE -> stringResource(R.string.camera_zoom_wide)
+                            }
+                            Surface(
+                                onClick = { onCameraZoom3dChange(zoomOption) },
+                                shape = CutCornerShape(6.dp),
+                                color = if (isSelected) Color(0x3300E5FF) else Color(0x1AFFFFFF),
+                                border = BorderStroke(1.dp, if (isSelected) Color(0xFF00E5FF) else Color(0x22FFFFFF)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(34.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                        fontSize = 10.5.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun PauseDialog(
     isSoundEnabled: Boolean = true,
     onToggleSound: () -> Unit = {},
@@ -640,10 +882,14 @@ fun PauseDialog(
     onRestart: () -> Unit,
     onExit: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xD9000000)),
+            .background(Color(0xD9000000))
+            .safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -661,260 +907,128 @@ fun PauseDialog(
             ),
             shadowElevation = 24.dp,
             modifier = Modifier
-                .widthIn(max = 420.dp)
-                .fillMaxWidth(0.90f)
-                .padding(16.dp)
+                .widthIn(max = if (isLandscape) 640.dp else 420.dp)
+                .fillMaxWidth(0.92f)
+                .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .padding(if (isLandscape) 16.dp else 24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Título Arcade
-                Text(
-                    text = stringResource(R.string.game_paused).uppercase(),
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Controles de Áudio HUD Arcade
-                Surface(
-                    color = Color(0xD9080E1A),
-                    shape = CutCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color(0x3300E5FF)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                if (isLandscape) {
+                    // Layout Bicolunar no Menu de Pausa em Paisagem (ADR 0037)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Sound Effects
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                        // Coluna Esquerda: Controles de Áudio, Bloom e Câmera 3D
+                        Column(
+                            modifier = Modifier.weight(1.1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AudioAndVisualControlsSurface(
+                                isSoundEnabled = isSoundEnabled,
+                                onToggleSound = onToggleSound,
+                                isMusicEnabled = isMusicEnabled,
+                                onToggleMusic = onToggleMusic,
+                                is3dActive = is3dActive,
+                                cameraZoom3d = cameraZoom3d,
+                                onCameraZoom3dChange = onCameraZoom3dChange,
+                                neonBloomIntensity = neonBloomIntensity,
+                                onNeonBloomIntensityChange = onNeonBloomIntensityChange
+                            )
+                        }
+
+                        // Coluna Direita: Cabeçalho PAUSADO e Ações Arcade
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.settings_sound_effects),
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Surface(
-                                onClick = onToggleSound,
-                                shape = CutCornerShape(8.dp),
-                                color = if (isSoundEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
-                                border = BorderStroke(1.dp, if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                                        contentDescription = if (isSoundEnabled) "Silenciar som" else "Ativar som",
-                                        tint = if (isSoundEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        // Divisor sutil
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(Color(0x1AFFFFFF))
-                        )
-
-                        // Game Music
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_music),
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Surface(
-                                onClick = onToggleMusic,
-                                shape = CutCornerShape(8.dp),
-                                color = if (isMusicEnabled) Color(0x2600E5FF) else Color(0x26EF4444),
-                                border = BorderStroke(1.dp, if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444)),
-                                modifier = Modifier.size(38.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = if (isMusicEnabled) Icons.Default.MusicNote else Icons.Default.MusicOff,
-                                        contentDescription = if (isMusicEnabled) "Silenciar música" else "Tocar música",
-                                        tint = if (isMusicEnabled) Color(0xFF00E5FF) else Color(0xFFEF4444),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        // Controle de Brilho do Neon (quando o 3D estiver em execução)
-                        if (is3dActive && onNeonBloomIntensityChange != null) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Color(0x1AFFFFFF))
+                                text = stringResource(R.string.game_paused).uppercase(),
+                                color = Color.White,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 2.sp
                             )
 
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.neon_bloom_intensity_title),
-                                        color = Color(0xFFE2E8F0),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    val pct = kotlin.math.round((neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
-                                    val intensityLabel = when {
-                                        pct == 0 -> stringResource(R.string.neon_bloom_off)
-                                        pct <= 30 -> stringResource(R.string.neon_bloom_soft)
-                                        pct <= 70 -> stringResource(R.string.neon_bloom_normal)
-                                        else -> stringResource(R.string.neon_bloom_vibrant)
-                                    }
-                                    Text(
-                                        text = "$pct% • $intensityLabel",
-                                        color = Color(0xFF00E5FF),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Slider(
-                                    value = neonBloomIntensity.coerceIn(0.0f, 0.10f),
-                                    onValueChange = onNeonBloomIntensityChange,
-                                    valueRange = 0.0f..0.10f,
-                                    steps = 9,
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = Color(0xFF00E5FF),
-                                        activeTrackColor = Color(0xFF00E5FF),
-                                        inactiveTrackColor = Color(0xFF1E293B)
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(30.dp)
-                                )
-                            }
-                        }
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                        // Controle de Zoom da Câmera 3D (quando a Arena 3D estiver ativa)
-                        if (is3dActive && onCameraZoom3dChange != null) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(Color(0x1AFFFFFF))
+                            ArcadePrimaryButton(
+                                text = stringResource(R.string.game_resume).uppercase(),
+                                containerColor = Color(0xFF00E5FF),
+                                icon = Icons.Default.PlayArrow,
+                                onClick = onResume
                             )
 
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Videocam,
-                                        contentDescription = null,
-                                        tint = Color(0xFF00E5FF),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.camera_zoom_title),
-                                        color = Color(0xFFE2E8F0),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
+                            ArcadeSecondaryButton(
+                                text = stringResource(R.string.game_restart).uppercase(),
+                                accentColor = Color(0xFF00E5FF),
+                                icon = Icons.Default.Refresh,
+                                onClick = onRestart
+                            )
 
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    listOf(CameraZoom3D.CLOSE, CameraZoom3D.STANDARD, CameraZoom3D.WIDE).forEach { zoomOption ->
-                                        val isSelected = zoomOption == cameraZoom3d
-                                        val label = when (zoomOption) {
-                                            CameraZoom3D.CLOSE -> stringResource(R.string.camera_zoom_close)
-                                            CameraZoom3D.STANDARD -> stringResource(R.string.camera_zoom_standard)
-                                            CameraZoom3D.WIDE -> stringResource(R.string.camera_zoom_wide)
-                                        }
-                                        Surface(
-                                            onClick = { onCameraZoom3dChange(zoomOption) },
-                                            shape = CutCornerShape(6.dp),
-                                            color = if (isSelected) Color(0x3300E5FF) else Color(0x1AFFFFFF),
-                                            border = BorderStroke(1.dp, if (isSelected) Color(0xFF00E5FF) else Color(0x22FFFFFF)),
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(34.dp)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Text(
-                                                    text = label,
-                                                    color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                                    fontSize = 10.5.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    maxLines = 1
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            ArcadeSecondaryButton(
+                                text = stringResource(R.string.game_exit_to_menu).uppercase(),
+                                accentColor = Color(0xFF94A3B8),
+                                onClick = onExit
+                            )
                         }
                     }
+                } else {
+                    // Modo Retrato: Coluna Única com rolagem vertical segura
+                    Text(
+                        text = stringResource(R.string.game_paused).uppercase(),
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    AudioAndVisualControlsSurface(
+                        isSoundEnabled = isSoundEnabled,
+                        onToggleSound = onToggleSound,
+                        isMusicEnabled = isMusicEnabled,
+                        onToggleMusic = onToggleMusic,
+                        is3dActive = is3dActive,
+                        cameraZoom3d = cameraZoom3d,
+                        onCameraZoom3dChange = onCameraZoom3dChange,
+                        neonBloomIntensity = neonBloomIntensity,
+                        onNeonBloomIntensityChange = onNeonBloomIntensityChange
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    ArcadePrimaryButton(
+                        text = stringResource(R.string.game_resume).uppercase(),
+                        containerColor = Color(0xFF00E5FF),
+                        icon = Icons.Default.PlayArrow,
+                        onClick = onResume
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    ArcadeSecondaryButton(
+                        text = stringResource(R.string.game_restart).uppercase(),
+                        accentColor = Color(0xFF00E5FF),
+                        icon = Icons.Default.Refresh,
+                        onClick = onRestart
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    ArcadeSecondaryButton(
+                        text = stringResource(R.string.game_exit_to_menu).uppercase(),
+                        accentColor = Color(0xFF94A3B8),
+                        onClick = onExit
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Botão Primário: Retomar (Ciano Neon)
-                ArcadePrimaryButton(
-                    text = stringResource(R.string.game_resume).uppercase(),
-                    containerColor = Color(0xFF00E5FF),
-                    icon = Icons.Default.PlayArrow,
-                    onClick = onResume
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Botão Secundário: Reiniciar
-                ArcadeSecondaryButton(
-                    text = stringResource(R.string.game_restart).uppercase(),
-                    accentColor = Color(0xFF00E5FF),
-                    icon = Icons.Default.Refresh,
-                    onClick = onRestart
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Botão Terciário: Sair para o Menu
-                ArcadeSecondaryButton(
-                    text = stringResource(R.string.game_exit_to_menu).uppercase(),
-                    accentColor = Color(0xFF94A3B8),
-                    onClick = onExit
-                )
             }
         }
     }
@@ -926,6 +1040,9 @@ fun GameOverDialog(
     onPlayAgain: () -> Unit,
     onExit: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val isDraw = matchState.winner == 0
     val winnerColor = if (isDraw) Color(0xFFE2E8F0) else if (matchState.winner == 1) Color(0xFF00E5FF) else Color(0xFFFF5722)
     val winnerTitle = if (isDraw) {
@@ -940,7 +1057,8 @@ fun GameOverDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xD9000000)),
+            .background(Color(0xD9000000))
+            .safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -957,24 +1075,26 @@ fun GameOverDialog(
             ),
             shadowElevation = 24.dp,
             modifier = Modifier
-                .widthIn(max = 420.dp)
+                .widthIn(max = if (isLandscape) 520.dp else 420.dp)
                 .fillMaxWidth(0.90f)
-                .padding(16.dp)
+                .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .padding(if (isLandscape) 14.dp else 24.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = winnerTitle.uppercase(),
                     color = winnerColor,
-                    fontSize = 24.sp,
+                    fontSize = if (isLandscape) 20.sp else 24.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.2.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(if (isLandscape) 8.dp else 14.dp))
 
                 // Placar Final Arcade
                 Surface(
@@ -986,14 +1106,14 @@ fun GameOverDialog(
                     Text(
                         text = "${matchState.scorePlayer1} - ${matchState.scorePlayer2}",
                         color = Color.White,
-                        fontSize = 38.sp,
+                        fontSize = if (isLandscape) 30.sp else 38.sp,
                         fontWeight = FontWeight.Black,
                         fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = if (isLandscape) 6.dp else 10.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(if (isLandscape) 14.dp else 24.dp))
 
                 ArcadePrimaryButton(
                     text = stringResource(R.string.game_play_again).uppercase(),
@@ -1002,7 +1122,7 @@ fun GameOverDialog(
                     onClick = onPlayAgain
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 ArcadeSecondaryButton(
                     text = stringResource(R.string.game_exit_to_menu).uppercase(),
@@ -1026,13 +1146,17 @@ fun StageResultDialog(
     onRetry: () -> Unit,
     onNextStage: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF5722)
     val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFFF6D00)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xD9000000)),
+            .background(Color(0xD9000000))
+            .safeDrawingPadding(),
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -1050,12 +1174,14 @@ fun StageResultDialog(
             ),
             shadowElevation = 24.dp,
             modifier = Modifier
-                .widthIn(max = 420.dp)
-                .fillMaxWidth(0.90f)
-                .padding(16.dp)
+                .widthIn(max = if (isLandscape) 640.dp else 420.dp)
+                .fillMaxWidth(0.92f)
+                .padding(if (isLandscape) 8.dp else 16.dp)
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier
+                    .padding(if (isLandscape) 14.dp else 22.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header: Level Number
