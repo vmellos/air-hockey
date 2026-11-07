@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.customization.ui
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -87,6 +89,289 @@ fun PreMatchArenaSelectionScreen(
     var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
     val arenaItems = ArenaConquestCatalog.ALL_THEMES
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val headerContent = @Composable {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isLandscape) 4.dp else 8.dp)
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(if (isLandscape) 36.dp else 40.dp)
+                    .background(Color(0xB3070D1A), CircleShape)
+                    .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = title.uppercase(),
+                color = Color.White,
+                fontSize = if (isLandscape) 15.sp else 17.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp,
+                fontFamily = FontFamily.SansSerif,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+
+    val previewBoxContent = @Composable { boxModifier: Modifier ->
+        Box(
+            modifier = boxModifier
+                .clip(CutCornerShape(12.dp))
+                .background(Color(0xFF0D1424))
+                .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
+        ) {
+            if (selectedDimension == ArenaDimension.THREE_DIMENSIONAL) {
+                Arena3DLivePreview(
+                    tableTheme = selectedTheme,
+                    puckSkin = prefs.puckSkin,
+                    malletSkin = prefs.player1MalletSkin,
+                    neonBloomIntensity = prefs.neonBloomIntensity,
+                    isExtended = false,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                ArenaLivePreview(
+                    tableTheme = selectedTheme,
+                    puckSkin = prefs.puckSkin,
+                    malletSkin = prefs.player1MalletSkin,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+
+    val dimensionSelectorContent = @Composable {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isLandscape) 4.dp else 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val is3D = selectedDimension == ArenaDimension.THREE_DIMENSIONAL
+            
+            Surface(
+                onClick = { selectedDimension = ArenaDimension.TWO_DIMENSIONAL },
+                shape = CutCornerShape(8.dp),
+                color = if (!is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
+                border = BorderStroke(1.2.dp, if (!is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = if (isLandscape) 6.dp else 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ViewAgenda,
+                        contentDescription = null,
+                        tint = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.pre_match_mode_2d).uppercase(),
+                        color = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+
+            Surface(
+                onClick = { selectedDimension = ArenaDimension.THREE_DIMENSIONAL },
+                shape = CutCornerShape(8.dp),
+                color = if (is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
+                border = BorderStroke(1.2.dp, if (is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(vertical = if (isLandscape) 6.dp else 10.dp, horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Layers,
+                        contentDescription = null,
+                        tint = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.pre_match_mode_3d).uppercase(),
+                        color = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+        }
+    }
+
+    val arenasCarouselContent = @Composable {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isLandscape) 6.dp else 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            items(arenaItems, key = { it.theme.name }) { item ->
+                val isLocked = item.unlockStage > 0 && !unlockedThemes.contains(item.theme)
+                val isSelected = selectedTheme == item.theme
+
+                val cardBorder = when {
+                    isSelected -> item.primaryColor
+                    isLocked -> Color(0x55FFB800)
+                    else -> Color(0xFF1E293B)
+                }
+
+                val cardBg = when {
+                    isSelected -> item.primaryColor.copy(alpha = 0.16f)
+                    else -> Color(0xFF0D1424)
+                }
+
+                Card(
+                    shape = CutCornerShape(8.dp),
+                    border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, cardBorder),
+                    colors = CardDefaults.cardColors(containerColor = cardBg),
+                    modifier = Modifier
+                        .width(if (isLandscape) 124.dp else 136.dp)
+                        .clickable {
+                            selectedTheme = item.theme
+                            if (isLocked) {
+                                lockedDialogInfo = LockedArenaInfo(item.titleRes, item.unlockStage)
+                            }
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(if (isLandscape) 6.dp else 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(if (isLandscape) 28.dp else 32.dp)
+                                    .clip(CutCornerShape(6.dp))
+                                    .background(item.primaryColor.copy(alpha = 0.20f))
+                                    .border(1.dp, item.primaryColor.copy(alpha = 0.6f), CutCornerShape(6.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = null,
+                                    tint = item.primaryColor,
+                                    modifier = Modifier.size(if (isLandscape) 16.dp else 18.dp)
+                                )
+                            }
+
+                            if (isLocked) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (isLandscape) 22.dp else 24.dp)
+                                        .background(Color(0x33FFB800), CircleShape)
+                                        .border(1.dp, Color(0x88FFB800), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFB800),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                }
+                            } else if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (isLandscape) 22.dp else 24.dp)
+                                        .background(item.primaryColor.copy(alpha = 0.20f), CircleShape)
+                                        .border(1.2.dp, item.primaryColor, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = item.primaryColor,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 8.dp))
+
+                        Text(
+                            text = stringResource(item.titleRes),
+                            color = Color.White,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    val actionButtonContent = @Composable {
+        Button(
+            onClick = {
+                val currentUnlocked = ArenaConquestCatalog.isDefaultUnlocked(selectedTheme) || unlockedThemes.contains(selectedTheme)
+                val finalTheme = if (currentUnlocked) selectedTheme else TableTheme.CLASSIC_NEON
+
+                coroutineScope.launch {
+                    preferencesRepo.applyThemePreset(finalTheme)
+                    preferencesRepo.updateArenaDimension(selectedDimension)
+                }
+                onConfirm(finalTheme, selectedDimension)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
+            shape = CutCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(if (isLandscape) 44.dp else 50.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = Color(0xFF070B14),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = confirmButtonText.uppercase(),
+                color = Color(0xFF070B14),
+                fontSize = if (isLandscape) 14.sp else 15.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
+            )
+        }
+    }
 
     Box(
         modifier = modifier
@@ -94,299 +379,73 @@ fun PreMatchArenaSelectionScreen(
             .background(Color(0xFF070B14))
             .safeDrawingPadding()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            // 1. Cabeçalho Arcade
+        if (isLandscape) {
+            // Layout Bicolunar no Seletor Pré-Jogo em Modo Paisagem (ADR 0037)
             Row(
-                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                IconButton(
-                    onClick = onBack,
+                // Coluna Esquerda: Vitrine de Pré-Visualização com altura total e alternador 2D/3D
+                Column(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(Color(0xB3070D1A), CircleShape)
-                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back),
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    previewBoxContent(Modifier.fillMaxWidth().weight(1f))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    dimensionSelectorContent()
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Text(
-                    text = title.uppercase(),
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // 2. Vitrine Interativa de Pré-Visualização (3D com rotação contínua e gestos de pinça, ou 2D)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clip(CutCornerShape(12.dp))
-                    .background(Color(0xFF0D1424))
-                    .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
-            ) {
-                if (selectedDimension == ArenaDimension.THREE_DIMENSIONAL) {
-                    Arena3DLivePreview(
-                        tableTheme = selectedTheme,
-                        puckSkin = prefs.puckSkin,
-                        malletSkin = prefs.player1MalletSkin,
-                        neonBloomIntensity = prefs.neonBloomIntensity,
-                        isExtended = false,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    ArenaLivePreview(
-                        tableTheme = selectedTheme,
-                        puckSkin = prefs.puckSkin,
-                        malletSkin = prefs.player1MalletSkin,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // 3. Seletor de Dimensão Gráfica (2D / 3D)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val is3D = selectedDimension == ArenaDimension.THREE_DIMENSIONAL
-                
-                Surface(
-                    onClick = { selectedDimension = ArenaDimension.TWO_DIMENSIONAL },
-                    shape = CutCornerShape(8.dp),
-                    color = if (!is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
-                    border = BorderStroke(1.2.dp, if (!is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
-                    modifier = Modifier.weight(1f)
+                // Coluna Direita: Cabeçalho, Carrossel de Arenas, Botão de Ação e Anúncio em Banner
+                Column(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ViewAgenda,
-                            contentDescription = null,
-                            tint = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.pre_match_mode_2d).uppercase(),
-                            color = if (!is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                    }
-                }
-
-                Surface(
-                    onClick = { selectedDimension = ArenaDimension.THREE_DIMENSIONAL },
-                    shape = CutCornerShape(8.dp),
-                    color = if (is3D) Color(0xFF00E5FF).copy(alpha = 0.15f) else Color(0xFF0D1424),
-                    border = BorderStroke(1.2.dp, if (is3D) Color(0xFF00E5FF) else Color(0xFF1E293B)),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Layers,
-                            contentDescription = null,
-                            tint = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.pre_match_mode_3d).uppercase(),
-                            color = if (is3D) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                    }
-                }
-            }
-
-            // 4. Carrossel Horizontal de Arenas Esportivas
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 2.dp)
-            ) {
-                items(arenaItems, key = { it.theme.name }) { item ->
-                    val isLocked = item.unlockStage > 0 && !unlockedThemes.contains(item.theme)
-                    val isSelected = selectedTheme == item.theme
-
-                    val cardBorder = when {
-                        isSelected -> item.primaryColor
-                        isLocked -> Color(0x55FFB800)
-                        else -> Color(0xFF1E293B)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        headerContent()
+                        arenasCarouselContent()
                     }
 
-                    val cardBg = when {
-                        isSelected -> item.primaryColor.copy(alpha = 0.16f)
-                        else -> Color(0xFF0D1424)
-                    }
-
-                    Card(
-                        shape = CutCornerShape(8.dp),
-                        border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, cardBorder),
-                        colors = CardDefaults.cardColors(containerColor = cardBg),
-                        modifier = Modifier
-                            .width(136.dp)
-                            .clickable {
-                                selectedTheme = item.theme
-                                if (isLocked) {
-                                    lockedDialogInfo = LockedArenaInfo(item.titleRes, item.unlockStage)
-                                }
-                            }
-                    ) {
-                        Column(
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        actionButtonContent()
+                        Spacer(modifier = Modifier.height(4.dp))
+                        AdBanner(
+                            adManager = AirHockeyApp.instance.adManager,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CutCornerShape(6.dp))
-                                        .background(item.primaryColor.copy(alpha = 0.20f))
-                                        .border(1.dp, item.primaryColor.copy(alpha = 0.6f), CutCornerShape(6.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = null,
-                                        tint = item.primaryColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-
-                                if (isLocked) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(Color(0x33FFB800), CircleShape)
-                                            .border(1.dp, Color(0x88FFB800), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Lock,
-                                            contentDescription = null,
-                                            tint = Color(0xFFFFB800),
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                    }
-                                } else if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(item.primaryColor.copy(alpha = 0.20f), CircleShape)
-                                            .border(1.2.dp, item.primaryColor, CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            tint = item.primaryColor,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = stringResource(item.titleRes),
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                                .padding(bottom = 2.dp)
+                        )
                     }
                 }
             }
-
-            // 5. Botão de Ação Primário Arcade
-            Button(
-                onClick = {
-                    val currentUnlocked = ArenaConquestCatalog.isDefaultUnlocked(selectedTheme) || unlockedThemes.contains(selectedTheme)
-                    val finalTheme = if (currentUnlocked) selectedTheme else TableTheme.CLASSIC_NEON
-
-                    coroutineScope.launch {
-                        preferencesRepo.applyThemePreset(finalTheme)
-                        preferencesRepo.updateArenaDimension(selectedDimension)
-                    }
-                    onConfirm(finalTheme, selectedDimension)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
-                shape = CutCornerShape(8.dp),
+        } else {
+            // Modo Retrato: Coluna Única Padrão
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = Color(0xFF070B14),
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = confirmButtonText.uppercase(),
-                    color = Color(0xFF070B14),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
+                headerContent()
+                previewBoxContent(Modifier.fillMaxWidth().weight(1f))
+                Spacer(modifier = Modifier.height(10.dp))
+                dimensionSelectorContent()
+                arenasCarouselContent()
+                actionButtonContent()
+                Spacer(modifier = Modifier.height(6.dp))
+                AdBanner(
+                    adManager = AirHockeyApp.instance.adManager,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            AdBanner(
-                adManager = AirHockeyApp.instance.adManager,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp)
-            )
         }
 
         // Diálogo Orientativo de Arena Bloqueada

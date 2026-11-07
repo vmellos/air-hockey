@@ -494,5 +494,14 @@ _Avoid_: Config, tela de opções geral, menu de temas
 O vocabulário padronizado para as abas na tela de personalização (`Kits`, `Mesas`, `Discos`, `Tacos` em PT e `Mazos` em ES), garantindo legibilidade em qualquer densidade de tela sem quebra ou compressão visual.
 _Avoid_: Rebatedores espremido, strings longas em abas fixas
 
+**Layout Bicolunar em Modo Paisagem**:
+A organização espacial responsiva em duas colunas paralela e simétrica adotada nas telas de navegação (Menu Principal, Customização da Arena e Seletor Pré-Jogo de Arenas) quando a aplicação é executada na orientação horizontal (landscape), isolando os elementos volumétricos visuais (como o Título Arcade Volumétrico ou a Vitrine de Pré-Visualização 3D) na coluna esquerda e os fluxos de ação (cartões de modos, abas de itens e botões primários) na coluna direita, prevenindo o colapso e corte vertical de elementos em smartphones.
+_Avoid_: Coluna única esticada em paisagem, tela quebrada em horizontal, scroll único achatado
+
+**Calhas Laterais da Arena**:
+Os espaços livres e escurecidos (letterbox) gerados automaticamente à esquerda e à direita da Mesa em telas ultrawide ou em smartphones na orientação horizontal (landscape), aproveitados ergonomicamente para ancoragem externa do Placar Lateral e botão de pausa sem invadir ou cobrir a superfície de jogo e os trilhos da arena virtual.
+_Avoid_: Borda preta vazia, área morta, letterbox simples
+
+
 
 

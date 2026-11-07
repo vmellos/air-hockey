@@ -69,6 +69,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
@@ -155,214 +157,367 @@ fun MainMenuScreen(
                 )
         )
 
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .widthIn(max = 520.dp)
-                    .fillMaxWidth()
-                    .safeDrawingPadding()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-            // Cabeçalho com Placar, Loja/Remover Anúncios, Recompensas e Configurações
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        if (isLandscape) {
+            // Layout Bicolunar no Menu Principal em Modo Paisagem (ADR 0037)
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 24.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botão Placar de Líderes + Badge do Play Games
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Coluna Esquerda: Título Arcade Volumétrico, Subtítulo e Anúncio em Banner
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        onClick = onOpenLeaderboard,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x66FFB800), CircleShape)
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = stringResource(R.string.leaderboard_title),
-                            tint = Color(0xFFFFB800),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-
-                }
-
-                // Ações da Direita
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (!isAdsRemovedPermanently && activity != null) {
-                        IconButton(
-                            onClick = { billingManager.launchPurchaseFlow(activity) },
+                        Image(
+                            painter = painterResource(id = R.drawable.title_banner_championship),
+                            contentDescription = stringResource(R.string.app_name),
                             modifier = Modifier
-                                .size(44.dp)
-                                .background(Color(0xB3070D1A), CircleShape)
-                                .border(1.2.dp, Color(0x6600E5FF), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingBag,
-                                contentDescription = stringResource(R.string.remove_ads_menu_button),
-                                tint = Color(0xFF00E5FF),
-                                modifier = Modifier.size(20.dp)
+                                .fillMaxWidth(0.88f)
+                                .widthIn(max = 300.dp)
+                                .aspectRatio(800f / 341f),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.app_tagline),
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp
+                        )
+
+                        if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            InAppUpdateDownloadedBanner(
+                                onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
+                                onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = onOpenCustomization,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Stadium,
-                            contentDescription = stringResource(R.string.customization_menu_tooltip),
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(20.dp)
+                        AdBanner(
+                            adManager = adManager,
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                        Text(
+                            text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
+                            color = Color(0xFF475569),
+                            fontSize = 10.sp,
+                            letterSpacing = 1.sp,
+                            fontFamily = FontFamily.Monospace
                         )
                     }
+                }
 
-                    // Acesso Rápido de Áudio e Vibração
-                    IconButton(
-                        onClick = {
-                            if (prefs.hapticsEnabled) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            }
-                            showQuickAudioDialog = true
-                        },
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                // Coluna Direita: Ações Rápidas de Topo e os 3 Modos de Jogo
+                Column(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Ações do Topo
+                    MainMenuHeaderActions(
+                        onOpenLeaderboard = onOpenLeaderboard,
+                        isAdsRemovedPermanently = isAdsRemovedPermanently,
+                        activity = activity,
+                        billingManager = billingManager,
+                        onOpenCustomization = onOpenCustomization,
+                        prefs = prefs,
+                        haptic = haptic,
+                        onOpenSettings = onOpenSettings,
+                        onOpenQuickAudio = { showQuickAudioDialog = true }
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Os 3 Cartões de Modos de Jogo com acesso imediato sem cortes
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        val isAnyAudioOn = prefs.soundEnabled || prefs.musicEnabled
-                        Icon(
-                            imageVector = if (isAnyAudioOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                            contentDescription = stringResource(R.string.quick_audio_title),
-                            tint = if (isAnyAudioOn) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            modifier = Modifier.size(20.dp)
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_solo),
+                            description = stringResource(R.string.menu_mode_solo_desc),
+                            accentColor = Color(0xFF10B981),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartSolo
                         )
-                    }
 
-                    IconButton(
-                        onClick = onOpenSettings,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(Color(0xB3070D1A), CircleShape)
-                            .border(1.2.dp, Color(0x6600E5FF), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.menu_settings),
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(20.dp)
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_split),
+                            description = stringResource(R.string.menu_mode_split_desc),
+                            accentColor = Color(0xFFFF5722),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartSplit
+                        )
+
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_network_centralized),
+                            description = stringResource(R.string.menu_mode_network_centralized_desc),
+                            accentColor = Color(0xFF00E5FF),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartNetwork
                         )
                     }
                 }
             }
-
-            // Título Neon Arcade Volumétrico com Arte Oficial
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 4.dp)
+        } else {
+            // Modo Retrato: Coluna Única Centralizada com Contêiner Responsivo (ADR 0026)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.title_banner_championship),
-                    contentDescription = stringResource(R.string.app_name),
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .widthIn(max = 380.dp)
-                        .aspectRatio(800f / 341f),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.app_tagline),
-                    color = Color(0xFFE2E8F0),
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.sp
-                )
+                        .fillMaxHeight()
+                        .widthIn(max = 520.dp)
+                        .fillMaxWidth()
+                        .safeDrawingPadding()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Cabeçalho com Placar, Loja/Remover Anúncios, Recompensas e Configurações
+                    MainMenuHeaderActions(
+                        onOpenLeaderboard = onOpenLeaderboard,
+                        isAdsRemovedPermanently = isAdsRemovedPermanently,
+                        activity = activity,
+                        billingManager = billingManager,
+                        onOpenCustomization = onOpenCustomization,
+                        prefs = prefs,
+                        haptic = haptic,
+                        onOpenSettings = onOpenSettings,
+                        onOpenQuickAudio = { showQuickAudioDialog = true }
+                    )
+
+                    // Título Neon Arcade Volumétrico com Arte Oficial
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp, bottom = 4.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.title_banner_championship),
+                            contentDescription = stringResource(R.string.app_name),
+                            modifier = Modifier
+                                .fillMaxWidth(0.85f)
+                                .widthIn(max = 380.dp)
+                                .aspectRatio(800f / 341f),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.app_tagline),
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    // Banner de Atualização Flexível Concluída
+                    if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
+                        InAppUpdateDownloadedBanner(
+                            onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
+                            onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }
+                        )
+                    }
+
+                    // Cartões dos 3 Modos de Jogo no Padrão Arcade Glassmorphism
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_solo),
+                            description = stringResource(R.string.menu_mode_solo_desc),
+                            accentColor = Color(0xFF10B981),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartSolo
+                        )
+
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_split),
+                            description = stringResource(R.string.menu_mode_split_desc),
+                            accentColor = Color(0xFFFF5722),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartSplit
+                        )
+
+                        MenuModeCard(
+                            title = stringResource(R.string.menu_mode_network_centralized),
+                            description = stringResource(R.string.menu_mode_network_centralized_desc),
+                            accentColor = Color(0xFF00E5FF),
+                            hapticsEnabled = prefs.hapticsEnabled,
+                            onClick = onStartNetwork
+                        )
+                    }
+
+                    // Anúncio em Banner não-invasivo
+                    AdBanner(
+                        adManager = adManager,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+
+                    // Rodapé elegante
+                    Text(
+                        text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
+                        color = Color(0xFF475569),
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
             }
-
-            // Banner de Atualização Flexível Concluída
-            if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
-                InAppUpdateDownloadedBanner(
-                    onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
-                    onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }
-                )
-            }
-
-            // Cartões dos 3 Modos de Jogo no Padrão Arcade Glassmorphism
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                MenuModeCard(
-                    title = stringResource(R.string.menu_mode_solo),
-                    description = stringResource(R.string.menu_mode_solo_desc),
-                    accentColor = Color(0xFF10B981),
-                    hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = onStartSolo
-                )
-
-                MenuModeCard(
-                    title = stringResource(R.string.menu_mode_split),
-                    description = stringResource(R.string.menu_mode_split_desc),
-                    accentColor = Color(0xFFFF5722),
-                    hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = onStartSplit
-                )
-
-                MenuModeCard(
-                    title = stringResource(R.string.menu_mode_network_centralized),
-                    description = stringResource(R.string.menu_mode_network_centralized_desc),
-                    accentColor = Color(0xFF00E5FF),
-                    hapticsEnabled = prefs.hapticsEnabled,
-                    onClick = onStartNetwork
-                )
-            }
-
-            // Anúncio em Banner não-invasivo
-            AdBanner(
-                adManager = adManager,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            // Rodapé elegante
-            Text(
-                text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
-                color = Color(0xFF475569),
-                fontSize = 11.sp,
-                letterSpacing = 1.sp,
-                fontFamily = FontFamily.Monospace
-            )
         }
-    }
 
         if (showQuickAudioDialog) {
             QuickAudioDialog(
                 prefs = prefs,
                 onDismiss = { showQuickAudioDialog = false }
             )
+        }
+    }
+}
+
+@Composable
+private fun MainMenuHeaderActions(
+    onOpenLeaderboard: () -> Unit,
+    isAdsRemovedPermanently: Boolean,
+    activity: android.app.Activity?,
+    billingManager: dev.vmellos.airhockey.core.billing.BillingManager,
+    onOpenCustomization: () -> Unit,
+    prefs: UserPreferences,
+    haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
+    onOpenSettings: () -> Unit,
+    onOpenQuickAudio: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Botão Placar de Líderes + Badge do Play Games
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(
+                onClick = onOpenLeaderboard,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xB3070D1A), CircleShape)
+                    .border(1.2.dp, Color(0x66FFB800), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = stringResource(R.string.leaderboard_title),
+                    tint = Color(0xFFFFB800),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+        // Ações da Direita
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (!isAdsRemovedPermanently && activity != null) {
+                IconButton(
+                    onClick = { billingManager.launchPurchaseFlow(activity) },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Color(0xB3070D1A), CircleShape)
+                        .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingBag,
+                        contentDescription = stringResource(R.string.remove_ads_menu_button),
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onOpenCustomization,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xB3070D1A), CircleShape)
+                    .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Stadium,
+                    contentDescription = stringResource(R.string.customization_menu_tooltip),
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Acesso Rápido de Áudio e Vibração
+            IconButton(
+                onClick = {
+                    if (prefs.hapticsEnabled) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                    onOpenQuickAudio()
+                },
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xB3070D1A), CircleShape)
+                    .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+            ) {
+                val isAnyAudioOn = prefs.soundEnabled || prefs.musicEnabled
+                Icon(
+                    imageVector = if (isAnyAudioOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                    contentDescription = stringResource(R.string.quick_audio_title),
+                    tint = if (isAnyAudioOn) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xB3070D1A), CircleShape)
+                    .border(1.2.dp, Color(0x6600E5FF), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.menu_settings),
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

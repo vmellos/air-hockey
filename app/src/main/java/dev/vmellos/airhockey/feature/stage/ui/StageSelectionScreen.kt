@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.stage.ui
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,6 +61,9 @@ fun StageSelectionScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val stageRepository = AirHockeyApp.instance.stageRepository
     val stages by stageRepository.stagesFlow.collectAsState(initial = emptyList())
     val totalStars by stageRepository.totalStarsFlow.collectAsState(initial = 0)
@@ -98,7 +103,7 @@ fun StageSelectionScreen(
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .widthIn(max = 560.dp)
+                    .widthIn(max = if (isLandscape) 820.dp else 560.dp)
                     .fillMaxWidth()
                     .safeDrawingPadding()
             ) {
@@ -106,7 +111,7 @@ fun StageSelectionScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = if (isLandscape) 6.dp else 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -114,7 +119,7 @@ fun StageSelectionScreen(
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(if (isLandscape) 38.dp else 44.dp)
                         .background(Color(0xB3070D1A), CircleShape)
                         .border(1.2.dp, Color(0x6600E5FF), CircleShape)
                 ) {
@@ -122,7 +127,7 @@ fun StageSelectionScreen(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.stage_back),
                         tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(if (isLandscape) 18.dp else 20.dp)
                     )
                 }
 
@@ -134,7 +139,7 @@ fun StageSelectionScreen(
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = if (isLandscape) 4.dp else 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -142,12 +147,12 @@ fun StageSelectionScreen(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
                             tint = Color(0xFFFFB800),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(if (isLandscape) 18.dp else 20.dp)
                         )
                         Text(
                             text = "$totalStars",
                             color = Color(0xFFFFB800),
-                            fontSize = 18.sp,
+                            fontSize = if (isLandscape) 16.sp else 18.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 1.sp
                         )
@@ -155,17 +160,17 @@ fun StageSelectionScreen(
                 }
 
                 // Espaçador para manter o contador de estrelas perfeitamente centralizado
-                Spacer(modifier = Modifier.size(44.dp))
+                Spacer(modifier = Modifier.size(if (isLandscape) 38.dp else 44.dp))
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 2.dp else 6.dp))
 
-            // Grade de 3 Colunas dos 100 Níveis
+            // Grade de Colunas dos 100 Níveis (6 colunas no landscape, 3 no portrait)
             LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                columns = GridCells.Fixed(if (isLandscape) 6 else 3),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = if (isLandscape) 6.dp else 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 14.dp),
+                verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)

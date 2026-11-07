@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -102,6 +103,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -234,61 +237,22 @@ fun ArenaCustomizationScreen(
         )
     )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF070B16))
-            .safeDrawingPadding()
-    ) {
-        // 1. Barra de Navegação Superior (Padrão da Indústria)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color(0x331E293B), CircleShape)
-                    .border(1.dp, Color(0x66334155), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                    tint = Color(0xFF00E5FF),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val is3d = prefs.arenaDimension == ArenaDimension.THREE_DIMENSIONAL
 
-            Spacer(modifier = Modifier.width(12.dp))
+    val categoryTitles = remember {
+        listOf(
+            Pair(R.string.customization_tab_bundles, Icons.Default.Layers),
+            Pair(R.string.customization_tab_tables, Icons.Default.ViewAgenda),
+            Pair(R.string.customization_tab_pucks, Icons.Default.Adjust),
+            Pair(R.string.customization_tab_mallets, Icons.Default.SportsEsports)
+        )
+    }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.customization_screen_title),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stringResource(R.string.settings_theme_active_indicator, currentActivePresetName),
-                    color = Color(0xFF00E5FF),
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        val is3d = prefs.arenaDimension == ArenaDimension.THREE_DIMENSIONAL
-
-        // 2. Vitrine de Pré-Visualização Dinâmica da Arena (Live Arena Preview 2D / 3D)
+    val previewBoxContent = @Composable { boxModifier: Modifier ->
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .height(210.dp)
+            modifier = boxModifier
                 .clip(CutCornerShape(12.dp))
                 .background(Color(0xFF0B1220))
                 .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
@@ -310,12 +274,13 @@ fun ArenaCustomizationScreen(
                 )
             }
         }
+    }
 
-        // Seletor de Dimensão da Arena (2D Clássico vs. 3D Imersivo)
+    val dimensionSelectorContent = @Composable {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+                .padding(horizontal = 8.dp, vertical = 2.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -376,20 +341,20 @@ fun ArenaCustomizationScreen(
                 }
             }
         }
+    }
 
-        // Controle do Brilho do Neon (quando o 3D está ativo)
+    val bloomControlsContent = @Composable {
         if (is3d) {
-            Spacer(modifier = Modifier.height(8.dp))
             Surface(
                 color = Color(0xFF0C1322),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, Color(0xFF1E293B)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -444,64 +409,56 @@ fun ArenaCustomizationScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(30.dp)
+                            .height(28.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color(0x1AFFFFFF))
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                            Text(
-                                text = stringResource(R.string.settings_3d_intro_title),
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_3d_intro_desc),
-                                color = Color(0xFF94A3B8),
-                                fontSize = 10.sp,
-                                lineHeight = 13.sp
-                            )
-                        }
-                        Switch(
-                            checked = prefs.arena3dIntroEnabled,
-                            onCheckedChange = { isEnabled ->
-                                coroutineScope.launch {
-                                    preferencesRepo.setArena3dIntroEnabled(isEnabled)
-                                }
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color(0xFF00E5FF),
-                                checkedTrackColor = Color(0x6600E5FF)
-                            )
-                        )
-                    }
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(10.dp))
+    val headerContent = @Composable {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (isLandscape) 4.dp else 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(Color(0x331E293B), CircleShape)
+                    .border(1.dp, Color(0x66334155), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
 
-        // 3. Barra de Categorias Segmentadas (Abas com Ícones Vetoriais)
-        val categoryTitles = listOf(
-            Pair(stringResource(R.string.customization_tab_bundles), Icons.Default.Layers),
-            Pair(stringResource(R.string.customization_tab_tables), Icons.Default.ViewAgenda),
-            Pair(stringResource(R.string.customization_tab_pucks), Icons.Default.Adjust),
-            Pair(stringResource(R.string.customization_tab_mallets), Icons.Default.SportsEsports)
-        )
+            Spacer(modifier = Modifier.width(10.dp))
 
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.customization_screen_title),
+                    color = Color.White,
+                    fontSize = if (isLandscape) 16.sp else 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.settings_theme_active_indicator, currentActivePresetName),
+                    color = Color(0xFF00E5FF),
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+
+    val tabRowContent = @Composable {
         TabRow(
             selectedTabIndex = selectedCategoryIndex,
             containerColor = Color(0xFF0B1322),
@@ -515,11 +472,11 @@ fun ArenaCustomizationScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = if (isLandscape) 4.dp else 16.dp)
                 .clip(CutCornerShape(8.dp))
                 .border(1.dp, Color(0xFF1E293B), CutCornerShape(8.dp))
         ) {
-            categoryTitles.forEachIndexed { index, (title, icon) ->
+            categoryTitles.forEachIndexed { index, (titleRes, icon) ->
                 val isSelected = selectedCategoryIndex == index
                 Tab(
                     selected = isSelected,
@@ -527,7 +484,7 @@ fun ArenaCustomizationScreen(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedCategoryIndex = index
                     },
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.height(44.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -538,13 +495,13 @@ fun ArenaCustomizationScreen(
                             imageVector = icon,
                             contentDescription = null,
                             tint = if (isSelected) Color(0xFF00E5FF) else Color(0xFF64748B),
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = title,
+                            text = stringResource(titleRes),
                             color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -553,17 +510,13 @@ fun ArenaCustomizationScreen(
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 4. Lista Modular de Itens da Categoria Selecionada
+    val itemsListContent = @Composable { listModifier: Modifier ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = listModifier.padding(horizontal = if (isLandscape) 4.dp else 16.dp),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             when (selectedCategoryIndex) {
                 0 -> {
@@ -699,27 +652,97 @@ fun ArenaCustomizationScreen(
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(6.dp))
+    if (isLandscape) {
+        // Layout Bicolunar na Customização em Modo Paisagem (ADR 0037)
+        Row(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color(0xFF070B16))
+                .safeDrawingPadding()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Coluna Esquerda: Vitrine de Pré-Visualização 3D/2D Dinâmica + Dimensão + Bloom
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                previewBoxContent(Modifier.fillMaxWidth().weight(1f))
+                Spacer(modifier = Modifier.height(4.dp))
+                dimensionSelectorContent()
+                bloomControlsContent()
+            }
 
-        AdBanner(
-            adManager = AirHockeyApp.instance.adManager,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 6.dp)
-        )
+            // Coluna Direita: Cabeçalho, Abas de Itens, Lista com Rolagem e Anúncio em Banner
+            Column(
+                modifier = Modifier
+                    .weight(1.2f)
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                headerContent()
+                tabRowContent()
+                Spacer(modifier = Modifier.height(6.dp))
+                itemsListContent(Modifier.fillMaxWidth().weight(1f))
+                AdBanner(
+                    adManager = AirHockeyApp.instance.adManager,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 2.dp)
+                )
+            }
+        }
+    } else {
+        // Modo Retrato: Coluna Única Padrão
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color(0xFF070B16))
+                .safeDrawingPadding()
+        ) {
+            headerContent()
 
-        val dialogInfo = lockedDialogInfo
-        if (dialogInfo != null) {
-            LockedArenaDialog(
-                info = dialogInfo,
-                onDismiss = { lockedDialogInfo = null },
-                onNavigateToStages = {
-                    lockedDialogInfo = null
-                    onNavigateToStages()
-                }
+            previewBoxContent(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .height(210.dp)
+            )
+
+            dimensionSelectorContent()
+            bloomControlsContent()
+
+            Spacer(modifier = Modifier.height(8.dp))
+            tabRowContent()
+            Spacer(modifier = Modifier.height(8.dp))
+
+            itemsListContent(Modifier.fillMaxWidth().weight(1f))
+
+            Spacer(modifier = Modifier.height(4.dp))
+            AdBanner(
+                adManager = AirHockeyApp.instance.adManager,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
             )
         }
+    }
+
+    val dialogInfo = lockedDialogInfo
+    if (dialogInfo != null) {
+        LockedArenaDialog(
+            info = dialogInfo,
+            onDismiss = { lockedDialogInfo = null },
+            onNavigateToStages = {
+                lockedDialogInfo = null
+                onNavigateToStages()
+            }
+        )
     }
 }
 
