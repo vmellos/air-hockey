@@ -174,6 +174,11 @@ class GameViewModel : ViewModel() {
                 airFriction = stageConfig.puckSpeed.airFriction,
                 tableTheme = stageConfig.tableTheme
             )
+        } else if (isExtended) {
+            spec.copy(
+                arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL,
+                hasIntroPresentation = false
+            )
         } else {
             spec
         }

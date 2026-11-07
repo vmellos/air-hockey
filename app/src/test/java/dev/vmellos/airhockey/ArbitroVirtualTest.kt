@@ -214,4 +214,45 @@ class ArbitroVirtualTest {
         arbitro.restart()
         assertEquals("Reiniciar deve restaurar PRESENTATION", MatchStatus.PRESENTATION, arbitro.matchState.value.status)
     }
+
+    @Test
+    fun testExtendedModeForcesTwoDimensionalRendering() {
+        val extDims = TableDimensions(
+            width = 1000f,
+            viewportHeight = 2000f,
+            bezelGapUnits = 50f,
+            isExtendedMode = true
+        )
+        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.EXTENDED_HOST,
+            arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+        )
+        val arbitro = ArbitroVirtual(
+            dimensions = extDims,
+            spec = spec
+        )
+        assertEquals(
+            "Mesa Estendida deve sempre forçar ArenaDimension.TWO_DIMENSIONAL mesmo se spec pedir 3D",
+            dev.vmellos.airhockey.core.preferences.ArenaDimension.TWO_DIMENSIONAL,
+            arbitro.matchState.value.arenaDimension
+        )
+    }
+
+    @Test
+    fun testSoloModePreservesThreeDimensionalRendering() {
+        val dims = TableDimensions()
+        val spec = dev.vmellos.airhockey.feature.game.MatchSpec(
+            mode = GameMode.SOLO,
+            arenaDimension = dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL
+        )
+        val arbitro = ArbitroVirtual(
+            dimensions = dims,
+            spec = spec
+        )
+        assertEquals(
+            "Modo Solo deve preservar ArenaDimension.THREE_DIMENSIONAL",
+            dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL,
+            arbitro.matchState.value.arenaDimension
+        )
+    }
 }
