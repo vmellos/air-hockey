@@ -53,6 +53,7 @@ class NsdDiscoveryManager(private val context: Context) {
     private var udpDiscoveryJob: Job? = null
     private var udpBroadcastSocket: DatagramSocket? = null
     private var udpDiscoverySocket: DatagramSocket? = null
+    private var isRestartingNsd = false
 
     private val tableRegistry = TableDiscoveryRegistry()
     private val _discoveredTables = MutableStateFlow<List<DiscoveredTable>>(emptyList())
@@ -172,6 +173,11 @@ class NsdDiscoveryManager(private val context: Context) {
                     }
                 }
 
+                // Anúncio imediato na sub-rede local para alertar convidados já aguardando no lobby
+                val initialMsg = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port:$mode:$hostName".toByteArray()
+                probeSubnets(socket, initialMsg)
+
+                var beaconCycle = 0
                 // Envia beacon periódico via Broadcast a cada 1000ms
                 while (isActive) {
                     val msg = "AIRHOCKEY_TABLE:$tableCode:$hostIp:$port:$mode:$hostName".toByteArray()
@@ -189,6 +195,12 @@ class NsdDiscoveryManager(private val context: Context) {
                             val p = DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT)
                             socket.send(p)
                         } catch (_: Exception) {}
+                    }
+
+                    // A cada ~3s (3 ciclos), varre a sub-rede unicast para clientes com isolamento AP
+                    beaconCycle++
+                    if (beaconCycle % 3 == 0) {
+                        probeSubnets(socket, msg)
                     }
 
                     delay(1000)
@@ -240,15 +252,8 @@ class NsdDiscoveryManager(private val context: Context) {
         releaseMulticastLockIfNeeded()
     }
 
-    fun startDiscovery() {
-        stopDiscovery()
-        isDiscovering = true
-        acquireMulticastLock()
-        tableRegistry.clear()
-        _discoveredTables.value = emptyList()
-
-        // 1. Canal NSD / mDNS
-        discoveryListener = object : NsdManager.DiscoveryListener {
+    private fun createDiscoveryListener(): NsdManager.DiscoveryListener {
+        return object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(regType: String) {}
 
             override fun onServiceFound(service: NsdServiceInfo) {
@@ -263,19 +268,90 @@ class NsdDiscoveryManager(private val context: Context) {
 
             override fun onDiscoveryStopped(serviceType: String) {}
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
-                stopDiscovery()
+                if (discoveryListener === this) {
+                    discoveryListener = null
+                }
             }
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
-                stopDiscovery()
+                if (discoveryListener === this) {
+                    discoveryListener = null
+                }
             }
         }
+    }
+
+    fun startDiscovery() {
+        stopDiscovery()
+        isDiscovering = true
+        acquireMulticastLock()
+        tableRegistry.clear()
+        _discoveredTables.value = emptyList()
+
+        // 1. Canal NSD / mDNS
+        val listener = createDiscoveryListener()
+        discoveryListener = listener
 
         try {
-            nsdManager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+            nsdManager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
         } catch (_: Exception) {}
 
-        // 2. Canal Ativo UDP Discovery (Sondagem via Broadcast e Gateway de Hotspot)
+        // 2. Canal Ativo UDP Discovery (Sondagem via Broadcast, Sub-rede /24 e Gateway de Hotspot)
         startUdpDiscovery()
+    }
+
+    fun restartNsdDiscovery() {
+        if (!isDiscovering || isRestartingNsd) return
+        isRestartingNsd = true
+        scope.launch {
+            try {
+                discoveryListener?.let { oldListener ->
+                    try {
+                        nsdManager.stopServiceDiscovery(oldListener)
+                    } catch (_: Exception) {}
+                }
+                delay(200)
+                if (!isDiscovering) return@launch
+
+                val newListener = createDiscoveryListener()
+                discoveryListener = newListener
+                try {
+                    nsdManager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, newListener)
+                } catch (_: Exception) {}
+            } finally {
+                isRestartingNsd = false
+            }
+        }
+    }
+
+    private fun sendProbesOnSocket(socket: DatagramSocket) {
+        val msg = "AIRHOCKEY_DISCOVER".toByteArray()
+
+        // 1. Broadcast global
+        try {
+            val pGlobal = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), NetworkConstants.DISCOVERY_UDP_PORT)
+            socket.send(pGlobal)
+        } catch (_: Exception) {}
+
+        // 2. Broadcasts dirigidos por interface
+        val bcasts = getAllBroadcastAddresses()
+        for (b in bcasts) {
+            try {
+                val p = DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT)
+                socket.send(p)
+            } catch (_: Exception) {}
+        }
+
+        // 3. Envio direto ao Gateway DHCP (essencial para Hotspot onde o anfitrião é o roteador)
+        val gatewayIp = getDhcpGatewayIp(context)
+        if (!gatewayIp.isNullOrBlank()) {
+            try {
+                val pGateway = DatagramPacket(msg, msg.size, InetAddress.getByName(gatewayIp), NetworkConstants.DISCOVERY_UDP_PORT)
+                socket.send(pGateway)
+            } catch (_: Exception) {}
+        }
+
+        // 4. Varredura unicast na sub-rede /24 (contorna bloqueio de broadcast e isolamento AP em redes Wi-Fi)
+        probeSubnets(socket, msg)
     }
 
     private fun startUdpDiscovery() {
@@ -312,33 +388,9 @@ class NsdDiscoveryManager(private val context: Context) {
 
                 // Emissor de sondagens periódicas a cada 1200ms
                 while (isActive) {
-                    val msg = "AIRHOCKEY_DISCOVER".toByteArray()
+                    sendProbesOnSocket(socket)
 
-                    // Broadcast global
-                    try {
-                        val pGlobal = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), NetworkConstants.DISCOVERY_UDP_PORT)
-                        socket.send(pGlobal)
-                    } catch (_: Exception) {}
-
-                    // Broadcasts dirigidos por interface
-                    val bcasts = getAllBroadcastAddresses()
-                    for (b in bcasts) {
-                        try {
-                            val p = DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT)
-                            socket.send(p)
-                        } catch (_: Exception) {}
-                    }
-
-                    // Envio direto ao Gateway DHCP (essencial para Hotspot onde o anfitrião é o roteador)
-                    val gatewayIp = getDhcpGatewayIp(context)
-                    if (!gatewayIp.isNullOrBlank()) {
-                        try {
-                            val pGateway = DatagramPacket(msg, msg.size, InetAddress.getByName(gatewayIp), NetworkConstants.DISCOVERY_UDP_PORT)
-                            socket.send(pGateway)
-                        } catch (_: Exception) {}
-                    }
-
-                    // Limpeza periódica por TTL (expira mesas inativas sem beacon há mais de 3,5s)
+                    // Limpeza periódica por TTL (expira mesas inativas sem beacon há mais de 7,0s)
                     _discoveredTables.value = tableRegistry.pruneExpired()
 
                     delay(1200)
@@ -367,45 +419,44 @@ class NsdDiscoveryManager(private val context: Context) {
     }
 
     /**
-     * Envia uma sondagem ativa imediata de descoberta (UDP Broadcast e Unicast para Gateway).
+     * Envia uma sondagem ativa imediata de descoberta (UDP Broadcast, Unicast para Gateway e Sub-rede /24).
+     * Reutiliza o socket de descoberta ativo se disponível, garantindo recebimento das respostas.
      */
     fun sendDirectedDiscoveryProbe() {
         scope.launch {
             try {
-                val socket = try {
-                    DatagramSocket().apply { broadcast = true }
-                } catch (_: Exception) {
-                    return@launch
-                }
-                val msg = "AIRHOCKEY_DISCOVER".toByteArray()
+                val activeSocket = udpDiscoverySocket?.takeIf { !it.isClosed }
+                if (activeSocket != null) {
+                    sendProbesOnSocket(activeSocket)
+                } else {
+                    val socket = try {
+                        DatagramSocket().apply {
+                            broadcast = true
+                            soTimeout = 600
+                        }
+                    } catch (_: Exception) {
+                        return@launch
+                    }
+                    sendProbesOnSocket(socket)
 
-                // Broadcast global
-                try {
-                    val pGlobal = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), NetworkConstants.DISCOVERY_UDP_PORT)
-                    socket.send(pGlobal)
-                } catch (_: Exception) {}
-
-                // Broadcasts das interfaces
-                for (b in getAllBroadcastAddresses()) {
+                    // Escuta por respostas rápidas no socket temporário
+                    val buf = ByteArray(512)
+                    val endTime = System.currentTimeMillis() + 600
+                    while (System.currentTimeMillis() < endTime) {
+                        try {
+                            val p = DatagramPacket(buf, buf.size)
+                            socket.receive(p)
+                            val text = String(p.data, p.offset, p.length).trim()
+                            val fallbackIp = p.address?.hostAddress ?: ""
+                            _discoveredTables.value = tableRegistry.handleBeacon(text, fallbackIp)
+                        } catch (_: Exception) {
+                            break
+                        }
+                    }
                     try {
-                        val p = DatagramPacket(msg, msg.size, b, NetworkConstants.DISCOVERY_UDP_PORT)
-                        socket.send(p)
+                        socket.close()
                     } catch (_: Exception) {}
                 }
-
-                // Gateway DHCP
-                val gw = getDhcpGatewayIp(context)
-                if (!gw.isNullOrBlank()) {
-                    try {
-                        val pGw = DatagramPacket(msg, msg.size, InetAddress.getByName(gw), NetworkConstants.DISCOVERY_UDP_PORT)
-                        socket.send(pGw)
-                    } catch (_: Exception) {}
-                }
-
-                delay(250)
-                try {
-                    socket.close()
-                } catch (_: Exception) {}
             } catch (_: Exception) {}
         }
     }
@@ -464,6 +515,55 @@ class NsdDiscoveryManager(private val context: Context) {
     }
 
     companion object {
+
+        data class SubnetRange(
+            val b0: Byte,
+            val b1: Byte,
+            val b2: Byte,
+            val selfLastOctet: Int
+        )
+
+        /**
+         * Retorna os intervalos de sub-rede /24 locais das interfaces IPv4 ativas não-loopback.
+         */
+        fun getLocalSubnetRanges(): List<SubnetRange> {
+            val ranges = mutableListOf<SubnetRange>()
+            try {
+                val interfaces = NetworkInterface.getNetworkInterfaces() ?: return ranges
+                while (interfaces.hasMoreElements()) {
+                    val iface = interfaces.nextElement()
+                    if (iface.isLoopback || !iface.isUp) continue
+                    for (addr in iface.inetAddresses) {
+                        if (addr is Inet4Address && !addr.isLoopbackAddress) {
+                            val raw = addr.address
+                            if (raw.size == 4) {
+                                val lastOctet = raw[3].toInt() and 0xFF
+                                ranges.add(SubnetRange(raw[0], raw[1], raw[2], lastOctet))
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+            return ranges
+        }
+
+        /**
+         * Varre as sub-redes /24 locais enviando pacote UDP para todos os hosts 1..254.
+         * Garante que pacotes cheguem mesmo em roteadores com bloqueio de broadcast inter-clientes.
+         */
+        fun probeSubnets(socket: DatagramSocket, msg: ByteArray) {
+            val ranges = getLocalSubnetRanges()
+            for (range in ranges) {
+                for (i in 1..254) {
+                    if (i == range.selfLastOctet) continue
+                    try {
+                        val targetAddr = InetAddress.getByAddress(byteArrayOf(range.b0, range.b1, range.b2, i.toByte()))
+                        val packet = DatagramPacket(msg, msg.size, targetAddr, NetworkConstants.DISCOVERY_UDP_PORT)
+                        socket.send(packet)
+                    } catch (_: Exception) {}
+                }
+            }
+        }
 
         /**
          * Retorna a lista de endereços de broadcast dirigidos das interfaces locais ativas.

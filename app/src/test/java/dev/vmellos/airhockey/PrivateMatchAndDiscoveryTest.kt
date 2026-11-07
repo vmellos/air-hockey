@@ -250,4 +250,42 @@ class PrivateMatchAndDiscoveryTest {
         assertEquals(1, remaining.size)
         assertEquals("2222", remaining.first().tableCode)
     }
+
+    @Test
+    fun testTableDiscoveryRegistryDefaultTtlIs7000ms() {
+        var simulatedTime = 50_000L
+        val registry = dev.vmellos.airhockey.feature.network.TableDiscoveryRegistry(
+            clock = { simulatedTime }
+        )
+
+        registry.handleBeacon("AIRHOCKEY_TABLE:3333:192.168.1.30:8888:EXTENDED:MesaLongTTL")
+        assertEquals(1, registry.getTables().size)
+
+        // Passam 5 segundos: com TTL antigo de 3.5s expiraria, mas com 7.0s deve permanecer ativa!
+        simulatedTime += 5000L
+        val tablesAt5s = registry.pruneExpired()
+        assertEquals(1, tablesAt5s.size)
+
+        // Passam mais 2.5s (total 7.5s): agora deve expirar
+        simulatedTime += 2500L
+        val tablesAt7500ms = registry.pruneExpired()
+        assertEquals(0, tablesAt7500ms.size)
+    }
+
+    @Test
+    fun testSubnetRangeTargetAddressCalculation() {
+        // Testa a conversão de octetos para InetAddress sem overflow ou problemas de sinal
+        val range = dev.vmellos.airhockey.feature.network.NsdDiscoveryManager.Companion.SubnetRange(
+            b0 = 192.toByte(),
+            b1 = 168.toByte(),
+            b2 = 15.toByte(),
+            selfLastOctet = 100
+        )
+        assertEquals(100, range.selfLastOctet)
+
+        val targetAddr = java.net.InetAddress.getByAddress(
+            byteArrayOf(range.b0, range.b1, range.b2, 200.toByte())
+        )
+        assertEquals("192.168.15.200", targetAddr.hostAddress)
+    }
 }

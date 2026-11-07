@@ -8,7 +8,7 @@ package dev.vmellos.airhockey.feature.network
  */
 class TableDiscoveryRegistry(
     private val clock: () -> Long = { System.currentTimeMillis() },
-    private val ttlMillis: Long = 3500L
+    private val ttlMillis: Long = 7000L
 ) {
     private val lock = Any()
     private val tablesMap = mutableMapOf<String, DiscoveredTable>()

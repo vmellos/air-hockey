@@ -156,12 +156,7 @@ fun LobbyScreen(
                 } else {
                     val d1Str = pendingAiDiff1?.name ?: ""
                     val d2Str = pendingAiDiff2?.name ?: ""
-                    val effectiveMode = if (mode == "AI_EXTENDED" && chosenDimension == dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL) {
-                        "AI_CONNECTED"
-                    } else {
-                        mode
-                    }
-                    viewModel.startAsHost(effectiveMode, d1Str, d2Str, chosenDimension.name)
+                    viewModel.startAsHost(mode, d1Str, d2Str, chosenDimension.name)
                 }
             }
         )
