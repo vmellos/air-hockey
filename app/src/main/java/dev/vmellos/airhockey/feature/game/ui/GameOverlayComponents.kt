@@ -603,8 +603,8 @@ fun PeerExitedDialog(
                 1.5.dp,
                 Brush.linearGradient(
                     listOf(
-                        Color(0xFFFF5722),
-                        Color(0xFFFF3D00)
+                        Color(0xFFFFB800),
+                        Color(0xFFFF8F00)
                     )
                 )
             ),
@@ -620,7 +620,7 @@ fun PeerExitedDialog(
             ) {
                 Text(
                     text = stringResource(R.string.game_peer_exited_title).uppercase(),
-                    color = Color(0xFFFF5722),
+                    color = Color(0xFFFFB800),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.2.sp
@@ -1149,8 +1149,8 @@ fun StageResultDialog(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFFF5722)
-    val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFFF6D00)
+    val accentColor = if (isWon) Color(0xFF00E5FF) else Color(0xFFF43F5E)
+    val glowColor = if (isWon) Color(0xFFFFB800) else Color(0xFFE11D48)
 
     Box(
         modifier = Modifier
@@ -1362,11 +1362,11 @@ fun StageResultDialog(
                         onClick = onRetry
                     )
                 } else {
-                    // Derrota: Tentar Novamente (Primário Laranja Neon)
+                    // Derrota: Tentar Novamente (Botão Âmbar Arcade)
                     ArcadePrimaryButton(
                         text = stringResource(R.string.stage_retry_btn).uppercase(),
-                        containerColor = Color(0xFFFF5722),
-                        textColor = Color.White,
+                        containerColor = Color(0xFFFFB800),
+                        textColor = Color(0xFF070B14),
                         icon = Icons.Default.Refresh,
                         onClick = onRetry
                     )

@@ -31,9 +31,11 @@ import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import dev.vmellos.airhockey.feature.physics.TablePoint
@@ -466,17 +468,26 @@ fun AirHockeyArena3DScene(
         }
     }
 
+    val themeVisuals = remember(activeTheme) { ArenaThemeCatalog.getVisuals(activeTheme) }
+
     val tableAsset = remember(activeTheme, isExtended, isExtendedHost) {
         Theme3DAssetResolver.getTable3DAsset(activeTheme, isExtended = isExtended, isPlayer1 = isExtendedHost)
     }
     val puckAsset = remember(prefs.puckSkin, activeTheme) {
         Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, activeTheme)
     }
-    val p1MalletAsset = remember(prefs.player1MalletSkin, activeTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true, theme = activeTheme)
+
+    val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
+        ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
+    } else {
+        prefs.player2MalletSkin
     }
-    val p2MalletAsset = remember(prefs.player2MalletSkin, activeTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(prefs.player2MalletSkin, isPlayer1 = false, theme = activeTheme)
+
+    val p1MalletAsset = remember(prefs.player1MalletSkin) {
+        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true)
+    }
+    val p2MalletAsset = remember(effectiveP2MalletSkin) {
+        Theme3DAssetResolver.getMallet3DAsset(effectiveP2MalletSkin, isPlayer1 = false)
     }
 
     val tableInstance = remember(modelLoader, tableAsset) {
@@ -757,7 +768,7 @@ fun AirHockeyArena3DScene(
             }
 
             if (puckTrail.size >= 2) {
-                val trailColor = if (engine.puck.lastHitBy == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
+                val trailColor = if (engine.puck.lastHitBy == 2) themeVisuals.secondaryColor else themeVisuals.primaryColor
                 val points = puckTrail.mapNotNull { pt ->
                     if (isExtended && !projection3D.isVisibleInViewport(pt.x, pt.y, 10f)) null
                     else projection3D.tableToScreen(
@@ -784,17 +795,17 @@ fun AirHockeyArena3DScene(
                 }
             }
 
-            // 3. Processamento de Eventos de Colisão (Ondas de Choque e Faíscas)
+            // 3. Processamento de Eventos de Colisão (Ondas de Choque e Faíscas Temáticas)
             synchronized(pendingCollisions) {
                 while (pendingCollisions.isNotEmpty()) {
                     val (cx, cy, evt) = pendingCollisions.removeFirst()
                     val color = when (evt) {
-                        CollisionEvent.PADDLE_HIT_P1 -> Color(0xFF00E5FF)
-                        CollisionEvent.PADDLE_HIT_P2 -> Color(0xFFFF6D00)
-                        CollisionEvent.GOAL_PLAYER1 -> Color(0xFF00E5FF)
-                        CollisionEvent.GOAL_PLAYER2 -> Color(0xFFFF6D00)
-                        CollisionEvent.WALL_HIT -> if (cy > dimensions.centerLineY) Color(0xFF00E5FF) else Color(0xFFFF6D00)
-                        else -> Color(0xFF00E5FF)
+                        CollisionEvent.PADDLE_HIT_P1 -> themeVisuals.primaryColor
+                        CollisionEvent.PADDLE_HIT_P2 -> themeVisuals.secondaryColor
+                        CollisionEvent.GOAL_PLAYER1 -> themeVisuals.primaryColor
+                        CollisionEvent.GOAL_PLAYER2 -> themeVisuals.secondaryColor
+                        CollisionEvent.WALL_HIT -> themeVisuals.wallHitColor
+                        else -> themeVisuals.primaryColor
                     }
                     particlePool.spawnShockwave(cx, cy, color, maxRadius = 160f)
                     val sparkCount = if (evt == CollisionEvent.WALL_HIT) 8 else 14

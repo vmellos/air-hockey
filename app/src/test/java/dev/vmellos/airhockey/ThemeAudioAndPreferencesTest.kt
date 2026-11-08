@@ -159,4 +159,60 @@ class ThemeAudioAndPreferencesTest {
         assertEquals(0.08f, updatedPrefs.neonBloomIntensity, 0.0001f)
         org.junit.Assert.assertFalse(updatedPrefs.arena3dIntroEnabled)
     }
+
+    @Test
+    fun testMalletSkinDecoupledFromTableTheme() {
+        // Garantir que a skin equipada pelo jogador não seja sobreposta pelo tema da arena (ADR 0040)
+        for (theme in TableTheme.entries) {
+            val classicP1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
+                skin = dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON,
+                isPlayer1 = true,
+                theme = theme
+            )
+            val classicP2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
+                skin = dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON,
+                isPlayer1 = false,
+                theme = theme
+            )
+            assertEquals("Skin CLASSIC_NEON P1 deve sempre retornar modelo clássico independente do tema",
+                "models/rebatedor_p1.glb", classicP1)
+            assertEquals("Skin CLASSIC_NEON P2 deve sempre retornar modelo clássico independente do tema",
+                "models/rebatedor_p2.glb", classicP2)
+        }
+
+        // Uma skin temática equipada explicitamente deve retornar seu modelo correspondente
+        val soccerMallet = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
+            skin = dev.vmellos.airhockey.core.preferences.MalletSkin.MAGNETIC_STRIKER,
+            isPlayer1 = true,
+            theme = TableTheme.CYBER_PONG
+        )
+        assertEquals("models/rebatedor_cyber_soccer_p1.glb", soccerMallet)
+    }
+
+    @Test
+    fun testArenaThemeCatalogProvidesThemeVisualsForAllThemes() {
+        for (theme in TableTheme.entries) {
+            val visuals = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(theme)
+            org.junit.Assert.assertNotNull("Visuals para o tema $theme não podem ser nulos", visuals)
+            org.junit.Assert.assertNotNull(visuals.primaryColor)
+            org.junit.Assert.assertNotNull(visuals.secondaryColor)
+            org.junit.Assert.assertNotNull(visuals.wallHitColor)
+        }
+    }
+
+    @Test
+    fun testSmartScrollTargetCalculation() {
+        // Simula fases até o nível 50 desbloqueadas
+        val stages = (1..100).map { stageNum ->
+            dev.vmellos.airhockey.core.database.StageProgressEntity(
+                stageNumber = stageNum,
+                isUnlocked = stageNum <= 50,
+                starsEarned = if (stageNum < 50) 3 else 0
+            )
+        }
+        val highestUnlocked = stages.filter { it.isUnlocked }.maxOfOrNull { it.stageNumber } ?: 1
+        val targetIndex = (highestUnlocked - 1).coerceAtLeast(0)
+        assertEquals(50, highestUnlocked)
+        assertEquals("O índice de rolagem do LazyGrid deve ser 49 para a fase 50", 49, targetIndex)
+    }
 }

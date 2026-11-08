@@ -253,7 +253,7 @@ fun MainMenuScreen(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // Os 3 Cartões de Modos de Jogo com acesso imediato sem cortes
+                    // Os 3 Cartões de Modos de Jogo com acesso imediato sem cortes (Design System Cyber-Obsidian)
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -261,7 +261,7 @@ fun MainMenuScreen(
                         MenuModeCard(
                             title = stringResource(R.string.menu_mode_solo),
                             description = stringResource(R.string.menu_mode_solo_desc),
-                            accentColor = Color(0xFF10B981),
+                            accentColor = Color(0xFFFFB800),
                             hapticsEnabled = prefs.hapticsEnabled,
                             onClick = onStartSolo
                         )
@@ -269,7 +269,7 @@ fun MainMenuScreen(
                         MenuModeCard(
                             title = stringResource(R.string.menu_mode_split),
                             description = stringResource(R.string.menu_mode_split_desc),
-                            accentColor = Color(0xFFFF5722),
+                            accentColor = Color(0xFFA855F7),
                             hapticsEnabled = prefs.hapticsEnabled,
                             onClick = onStartSplit
                         )
@@ -358,7 +358,7 @@ fun MainMenuScreen(
                         MenuModeCard(
                             title = stringResource(R.string.menu_mode_solo),
                             description = stringResource(R.string.menu_mode_solo_desc),
-                            accentColor = Color(0xFF10B981),
+                            accentColor = Color(0xFFFFB800),
                             hapticsEnabled = prefs.hapticsEnabled,
                             onClick = onStartSolo
                         )
@@ -366,7 +366,7 @@ fun MainMenuScreen(
                         MenuModeCard(
                             title = stringResource(R.string.menu_mode_split),
                             description = stringResource(R.string.menu_mode_split_desc),
-                            accentColor = Color(0xFFFF5722),
+                            accentColor = Color(0xFFA855F7),
                             hapticsEnabled = prefs.hapticsEnabled,
                             onClick = onStartSplit
                         )
@@ -1152,11 +1152,11 @@ fun AiVsAiConfigDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Card Bot 2 (Laranja)
+                // Card Bot 2 (Âmbar Arcade)
                 Surface(
-                    color = Color(0x12FF5722),
+                    color = Color(0x12FFB800),
                     shape = CutCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FF5722)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x44FFB800)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -1167,12 +1167,12 @@ fun AiVsAiConfigDialog(
                             Icon(
                                 imageVector = Icons.Default.SmartToy,
                                 contentDescription = null,
-                                tint = Color(0xFFFF5722),
+                                tint = Color(0xFFFFB800),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = stringResource(R.string.bot_2_orange),
-                                color = Color(0xFFFF5722),
+                                color = Color(0xFFFFB800),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 1.sp
@@ -1190,10 +1190,10 @@ fun AiVsAiConfigDialog(
                                 Surface(
                                     onClick = { diffBot2 = d },
                                     shape = CutCornerShape(6.dp),
-                                    color = if (selected) Color(0xFFFF5722) else Color(0x440B132B),
+                                    color = if (selected) Color(0xFFFFB800) else Color(0x440B132B),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (selected) Color(0xFFFF5722) else Color(0x22FF5722)
+                                        if (selected) Color(0xFFFFB800) else Color(0x22FFB800)
                                     ),
                                     modifier = Modifier.weight(1f)
                                 ) {
