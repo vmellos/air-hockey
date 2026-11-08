@@ -119,8 +119,8 @@ O cálculo de interseção geométrica que projeta o raio do ponto de toque na t
 _Avoid_: Raycast 2D, touch 3D aproximado, clique na tela, conversão ortográfica em 3D
 
 **Piso da Arena 3D**:
-O plano espacial perimetral posicionado abaixo e ao redor da mesa 3D estilizado com grade cibernética e balizadores de iluminação neon, servindo de âncora óptica fixa no mundo para evidenciar a cinemática de câmera durante a Apresentação de Abertura da Mesa 3D e ao longo da partida.
-_Avoid_: Chão escuro, fundo vazio, piso simples, arena vazia
+O plano espacial perimetral posicionado no plano horizontal (`XZ`) abaixo e ao redor da mesa 3D estilizado com grade cibernética e balizadores de iluminação neon, servindo de âncora óptica fixa no mundo para evidenciar a cinemática de câmera durante a Apresentação de Abertura da Mesa 3D e ao longo da partida (renderizado via `piso_arena_cyber.glb` na Mesa Clássica e via piso de estádio temático integrado `ArenaStadiumFloor` nas 10 arenas de conjuntos esportivos).
+_Avoid_: Chão escuro, fundo vazio, piso simples, arena vazia, piso vertical
 
 **Barreira de Energia da Meta 3D**:
 O portal luminoso em arco com emissores laser posicionado na embocadura de cada meta na Mesa 3D, simulando um campo de força de contenção arcade com iluminação temática da facção correspondente.
