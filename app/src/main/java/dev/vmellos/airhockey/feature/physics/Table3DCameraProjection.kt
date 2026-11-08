@@ -135,6 +135,23 @@ class Table3DCameraProjection(
     }
 
     /**
+     * Calcula a coordenada longitudinal Z do ponto de foco no plano da mesa (Y = 0)
+     * correspondente ao preset alvo, respeitando a inversão de 180° do Dispositivo Convidado
+     * e evitando singularidade vetorial no ângulo zenital (-90°) da Mesa Dividida.
+     */
+    fun computeFinalFocusZ(targetPreset: CameraPreset): Float {
+        val pitchRad = Math.toRadians((-targetPreset.rotation.x).toDouble()).toFloat()
+        val tanPitch = kotlin.math.tan(pitchRad)
+        val horizDist = if (abs(tanPitch) < 1e-3f) {
+            0.005f
+        } else {
+            (targetPreset.position.y / tanPitch).coerceAtLeast(0.005f)
+        }
+        val zDir = if (isGuestCamera) 1f else -1f
+        return targetPreset.position.z + zDir * horizDist
+    }
+
+    /**
      * Calcula a pose tridimensional da câmera durante a Apresentação de Abertura da Mesa 3D
      * (voo de drone cinematográfico em arco rasante com foco dinâmico e aterrissagem suave).
      */
@@ -143,7 +160,7 @@ class Table3DCameraProjection(
         targetPreset: CameraPreset
     ): CameraPose3D {
         val p = progress.coerceIn(0f, 1f)
-        val finalFocusZ = targetPreset.position.z - (targetPreset.position.y / kotlin.math.tan(Math.toRadians(-targetPreset.rotation.x.toDouble()).toFloat()))
+        val finalFocusZ = computeFinalFocusZ(targetPreset)
 
         if (p >= 1f) {
             return CameraPose3D(
@@ -160,6 +177,7 @@ class Table3DCameraProjection(
 
         // Curva suave de aceleração e desaceleração (Smootherstep)
         val t = (p * p * p * (p * (p * 6f - 15f) + 10f)).coerceIn(0f, 1f)
+        val sideSign = if (isGuestCamera) -1f else 1f
 
         val targetX = targetPreset.position.x
         val targetY = targetPreset.position.y
@@ -169,23 +187,23 @@ class Table3DCameraProjection(
         val (camPos, focusPos) = if (t < 0.5f) {
             val u = t / 0.5f
             val uInv = 1f - u
-            // Fase 1: Voo descendente da cabeceira adversária (-1.60, 2.70, -2.60) até a lateral média (-1.25, 1.45, 0.10)
-            val cx = -1.60f * uInv * uInv + -1.40f * 2f * uInv * u + -1.25f * u * u
+            // Fase 1: Voo descendente da cabeceira adversária até a lateral média
+            val cx = sideSign * (-1.60f * uInv * uInv + -1.40f * 2f * uInv * u + -1.25f * u * u)
             val cy = 2.70f * uInv * uInv + 1.65f * 2f * uInv * u + 1.45f * u * u
-            val cz = -2.60f * uInv * uInv + -1.15f * 2f * uInv * u + 0.10f * u * u
+            val cz = sideSign * (-2.60f * uInv * uInv + -1.15f * 2f * uInv * u + 0.10f * u * u)
 
             val fx = 0.0f
             val fy = 0.05f * uInv + 0.02f * u
-            val fz = -1.10f * uInv + 0.0f * u
+            val fz = sideSign * (-1.10f * uInv + 0.0f * u)
 
             Pair(Float3(cx, cy, cz), Float3(fx, fy, fz))
         } else {
             val u = (t - 0.5f) / 0.5f
             val uInv = 1f - u
             // Fase 2: Curva rasante pela lateral, contorno da meta e ascensão para targetPreset
-            val cx = -1.25f * uInv * uInv + 0.45f * 2f * uInv * u + targetX * u * u
+            val cx = (sideSign * -1.25f) * uInv * uInv + (sideSign * 0.45f) * 2f * uInv * u + targetX * u * u
             val cy = 1.45f * uInv * uInv + 1.75f * 2f * uInv * u + targetY * u * u
-            val cz = 0.10f * uInv * uInv + 2.30f * 2f * uInv * u + targetZ * u * u
+            val cz = (sideSign * 0.10f) * uInv * uInv + (sideSign * 2.30f) * 2f * uInv * u + targetZ * u * u
 
             val fx = 0.0f
             val fy = 0.02f * uInv + 0.0f * u
@@ -211,7 +229,8 @@ class Table3DCameraProjection(
             val blend = ((t - 0.60f) / 0.40f).coerceIn(0f, 1f)
             val blendSmooth = blend * blend * (3f - 2f * blend)
             pitch = pitch * (1f - blendSmooth) + targetPreset.rotation.x * blendSmooth
-            yaw = yaw * (1f - blendSmooth) + targetPreset.rotation.y * blendSmooth
+            val normalizedYaw = if (yaw < 0f) yaw + 360f else yaw
+            yaw = normalizedYaw * (1f - blendSmooth) + targetPreset.rotation.y * blendSmooth
         }
 
         return CameraPose3D(
@@ -234,7 +253,7 @@ class Table3DCameraProjection(
         target: CameraPreset,
         factor: Float = 0.15f
     ): CameraPose3D {
-        val finalFocusZ = target.position.z - (target.position.y / kotlin.math.tan(Math.toRadians(-target.rotation.x.toDouble()).toFloat()))
+        val finalFocusZ = computeFinalFocusZ(target)
         return CameraPose3D(
             x = current.x + (target.position.x - current.x) * factor,
             y = current.y + (target.position.y - current.y) * factor,

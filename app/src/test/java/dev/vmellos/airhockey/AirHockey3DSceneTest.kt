@@ -478,17 +478,61 @@ class AirHockey3DSceneTest {
         val poseMid = proj.computePresentationPose(0.5f, target)
         val poseEnd = proj.computePresentationPose(1f, target)
 
-        // At p=0, drone starts high and elevated
-        assertEquals(1.70f, poseStart.y, 0.05f)
+        // At p=0, drone starts high and elevated over opponent goal
+        assertEquals(2.70f, poseStart.y, 0.05f)
+        assertEquals(-2.60f, poseStart.z, 0.05f)
 
         // At p=1, pose matches target preset position and pitch
         assertEquals(target.position.x, poseEnd.x, 0.05f)
         assertEquals(target.position.y, poseEnd.y, 0.05f)
         assertEquals(target.position.z, poseEnd.z, 0.05f)
         assertEquals(target.rotation.x, poseEnd.pitch, 0.5f)
+        assertTrue("Final focusZ for host should point toward negative Z", poseEnd.focusZ < 0f)
 
         // Mid progression is valid and distinct
         assertTrue(poseMid.y > 0f)
+
+        // Guest camera mode mirrors trajectory and lands with positive focusZ and 180 yaw
+        val guestProj = Table3DCameraProjection(dims, GameMode.CONNECTED_GUEST)
+        val guestTarget = guestProj.getBasePreset(CameraZoom3D.STANDARD)
+        val guestEnd = guestProj.computePresentationPose(1f, guestTarget)
+        assertEquals(guestTarget.position.z, guestEnd.z, 0.05f)
+        assertEquals(180f, guestEnd.yaw, 0.5f)
+        assertTrue("Final focusZ for guest should point toward positive Z", guestEnd.focusZ > 0f)
+
+        // Split screen avoids zero-distance singularity on lookAt at zenith
+        val splitProj = Table3DCameraProjection(dims, GameMode.SPLIT_SCREEN)
+        val splitTarget = splitProj.getBasePreset(CameraZoom3D.STANDARD)
+        val splitEnd = splitProj.computePresentationPose(1f, splitTarget)
+        assertEquals(-90f, splitEnd.pitch, 0.5f)
+        assertTrue("Zenith focusZ keeps non-zero offset to prevent lookAt gimbal singularity", kotlin.math.abs(splitEnd.focusZ) >= 0.004f)
+    }
+
+    @Test
+    fun cyberFloorGlb_isOrientedHorizontallyInXZPlane() {
+        val file = java.io.File("src/main/assets/models/piso_arena_cyber.glb").let {
+            if (it.exists()) it else java.io.File("app/src/main/assets/models/piso_arena_cyber.glb")
+        }
+        assertTrue("piso_arena_cyber.glb must exist", file.exists())
+        val bytes = file.readBytes()
+        val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        val magic = buf.int
+        val version = buf.int
+        val totalLen = buf.int
+        assertEquals(0x46546C67, magic)
+        assertEquals(2, version)
+        assertTrue(totalLen > 100)
+
+        val jsonLen = buf.int
+        val jsonType = buf.int
+        assertEquals(0x4E4F534A, jsonType)
+        val jsonBytes = ByteArray(jsonLen)
+        buf.get(jsonBytes)
+        val jsonStr = String(jsonBytes, Charsets.UTF_8)
+
+        // Verify FloorSlab and FloorRim are flat along Y (vertical thickness < 0.1m) and extended along Z (length >= 6.4m)
+        assertTrue("FloorRim must span Z from -3.25 to +3.25 (horizontal XZ plane)", jsonStr.contains("-3.25") && jsonStr.contains("3.25"))
+        assertTrue("piso_arena_cyber.glb must not have vertical Y wall bounds of 3.25m", !jsonStr.contains("-3.25, -0.0225"))
     }
 
     @Test

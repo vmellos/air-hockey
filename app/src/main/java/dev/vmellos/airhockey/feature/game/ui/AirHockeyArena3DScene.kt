@@ -507,8 +507,9 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    val floorAsset = remember(isExtended) {
-        if (isExtended) null else "models/piso_arena_cyber.glb"
+    val floorAsset = remember(isExtended, activeTheme) {
+        val isClassicTheme = activeTheme == TableTheme.CLASSIC_NEON || activeTheme == TableTheme.ARCADE_3D
+        if (isExtended || !isClassicTheme) null else "models/piso_arena_cyber.glb"
     }
     val floorInstance = remember(modelLoader, floorAsset) {
         floorAsset?.let { path ->

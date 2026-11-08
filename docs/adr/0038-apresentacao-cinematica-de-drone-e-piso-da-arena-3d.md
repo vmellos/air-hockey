@@ -21,7 +21,7 @@ Na Apresentação de Abertura da Mesa 3D, a cinemática de câmera anterior exec
 2. **Orientação Vetorial Estabilizada via `cameraNode.lookAt`:**
    Eliminar cálculos angulares manuais sujeitos a *roll*. A orientação da câmera durante todo o sobrevoo passa a ser computada dinamicamente via `cameraNode.lookAt(target = focusPoint, upDirection = Direction(y = 1.0f))`, garantindo que o vetor UP permaneça cravado no eixo vertical do mundo, sem nenhum tombamento de horizonte.
 3. **Piso da Arena 3D como Âncora Óptica:**
-   Incorporar o modelo tridimensional otimizado `piso_arena_cyber.glb` (38 KB) posicionado logo abaixo da mesa (`y = -0.045f`), dotado de base metálica escura, malha de grade perimetral cibernética neon ciano e balizadores de canto, conferindo referência espacial e paralaxe real durante a movimentação da câmera.
+   Incorporar o modelo tridimensional otimizado `piso_arena_cyber.glb` orientado no plano horizontal `XZ` do Filament e posicionado logo abaixo da Mesa Clássica (`y = -0.045f`), dotado de base metálica escura, malha de grade perimetral cibernética neon ciano e balizadores de canto, conferindo referência espacial e paralaxe real durante a movimentação da câmera, enquanto as 10 arenas temáticas exibem livremente seu próprio piso de estádio integrado (`ArenaStadiumFloor`) sem sobreposição.
 4. **Calibração de Duração e Ritmo:**
    Reduzir a duração da apresentação para **3,8 segundos** com curva de aceleração e desaceleração `FastOutSlowInEasing`, conectando o fim do voo diretamente à contagem regressiva de saque.
 5. **Brilho Neon Inicial em 10% com Preservação:**
