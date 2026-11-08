@@ -89,6 +89,34 @@ class AirHockeyImprovementsTest {
     }
 
     @Test
+    fun testAiCornerRescue_movesTowardsCornerPuck() {
+        val ai = AirHockeyAiController(AiDifficulty.MEDIUM)
+
+        // Disco preso no escanteio superior direito (situação da screenshot do usuário)
+        engine.puck.x = 900f
+        engine.puck.y = 80f
+        engine.puck.vx = 0f
+        engine.puck.vy = 0f
+
+        engine.player2Mallet.x = 500f
+        engine.player2Mallet.y = 190f
+        engine.player2Mallet.targetX = 500f
+        engine.player2Mallet.targetY = 190f
+
+        // Simula 0.5s de tempo inativo para a IA acionar o Resgate de Canto
+        for (i in 0 until 30) {
+            ai.update(engine, 1f / 60f)
+        }
+
+        // A IA NÃO deve permanecer travada no meio do gol (x=500, y=130);
+        // ela deve avançar em direção ao canto direito (targetX > 600f) para resgatar o disco!
+        assertTrue(
+            "IA deve avançar em direção ao canto direito para resgatar o disco preso (targetX=${engine.player2Mallet.targetX})",
+            engine.player2Mallet.targetX > 600f
+        )
+    }
+
+    @Test
     fun testAiHardModeHighSpeedAndLateralReaction() {
         val ai = AirHockeyAiController(AiDifficulty.HARD)
 

@@ -133,4 +133,32 @@ class PlayGamesSavePayloadTest {
         assertEquals(12, merged.stats?.soloWins)
         assertEquals(5, merged.stats?.multiplayerWins)
     }
+
+    @Test
+    fun testPreferencesSerializationAndMerging() {
+        val pref = dev.vmellos.airhockey.core.playgames.PlayGamesPreferencesPayload(
+            tableTheme = "RETRO_SYNTHWAVE",
+            puckSkin = "SYNTH_DISC",
+            malletSkinP1 = "OUTRUN_STRIKER",
+            malletSkinP2 = "OUTRUN_STRIKER",
+            arenaDimension = "THREE_DIMENSIONAL",
+            arena3dIntroEnabled = true
+        )
+        val payload = PlayGamesSavePayload(
+            version = 1,
+            timestamp = 1700000000000L,
+            stages = emptyList(),
+            stats = null,
+            preferences = pref
+        )
+        val bytes = payload.toByteArray()
+        val restored = PlayGamesSavePayload.fromByteArray(bytes)
+        assertNotNull(restored)
+        assertNotNull(restored?.preferences)
+        assertEquals("RETRO_SYNTHWAVE", restored?.preferences?.tableTheme)
+        assertEquals("SYNTH_DISC", restored?.preferences?.puckSkin)
+        assertEquals("OUTRUN_STRIKER", restored?.preferences?.malletSkinP1)
+        assertEquals("THREE_DIMENSIONAL", restored?.preferences?.arenaDimension)
+        assertEquals(true, restored?.preferences?.arena3dIntroEnabled)
+    }
 }

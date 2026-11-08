@@ -7,12 +7,19 @@ import com.google.android.gms.games.SnapshotsClient
 import com.google.android.gms.games.snapshot.Snapshot
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange
 import dev.vmellos.airhockey.core.database.AppDatabase
+import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
+import dev.vmellos.airhockey.core.preferences.ArenaDimension
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
+import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -22,7 +29,8 @@ import kotlinx.coroutines.withContext
  * do Google Play Games Services v2.
  */
 class PlayGamesSaveManager(
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val preferencesRepository: UserPreferencesRepository? = null
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _syncState = MutableStateFlow<CloudSyncState>(CloudSyncState.Idle)
@@ -96,16 +104,33 @@ class PlayGamesSaveManager(
             val remoteBytes = snapshot.snapshotContents.readFully()
             val remotePayload = PlayGamesSavePayload.fromByteArray(remoteBytes)
 
-            // Carrega dados locais do Room Database
+            // Carrega dados locais do Room Database e UserPreferences
             val stageDao = database.stageProgressDao()
             val localStages = stageDao.getAllStagesDirect()
 
             val leaderboardDao = database.leaderboardDao()
-            val localStats = leaderboardDao.getProfileStatsDirect("Jogador")
+            val currentPrefs = preferencesRepository?.userPreferencesFlow?.firstOrNull()
+            val effectivePlayerName = currentPrefs?.playerName?.ifBlank { "Jogador" } ?: "Jogador"
+
+            val localStats = leaderboardDao.getProfileStatsDirect(effectivePlayerName)
+                ?: leaderboardDao.getProfileStatsDirect("Jogador")
+                ?: PlayerProfileStatsEntity(playerName = effectivePlayerName)
+
+            val localPrefPayload = currentPrefs?.let { p ->
+                PlayGamesPreferencesPayload(
+                    tableTheme = p.tableTheme.name,
+                    puckSkin = p.puckSkin.name,
+                    malletSkinP1 = p.player1MalletSkin.name,
+                    malletSkinP2 = p.player2MalletSkin.name,
+                    arenaDimension = p.arenaDimension.name,
+                    arena3dIntroEnabled = p.arena3dIntroEnabled
+                )
+            }
 
             val localPayload = PlayGamesSavePayload(
                 stages = localStages,
-                stats = localStats
+                stats = localStats,
+                preferences = localPrefPayload
             )
 
             // Executa o merge de progresso
@@ -121,6 +146,43 @@ class PlayGamesSaveManager(
             }
             finalPayload.stats?.let { stats ->
                 leaderboardDao.upsertProfileStats(stats)
+                if (stats.playerName.isNotBlank() && stats.playerName != "Jogador") {
+                    preferencesRepository?.setPlayerName(stats.playerName)
+                }
+            }
+
+            // Atualiza preferências cosméticas locais se fornecidas pelo snapshot remoto
+            finalPayload.preferences?.let { p ->
+                preferencesRepository?.let { repo ->
+                    p.tableTheme?.let { tName ->
+                        try {
+                            repo.setTableTheme(TableTheme.valueOf(tName))
+                        } catch (_: Exception) {}
+                    }
+                    p.puckSkin?.let { sName ->
+                        try {
+                            repo.setPuckSkin(PuckSkin.valueOf(sName))
+                        } catch (_: Exception) {}
+                    }
+                    p.malletSkinP1?.let { m1Name ->
+                        try {
+                            repo.setMalletSkinP1(MalletSkin.valueOf(m1Name))
+                        } catch (_: Exception) {}
+                    }
+                    p.malletSkinP2?.let { m2Name ->
+                        try {
+                            repo.setMalletSkinP2(MalletSkin.valueOf(m2Name))
+                        } catch (_: Exception) {}
+                    }
+                    p.arenaDimension?.let { dName ->
+                        try {
+                            repo.updateArenaDimension(ArenaDimension.valueOf(dName))
+                        } catch (_: Exception) {}
+                    }
+                    p.arena3dIntroEnabled?.let { intro ->
+                        repo.setArena3dIntroEnabled(intro)
+                    }
+                }
             }
 
             // 2. Prepara e envia os bytes atualizados para a nuvem da Google Play

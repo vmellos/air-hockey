@@ -110,6 +110,28 @@ class StageProgressionTest {
     }
 
     @Test
+    fun testStageGradualDifficultyParameters() {
+        val s1 = repository.getStageConfig(1)
+        assertEquals(900f, s1.aiMaxSpeed, 0.01f)
+        assertEquals(0.32f, s1.aiReactionDelay, 0.01f)
+        assertEquals(70f, s1.aiAimingError, 0.01f)
+        assertEquals(0f, s1.aiBankShotChance, 0.01f)
+
+        val s20 = repository.getStageConfig(20)
+        val s21 = repository.getStageConfig(21)
+        // Garante que não há salto brusco: a diferença entre as fases 20 e 21 é suave (~43f)
+        assertTrue(s21.aiMaxSpeed > s20.aiMaxSpeed)
+        assertEquals(43.43f, s21.aiMaxSpeed - s20.aiMaxSpeed, 1.0f)
+        assertTrue(s21.aiReactionDelay < s20.aiReactionDelay)
+
+        val s100 = repository.getStageConfig(100)
+        assertEquals(5200f, s100.aiMaxSpeed, 0.01f)
+        assertEquals(0.0f, s100.aiReactionDelay, 0.01f)
+        assertEquals(0.0f, s100.aiAimingError, 0.01f)
+        assertEquals(0.80f, s100.aiBankShotChance, 0.01f)
+    }
+
+    @Test
     fun testStarRatingCalculation() {
         // Stage 1: target 3
         assertEquals(3, repository.calculateStars(1, scorePlayer = 3, scoreAi = 0))

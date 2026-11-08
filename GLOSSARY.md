@@ -502,6 +502,33 @@ _Avoid_: Coluna única esticada em paisagem, tela quebrada em horizontal, scroll
 Os espaços livres e escurecidos (letterbox) gerados automaticamente à esquerda e à direita da Mesa em telas ultrawide ou em smartphones na orientação horizontal (landscape), aproveitados ergonomicamente para ancoragem externa do Placar Lateral e botão de pausa sem invadir ou cobrir a superfície de jogo e os trilhos da arena virtual.
 _Avoid_: Borda preta vazia, área morta, letterbox simples
 
+## Regras Esportivas, Inteligência Artificial e Renderização
+
+**Disco Preso**:
+Regra esportiva oficial arbitrada pelo Árbitro Virtual que detecta quando o disco permanece inerte ou inalcançável por mais de 3,5 segundos na mesa, reposicionando-o automaticamente no ponto neutro de saída para assegurar a continuidade do confronto.
+_Avoid_: Deadlock, disco travado, bug de física, bola presa
+
+**Resgate de Canto**:
+Manobra tática de desempacamento executada pelo rebatedor autônomo ao detectar o disco em baixa velocidade nos cantos profundos de sua área defensiva, contornando o disco para projetá-lo de volta ao meio-campo sem expor a própria meta.
+_Avoid_: Destravamento de IA, saída de escanteio, manobra de canto
+
+**Curva Gradual de Dificuldade**:
+A progressão paramétrica contínua e suave da inteligência artificial ao longo dos 100 níveis do Modo Fases, interpolando velocidade máxima, tempo de reação humana, dispersão de mira e propensão a tabelas sem saltos abruptos entre categorias.
+_Avoid_: Dificuldade em bloco, salto de IA, degrau de fases
+
+**Salvaguarda de Autogol**:
+O filtro vetorial preventivo do controlador autônomo que atenua a aceleração e contorna o disco quando este se encontra entre o rebatedor e a própria meta, impedindo rebatidas acidentais contra as próprias redes.
+_Avoid_: Gol contra de IA, frenesi defensivo, rebatida cega
+
+**Sincronização Cosmética em Nuvem**:
+A extensão do payload do Google Play Games Services v2 que persiste em nuvem a identidade competitiva e o equipamento visual ativo do atleta (nome, temas de arena, discos e rebatedores), mantendo calibrações de hardware e áudio no armazenamento local.
+_Avoid_: Cloud save total, backup cego de datastore
+
+**Curva Gama de Bloom**:
+O mapeamento não linear quadrático de intensidade com patamar HDR ativo no motor Filament 3D, restringindo a emissão luminosa aos elementos incandescentes neon e assegurando visual arcade nítido sem ofuscamento ou superexposição.
+_Avoid_: Bloom estourado, saturação aditiva cega, tela branca
+
+
 
 
 
