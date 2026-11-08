@@ -5,6 +5,7 @@ import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.feature.stage.StageConfig
 
 /**
  * Especificação Imutável de Partida de Air Hockey (GLOSSARY.md).
@@ -30,7 +31,11 @@ data class MatchSpec(
     val stageNumber: Int = 1,
     val hasIntroPresentation: Boolean = false,
     val tableTheme: TableTheme? = null,
-    val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL
+    val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL,
+    val customAiMaxSpeed: Float? = null,
+    val customAiReactionDelay: Float? = null,
+    val customAiAimingErrorRange: Float? = null,
+    val customAiBankShotChance: Float? = null
 ) {
     companion object {
         /**
@@ -51,7 +56,11 @@ data class MatchSpec(
                 player2Name = player2Name,
                 stageNumber = stageNumber,
                 hasIntroPresentation = hasIntro,
-                arenaDimension = userPrefs.arenaDimension
+                arenaDimension = userPrefs.arenaDimension,
+                customAiMaxSpeed = StageConfig.calculateAiMaxSpeed(stageNumber),
+                customAiReactionDelay = StageConfig.calculateAiReactionDelay(stageNumber),
+                customAiAimingErrorRange = StageConfig.calculateAiAimingError(stageNumber),
+                customAiBankShotChance = StageConfig.calculateAiBankShotChance(stageNumber)
             )
         }
 

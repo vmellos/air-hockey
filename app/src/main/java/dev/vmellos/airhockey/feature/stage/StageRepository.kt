@@ -16,8 +16,48 @@ data class StageConfig(
     val aiDifficulty: AiDifficulty,
     val puckSpeed: PuckSpeedPreset,
     val tierName: String,
-    val tableTheme: TableTheme = TableTheme.CLASSIC_NEON
-)
+    val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
+    val aiMaxSpeed: Float = calculateAiMaxSpeed(stageNumber),
+    val aiReactionDelay: Float = calculateAiReactionDelay(stageNumber),
+    val aiAimingError: Float = calculateAiAimingError(stageNumber),
+    val aiBankShotChance: Float = calculateAiBankShotChance(stageNumber)
+) {
+    companion object {
+        /**
+         * Curva Gradual de Dificuldade (GLOSSARY.md / ADR 0039):
+         * Acelera suavemente a velocidade máxima de 900f (Fase 1) até 5200f (Fase 100)
+         * sem saltos abruptos de categoria.
+         */
+        fun calculateAiMaxSpeed(stage: Int): Float {
+            val clamped = stage.coerceIn(1, 100)
+            return 900f + (clamped - 1) * ((5200f - 900f) / 99f)
+        }
+
+        /**
+         * Latência de reação com redução progressiva de 320ms (Fase 1) a 0ms (Fase 100).
+         */
+        fun calculateAiReactionDelay(stage: Int): Float {
+            val clamped = stage.coerceIn(1, 100)
+            return (0.32f * (100 - clamped) / 99f).coerceAtLeast(0f)
+        }
+
+        /**
+         * Dispersão de mira humana com redução progressiva de ±70px (Fase 1) a 0px (Fase 100).
+         */
+        fun calculateAiAimingError(stage: Int): Float {
+            val clamped = stage.coerceIn(1, 100)
+            return (70f * (100 - clamped) / 99f).coerceAtLeast(0f)
+        }
+
+        /**
+         * Probabilidade de jogadas laterais com tabela, iniciando na Fase 30 (10%) até 80% na Fase 100.
+         */
+        fun calculateAiBankShotChance(stage: Int): Float {
+            val clamped = stage.coerceIn(1, 100)
+            return if (clamped < 30) 0f else (0.10f + (clamped - 30) * (0.70f / 70f)).coerceIn(0f, 0.80f)
+        }
+    }
+}
 
 class StageRepository(private val stageProgressDao: StageProgressDao) {
 

@@ -179,7 +179,11 @@ class GameViewModel : ViewModel() {
                 aiDifficulty = stageConfig.aiDifficulty,
                 puckMaxSpeed = stageConfig.puckSpeed.maxSpeed,
                 airFriction = stageConfig.puckSpeed.airFriction,
-                tableTheme = stageConfig.tableTheme
+                tableTheme = stageConfig.tableTheme,
+                customAiMaxSpeed = stageConfig.aiMaxSpeed,
+                customAiReactionDelay = stageConfig.aiReactionDelay,
+                customAiAimingErrorRange = stageConfig.aiAimingError,
+                customAiBankShotChance = stageConfig.aiBankShotChance
             )
         } else if (isExtended) {
             spec.copy(

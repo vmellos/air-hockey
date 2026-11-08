@@ -442,22 +442,26 @@ fun AirHockeyArena3DScene(
     val modelLoader = rememberModelLoader(engine3d)
     val view3d = rememberView(engine3d) {
         SceneView.createView(engine3d).apply {
+            val normalizedBloom = (prefs.neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
+            val calibratedStrength = (normalizedBloom * normalizedBloom) * 0.22f
             bloomOptions = bloomOptions.apply {
-                enabled = prefs.neonBloomIntensity > 0.005f
-                threshold = false
-                highlight = 1.0f
-                strength = (prefs.neonBloomIntensity / 0.10f) * 0.45f
+                enabled = prefs.neonBloomIntensity > 0.002f
+                threshold = true
+                highlight = 0.85f
+                strength = calibratedStrength
                 blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
             }
         }
     }
 
     LaunchedEffect(prefs.neonBloomIntensity) {
+        val normalizedBloom = (prefs.neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
+        val calibratedStrength = (normalizedBloom * normalizedBloom) * 0.22f
         view3d.bloomOptions = view3d.bloomOptions.apply {
-            enabled = prefs.neonBloomIntensity > 0.005f
-            threshold = false
-            highlight = 1.0f
-            strength = (prefs.neonBloomIntensity / 0.10f) * 0.45f
+            enabled = prefs.neonBloomIntensity > 0.002f
+            threshold = true
+            highlight = 0.85f
+            strength = calibratedStrength
             blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
         }
     }

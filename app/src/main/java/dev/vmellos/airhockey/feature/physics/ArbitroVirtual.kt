@@ -131,15 +131,50 @@ class ArbitroVirtual(
     )
 
     val aiControllerP1: AirHockeyAiController? = when (mode) {
-        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true)
-        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(spec.aiDifficultyPlayer1, isPlayer1 = true) else null
+        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(
+            difficulty = spec.aiDifficultyPlayer1,
+            isPlayer1 = true,
+            customMaxSpeed = spec.customAiMaxSpeed,
+            customReactionDelay = spec.customAiReactionDelay,
+            customAimingErrorRange = spec.customAiAimingErrorRange,
+            customBankShotChance = spec.customAiBankShotChance
+        )
+        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(
+            difficulty = spec.aiDifficultyPlayer1,
+            isPlayer1 = true,
+            customMaxSpeed = spec.customAiMaxSpeed,
+            customReactionDelay = spec.customAiReactionDelay,
+            customAimingErrorRange = spec.customAiAimingErrorRange,
+            customBankShotChance = spec.customAiBankShotChance
+        ) else null
         else -> null
     }
 
     val aiControllerP2: AirHockeyAiController? = when (mode) {
-        GameMode.SOLO -> AirHockeyAiController(spec.aiDifficulty, isPlayer1 = false)
-        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false)
-        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(spec.aiDifficultyPlayer2, isPlayer1 = false) else null
+        GameMode.SOLO -> AirHockeyAiController(
+            difficulty = spec.aiDifficulty,
+            isPlayer1 = false,
+            customMaxSpeed = spec.customAiMaxSpeed,
+            customReactionDelay = spec.customAiReactionDelay,
+            customAimingErrorRange = spec.customAiAimingErrorRange,
+            customBankShotChance = spec.customAiBankShotChance
+        )
+        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(
+            difficulty = spec.aiDifficultyPlayer2,
+            isPlayer1 = false,
+            customMaxSpeed = spec.customAiMaxSpeed,
+            customReactionDelay = spec.customAiReactionDelay,
+            customAimingErrorRange = spec.customAiAimingErrorRange,
+            customBankShotChance = spec.customAiBankShotChance
+        )
+        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(
+            difficulty = spec.aiDifficultyPlayer2,
+            isPlayer1 = false,
+            customMaxSpeed = spec.customAiMaxSpeed,
+            customReactionDelay = spec.customAiReactionDelay,
+            customAimingErrorRange = spec.customAiAimingErrorRange,
+            customBankShotChance = spec.customAiBankShotChance
+        ) else null
         else -> null
     }
 
@@ -176,10 +211,12 @@ class ArbitroVirtual(
     private var goalPauseAccumulator: Float = 0f
     private var countdownStepAccumulator: Float = 0f
     private var secondTimerAccumulator: Float = 0f
+    private var deadPuckAccumulator: Float = 0f
 
     companion object {
         const val GOAL_PAUSE_DURATION_SEC: Float = 1.20f
         const val COUNTDOWN_STEP_DURATION_SEC: Float = 0.90f
+        const val DEAD_PUCK_TIMEOUT_SEC: Float = 3.50f
     }
 
     init {
@@ -289,6 +326,23 @@ class ArbitroVirtual(
 
     fun tickPhysics(dt: Float) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
+
+        // REGRA DO DISCO PRESO (GLOSSARY.md / ADR 0039):
+        // Se o disco permanecer praticamente imóvel (< 30f) por mais de 3,5 segundos,
+        // o Árbitro Virtual intervém, apita e reinicia no centro neutro da mesa.
+        val puckSpeed = engine.puck.speed()
+        if (puckSpeed < 30f) {
+            deadPuckAccumulator += dt
+            if (deadPuckAccumulator >= DEAD_PUCK_TIMEOUT_SEC) {
+                deadPuckAccumulator = 0f
+                engine.puck.reset(dimensions.width / 2f, dimensions.centerLineY)
+                audioPort.playCountdownBeep(true)
+                publishSnapshot()
+                return
+            }
+        } else {
+            deadPuckAccumulator = 0f
+        }
 
         if (isHost) {
             aiControllerP1?.update(engine, dt)

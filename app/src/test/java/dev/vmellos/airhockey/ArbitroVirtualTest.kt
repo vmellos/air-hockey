@@ -377,4 +377,27 @@ class ArbitroVirtualTest {
         arbitro.tick(2.10f)
         assertEquals(3, arbitro.matchState.value.remainingTimeSeconds)
     }
+
+    @Test
+    fun testDeadPuckRule_resetsPuckAfterTimeout() {
+        val audio = TestAudioPort()
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SOLO, audioPort = audio)
+        arbitro.setCountdown(0) // PLAYING
+
+        // Coloca o disco parado no canto
+        arbitro.engine.puck.x = 900f
+        arbitro.engine.puck.y = 100f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+
+        // Avança 2.0 segundos: ainda não atingiu os 3.5s
+        arbitro.tick(2.0f)
+        assertEquals(900f, arbitro.frames.value.puckX, 1.0f)
+
+        // Avança mais 1.6s (total 3.6s > 3.5s): o Árbitro Virtual declara Disco Preso e reinicia no centro
+        arbitro.tick(1.6f)
+        assertEquals(dims.width / 2f, arbitro.frames.value.puckX, 1.0f)
+        assertEquals(dims.centerLineY, arbitro.frames.value.puckY, 1.0f)
+    }
 }

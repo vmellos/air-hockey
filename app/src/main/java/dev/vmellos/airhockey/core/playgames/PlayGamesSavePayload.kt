@@ -5,6 +5,15 @@ import dev.vmellos.airhockey.core.database.StageProgressEntity
 import org.json.JSONArray
 import org.json.JSONObject
 
+data class PlayGamesPreferencesPayload(
+    val tableTheme: String? = null,
+    val puckSkin: String? = null,
+    val malletSkinP1: String? = null,
+    val malletSkinP2: String? = null,
+    val arenaDimension: String? = null,
+    val arena3dIntroEnabled: Boolean? = null
+)
+
 /**
  * Payload estruturado serializado para os Jogos Salvos (SnapshotsClient) do Google Play Games.
  */
@@ -12,7 +21,8 @@ data class PlayGamesSavePayload(
     val version: Int = 1,
     val timestamp: Long = System.currentTimeMillis(),
     val stages: List<StageProgressEntity>,
-    val stats: PlayerProfileStatsEntity? = null
+    val stats: PlayerProfileStatsEntity? = null,
+    val preferences: PlayGamesPreferencesPayload? = null
 ) {
     val totalStars: Int
         get() = stages.sumOf { it.starsEarned }
@@ -54,6 +64,17 @@ data class PlayGamesSavePayload(
             statsObj.put("goalsConceded", s.goalsConceded)
             statsObj.put("lastMatchTimestamp", s.lastMatchTimestamp)
             root.put("stats", statsObj)
+        }
+
+        preferences?.let { p ->
+            val prefObj = JSONObject()
+            p.tableTheme?.let { prefObj.put("tableTheme", it) }
+            p.puckSkin?.let { prefObj.put("puckSkin", it) }
+            p.malletSkinP1?.let { prefObj.put("malletSkinP1", it) }
+            p.malletSkinP2?.let { prefObj.put("malletSkinP2", it) }
+            p.arenaDimension?.let { prefObj.put("arenaDimension", it) }
+            p.arena3dIntroEnabled?.let { prefObj.put("arena3dIntroEnabled", it) }
+            root.put("preferences", prefObj)
         }
 
         return root.toString().toByteArray(Charsets.UTF_8)
@@ -102,7 +123,19 @@ data class PlayGamesSavePayload(
                     )
                 }
 
-                PlayGamesSavePayload(version, timestamp, stagesList, stats)
+                val prefObj = root.optJSONObject("preferences")
+                val preferences = prefObj?.let {
+                    PlayGamesPreferencesPayload(
+                        tableTheme = it.optString("tableTheme").takeIf { s -> s.isNotBlank() },
+                        puckSkin = it.optString("puckSkin").takeIf { s -> s.isNotBlank() },
+                        malletSkinP1 = it.optString("malletSkinP1").takeIf { s -> s.isNotBlank() },
+                        malletSkinP2 = it.optString("malletSkinP2").takeIf { s -> s.isNotBlank() },
+                        arenaDimension = it.optString("arenaDimension").takeIf { s -> s.isNotBlank() },
+                        arena3dIntroEnabled = if (it.has("arena3dIntroEnabled")) it.optBoolean("arena3dIntroEnabled") else null
+                    )
+                }
+
+                PlayGamesSavePayload(version, timestamp, stagesList, stats, preferences)
             } catch (_: Exception) {
                 null
             }
@@ -149,8 +182,14 @@ data class PlayGamesSavePayload(
                 local.stats != null && remote.stats != null -> {
                     val l = local.stats
                     val r = remote.stats
+                    val resolvedPlayerName = when {
+                        l.playerName.isNotBlank() && l.playerName != "Jogador" -> l.playerName
+                        r.playerName.isNotBlank() && r.playerName != "Jogador" -> r.playerName
+                        l.playerName.isNotBlank() -> l.playerName
+                        else -> r.playerName
+                    }
                     PlayerProfileStatsEntity(
-                        playerName = if (l.playerName.isNotBlank() && l.playerName != "Jogador") l.playerName else r.playerName,
+                        playerName = resolvedPlayerName,
                         ratingElo = maxOf(l.ratingElo, r.ratingElo),
                         soloWins = maxOf(l.soloWins, r.soloWins),
                         soloLosses = maxOf(l.soloLosses, r.soloLosses),
@@ -169,11 +208,21 @@ data class PlayGamesSavePayload(
                 else -> remote.stats
             }
 
+            val mergedPrefs = PlayGamesPreferencesPayload(
+                tableTheme = local.preferences?.tableTheme ?: remote.preferences?.tableTheme,
+                puckSkin = local.preferences?.puckSkin ?: remote.preferences?.puckSkin,
+                malletSkinP1 = local.preferences?.malletSkinP1 ?: remote.preferences?.malletSkinP1,
+                malletSkinP2 = local.preferences?.malletSkinP2 ?: remote.preferences?.malletSkinP2,
+                arenaDimension = local.preferences?.arenaDimension ?: remote.preferences?.arenaDimension,
+                arena3dIntroEnabled = local.preferences?.arena3dIntroEnabled ?: remote.preferences?.arena3dIntroEnabled
+            )
+
             return PlayGamesSavePayload(
                 version = maxOf(local.version, remote.version),
                 timestamp = System.currentTimeMillis(),
                 stages = mergedStages,
-                stats = mergedStats
+                stats = mergedStats,
+                preferences = mergedPrefs
             )
         }
     }
