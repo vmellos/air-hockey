@@ -147,7 +147,7 @@ class ThemeAudioAndPreferencesTest {
         val prefs = UserPreferences()
         assertEquals("ArenaDimension padrão deve ser THREE_DIMENSIONAL",
             dev.vmellos.airhockey.core.preferences.ArenaDimension.THREE_DIMENSIONAL, prefs.arenaDimension)
-        assertEquals("Intensidade padrão do bloom de neon deve ser 0.01f (10%)", 0.01f, prefs.neonBloomIntensity, 0.0001f)
+        assertEquals("Intensidade padrão do bloom de neon deve ser 0.05f (50%)", 0.05f, prefs.neonBloomIntensity, 0.0001f)
         assertTrue("Animação inicial 3D deve vir ativada por padrão", prefs.arena3dIntroEnabled)
 
         val updatedPrefs = prefs.copy(

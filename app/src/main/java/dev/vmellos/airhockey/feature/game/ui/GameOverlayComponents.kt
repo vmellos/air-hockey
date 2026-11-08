@@ -876,7 +876,7 @@ fun PauseDialog(
     is3dActive: Boolean = false,
     cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
     onCameraZoom3dChange: ((CameraZoom3D) -> Unit)? = null,
-    neonBloomIntensity: Float = 0.01f,
+    neonBloomIntensity: Float = 0.05f,
     onNeonBloomIntensityChange: ((Float) -> Unit)? = null,
     onResume: () -> Unit,
     onRestart: () -> Unit,

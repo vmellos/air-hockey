@@ -96,7 +96,7 @@ data class UserPreferences(
     val playerName: String = "",
     val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL,
-    val neonBloomIntensity: Float = 0.01f,
+    val neonBloomIntensity: Float = 0.05f,
     val arena3dIntroEnabled: Boolean = true,
     val cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
     val puckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
