@@ -52,58 +52,55 @@ object Theme3DAssetResolver {
 
     /**
      * Retorna o modelo 3D correspondente à aparência do disco equipada ou ao tema ativo.
+     * Se o jogador equipou uma skin personalizada (não padrão), ela é preservada rigorosamente.
+     * Caso contrário, adota o disco temático correspondente à arena ativa.
      */
-    fun getPuck3DAsset(skin: PuckSkin, theme: TableTheme): String = when {
-        skin == PuckSkin.CYBER_SOCCER_BALL || theme == TableTheme.CYBER_SOCCER -> "models/disco_cyber_soccer.glb"
-        skin == PuckSkin.NEO_BASKETBALL || theme == TableTheme.NEO_BASKETBALL -> "models/disco_neo_basketball.glb"
-        skin == PuckSkin.GRAVITY_VOLLEY || theme == TableTheme.GRAVITY_VOLLEY -> "models/disco_gravity_volley.glb"
-        skin == PuckSkin.GRIDIRON_FOOTBALL || theme == TableTheme.GRIDIRON_FOOTBALL -> "models/disco_gridiron_football.glb"
-        skin == PuckSkin.CYBER_BASEBALL || theme == TableTheme.CYBER_BASEBALL -> "models/disco_cyber_baseball.glb"
-        skin == PuckSkin.SAWBLADE || theme == TableTheme.WASTELAND_APOCALYPSE -> "models/disco_wasteland_apocalypse.glb"
-        skin == PuckSkin.SYNTH_DISC || theme == TableTheme.RETRO_SYNTHWAVE -> "models/disco_retro_synthwave.glb"
-        skin == PuckSkin.ATOMIC_CORE || theme == TableTheme.TOKAMAK_REACTOR -> "models/disco_tokamak_reactor.glb"
-        skin == PuckSkin.PONG_SQUARE || theme == TableTheme.CYBER_PONG -> "models/disco_cyber_pong.glb"
-        skin == PuckSkin.GLADIATOR_SHIELD || theme == TableTheme.CYBER_COLOSSEUM -> "models/disco_cyber_colosseum.glb"
-        else -> "models/disco_cyber.glb"
+    fun getPuck3DAsset(skin: PuckSkin, theme: TableTheme = TableTheme.CLASSIC_NEON): String = when {
+        skin != PuckSkin.CLASSIC_PLASMA -> when (skin) {
+            PuckSkin.CYBER_SOCCER_BALL -> "models/disco_cyber_soccer.glb"
+            PuckSkin.NEO_BASKETBALL -> "models/disco_neo_basketball.glb"
+            PuckSkin.GRAVITY_VOLLEY -> "models/disco_gravity_volley.glb"
+            PuckSkin.GRIDIRON_FOOTBALL -> "models/disco_gridiron_football.glb"
+            PuckSkin.CYBER_BASEBALL -> "models/disco_cyber_baseball.glb"
+            PuckSkin.SAWBLADE -> "models/disco_wasteland_apocalypse.glb"
+            PuckSkin.SYNTH_DISC -> "models/disco_retro_synthwave.glb"
+            PuckSkin.ATOMIC_CORE -> "models/disco_tokamak_reactor.glb"
+            PuckSkin.PONG_SQUARE -> "models/disco_cyber_pong.glb"
+            PuckSkin.GLADIATOR_SHIELD -> "models/disco_cyber_colosseum.glb"
+            PuckSkin.CLASSIC_PLASMA -> "models/disco_cyber.glb"
+        }
+        else -> when (theme) {
+            TableTheme.CYBER_SOCCER -> "models/disco_cyber_soccer.glb"
+            TableTheme.NEO_BASKETBALL -> "models/disco_neo_basketball.glb"
+            TableTheme.GRAVITY_VOLLEY -> "models/disco_gravity_volley.glb"
+            TableTheme.GRIDIRON_FOOTBALL -> "models/disco_gridiron_football.glb"
+            TableTheme.CYBER_BASEBALL -> "models/disco_cyber_baseball.glb"
+            TableTheme.WASTELAND_APOCALYPSE -> "models/disco_wasteland_apocalypse.glb"
+            TableTheme.RETRO_SYNTHWAVE -> "models/disco_retro_synthwave.glb"
+            TableTheme.TOKAMAK_REACTOR -> "models/disco_tokamak_reactor.glb"
+            TableTheme.CYBER_PONG -> "models/disco_cyber_pong.glb"
+            TableTheme.CYBER_COLOSSEUM -> "models/disco_cyber_colosseum.glb"
+            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> "models/disco_cyber.glb"
+        }
     }
 
     /**
      * Retorna o modelo 3D do rebatedor do Jogador 1 ou Jogador 2.
+     * Desacoplado do tema da mesa: o jogador preserva estritamente a skin equipada,
+     * impedindo sobreposições involuntárias antes do desbloqueio da arena (ADR 0040).
      */
-    fun getMallet3DAsset(skin: MalletSkin, isPlayer1: Boolean, theme: TableTheme): String = when {
-        theme == TableTheme.CYBER_SOCCER || skin == MalletSkin.MAGNETIC_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_cyber_soccer_p1.glb" else "models/rebatedor_cyber_soccer_p2.glb"
-        }
-        theme == TableTheme.NEO_BASKETBALL || skin == MalletSkin.DUNK_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_neo_basketball_p1.glb" else "models/rebatedor_neo_basketball_p2.glb"
-        }
-        theme == TableTheme.GRAVITY_VOLLEY || skin == MalletSkin.SPIKE_EMITTER -> {
-            if (isPlayer1) "models/rebatedor_gravity_volley_p1.glb" else "models/rebatedor_gravity_volley_p2.glb"
-        }
-        theme == TableTheme.GRIDIRON_FOOTBALL || skin == MalletSkin.LINEBACKER_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_gridiron_football_p1.glb" else "models/rebatedor_gridiron_football_p2.glb"
-        }
-        theme == TableTheme.CYBER_BASEBALL || skin == MalletSkin.SLUGGER_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_cyber_baseball_p1.glb" else "models/rebatedor_cyber_baseball_p2.glb"
-        }
-        theme == TableTheme.WASTELAND_APOCALYPSE || skin == MalletSkin.RIPPER_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_wasteland_apocalypse_p1.glb" else "models/rebatedor_wasteland_apocalypse_p2.glb"
-        }
-        theme == TableTheme.RETRO_SYNTHWAVE || skin == MalletSkin.OUTRUN_STRIKER -> {
-            if (isPlayer1) "models/rebatedor_retro_synthwave_p1.glb" else "models/rebatedor_retro_synthwave_p2.glb"
-        }
-        theme == TableTheme.TOKAMAK_REACTOR || skin == MalletSkin.MAGNETIC_COIL -> {
-            if (isPlayer1) "models/rebatedor_tokamak_reactor_p1.glb" else "models/rebatedor_tokamak_reactor_p2.glb"
-        }
-        theme == TableTheme.CYBER_PONG || skin == MalletSkin.PONG_PADDLE -> {
-            if (isPlayer1) "models/rebatedor_cyber_pong_p1.glb" else "models/rebatedor_cyber_pong_p2.glb"
-        }
-        theme == TableTheme.CYBER_COLOSSEUM || skin == MalletSkin.SPARTAN_AEGIS -> {
-            if (isPlayer1) "models/rebatedor_cyber_colosseum_p1.glb" else "models/rebatedor_cyber_colosseum_p2.glb"
-        }
-        else -> {
-            if (isPlayer1) "models/rebatedor_p1.glb" else "models/rebatedor_p2.glb"
-        }
+    fun getMallet3DAsset(skin: MalletSkin, isPlayer1: Boolean, theme: TableTheme = TableTheme.CLASSIC_NEON): String = when (skin) {
+        MalletSkin.MAGNETIC_STRIKER -> if (isPlayer1) "models/rebatedor_cyber_soccer_p1.glb" else "models/rebatedor_cyber_soccer_p2.glb"
+        MalletSkin.DUNK_STRIKER -> if (isPlayer1) "models/rebatedor_neo_basketball_p1.glb" else "models/rebatedor_neo_basketball_p2.glb"
+        MalletSkin.SPIKE_EMITTER -> if (isPlayer1) "models/rebatedor_gravity_volley_p1.glb" else "models/rebatedor_gravity_volley_p2.glb"
+        MalletSkin.LINEBACKER_STRIKER -> if (isPlayer1) "models/rebatedor_gridiron_football_p1.glb" else "models/rebatedor_gridiron_football_p2.glb"
+        MalletSkin.SLUGGER_STRIKER -> if (isPlayer1) "models/rebatedor_cyber_baseball_p1.glb" else "models/rebatedor_cyber_baseball_p2.glb"
+        MalletSkin.RIPPER_STRIKER -> if (isPlayer1) "models/rebatedor_wasteland_apocalypse_p1.glb" else "models/rebatedor_wasteland_apocalypse_p2.glb"
+        MalletSkin.OUTRUN_STRIKER -> if (isPlayer1) "models/rebatedor_retro_synthwave_p1.glb" else "models/rebatedor_retro_synthwave_p2.glb"
+        MalletSkin.MAGNETIC_COIL -> if (isPlayer1) "models/rebatedor_tokamak_reactor_p1.glb" else "models/rebatedor_tokamak_reactor_p2.glb"
+        MalletSkin.PONG_PADDLE -> if (isPlayer1) "models/rebatedor_cyber_pong_p1.glb" else "models/rebatedor_cyber_pong_p2.glb"
+        MalletSkin.SPARTAN_AEGIS -> if (isPlayer1) "models/rebatedor_cyber_colosseum_p1.glb" else "models/rebatedor_cyber_colosseum_p2.glb"
+        MalletSkin.CLASSIC_NEON -> if (isPlayer1) "models/rebatedor_p1.glb" else "models/rebatedor_p2.glb"
     }
 
     /**

@@ -528,6 +528,23 @@ _Avoid_: Cloud save total, backup cego de datastore
 O mapeamento não linear quadrático de intensidade com patamar HDR ativo no motor Filament 3D, restringindo a emissão luminosa aos elementos incandescentes neon e assegurando visual arcade nítido sem ofuscamento ou superexposição.
 _Avoid_: Bloom estourado, saturação aditiva cega, tela branca
 
+**Auto-Rolagem de Fases**:
+O mecanismo de ancoragem inteligente na grade de seleção de fases que localiza a fase ativa mais recente desbloqueada e rola suavemente a visão até sua posição ao abrir a interface, eliminando o esforço de rolagem manual desde o primeiro nível.
+_Avoid_: Scroll manual de fases, reset de topo de grid
+
+**Desacoplamento de Skin em Fases**:
+A regra esportiva visual que garante que o rebatedor do jogador mantenha sua própria aparência equipada durante a campanha solo, enquanto o oponente autônomo (Boss da Arena) assume o taco temático do palco em disputa.
+_Avoid_: Forçar skin da fase, taco mutável, perda de customização
+
+**Partículas Temáticas da Arena**:
+O sistema de efeitos visuais de colisão (ondas de choque, faíscas incandescentes, explosões de gol e rastro de energia) cujas cores no motor 2D e 3D Filament são extraídas dinamicamente da paleta esportiva da arena ativa, eliminando tons genéricos fixos.
+_Avoid_: Faíscas monocromáticas, efeitos fixos azul e vermelho
+
+**Design System Cyber-Obsidian**:
+O padrão de interface gráfica padronizado adotado nas telas de navegação, diálogos e botões, composto por superfícies escuras Obsidian (`#070B14`), glassmorphism translúcido, acentos luminosos em Ciano Elétrico (`#00E5FF`) e Ouro Arcade (`#FFB800`), e molduras chanfradas elegantes.
+_Avoid_: Cores primárias genéricas, botões vermelho e azul estridentes
+
+
 
 
 

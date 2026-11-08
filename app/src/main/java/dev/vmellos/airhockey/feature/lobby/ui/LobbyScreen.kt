@@ -637,8 +637,8 @@ private fun RoleSelectionCards(
                     width = 1.2.dp,
                     brush = Brush.horizontalGradient(
                         listOf(
-                            Color(0xFFFF5722).copy(alpha = 0.90f),
-                            Color(0xFFFF5722).copy(alpha = 0.35f)
+                            Color(0xFFFFB800).copy(alpha = 0.90f),
+                            Color(0xFFFFB800).copy(alpha = 0.35f)
                         )
                     ),
                     shape = guestShape
@@ -656,7 +656,7 @@ private fun RoleSelectionCards(
                         .height(36.dp)
                         .background(
                             brush = Brush.verticalGradient(
-                                listOf(Color(0xFFFF5722), Color(0xFFFF5722).copy(alpha = 0.35f))
+                                listOf(Color(0xFFFFB800), Color(0xFFFFB800).copy(alpha = 0.35f))
                             ),
                             shape = RoundedCornerShape(2.dp)
                         )
@@ -686,7 +686,7 @@ private fun RoleSelectionCards(
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = Color(0xFFFF5722).copy(alpha = 0.70f),
+                    tint = Color(0xFFFFB800).copy(alpha = 0.70f),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -1180,13 +1180,13 @@ private fun GuestLobbyView(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
-                    .border(1.dp, Color(0x66FF5722), connectingShape)
+                    .border(1.dp, Color(0x66FFB800), connectingShape)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    CircularProgressIndicator(color = Color(0xFFFF5722), modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = Color(0xFFFFB800), modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(14.dp))
                     Text(
                         text = stringResource(R.string.lobby_status_connecting),
@@ -1206,15 +1206,18 @@ private fun GuestLobbyView(
             ) {
                 Button(
                     onClick = onScanQrClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFB800),
+                        contentColor = Color(0xFF070B14)
+                    ),
                     shape = CutCornerShape(10.dp),
                     modifier = Modifier.weight(0.4f)
                 ) {
-                    Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.QrCode, contentDescription = null, tint = Color(0xFF070B14))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         stringResource(R.string.lobby_scan_qr),
-                        color = Color.White,
+                        color = Color(0xFF070B14),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         maxLines = 1
@@ -1254,13 +1257,16 @@ private fun GuestLobbyView(
             // Botão de Escanear QR Code
             Button(
                 onClick = onScanQrClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFB800),
+                    contentColor = Color(0xFF070B14)
+                ),
                 shape = CutCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.QrCode, contentDescription = null, tint = Color.White)
+                Icon(Icons.Default.QrCode, contentDescription = null, tint = Color(0xFF070B14))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.lobby_scan_qr), color = Color.White, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.lobby_scan_qr), color = Color(0xFF070B14), fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1329,7 +1335,7 @@ private fun GuestLobbyView(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 12.dp)
             ) {
-                CircularProgressIndicator(color = Color(0xFFFF5722), modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(color = Color(0xFFFFB800), modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = stringResource(R.string.lobby_no_tables_found),
@@ -1410,11 +1416,11 @@ private fun GuestLobbyView(
                                 }
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Lock, contentDescription = stringResource(R.string.lobby_table_private_badge), tint = Color(0xFFFF5722), modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Lock, contentDescription = stringResource(R.string.lobby_table_private_badge), tint = Color(0xFFFFB800), modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = stringResource(R.string.lobby_table_private_badge),
-                                    color = Color(0xFFFF5722),
+                                    color = Color(0xFFFFB800),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -1581,7 +1587,7 @@ fun HostCreateModeDialog(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.bot_2_orange),
-                                    color = Color(0xFFFF5722),
+                                    color = Color(0xFFFFB800),
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.sp,
@@ -1590,7 +1596,7 @@ fun HostCreateModeDialog(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 DifficultySelectorRow(
                                     selected = diffBot2,
-                                    activeColor = Color(0xFFFF5722),
+                                    activeColor = Color(0xFFFFB800),
                                     onSelect = { diffBot2 = it }
                                 )
                             }
@@ -1614,10 +1620,10 @@ fun HostCreateModeDialog(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Bot 2 (Laranja)
+                        // Bot 2 (Laranja / Âmbar Arcade)
                         Text(
                             text = stringResource(R.string.bot_2_orange),
-                            color = Color(0xFFFF5722),
+                            color = Color(0xFFFFB800),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
@@ -1626,7 +1632,7 @@ fun HostCreateModeDialog(
                         Spacer(modifier = Modifier.height(6.dp))
                         DifficultySelectorRow(
                             selected = diffBot2,
-                            activeColor = Color(0xFFFF5722),
+                            activeColor = Color(0xFFFFB800),
                             onSelect = { diffBot2 = it }
                         )
                     }

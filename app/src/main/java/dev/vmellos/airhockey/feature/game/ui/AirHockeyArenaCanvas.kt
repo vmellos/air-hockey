@@ -28,6 +28,7 @@ import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
+import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableProjection
 
@@ -262,9 +263,14 @@ fun AirHockeyArenaCanvas(
                 MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
             }
 
-            // 8. Desenha Rebatedor 2 (Jogador 2)
+            // 8. Desenha Rebatedor 2 (Jogador 2 / Guardião da Arena no Solo)
             val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
-            when (prefs.player2MalletSkin) {
+            val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
+                ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
+            } else {
+                prefs.player2MalletSkin
+            }
+            when (effectiveP2MalletSkin) {
                 MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonRuby, rimColor = NeonRubyBright, scale = scale)
                 MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
                 MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonMagenta, rimColor = NeonMagentaBright, scale = scale)

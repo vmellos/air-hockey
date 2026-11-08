@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,9 +37,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +72,19 @@ fun StageSelectionScreen(
     val stageRepository = AirHockeyApp.instance.stageRepository
     val stages by stageRepository.stagesFlow.collectAsState(initial = emptyList())
     val totalStars by stageRepository.totalStarsFlow.collectAsState(initial = 0)
+
+    val gridState = rememberLazyGridState()
+    var hasAutoScrolled by rememberSaveable { mutableStateOf(false) }
+
+    // Auto-rolagem inteligente (Smart Scroll): ancora automaticamente na fase ativa desbloqueada mais alta
+    LaunchedEffect(stages) {
+        if (!hasAutoScrolled && stages.isNotEmpty()) {
+            val highestUnlockedStage = stages.filter { it.isUnlocked }.maxOfOrNull { it.stageNumber } ?: 1
+            val targetIndex = (highestUnlockedStage - 1).coerceAtLeast(0)
+            gridState.scrollToItem(targetIndex)
+            hasAutoScrolled = true
+        }
+    }
 
     Box(
         modifier = modifier
@@ -168,6 +186,7 @@ fun StageSelectionScreen(
             // Grade de Colunas dos 100 Níveis (6 colunas no landscape, 3 no portrait)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(if (isLandscape) 6 else 3),
+                state = gridState,
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = if (isLandscape) 6.dp else 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 14.dp),
                 verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp),
