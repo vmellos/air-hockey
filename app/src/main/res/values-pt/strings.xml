@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Air Hockey</string>
-    <string name="app_tagline">Junte os celulares e comece a partida</string>
+    <string name="app_tagline">Junte os aparelhos e comece a partida</string>
 
     <!-- Menu Principal -->
     <string name="menu_mode_connected">Mesa Conectada</string>
@@ -25,7 +25,7 @@
     <string name="menu_mode_extended_desc">2 aparelhos topo a topo formando uma mesa contínua</string>
     <string name="menu_mode_ai_vs_ai">Modo IA x IA</string>
     <string name="menu_mode_ai_vs_ai_desc">Duelo autônomo entre inteligências artificiais</string>
-    <string name="menu_mode_network_centralized">Jogar em 2 Celulares</string>
+    <string name="menu_mode_network_centralized">Jogar em 2 Aparelhos</string>
     <string name="menu_mode_network_centralized_desc">Mesa Estendida, Mesa Conectada ou Duelo IA x IA via Wi-Fi</string>
     <string name="menu_settings">Configurações</string>
 
@@ -35,8 +35,8 @@
     <string name="lobby_title_connected">Lobby da Mesa Conectada</string>
     <string name="lobby_select_host_mode_title">CRIAR MESA MULTIJOGADOR</string>
     <string name="lobby_select_host_mode_subtitle">Escolha a modalidade da partida em 2 aparelhos:</string>
-    <string name="lobby_host_ai_vs_ai_local_btn">Assistir neste celular (1 Tela)</string>
-    <string name="lobby_host_ai_vs_ai_extended_btn">Criar Mesa em 2 Celulares</string>
+    <string name="lobby_host_ai_vs_ai_local_btn">Assistir neste aparelho (1 Tela)</string>
+    <string name="lobby_host_ai_vs_ai_extended_btn">Criar Mesa em 2 Aparelhos</string>
     <string name="lobby_btn_start_match">Iniciar Partida</string>
     <string name="lobby_role_host">Criar Mesa</string>
     <string name="lobby_role_host_desc">Anunciar na rede local e gerar código / QR Code</string>
@@ -57,12 +57,12 @@
     <string name="lobby_status_waiting_guest">Aguardando o jogador 2 entrar&#8230;</string>
     <string name="lobby_status_disconnected">Conexão perdida</string>
     <string name="lobby_hotspot_hint">Dica: Se estiver usando o Roteador Wi-Fi (Hotspot), o convidado pode conectar apontando para o QR Code ou digitando o código.</string>
-    <string name="lobby_network_same_wifi">Atenção: Os dois celulares devem estar conectados à mesma rede Wi-Fi.</string>
+    <string name="lobby_network_same_wifi">Atenção: Os dois aparelhos devem estar conectados à mesma rede Wi-Fi.</string>
     <string name="lobby_network_ssid">Rede Wi-Fi: %1$s</string>
     <string name="lobby_network_wifi_connected">Wi-Fi Conectado (%1$s)</string>
     <string name="lobby_network_no_wifi">Nenhuma rede Wi-Fi detectada</string>
     <string name="lobby_network_open_hotspot">Sem Wi-Fi? Ativar Ponto de Acesso (Roteador)</string>
-    <string name="lobby_network_hotspot_instruction">Ative o Ponto de Acesso neste celular e conecte o outro aparelho nele.</string>
+    <string name="lobby_network_hotspot_instruction">Ative o Ponto de Acesso neste aparelho e conecte o outro dispositivo nele.</string>
 
     <!-- Calibração de Vão Físico -->
     <string name="calibration_title">Calibração de Vão Físico</string>
@@ -208,7 +208,7 @@
     <string name="visual_effects_full">Efeitos Arcade Neon</string>
     <string name="visual_effects_full_desc">Rastro de fogo de plasma, faíscas incandescentes, vórtice de contagem e celebração explosiva</string>
     <string name="visual_effects_off">Modo Desempenho (Mínimo)</string>
-    <string name="visual_effects_off_desc">Sem rastros ou partículas para máxima fluidez em celulares de entrada</string>
+    <string name="visual_effects_off_desc">Sem rastros ou partículas para máxima fluidez em dispositivos de entrada</string>
 
     <!-- Placar Alvo no HUD & Diálogo IA x IA -->
     <string name="target_score_hud">ALVO: %1$d</string>
@@ -341,7 +341,7 @@
     <string name="quick_audio_music">Música de Fundo</string>
     <string name="quick_audio_haptics">Vibração</string>
     <string name="quick_audio_close">Pronto</string>
-    <string name="camera_zoom_title">Visão da Câmera 3D</string>
+    <string name="camera_zoom_title">Enquadramento 3D</string>
     <string name="camera_zoom_standard">Padrão (1.0x)</string>
     <string name="camera_zoom_wide">Amplo (1.3x)</string>
     <string name="camera_zoom_close">Próximo (0.8x)</string>

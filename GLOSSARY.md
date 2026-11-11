@@ -4,6 +4,10 @@ Air Hockey é um jogo arcade multijogador em tempo real executado localmente em 
 
 ## Entidades de Jogo
 
+**Aparelho**:
+O dispositivo móvel físico (smartphone, tablet ou dobrável) que executa a aplicação individualmente ou pareado em rede com outro participante.
+_Avoid_: Celular, telefone, smartphone (quando restringe indevidamente a experiência a celulares de bolso)
+
 **Disco**:
 O objeto circular deslizante impulsionado pelos jogadores para marcar pontos nas metas.
 _Avoid_: Bola, puck, esfera
@@ -111,8 +115,8 @@ O voo panorâmico cinematográfico estilo drone que sobrevoa a extensão da aren
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
-Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1, para a Câmera 3D Zenital no Modo Tela Dividida e para a Mesa Estendida com ancoragem no topo físico (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e segundo a preferência visual do usuário, alternáveis por controle no HUD e persistidos nas preferências.
-_Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto
+Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1, para a Câmera 3D Zenital no Modo Tela Dividida e para a Mesa Estendida com ancoragem no topo físico (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e segundo a preferência visual do usuário, alternáveis por controle no Menu de Pausa (preservando o HUD da arena despoluído durante a partida ativa) e persistidos nas preferências.
+_Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto, botão de zoom
 
 **Desprojeção em Perspectiva 3D**:
 O cálculo de interseção geométrica que projeta o raio do ponto de toque na tela diretamente sobre o plano da mesa de jogo (Y = 0), convertendo com precisão coordenadas de tela em coordenadas métricas do motor físico sob qualquer um dos Níveis de Enquadramento 3D para controle preciso dos rebatedores.
