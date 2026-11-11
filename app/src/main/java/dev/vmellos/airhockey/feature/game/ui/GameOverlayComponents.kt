@@ -843,19 +843,26 @@ private fun AudioAndVisualControlsSurface(
                             Surface(
                                 onClick = { onCameraZoom3dChange(zoomOption) },
                                 shape = CutCornerShape(6.dp),
-                                color = if (isSelected) Color(0x3300E5FF) else Color(0x1AFFFFFF),
-                                border = BorderStroke(1.dp, if (isSelected) Color(0xFF00E5FF) else Color(0x22FFFFFF)),
+                                color = if (isSelected) Color(0x3300E5FF) else Color(0x1A0F172A),
+                                border = BorderStroke(if (isSelected) 1.5.dp else 1.dp, if (isSelected) Color(0xFF00E5FF) else Color(0x2EFFFFFF)),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(34.dp)
+                                    .height(42.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 2.dp)
+                                ) {
                                     Text(
                                         text = label,
-                                        color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
-                                        fontSize = 10.5.sp,
+                                        color = if (isSelected) Color(0xFF00E5FF) else Color(0xFFCBD5E1),
+                                        fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        maxLines = 1
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        maxLines = 2,
+                                        lineHeight = 13.sp
                                     )
                                 }
                             }

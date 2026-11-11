@@ -161,49 +161,64 @@ fun MainMenuScreen(
         val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         if (isLandscape) {
-            // Layout Bicolunar no Menu Principal em Modo Paisagem (ADR 0037)
-            Row(
+            // Layout Otimizado para Paisagem e Tablets (ADR 0037 & ADR 0041)
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(horizontal = 24.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
-                // Coluna Esquerda: Título Arcade Volumétrico, Subtítulo e Anúncio em Banner
-                Column(
+                // Topo Global Unificado: Placar na esquerda e Ações na direita (sem distorção no tablet)
+                MainMenuHeaderActions(
+                    onOpenLeaderboard = onOpenLeaderboard,
+                    isAdsRemovedPermanently = isAdsRemovedPermanently,
+                    activity = activity,
+                    billingManager = billingManager,
+                    onOpenCustomization = onOpenCustomization,
+                    prefs = prefs,
+                    haptic = haptic,
+                    onOpenSettings = onOpenSettings,
+                    onOpenQuickAudio = { showQuickAudioDialog = true }
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Área Central Bicolunar
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Coluna Esquerda: Título Arcade Volumétrico (Desobstrução Total do Disco Flamejante ao Fundo)
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.title_banner_championship),
                             contentDescription = stringResource(R.string.app_name),
                             modifier = Modifier
-                                .fillMaxWidth(0.88f)
-                                .widthIn(max = 300.dp)
+                                .fillMaxWidth(0.90f)
+                                .widthIn(max = 340.dp)
                                 .aspectRatio(800f / 341f),
                             contentScale = ContentScale.Fit
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(R.string.app_tagline),
                             color = Color(0xFFE2E8F0),
-                            fontSize = 10.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 1.sp
                         )
 
                         if (inAppUpdateStatus is InAppUpdateStatus.Downloaded) {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             InAppUpdateDownloadedBanner(
                                 onRestart = { AirHockeyApp.instance.inAppUpdateEngine.completeUpdate() },
                                 onDismiss = { AirHockeyApp.instance.inAppUpdateEngine.dismissNotification() }
@@ -211,76 +226,65 @@ fun MainMenuScreen(
                         }
                     }
 
+                    // Coluna Direita: Cartões de Modo com largura contida (max 440 dp) e Banner na base
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .weight(1.15f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AdBanner(
-                            adManager = adManager,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                        Text(
-                            text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
-                            color = Color(0xFF475569),
-                            fontSize = 10.sp,
-                            letterSpacing = 1.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
+                        // Os 3 Cartões de Modos de Jogo em contêiner compacto ergonômico
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = 440.dp)
+                        ) {
+                            MenuModeCard(
+                                title = stringResource(R.string.menu_mode_solo),
+                                description = stringResource(R.string.menu_mode_solo_desc),
+                                accentColor = Color(0xFFFFB800),
+                                hapticsEnabled = prefs.hapticsEnabled,
+                                onClick = onStartSolo
+                            )
 
-                // Coluna Direita: Ações Rápidas de Topo e os 3 Modos de Jogo
-                Column(
-                    modifier = Modifier
-                        .weight(1.2f)
-                        .fillMaxHeight()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Ações do Topo
-                    MainMenuHeaderActions(
-                        onOpenLeaderboard = onOpenLeaderboard,
-                        isAdsRemovedPermanently = isAdsRemovedPermanently,
-                        activity = activity,
-                        billingManager = billingManager,
-                        onOpenCustomization = onOpenCustomization,
-                        prefs = prefs,
-                        haptic = haptic,
-                        onOpenSettings = onOpenSettings,
-                        onOpenQuickAudio = { showQuickAudioDialog = true }
-                    )
+                            MenuModeCard(
+                                title = stringResource(R.string.menu_mode_split),
+                                description = stringResource(R.string.menu_mode_split_desc),
+                                accentColor = Color(0xFFA855F7),
+                                hapticsEnabled = prefs.hapticsEnabled,
+                                onClick = onStartSplit
+                            )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                            MenuModeCard(
+                                title = stringResource(R.string.menu_mode_network_centralized),
+                                description = stringResource(R.string.menu_mode_network_centralized_desc),
+                                accentColor = Color(0xFF00E5FF),
+                                hapticsEnabled = prefs.hapticsEnabled,
+                                onClick = onStartNetwork
+                            )
+                        }
 
-                    // Os 3 Cartões de Modos de Jogo com acesso imediato sem cortes (Design System Cyber-Obsidian)
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        MenuModeCard(
-                            title = stringResource(R.string.menu_mode_solo),
-                            description = stringResource(R.string.menu_mode_solo_desc),
-                            accentColor = Color(0xFFFFB800),
-                            hapticsEnabled = prefs.hapticsEnabled,
-                            onClick = onStartSolo
-                        )
-
-                        MenuModeCard(
-                            title = stringResource(R.string.menu_mode_split),
-                            description = stringResource(R.string.menu_mode_split_desc),
-                            accentColor = Color(0xFFA855F7),
-                            hapticsEnabled = prefs.hapticsEnabled,
-                            onClick = onStartSplit
-                        )
-
-                        MenuModeCard(
-                            title = stringResource(R.string.menu_mode_network_centralized),
-                            description = stringResource(R.string.menu_mode_network_centralized_desc),
-                            accentColor = Color(0xFF00E5FF),
-                            hapticsEnabled = prefs.hapticsEnabled,
-                            onClick = onStartNetwork
-                        )
+                        // Banner Publicitário e Rodapé de Versão ancorados na base da coluna direita
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            AdBanner(
+                                adManager = adManager,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                            )
+                            Text(
+                                text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
                     }
                 }
             }
@@ -389,7 +393,7 @@ fun MainMenuScreen(
                     // Rodapé elegante
                     Text(
                         text = "AIR HOCKEY ARCADE • v${dev.vmellos.airhockey.BuildConfig.VERSION_NAME}",
-                        color = Color(0xFF475569),
+                        color = Color(0xFF94A3B8),
                         fontSize = 11.sp,
                         letterSpacing = 1.sp,
                         fontFamily = FontFamily.Monospace

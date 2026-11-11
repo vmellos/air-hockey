@@ -114,24 +114,49 @@ class Table3DCameraProjection(
         screenAspect: Float
     ): CameraPreset {
         val base = getBasePreset(zoom)
-        if (!isExtended || screenAspect <= 0.05f) {
+        if (screenAspect <= 0.05f) {
             return base
         }
 
-        val targetWidth = 1.28f
-        val targetLength = 2.30f
-        val requiredYForWidth = targetWidth / (FOV_COEFF * screenAspect)
-        val requiredYForLength = targetLength / FOV_COEFF
-        val baseY = kotlin.math.max(requiredYForWidth, requiredYForLength)
+        if (isExtended) {
+            val targetWidth = 1.28f
+            val targetLength = 2.30f
+            val requiredYForWidth = targetWidth / (FOV_COEFF * screenAspect)
+            val requiredYForLength = targetLength / FOV_COEFF
+            val baseY = kotlin.math.max(requiredYForWidth, requiredYForLength)
 
-        val zoomFactor = when (zoom) {
-            CameraZoom3D.CLOSE -> 0.90f
-            CameraZoom3D.STANDARD -> 1.0f
-            CameraZoom3D.WIDE -> 1.15f
+            val zoomFactor = when (zoom) {
+                CameraZoom3D.CLOSE -> 0.90f
+                CameraZoom3D.STANDARD -> 1.0f
+                CameraZoom3D.WIDE -> 1.15f
+            }
+            val calibratedY = baseY * zoomFactor
+            val calibratedZ = Z_TOP_EXTENDED + calibratedY * TAN_HALF_FOV
+            return base.copy(position = Float3(0f, calibratedY, calibratedZ))
         }
-        val calibratedY = baseY * zoomFactor
-        val calibratedZ = Z_TOP_EXTENDED + calibratedY * TAN_HALF_FOV
-        return base.copy(position = Float3(0f, calibratedY, calibratedZ))
+
+        // Calibração adaptativa para modo paisagem em tablets e telas largas (screenAspect > 1.15f) — ADR 0041
+        if (screenAspect > 1.15f) {
+            return when {
+                isSplitScreen -> when (zoom) {
+                    CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.15f, 0f), Float3(-90f, 0f, 0f))
+                    CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.35f, 0f), Float3(-90f, 0f, 0f))
+                    CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 2.65f, 0f), Float3(-90f, 0f, 0f))
+                }
+                isGuestCamera -> when (zoom) {
+                    CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 1.70f, -1.45f), Float3(-49f, 180f, 0f))
+                    CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.15f, -1.85f), Float3(-47f, 180f, 0f))
+                    CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 2.60f, -2.25f), Float3(-45f, 180f, 0f))
+                }
+                else -> when (zoom) {
+                    CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 1.70f, 1.45f), Float3(-49f, 0f, 0f))
+                    CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.15f, 1.85f), Float3(-47f, 0f, 0f))
+                    CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 2.60f, 2.25f), Float3(-45f, 0f, 0f))
+                }
+            }
+        }
+
+        return base
     }
 
     /**

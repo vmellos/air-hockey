@@ -462,10 +462,27 @@ class AirHockey3DSceneTest {
         val expectedZTall = Table3DCameraProjection.Z_TOP_EXTENDED + tallPreset.position.y * Table3DCameraProjection.TAN_HALF_FOV
         assertEquals(expectedZTall, tallPreset.position.z, 1e-4f)
 
-        // For non-extended modes, base preset is preserved unchanged
+        // For non-extended modes, base preset is preserved unchanged in portrait (aspect <= 1.15)
         val soloProj = Table3DCameraProjection(TableDimensions(), GameMode.SOLO)
-        val soloPreset = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f)
-        assertEquals(soloProj.getBasePreset(CameraZoom3D.STANDARD), soloPreset)
+        val soloPresetPortrait = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f)
+        assertEquals(soloProj.getBasePreset(CameraZoom3D.STANDARD), soloPresetPortrait)
+
+        // For landscape aspect ratios (aspect > 1.15, typical of tablets), camera adapts closer (ADR 0041)
+        val tabletAspect = 1920f / 1200f // 1.6
+        val soloPresetTabletClose = soloProj.computeEffectiveTargetPreset(CameraZoom3D.CLOSE, tabletAspect)
+        val soloPresetTabletStd = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, tabletAspect)
+        val soloPresetTabletWide = soloProj.computeEffectiveTargetPreset(CameraZoom3D.WIDE, tabletAspect)
+
+        assertEquals(1.70f, soloPresetTabletClose.position.y, 1e-4f)
+        assertEquals(1.45f, soloPresetTabletClose.position.z, 1e-4f)
+        assertEquals(-49f, soloPresetTabletClose.rotation.x, 1e-4f)
+
+        assertEquals(2.15f, soloPresetTabletStd.position.y, 1e-4f)
+        assertEquals(1.85f, soloPresetTabletStd.position.z, 1e-4f)
+        assertEquals(-47f, soloPresetTabletStd.rotation.x, 1e-4f)
+
+        assertTrue(soloPresetTabletClose.position.y < soloPresetTabletStd.position.y)
+        assertTrue(soloPresetTabletStd.position.y < soloPresetTabletWide.position.y)
     }
 
     @Test
