@@ -47,7 +47,8 @@ enum class TableTheme {
     TOKAMAK_REACTOR,
     CYBER_PONG,
     CYBER_COLOSSEUM,
-    ARCADE_3D
+    ARCADE_3D,
+    KIARA_CAT
 }
 
 enum class PuckSkin {
@@ -61,7 +62,8 @@ enum class PuckSkin {
     SYNTH_DISC,
     ATOMIC_CORE,
     PONG_SQUARE,
-    GLADIATOR_SHIELD
+    GLADIATOR_SHIELD,
+    KIARA_PAW
 }
 
 enum class MalletSkin {
@@ -75,7 +77,8 @@ enum class MalletSkin {
     OUTRUN_STRIKER,
     MAGNETIC_COIL,
     PONG_PADDLE,
-    SPARTAN_AEGIS
+    SPARTAN_AEGIS,
+    NEKO_STRIKER
 }
 
 data class UserPreferences(

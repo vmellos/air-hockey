@@ -79,7 +79,7 @@ fun PreMatchArenaSelectionScreen(
 
     val stageRepo = AirHockeyApp.instance.stageRepository
     val unlockedThemes by stageRepo.unlockedThemesFlow.collectAsState(
-        initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D)
+        initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT)
     )
 
     var selectedTheme by remember { mutableStateOf(prefs.tableTheme) }
@@ -130,6 +130,12 @@ fun PreMatchArenaSelectionScreen(
     }
 
     val previewBoxContent = @Composable { boxModifier: Modifier ->
+        val selectedTier = remember(selectedTheme) {
+            ArenaConquestCatalog.getTierForTheme(selectedTheme) ?: ArenaConquestCatalog.TIER_CLASSIC
+        }
+        val previewPuckSkin = selectedTier.puckSkin
+        val previewMalletSkin = selectedTier.malletSkin
+
         Box(
             modifier = boxModifier
                 .clip(CutCornerShape(12.dp))
@@ -139,8 +145,8 @@ fun PreMatchArenaSelectionScreen(
             if (selectedDimension == ArenaDimension.THREE_DIMENSIONAL) {
                 Arena3DLivePreview(
                     tableTheme = selectedTheme,
-                    puckSkin = prefs.puckSkin,
-                    malletSkin = prefs.player1MalletSkin,
+                    puckSkin = previewPuckSkin,
+                    malletSkin = previewMalletSkin,
                     neonBloomIntensity = prefs.neonBloomIntensity,
                     isExtended = false,
                     modifier = Modifier.fillMaxSize()
@@ -148,8 +154,8 @@ fun PreMatchArenaSelectionScreen(
             } else {
                 ArenaLivePreview(
                     tableTheme = selectedTheme,
-                    puckSkin = prefs.puckSkin,
-                    malletSkin = prefs.player1MalletSkin,
+                    puckSkin = previewPuckSkin,
+                    malletSkin = previewMalletSkin,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -347,8 +353,8 @@ fun PreMatchArenaSelectionScreen(
                 coroutineScope.launch {
                     preferencesRepo.applyThemePreset(finalTheme)
                     preferencesRepo.updateArenaDimension(selectedDimension)
+                    onConfirm(finalTheme, selectedDimension)
                 }
-                onConfirm(finalTheme, selectedDimension)
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF)),
             shape = CutCornerShape(8.dp),

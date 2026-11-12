@@ -172,6 +172,14 @@ fun ScoreBoardOverlay(
             TokamakPlasma,
             FontFamily.SansSerif
         )
+        TableTheme.KIARA_CAT -> SixTuple(
+            RoundedCornerShape(12.dp),
+            Color(0xDD12081C),
+            BorderStroke(1.2.dp, Color(0xFFFF1493).copy(alpha = 0.8f)),
+            Color(0xFFFF1493),
+            NeonCyan,
+            FontFamily.SansSerif
+        )
         TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> SixTuple(
             RoundedCornerShape(12.dp),
             Color(0x33000000),
@@ -320,6 +328,7 @@ fun CountdownOverlay(
         TableTheme.WASTELAND_APOCALYPSE -> Triple(WastelandFlame, WastelandFlameBright, FontFamily.SansSerif)
         TableTheme.RETRO_SYNTHWAVE -> Triple(SynthPink, SynthCyanBright, FontFamily.SansSerif)
         TableTheme.TOKAMAK_REACTOR -> Triple(TokamakRadiation, TokamakPlasmaBright, FontFamily.SansSerif)
+        TableTheme.KIARA_CAT -> Triple(Color(0xFFFF1493), Color(0xFFFFC107), FontFamily.SansSerif)
         TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Triple(NeonCyan, Color(0xFF10B981), FontFamily.SansSerif)
     }
 
@@ -365,6 +374,7 @@ fun GoalBannerOverlay(
         TableTheme.TOKAMAK_REACTOR -> Pair(TokamakRadiation, TokamakPlasma)
         TableTheme.CYBER_PONG -> Pair(PongGreen, PongGreen)
         TableTheme.CYBER_COLOSSEUM -> Pair(ColosseumGold, ColosseumCrimson)
+        TableTheme.KIARA_CAT -> Pair(Color(0xFFFF1493), NeonCyan)
     }
 
     val color = if (scorer == 1) primaryColor else secondaryColor
@@ -380,6 +390,7 @@ fun GoalBannerOverlay(
         TableTheme.TOKAMAK_REACTOR -> if (scorer == 1) TokamakRadiationBright else TokamakPlasmaBright
         TableTheme.CYBER_PONG -> PongGreenBright
         TableTheme.CYBER_COLOSSEUM -> if (scorer == 1) ColosseumGoldBright else ColosseumCrimson
+        TableTheme.KIARA_CAT -> if (scorer == 1) Color(0xFFFF69B4) else NeonCyanBright
     }
 
     val bannerShape = when (tableTheme) {
@@ -393,6 +404,7 @@ fun GoalBannerOverlay(
         TableTheme.NEO_BASKETBALL -> CutCornerShape(12.dp)
         TableTheme.TOKAMAK_REACTOR -> CutCornerShape(12.dp)
         TableTheme.CYBER_BASEBALL -> CutCornerShape(14.dp)
+        TableTheme.KIARA_CAT -> RoundedCornerShape(14.dp)
         TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> CutCornerShape(16.dp)
     }
 
@@ -407,6 +419,7 @@ fun GoalBannerOverlay(
         TableTheme.RETRO_SYNTHWAVE -> Color(0xE61A081C)
         TableTheme.TOKAMAK_REACTOR -> Color(0xE607180A)
         TableTheme.CYBER_COLOSSEUM -> Color(0xE61C1408)
+        TableTheme.KIARA_CAT -> Color(0xE614081E)
         TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Color(0xD9080E1A)
     }
 

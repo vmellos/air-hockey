@@ -2597,3 +2597,451 @@ fun DrawScope.drawSpikeEmitterMallet(
     )
 }
 
+// ============================================================================
+// ARENA KIARA CAT 2D (TEMA FELINO ARCADE)
+// ============================================================================
+
+fun DrawScope.drawKiaraCatTable(
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+    scale: Float,
+    isExtendedHost: Boolean,
+    isExtendedGuest: Boolean,
+    isConnectedGuest: Boolean
+) {
+    val chamfer = 48f * scale
+    val right = left + width
+    val bottom = top + height
+    val centerY = top + height / 2f
+
+    // 1. Fundo do campo escuro profundo violeta
+    val tablePath = Path().apply {
+        moveTo(left + chamfer, top)
+        lineTo(right - chamfer, top)
+        lineTo(right, top + chamfer)
+        lineTo(right, bottom - chamfer)
+        lineTo(right - chamfer, bottom)
+        lineTo(left + chamfer, bottom)
+        lineTo(left, bottom - chamfer)
+        lineTo(left, top + chamfer)
+        close()
+    }
+    drawPath(path = tablePath, color = Color(0xFF0C0816))
+
+    // 2. Grade cibernética neon magenta sutil
+    val gridStep = 70f * scale
+    var gx = left + gridStep
+    while (gx < right) {
+        drawLine(
+            color = Color(0x16FF1493),
+            start = Offset(gx, top),
+            end = Offset(gx, bottom),
+            strokeWidth = 1f
+        )
+        gx += gridStep
+    }
+    var gy = top + gridStep
+    while (gy < bottom) {
+        drawLine(
+            color = Color(0x16FF1493),
+            start = Offset(left, gy),
+            end = Offset(right, gy),
+            strokeWidth = 1f
+        )
+        gy += gridStep
+    }
+
+    // 3. Patinhas sutis no piso da mesa (marcas d'água neon)
+    fun drawPawPrint(cx: Float, cy: Float, pawScale: Float, pawColor: Color) {
+        drawOval(
+            color = pawColor,
+            topLeft = Offset(cx - 18f * pawScale, cy - 12f * pawScale),
+            size = Size(36f * pawScale, 26f * pawScale)
+        )
+        val toeOffsets = listOf(
+            Offset(-22f * pawScale, -20f * pawScale) to 5.5f * pawScale,
+            Offset(-8f * pawScale, -28f * pawScale) to 6f * pawScale,
+            Offset(8f * pawScale, -28f * pawScale) to 6f * pawScale,
+            Offset(22f * pawScale, -20f * pawScale) to 5.5f * pawScale
+        )
+        for ((off, rad) in toeOffsets) {
+            drawCircle(
+                color = pawColor,
+                radius = rad,
+                center = Offset(cx + off.x, cy + off.y)
+            )
+        }
+    }
+
+    val pawAlphaColor = Color(0x1CFF1493)
+    val pawGoldAlpha = Color(0x18FFC107)
+    drawPawPrint(left + width * 0.28f, top + height * 0.22f, scale * 1.1f, pawGoldAlpha)
+    drawPawPrint(left + width * 0.72f, top + height * 0.32f, scale * 1.0f, pawAlphaColor)
+    drawPawPrint(left + width * 0.28f, top + height * 0.68f, scale * 1.0f, pawAlphaColor)
+    drawPawPrint(left + width * 0.72f, top + height * 0.78f, scale * 1.1f, pawGoldAlpha)
+
+    // 4. Bordas Chanfradas Neon
+    if (isExtendedHost || isExtendedGuest) {
+        val singleColor = if (isExtendedGuest) NeonCyan else Color(0xFFFF1493)
+        val singleBorder = Path().apply {
+            moveTo(left, top)
+            lineTo(left, bottom - chamfer)
+            lineTo(left + chamfer, bottom)
+            lineTo(right - chamfer, bottom)
+            lineTo(right, bottom - chamfer)
+            lineTo(right, top)
+        }
+        drawPath(path = singleBorder, color = singleColor.copy(alpha = 0.25f), style = Stroke(width = 12f * scale))
+        drawPath(path = singleBorder, color = singleColor, style = Stroke(width = 5.5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        drawLine(
+            color = Color(0x99FFFFFF),
+            start = Offset(left, top),
+            end = Offset(right, top),
+            strokeWidth = 3f * scale,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f * scale, 18f * scale), 0f)
+        )
+
+        val circleRadius = 130f * scale
+        drawArc(
+            color = singleColor.copy(alpha = 0.85f),
+            startAngle = 0f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(left + width / 2f - circleRadius, top - circleRadius),
+            size = Size(circleRadius * 2f, circleRadius * 2f),
+            style = Stroke(width = 4f * scale)
+        )
+    } else {
+        // Metade Superior: Ciano Elétrico (P2)
+        val topHalfPath = Path().apply {
+            moveTo(left, centerY)
+            lineTo(left, top + chamfer)
+            lineTo(left + chamfer, top)
+            lineTo(right - chamfer, top)
+            lineTo(right, top + chamfer)
+            lineTo(right, centerY)
+        }
+        drawPath(path = topHalfPath, color = NeonCyan.copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
+        drawPath(path = topHalfPath, color = NeonCyan, style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Metade Inferior: Magenta / Pink Neon (P1)
+        val bottomHalfPath = Path().apply {
+            moveTo(right, centerY)
+            lineTo(right, bottom - chamfer)
+            lineTo(right - chamfer, bottom)
+            lineTo(left + chamfer, bottom)
+            lineTo(left, bottom - chamfer)
+            lineTo(left, centerY)
+        }
+        drawPath(path = bottomHalfPath, color = Color(0xFFFF1493).copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
+        drawPath(path = bottomHalfPath, color = Color(0xFFFF1493), style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Linha divisória central dourada
+        drawLine(
+            color = Color(0xFFFFC107).copy(alpha = 0.85f),
+            start = Offset(left, centerY),
+            end = Offset(right, centerY),
+            strokeWidth = 3.5f * scale
+        )
+
+        // Círculo central com contorno de orelhas de gato
+        val circleRadius = 110f * scale
+        val cx = left + width / 2f
+        drawCircle(
+            color = Color(0xFFFFC107).copy(alpha = 0.80f),
+            radius = circleRadius,
+            center = Offset(cx, centerY),
+            style = Stroke(width = 3.5f * scale)
+        )
+
+        // Orelhas de gato no topo e na base do círculo central
+        val earW = 28f * scale
+        val earH = 34f * scale
+        val earLeftPath = Path().apply {
+            moveTo(cx - circleRadius * 0.65f, centerY - circleRadius * 0.76f)
+            lineTo(cx - circleRadius * 0.45f - earW, centerY - circleRadius * 0.76f - earH)
+            lineTo(cx - circleRadius * 0.25f, centerY - circleRadius * 0.96f)
+
+            moveTo(cx + circleRadius * 0.25f, centerY - circleRadius * 0.96f)
+            lineTo(cx + circleRadius * 0.45f + earW, centerY - circleRadius * 0.76f - earH)
+            lineTo(cx + circleRadius * 0.65f, centerY - circleRadius * 0.76f)
+
+            moveTo(cx - circleRadius * 0.65f, centerY + circleRadius * 0.76f)
+            lineTo(cx - circleRadius * 0.45f - earW, centerY + circleRadius * 0.76f + earH)
+            lineTo(cx - circleRadius * 0.25f, centerY + circleRadius * 0.96f)
+
+            moveTo(cx + circleRadius * 0.25f, centerY + circleRadius * 0.96f)
+            lineTo(cx + circleRadius * 0.45f + earW, centerY + circleRadius * 0.76f + earH)
+            lineTo(cx + circleRadius * 0.65f, centerY + circleRadius * 0.76f)
+        }
+        drawPath(path = earLeftPath, color = Color(0xFFFFC107), style = Stroke(width = 3.5f * scale, cap = StrokeCap.Round))
+    }
+}
+
+fun DrawScope.drawKiaraCatGoal(
+    goalLeft: Float,
+    goalWidth: Float,
+    y: Float,
+    scale: Float,
+    goalColor: Color,
+    isTop: Boolean
+) {
+    val goalRight = goalLeft + goalWidth
+    val depth = 38f * scale * (if (isTop) 1f else -1f)
+
+    val goalPath = Path().apply {
+        moveTo(goalLeft, y)
+        lineTo(goalLeft + 16f * scale, y + depth)
+        lineTo(goalRight - 16f * scale, y + depth)
+        lineTo(goalRight, y)
+    }
+
+    drawPath(path = goalPath, color = goalColor.copy(alpha = 0.22f), style = Stroke(width = 8f * scale))
+    drawPath(path = goalPath, color = goalColor, style = Stroke(width = 4.5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+    val arcHeight = 18f * scale * (if (isTop) 1f else -1f)
+    val laserBar = Path().apply {
+        moveTo(goalLeft + 25f * scale, y)
+        quadraticBezierTo(goalLeft + goalWidth / 2f, y + arcHeight, goalRight - 25f * scale, y)
+    }
+    drawPath(path = laserBar, color = Color(0xFFFFC107), style = Stroke(width = 3f * scale, cap = StrokeCap.Round))
+}
+
+fun DrawScope.drawNekoStriker(
+    cx: Float,
+    cy: Float,
+    radius: Float,
+    accentColor: Color,
+    rimColor: Color,
+    scale: Float
+) {
+    drawCircle(
+        color = Color(0xFF0F0B18),
+        radius = radius,
+        center = Offset(cx, cy)
+    )
+
+    drawCircle(
+        color = rimColor.copy(alpha = 0.35f),
+        radius = radius,
+        center = Offset(cx, cy),
+        style = Stroke(width = 7f * scale)
+    )
+    drawCircle(
+        color = rimColor,
+        radius = radius,
+        center = Offset(cx, cy),
+        style = Stroke(width = 3.5f * scale)
+    )
+
+    val earH = radius * 0.45f
+    val earW = radius * 0.35f
+    val earsPath = Path().apply {
+        moveTo(cx - radius * 0.65f, cy - radius * 0.4f)
+        lineTo(cx - radius * 0.55f, cy - radius - earH * 0.5f)
+        lineTo(cx - radius * 0.15f, cy - radius * 0.85f)
+
+        moveTo(cx + radius * 0.15f, cy - radius * 0.85f)
+        lineTo(cx + radius * 0.55f, cy - radius - earH * 0.5f)
+        lineTo(cx + radius * 0.65f, cy - radius * 0.4f)
+    }
+    drawPath(path = earsPath, color = rimColor, style = Stroke(width = 3.5f * scale, cap = StrokeCap.Round))
+
+    val knobRadius = radius * 0.52f
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(WhiteHot, accentColor, Color(0xFF1E0A3A)),
+            center = Offset(cx - knobRadius * 0.2f, cy - knobRadius * 0.2f),
+            radius = knobRadius * 1.1f
+        ),
+        radius = knobRadius,
+        center = Offset(cx, cy)
+    )
+    drawCircle(
+        color = rimColor,
+        radius = knobRadius,
+        center = Offset(cx, cy),
+        style = Stroke(width = 2.5f * scale)
+    )
+
+    drawCircle(
+        color = Color(0xFFFFC107),
+        radius = knobRadius * 0.28f,
+        center = Offset(cx, cy + knobRadius * 0.15f)
+    )
+    for (ang in listOf(-45.0, -15.0, 15.0, 45.0)) {
+        val rad = Math.toRadians(ang)
+        val tx = cx + (radius * 0.55f * sin(rad)).toFloat()
+        val ty = cy - (radius * 0.55f * cos(rad)).toFloat() + knobRadius * 0.15f
+        drawCircle(
+            color = Color(0xFFFFC107),
+            radius = knobRadius * 0.12f,
+            center = Offset(tx, ty)
+        )
+    }
+}
+
+fun DrawScope.drawKiara2DGutterMascot(
+    centerX: Float,
+    centerY: Float,
+    scale: Float
+) {
+    val r = 26f * scale
+    drawCircle(
+        color = Color(0xFFFF1493).copy(alpha = 0.20f),
+        radius = r * 1.5f,
+        center = Offset(centerX, centerY)
+    )
+
+    drawCircle(
+        color = Color(0xFF140D22),
+        radius = r,
+        center = Offset(centerX, centerY)
+    )
+    drawCircle(
+        color = Color(0xFFFF1493),
+        radius = r,
+        center = Offset(centerX, centerY),
+        style = Stroke(width = 2.5f * scale)
+    )
+
+    val earH = r * 0.75f
+    val ears = Path().apply {
+        moveTo(centerX - r * 0.8f, centerY - r * 0.2f)
+        lineTo(centerX - r * 0.55f, centerY - r - earH * 0.6f)
+        lineTo(centerX - r * 0.15f, centerY - r * 0.85f)
+
+        moveTo(centerX + r * 0.15f, centerY - r * 0.85f)
+        lineTo(centerX + r * 0.55f, centerY - r - earH * 0.6f)
+        lineTo(centerX + r * 0.8f, centerY - r * 0.2f)
+    }
+    drawPath(path = ears, color = Color(0xFFFF1493), style = Stroke(width = 2.5f * scale, cap = StrokeCap.Round))
+
+    drawOval(
+        color = Color(0xFFFFC107),
+        topLeft = Offset(centerX - r * 0.55f, centerY - r * 0.25f),
+        size = Size(r * 0.35f, r * 0.5f)
+    )
+    drawOval(
+        color = Color(0xFFFFC107),
+        topLeft = Offset(centerX + r * 0.20f, centerY - r * 0.25f),
+        size = Size(r * 0.35f, r * 0.5f)
+    )
+
+    drawCircle(
+        color = Color(0xFF0F0B18),
+        radius = r * 0.12f,
+        center = Offset(centerX - r * 0.37f, centerY)
+    )
+    drawCircle(
+        color = Color(0xFF0F0B18),
+        radius = r * 0.12f,
+        center = Offset(centerX + r * 0.37f, centerY)
+    )
+
+    drawCircle(
+        color = Color(0xFFFF69B4),
+        radius = r * 0.10f,
+        center = Offset(centerX, centerY + r * 0.25f)
+    )
+    for (dir in listOf(-1, 1)) {
+        for (idx in listOf(-1, 1)) {
+            val sx = centerX + dir * r * 0.25f
+            val sy = centerY + r * 0.28f + idx * 4f * scale
+            val ex = centerX + dir * r * 0.95f
+            val ey = sy + idx * 3f * scale
+            drawLine(
+                color = Color(0xCCFFFFFF),
+                start = Offset(sx, sy),
+                end = Offset(ex, ey),
+                strokeWidth = 1.2f * scale
+            )
+        }
+    }
+}
+
+/**
+ * Desenha pegada efêmera da Mascote Kiara 2D no Canvas durante o circuito de patrulha (ADR 0042).
+ */
+fun DrawScope.drawKiaraPawTrailPrint(
+    cx: Float,
+    cy: Float,
+    scale: Float,
+    alpha: Float
+) {
+    val pawColor = Color(0xFFFF1493).copy(alpha = 0.55f * alpha)
+    drawOval(
+        color = pawColor,
+        topLeft = Offset(cx - 10f * scale, cy - 7f * scale),
+        size = Size(20f * scale, 14f * scale)
+    )
+    val toeOffsets = listOf(
+        Offset(-11f * scale, -10f * scale) to 3.0f * scale,
+        Offset(-4f * scale, -14f * scale) to 3.5f * scale,
+        Offset(4f * scale, -14f * scale) to 3.5f * scale,
+        Offset(11f * scale, -10f * scale) to 3.0f * scale
+    )
+    for ((off, rad) in toeOffsets) {
+        drawCircle(
+            color = Color(0xFFFFD54F).copy(alpha = 0.65f * alpha),
+            radius = rad,
+            center = Offset(cx + off.x, cy + off.y)
+        )
+    }
+}
+
+fun DrawScope.drawKiaraPawPuck(
+    cx: Float,
+    cy: Float,
+    radius: Float,
+    accentColor: Color,
+    scale: Float
+) {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(accentColor.copy(alpha = 0.50f), accentColor.copy(alpha = 0.12f), Color.Transparent),
+            center = Offset(cx, cy),
+            radius = radius * 1.8f
+        ),
+        radius = radius * 1.8f,
+        center = Offset(cx, cy)
+    )
+
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color(0xFF2A1C35), Color(0xFF140D22), Color(0xFF090510)),
+            center = Offset(cx - radius * 0.20f, cy - radius * 0.20f),
+            radius = radius * 1.05f
+        ),
+        radius = radius,
+        center = Offset(cx, cy)
+    )
+
+    drawCircle(
+        color = accentColor,
+        radius = radius,
+        center = Offset(cx, cy),
+        style = Stroke(width = 3.5f * scale)
+    )
+
+    val padRadius = radius * 0.32f
+    drawOval(
+        color = Color(0xFFFFC107),
+        topLeft = Offset(cx - padRadius * 1.1f, cy - padRadius * 0.35f),
+        size = Size(padRadius * 2.2f, padRadius * 1.6f)
+    )
+    for (ang in listOf(-45.0, -15.0, 15.0, 45.0)) {
+        val rad = Math.toRadians(ang)
+        val tx = cx + (radius * 0.55f * sin(rad)).toFloat()
+        val ty = cy - (radius * 0.55f * cos(rad)).toFloat() + padRadius * 0.2f
+        drawCircle(
+            color = Color(0xFFFFC107),
+            radius = padRadius * 0.38f,
+            center = Offset(tx, ty)
+        )
+    }
+}
+

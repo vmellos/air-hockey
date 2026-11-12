@@ -2,6 +2,7 @@ package dev.vmellos.airhockey.feature.stage
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.filled.SportsBasketball
@@ -58,6 +59,22 @@ object ArenaConquestCatalog {
         secondaryColor = NeonOrange,
         puckTitleRes = R.string.skin_puck_classic,
         malletTitleRes = R.string.skin_mallet_classic
+    )
+
+    val TIER_KIARA_CAT = ArenaTier(
+        tierIndex = 11,
+        stageRange = 0..0,
+        unlockStage = 0,
+        theme = TableTheme.KIARA_CAT,
+        puckSkin = PuckSkin.KIARA_PAW,
+        malletSkin = MalletSkin.NEKO_STRIKER,
+        titleRes = R.string.theme_preset_kiara_cat,
+        descRes = R.string.theme_preset_kiara_cat_desc,
+        icon = Icons.Default.Pets,
+        primaryColor = Color(0xFFFF1493),
+        secondaryColor = NeonCyan,
+        puckTitleRes = R.string.skin_puck_kiara_paw,
+        malletTitleRes = R.string.skin_mallet_neko_striker
     )
 
     val TIERS: List<ArenaTier> = listOf(
@@ -214,9 +231,9 @@ object ArenaConquestCatalog {
     )
 
     /**
-     * Catálogo completo de todos os 11 Conjuntos Temáticos Esportivos (incluindo Clássico).
+     * Catálogo completo de todos os Conjuntos Temáticos Esportivos (incluindo Clássico e Kiara Cat).
      */
-    val ALL_THEMES: List<ArenaTier> = listOf(TIER_CLASSIC) + TIERS
+    val ALL_THEMES: List<ArenaTier> = listOf(TIER_CLASSIC, TIER_KIARA_CAT) + TIERS
 
     fun resolveActivePresetTitleRes(theme: TableTheme, puck: PuckSkin, mallet: MalletSkin): Int {
         val match = ALL_THEMES.firstOrNull { it.theme == theme && it.puckSkin == puck && it.malletSkin == mallet }
@@ -228,7 +245,8 @@ object ArenaConquestCatalog {
         return TIERS.firstOrNull { validStage in it.stageRange } ?: TIERS.first()
     }
 
-    fun getTierForTheme(theme: TableTheme): ArenaTier? = TIERS.firstOrNull { it.theme == theme }
+    fun getTierForTheme(theme: TableTheme): ArenaTier? =
+        if (theme == TableTheme.KIARA_CAT) TIER_KIARA_CAT else TIERS.firstOrNull { it.theme == theme }
 
     fun getThemeForStage(stageNumber: Int): TableTheme = getTierForStage(stageNumber).theme
 
@@ -237,26 +255,26 @@ object ArenaConquestCatalog {
     fun getMalletSkinForStage(stageNumber: Int): MalletSkin = getTierForStage(stageNumber).malletSkin
 
     fun getUnlockStageForTheme(theme: TableTheme): Int {
-        if (theme == TableTheme.CLASSIC_NEON || theme == TableTheme.ARCADE_3D) return 0
+        if (theme == TableTheme.CLASSIC_NEON || theme == TableTheme.ARCADE_3D || theme == TableTheme.KIARA_CAT) return 0
         return TIERS.firstOrNull { it.theme == theme }?.unlockStage ?: 0
     }
 
     fun getUnlockStageForPuck(skin: PuckSkin): Int {
-        if (skin == PuckSkin.CLASSIC_PLASMA) return 0
+        if (skin == PuckSkin.CLASSIC_PLASMA || skin == PuckSkin.KIARA_PAW) return 0
         return TIERS.firstOrNull { it.puckSkin == skin }?.unlockStage ?: 0
     }
 
     fun getUnlockStageForMallet(skin: MalletSkin): Int {
-        if (skin == MalletSkin.CLASSIC_NEON) return 0
+        if (skin == MalletSkin.CLASSIC_NEON || skin == MalletSkin.NEKO_STRIKER) return 0
         return TIERS.firstOrNull { it.malletSkin == skin }?.unlockStage ?: 0
     }
 
     fun isDefaultUnlocked(theme: TableTheme): Boolean =
-        theme == TableTheme.CLASSIC_NEON || theme == TableTheme.ARCADE_3D
+        theme == TableTheme.CLASSIC_NEON || theme == TableTheme.ARCADE_3D || theme == TableTheme.KIARA_CAT
 
     fun isDefaultUnlocked(skin: PuckSkin): Boolean =
-        skin == PuckSkin.CLASSIC_PLASMA
+        skin == PuckSkin.CLASSIC_PLASMA || skin == PuckSkin.KIARA_PAW
 
     fun isDefaultUnlocked(skin: MalletSkin): Boolean =
-        skin == MalletSkin.CLASSIC_NEON
+        skin == MalletSkin.CLASSIC_NEON || skin == MalletSkin.NEKO_STRIKER
 }

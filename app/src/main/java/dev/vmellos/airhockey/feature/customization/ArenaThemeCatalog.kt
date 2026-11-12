@@ -39,6 +39,7 @@ object ArenaThemeCatalog {
         TableTheme.TOKAMAK_REACTOR -> ThemeVisuals(TokamakDark, TokamakRadiation, TokamakPlasma, wallHitColor = TokamakRadiationBright)
         TableTheme.CYBER_PONG -> ThemeVisuals(PongDark, PongGreen, PongGreenBright, wallHitColor = PongGreenBright)
         TableTheme.CYBER_COLOSSEUM -> ThemeVisuals(ColosseumDark, ColosseumGold, ColosseumCrimson, wallHitColor = ColosseumGoldBright)
+        TableTheme.KIARA_CAT -> ThemeVisuals(Color(0xFF0F0B18), Color(0xFFFF1493), NeonCyan, wallHitColor = Color(0xFFFFC107))
         TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> ThemeVisuals(TableBgDark, NeonCyan, NeonOrange, wallHitColor = Color(0xFFE2E8F0))
     }
 
@@ -55,6 +56,7 @@ object ArenaThemeCatalog {
                 MalletSkin.MAGNETIC_COIL -> MalletSkinVisuals(TokamakRadiation, TokamakRadiationBright)
                 MalletSkin.PONG_PADDLE -> MalletSkinVisuals(PongGreen, PongGreenBright)
                 MalletSkin.SPARTAN_AEGIS -> MalletSkinVisuals(ColosseumGold, ColosseumGoldBright)
+                MalletSkin.NEKO_STRIKER -> MalletSkinVisuals(Color(0xFFFF1493), Color(0xFFFF69B4))
                 MalletSkin.CLASSIC_NEON -> MalletSkinVisuals(NeonCyan, NeonCyanBright)
             }
         } else {
@@ -69,6 +71,7 @@ object ArenaThemeCatalog {
                 MalletSkin.MAGNETIC_COIL -> MalletSkinVisuals(TokamakPlasma, TokamakPlasmaBright)
                 MalletSkin.PONG_PADDLE -> MalletSkinVisuals(PongGreenBright, PongGreen)
                 MalletSkin.SPARTAN_AEGIS -> MalletSkinVisuals(ColosseumCrimson, ColosseumGold)
+                MalletSkin.NEKO_STRIKER -> MalletSkinVisuals(NeonCyan, NeonCyanBright)
                 MalletSkin.CLASSIC_NEON -> MalletSkinVisuals(NeonOrange, NeonOrangeBright)
             }
         }
@@ -85,6 +88,7 @@ object ArenaThemeCatalog {
         PuckSkin.ATOMIC_CORE -> TokamakRadiation
         PuckSkin.PONG_SQUARE -> PongGreen
         PuckSkin.GLADIATOR_SHIELD -> ColosseumGold
+        PuckSkin.KIARA_PAW -> Color(0xFFFF1493)
         PuckSkin.CLASSIC_PLASMA -> NeonCyan
     }
 }

@@ -77,7 +77,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     val unlockedThemesFlow: Flow<Set<TableTheme>> = stagesFlow.map { stages ->
         val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D)
+        val unlocked = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT)
         ArenaConquestCatalog.TIERS.forEach { tier ->
             if (completedStages.contains(tier.unlockStage)) {
                 unlocked.add(tier.theme)
@@ -88,7 +88,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     val unlockedPuckSkinsFlow: Flow<Set<PuckSkin>> = stagesFlow.map { stages ->
         val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(PuckSkin.CLASSIC_PLASMA)
+        val unlocked = mutableSetOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW)
         ArenaConquestCatalog.TIERS.forEach { tier ->
             if (completedStages.contains(tier.unlockStage)) {
                 unlocked.add(tier.puckSkin)
@@ -99,7 +99,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     val unlockedMalletSkinsFlow: Flow<Set<MalletSkin>> = stagesFlow.map { stages ->
         val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(MalletSkin.CLASSIC_NEON)
+        val unlocked = mutableSetOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER)
         ArenaConquestCatalog.TIERS.forEach { tier ->
             if (completedStages.contains(tier.unlockStage)) {
                 unlocked.add(tier.malletSkin)

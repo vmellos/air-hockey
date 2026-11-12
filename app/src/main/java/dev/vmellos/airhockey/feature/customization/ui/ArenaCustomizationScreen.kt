@@ -171,9 +171,9 @@ fun ArenaCustomizationScreen(
     val haptic = LocalHapticFeedback.current
 
     val stageRepo = AirHockeyApp.instance.stageRepository
-    val unlockedThemes by stageRepo.unlockedThemesFlow.collectAsState(initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D))
-    val unlockedPucks by stageRepo.unlockedPuckSkinsFlow.collectAsState(initial = setOf(PuckSkin.CLASSIC_PLASMA))
-    val unlockedMallets by stageRepo.unlockedMalletSkinsFlow.collectAsState(initial = setOf(MalletSkin.CLASSIC_NEON))
+    val unlockedThemes by stageRepo.unlockedThemesFlow.collectAsState(initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT))
+    val unlockedPucks by stageRepo.unlockedPuckSkinsFlow.collectAsState(initial = setOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW))
+    val unlockedMallets by stageRepo.unlockedMalletSkinsFlow.collectAsState(initial = setOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER))
 
     var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
@@ -832,6 +832,28 @@ internal fun Arena3DLivePreview(
         }
     }
 
+    val mascotAsset = remember(tableTheme) {
+        Theme3DAssetResolver.getMascot3DAsset(tableTheme)
+    }
+    val mascotInstance = remember(modelLoader, mascotAsset) {
+        mascotAsset?.let { path ->
+            try {
+                modelLoader.createModelInstance(path)
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+    val mascotNode = remember(mascotInstance) {
+        mascotInstance?.let {
+            ModelNode(it, autoAnimate = true).apply {
+                position = Float3(-0.74f, -0.045f, -0.15f)
+                rotation = Float3(0f, 90f, 0f)
+                scale = Float3(1.0f, 1.0f, 1.0f)
+            }
+        }
+    }
+
     val tableNode = remember(tableInstance) {
         tableInstance?.let {
             ModelNode(it).apply {
@@ -883,9 +905,9 @@ internal fun Arena3DLivePreview(
         Node(engine3d)
     }
 
-    LaunchedEffect(arenaRootNode, tableNode, puckNode, p1Node, p2Node) {
+    LaunchedEffect(arenaRootNode, tableNode, puckNode, p1Node, p2Node, mascotNode) {
         arenaRootNode.clearChildNodes()
-        listOfNotNull(tableNode, puckNode, p1Node, p2Node).forEach { node ->
+        listOfNotNull(tableNode, puckNode, p1Node, p2Node, mascotNode).forEach { node ->
             arenaRootNode.addChildNode(node)
         }
     }
@@ -1062,6 +1084,7 @@ internal fun ArenaLivePreview(
                 PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.PONG_SQUARE -> drawPongPuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(puckX, puckY, puckRadius, puckAccent, scale)
+                PuckSkin.KIARA_PAW -> drawKiaraPawPuck(puckX, puckY, puckRadius, puckAccent, scale)
                 PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(puckX, puckY, puckRadius, puckAccent, scale)
             }
         }

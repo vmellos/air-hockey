@@ -33,6 +33,7 @@ object Theme3DAssetResolver {
             TableTheme.TOKAMAK_REACTOR -> if (isPlayer1) "models/mesa_tokamak_reactor_half_p1.glb" else "models/mesa_tokamak_reactor_half_p2.glb"
             TableTheme.CYBER_PONG -> if (isPlayer1) "models/mesa_cyber_pong_half_p1.glb" else "models/mesa_cyber_pong_half_p2.glb"
             TableTheme.CYBER_COLOSSEUM -> if (isPlayer1) "models/mesa_cyber_colosseum_half_p1.glb" else "models/mesa_cyber_colosseum_half_p2.glb"
+            TableTheme.KIARA_CAT -> if (isPlayer1) "models/mesa_kiara_cat_half_p1.glb" else "models/mesa_kiara_cat_half_p2.glb"
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> if (isPlayer1) "models/mesa_arcade_half_p1.glb" else "models/mesa_arcade_half_p2.glb"
         }
         else -> when (theme) {
@@ -46,6 +47,7 @@ object Theme3DAssetResolver {
             TableTheme.TOKAMAK_REACTOR -> "models/mesa_tokamak_reactor.glb"
             TableTheme.CYBER_PONG -> "models/mesa_cyber_pong.glb"
             TableTheme.CYBER_COLOSSEUM -> "models/mesa_cyber_colosseum.glb"
+            TableTheme.KIARA_CAT -> "models/mesa_kiara_cat.glb"
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> "models/mesa_arcade.glb"
         }
     }
@@ -67,6 +69,7 @@ object Theme3DAssetResolver {
             PuckSkin.ATOMIC_CORE -> "models/disco_tokamak_reactor.glb"
             PuckSkin.PONG_SQUARE -> "models/disco_cyber_pong.glb"
             PuckSkin.GLADIATOR_SHIELD -> "models/disco_cyber_colosseum.glb"
+            PuckSkin.KIARA_PAW -> "models/disco_kiara_paw.glb"
             PuckSkin.CLASSIC_PLASMA -> "models/disco_cyber.glb"
         }
         else -> when (theme) {
@@ -80,6 +83,7 @@ object Theme3DAssetResolver {
             TableTheme.TOKAMAK_REACTOR -> "models/disco_tokamak_reactor.glb"
             TableTheme.CYBER_PONG -> "models/disco_cyber_pong.glb"
             TableTheme.CYBER_COLOSSEUM -> "models/disco_cyber_colosseum.glb"
+            TableTheme.KIARA_CAT -> "models/disco_kiara_paw.glb"
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> "models/disco_cyber.glb"
         }
     }
@@ -100,7 +104,16 @@ object Theme3DAssetResolver {
         MalletSkin.MAGNETIC_COIL -> if (isPlayer1) "models/rebatedor_tokamak_reactor_p1.glb" else "models/rebatedor_tokamak_reactor_p2.glb"
         MalletSkin.PONG_PADDLE -> if (isPlayer1) "models/rebatedor_cyber_pong_p1.glb" else "models/rebatedor_cyber_pong_p2.glb"
         MalletSkin.SPARTAN_AEGIS -> if (isPlayer1) "models/rebatedor_cyber_colosseum_p1.glb" else "models/rebatedor_cyber_colosseum_p2.glb"
+        MalletSkin.NEKO_STRIKER -> if (isPlayer1) "models/rebatedor_kiara_p1.glb" else "models/rebatedor_kiara_p2.glb"
         MalletSkin.CLASSIC_NEON -> if (isPlayer1) "models/rebatedor_p1.glb" else "models/rebatedor_p2.glb"
+    }
+
+    /**
+     * Retorna o ativo da Mascote 3D de mesa caso o tema possua uma mascote acompanhante.
+     */
+    fun getMascot3DAsset(theme: TableTheme): String? = when (theme) {
+        TableTheme.KIARA_CAT -> "models/kiara_3d.glb"
+        else -> null
     }
 
     /**

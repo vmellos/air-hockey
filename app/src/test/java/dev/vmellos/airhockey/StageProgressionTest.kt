@@ -205,10 +205,12 @@ class StageProgressionTest {
         assertEquals(TableTheme.NEO_BASKETBALL, ArenaConquestCatalog.getThemeForStage(25))
         assertEquals(30, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.NEO_BASKETBALL))
 
-        // Classic arena is default unlocked
+        // Classic and Kiara Cat arenas are default unlocked
         assertTrue(ArenaConquestCatalog.isDefaultUnlocked(TableTheme.CLASSIC_NEON))
         assertTrue(ArenaConquestCatalog.isDefaultUnlocked(TableTheme.ARCADE_3D))
+        assertTrue(ArenaConquestCatalog.isDefaultUnlocked(TableTheme.KIARA_CAT))
         assertEquals(0, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.CLASSIC_NEON))
+        assertEquals(0, ArenaConquestCatalog.getUnlockStageForTheme(TableTheme.KIARA_CAT))
     }
 
     @Test
@@ -219,6 +221,7 @@ class StageProgressionTest {
         assertFalse(repository.isThemeUnlocked(TableTheme.CYBER_PONG))
         val initialThemes = repository.unlockedThemesFlow.first()
         assertTrue(initialThemes.contains(TableTheme.CLASSIC_NEON))
+        assertTrue(initialThemes.contains(TableTheme.KIARA_CAT))
         assertFalse(initialThemes.contains(TableTheme.CYBER_PONG))
 
         // Complete stage 10 with stars
