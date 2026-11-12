@@ -31,6 +31,9 @@ import dev.vmellos.airhockey.feature.game.MatchStatus
 import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableProjection
+import kotlin.math.hypot
+
+private data class MascotPawPrint2D(val x: Float, val y: Float, val timestampNanos: Long)
 
 @Composable
 fun AirHockeyArenaCanvas(
@@ -103,6 +106,7 @@ fun AirHockeyArenaCanvas(
 
     val themeVisuals = remember(activeTheme) { dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(activeTheme) }
     val arenaBgColor = themeVisuals.backgroundColor
+    val pawPrints2D = remember(activeTheme) { ArrayDeque<MascotPawPrint2D>(32) }
 
     Box(
         modifier = modifier
@@ -206,6 +210,69 @@ fun AirHockeyArenaCanvas(
                 )
             }
 
+            // Mascote Kiara 2D em Circuito de Patrulha Móvel com Rastro de Patinhas (ADR 0042)
+            if (activeTheme == TableTheme.KIARA_CAT && !isExtendedGuest) {
+                val topMarginY = if (offsetY > 30f * scale) offsetY * 0.5f else (offsetY + 35f * scale)
+                val leftX = if (offsetX > 25f * scale) offsetX * 0.5f else (offsetX + 35f * scale)
+                val rightX = if (offsetX > 25f * scale) (screenW - offsetX * 0.5f) else (screenW - 35f * scale)
+                val bottomMarginY = if (offsetY > 30f * scale) (screenH - offsetY * 0.5f) else (screenH - 35f * scale)
+
+                val segW = (rightX - leftX).coerceAtLeast(10f)
+                val segH = (bottomMarginY - topMarginY).coerceAtLeast(10f)
+                val totalPerimeter = 2f * (segW + segH)
+
+                // Período de 22 segundos para dar uma volta completa no campo
+                val periodNanos = 22_000_000_000L
+                val timeFraction = ((framePulse % periodNanos).toDouble() / periodNanos.toDouble()).toFloat()
+                val distAlong = timeFraction * totalPerimeter
+
+                val (kx, ky) = when {
+                    distAlong < segW -> {
+                        // 1. Topo: da esquerda para a direita
+                        (leftX + distAlong) to topMarginY
+                    }
+                    distAlong < segW + segH -> {
+                        // 2. Lateral Direita: do topo para o rodapé
+                        val d = distAlong - segW
+                        rightX to (topMarginY + d)
+                    }
+                    distAlong < 2f * segW + segH -> {
+                        // 3. Rodapé: da direita para a esquerda
+                        val d = distAlong - (segW + segH)
+                        (rightX - d) to bottomMarginY
+                    }
+                    else -> {
+                        // 4. Lateral Esquerda: do rodapé para o topo
+                        val d = distAlong - (2f * segW + segH)
+                        leftX to (bottomMarginY - d)
+                    }
+                }
+
+                // Registro de pegada efêmera a cada ~32px percorridos
+                val lastPrint = pawPrints2D.lastOrNull()
+                if (lastPrint == null || hypot(kx - lastPrint.x, ky - lastPrint.y) > 32f * scale) {
+                    if (pawPrints2D.size >= 32) {
+                        pawPrints2D.removeFirst()
+                    }
+                    pawPrints2D.addLast(MascotPawPrint2D(kx, ky, framePulse))
+                }
+
+                // Pruning e renderização de pegadas com fade out suave de 1.2s
+                val cutoffNanos = framePulse - 1_200_000_000L
+                while (pawPrints2D.isNotEmpty() && pawPrints2D.first().timestampNanos < cutoffNanos) {
+                    pawPrints2D.removeFirst()
+                }
+
+                for (p in pawPrints2D) {
+                    val age = (framePulse - p.timestampNanos) / 1_200_000_000f
+                    val alpha = (1f - age).coerceIn(0f, 1f)
+                    drawKiaraPawTrailPrint(p.x, p.y, scale, alpha)
+                }
+
+                // Silhueta vetorial da Mascote Kiara 2D
+                drawKiara2DGutterMascot(kx, ky, scale * 1.08f)
+            }
+
             // 3. Desenha metas da mesa
             val goalW = dimensions.goalWidth * scale
             val goalLeft = offsetX + dimensions.goalLeft * scale
@@ -249,7 +316,11 @@ fun AirHockeyArenaCanvas(
 
             // 7. Desenha Rebatedor 1 (Jogador 1)
             val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
-            when (prefs.player1MalletSkin) {
+            val effectiveP1MalletSkin = when {
+                activeTheme == TableTheme.CLASSIC_NEON && prefs.player1MalletSkin == MalletSkin.NEKO_STRIKER -> MalletSkin.CLASSIC_NEON
+                else -> prefs.player1MalletSkin
+            }
+            when (effectiveP1MalletSkin) {
                 MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonEmerald, rimColor = NeonEmeraldBright, scale = scale)
                 MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonAmber, rimColor = NeonAmberBright, scale = scale)
                 MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonViolet, rimColor = NeonVioletBright, scale = scale)
@@ -260,15 +331,16 @@ fun AirHockeyArenaCanvas(
                 MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = TokamakRadiation, rimColor = TokamakRadiationBright, scale = scale)
                 MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = PongGreen, rimColor = PongGreenBright, scale = scale)
                 MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = ColosseumGold, rimColor = ColosseumGoldBright, scale = scale)
+                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = Color(0xFFFF1493), rimColor = Color(0xFFFF69B4), scale = scale)
                 MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
             }
 
             // 8. Desenha Rebatedor 2 (Jogador 2 / Guardião da Arena no Solo)
             val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
-            val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
-                ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
-            } else {
-                prefs.player2MalletSkin
+            val effectiveP2MalletSkin = when {
+                mode == GameMode.SOLO -> ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
+                activeTheme == TableTheme.CLASSIC_NEON && prefs.player2MalletSkin == MalletSkin.NEKO_STRIKER -> MalletSkin.CLASSIC_NEON
+                else -> prefs.player2MalletSkin
             }
             when (effectiveP2MalletSkin) {
                 MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonRuby, rimColor = NeonRubyBright, scale = scale)
@@ -281,6 +353,7 @@ fun AirHockeyArenaCanvas(
                 MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = TokamakPlasma, rimColor = TokamakPlasmaBright, scale = scale)
                 MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = PongGreenBright, rimColor = PongGreen, scale = scale)
                 MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = ColosseumCrimson, rimColor = ColosseumGold, scale = scale)
+                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
                 MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonOrange, rimColor = NeonOrangeBright, scale = scale)
             }
 
@@ -307,7 +380,11 @@ fun AirHockeyArenaCanvas(
                 }
 
                 // Cor dinâmica do rastro e do disco conforme o último batedor
-                val (puckAccentColor, puckCoreColor) = when (prefs.puckSkin) {
+                val effectivePuckSkin = when {
+                    activeTheme == TableTheme.CLASSIC_NEON && prefs.puckSkin == PuckSkin.KIARA_PAW -> PuckSkin.CLASSIC_PLASMA
+                    else -> prefs.puckSkin
+                }
+                val (puckAccentColor, puckCoreColor) = when (effectivePuckSkin) {
                     PuckSkin.CYBER_SOCCER_BALL -> when (engine.puck.lastHitBy) {
                         1 -> Pair(NeonEmerald, NeonEmeraldCore)
                         2 -> Pair(NeonRuby, NeonRubyCore)
@@ -358,6 +435,11 @@ fun AirHockeyArenaCanvas(
                         2 -> Pair(ColosseumCrimson, ColosseumCrimsonCore)
                         else -> Pair(ColosseumGoldBright, WhiteHot)
                     }
+                    PuckSkin.KIARA_PAW -> when (engine.puck.lastHitBy) {
+                        1 -> Pair(Color(0xFFFF1493), Color(0xFFFF69B4))
+                        2 -> Pair(NeonCyan, NeonCyanBright)
+                        else -> Pair(Color(0xFFFFC107), WhiteHot)
+                    }
                     PuckSkin.CLASSIC_PLASMA -> when (engine.puck.lastHitBy) {
                         1 -> Pair(NeonCyan, NeonCyanCore)
                         2 -> Pair(NeonOrange, NeonOrangeCore)
@@ -388,6 +470,7 @@ fun AirHockeyArenaCanvas(
                     PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
                     PuckSkin.PONG_SQUARE -> drawPongPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
                     PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.KIARA_PAW -> drawKiaraPawPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
                     PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
                 }
             }

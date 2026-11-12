@@ -350,6 +350,11 @@ class UserPreferencesRepository(private val context: Context) {
                     preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.CLASSIC_NEON.name
                     preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
                 }
+                TableTheme.KIARA_CAT -> {
+                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.KIARA_PAW.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.NEKO_STRIKER.name
+                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.NEKO_STRIKER.name
+                }
             }
         }
     }

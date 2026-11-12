@@ -93,6 +93,10 @@ private class Scene3DState(
     // Giroscópio procedural do disco (rotação em torno do eixo vertical Y)
     var puckYawDeg: Float = 0f
 
+    // Estado da Mascote Kiara 3D
+    var currentMascotAnim: String = "LickPaw"
+    var lastFrameNanoTime: Long = 0L
+
     fun toPose(): CameraPose3D = CameraPose3D(camX, camY, camZ, camPitch, camYaw, camFocusX, camFocusY, camFocusZ)
 
     fun updateFromPose(pose: CameraPose3D) {
@@ -543,6 +547,31 @@ fun AirHockeyArena3DScene(
         }
     }
 
+    val mascotAsset = remember(isExtended, activeTheme, isExtendedGuest) {
+        if (isExtended && isExtendedGuest) null else Theme3DAssetResolver.getMascot3DAsset(activeTheme)
+    }
+    val mascotController = remember(activeTheme) {
+        if (activeTheme == TableTheme.KIARA_CAT) KiaraMascotController() else null
+    }
+    val mascotInstance = remember(modelLoader, mascotAsset) {
+        mascotAsset?.let { path ->
+            try {
+                modelLoader.createModelInstance(path)
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+    val mascotNode = remember(mascotInstance) {
+        mascotInstance?.let {
+            ModelNode(it, autoAnimate = true).apply {
+                position = Float3(-0.74f, -0.045f, -0.15f)
+                rotation = Float3(0f, 90f, 0f)
+                scale = Float3(1.0f, 1.0f, 1.0f)
+            }
+        }
+    }
+
     val tableNode = remember(tableInstance) {
         tableInstance?.let {
             ModelNode(it).apply {
@@ -568,8 +597,8 @@ fun AirHockeyArena3DScene(
         rotation = Float3(sceneState.camPitch, sceneState.camYaw, 0f)
     }
 
-    val childNodes = remember(floorNode, tableNode, puckNode, p1Node, p2Node) {
-        listOfNotNull(floorNode, tableNode, puckNode, p1Node, p2Node)
+    val childNodes = remember(floorNode, tableNode, puckNode, p1Node, p2Node, mascotNode) {
+        listOfNotNull(floorNode, tableNode, puckNode, p1Node, p2Node, mascotNode)
     }
 
     // Frame pulse acoplado ao vsync nativo do display
@@ -639,8 +668,8 @@ fun AirHockeyArena3DScene(
         val screenH = constraints.maxHeight.toFloat()
         val screenAspect = if (screenH > 0f) screenW / screenH else 9f / 19.5f
 
-        val effectiveTargetPreset = remember(zoom, screenAspect) {
-            projection3D.computeEffectiveTargetPreset(zoom, screenAspect)
+        val effectiveTargetPreset = remember(zoom, screenAspect, activeTheme) {
+            projection3D.computeEffectiveTargetPreset(zoom, screenAspect, activeTheme)
         }
         Scene(
             modifier = Modifier.fillMaxSize(),
@@ -708,6 +737,29 @@ fun AirHockeyArena3DScene(
                 } else {
                     p2Node?.position = Float3(0f, -5f, 0f)
                 }
+
+                // Cinemática e Comportamento Autônomo da Mascote Kiara 3D (ADR 0042)
+                mascotController?.let { ctrl ->
+                    val nowNanos = System.nanoTime()
+                    val dtSec = if (sceneState.lastFrameNanoTime > 0L) {
+                        ((nowNanos - sceneState.lastFrameNanoTime) / 1_000_000_000f).coerceIn(0.001f, 0.050f)
+                    } else 0.016f
+                    sceneState.lastFrameNanoTime = nowNanos
+
+                    val puckX = mapEngineX(engine.puck.x)
+                    val puckZ = mapEngineZ(engine.puck.y)
+                    ctrl.update(dtSec, puckX, puckZ)
+                    mascotNode?.position = ctrl.toPosition()
+                    mascotNode?.rotation = ctrl.toRotation()
+
+                    val targetAnim = ctrl.currentAnimation
+                    if (sceneState.currentMascotAnim != targetAnim) {
+                        sceneState.currentMascotAnim = targetAnim
+                        try {
+                            mascotNode?.playAnimation(targetAnim, loop = true)
+                        } catch (_: Exception) {}
+                    }
+                }
             }
         )
 
@@ -752,6 +804,37 @@ fun AirHockeyArena3DScene(
                     center = goalScreenCenter,
                     radius = w * 0.85f
                 )
+
+                // Celebração luminosa dinâmica ao redor da Mascote Kiara 3D
+                if (activeTheme == TableTheme.KIARA_CAT && !isExtendedGuest && mascotNode != null) {
+                    val mx = mascotController?.currentX ?: -0.61f
+                    val mz = mascotController?.currentZ ?: -0.15f
+                    val tableX = (mx / 0.00108f) + 500f
+                    val tableY = (mz / 0.00096f) + 1000f
+                    val kiaraScreen = projection3D.tableToScreen(
+                        tableX,
+                        tableY,
+                        w,
+                        h,
+                        currentPose
+                    )
+                    kiaraScreen?.let { kPos ->
+                        val auraRadius = 85f * (w / 1080f).coerceIn(0.6f, 1.4f)
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    goalColor.copy(alpha = 0.50f),
+                                    Color(0xFFFFC107).copy(alpha = 0.25f),
+                                    Color.Transparent
+                                ),
+                                center = kPos,
+                                radius = auraRadius * 1.5f
+                            ),
+                            center = kPos,
+                            radius = auraRadius * 1.5f
+                        )
+                    }
+                }
             }
 
             // 2. Rastro de Energia 3D do Disco (Puck Trail)

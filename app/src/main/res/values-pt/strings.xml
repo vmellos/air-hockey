@@ -295,6 +295,8 @@
     <string name="theme_preset_colosseum_desc">Areia negra magnética com meandros romanos, coroa de louros e escudo gladiador</string>
     <string name="theme_preset_arcade_3d">Arcade 3D Realista</string>
     <string name="theme_preset_arcade_3d_desc">Mesa tridimensional fotorrealista com motor Filament PBR e perspectiva travada do Jogador 1</string>
+    <string name="theme_preset_kiara_cat">Kiara Cat Arcade</string>
+    <string name="theme_preset_kiara_cat_desc">Arena neon magenta e ciano com mascote 3D Kiara animada na calha lateral</string>
     <string name="theme_table_label">Tema da Mesa</string>
     <string name="theme_puck_label">Aparência do Disco</string>
     <string name="theme_mallet_label">Aparência do Rebatedor</string>
@@ -309,6 +311,7 @@
     <string name="skin_puck_tokamak">Núcleo Atômico Pulsante</string>
     <string name="skin_puck_pong">Bloco de Fósforo Pixel</string>
     <string name="skin_puck_colosseum">Escudo Gladiatório Romano</string>
+    <string name="skin_puck_kiara_paw">Patinha Neon</string>
     <string name="skin_mallet_classic">Neon Clássico</string>
     <string name="skin_mallet_soccer">Chute Magnético</string>
     <string name="skin_mallet_basketball">Dunk Striker</string>
@@ -320,6 +323,7 @@
     <string name="skin_mallet_tokamak">Bobina Magnética Striker</string>
     <string name="skin_mallet_pong">Palheta Vetorial Arcade</string>
     <string name="skin_mallet_colosseum">Spartan Aegis Striker</string>
+    <string name="skin_mallet_neko_striker">Neko Striker</string>
     <string name="settings_theme_equipped">EQUIPADO</string>
     <string name="settings_theme_equip_action">EQUIPAR</string>
     <string name="settings_theme_modular_title">Customização Modular</string>

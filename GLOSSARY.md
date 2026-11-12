@@ -158,6 +158,18 @@ _Avoid_: Pinch zoom simples, touch livre, arrastar câmera, gesto solto
 O mecanismo e interface de ajuste em tempo real da intensidade de dispersão luminosa (bloom) e luminescência dos materiais emissivos na Vitrine de Pré-Visualização 3D, proporcionando feedback visual imediato com persistência automática nas preferências globais do jogador.
 _Avoid_: Slider de brilho, ajuste de luz, efeito neon, bloom slider
 
+**Mascote da Mesa**:
+O elemento cênico e animado que patrulha autonomamente o piso externo adjacente à arena virtual durante a partida na Dimensão de Renderização 3D (e representado por silhueta móvel com rastro de passos na perspectiva 2D), conferindo dinamismo orgânico ao ambiente esportivo ao alternar caminhada quadrúpede e paradas para limpeza facial.
+_Avoid_: Mascote solto, pet decorativo, npc da mesa, enfeite de campo
+
+**Circuito de Patrulha da Mascote**:
+O percurso perimetral fechado no piso da arena que contorna as calhas laterais e o topo superior atrás da meta adversária, percorrido continuamente pela Mascote da Mesa em velocidade constante com paradas contemplativas em mirantes estratégicos onde a visibilidade é ampla e desobstruída do toque do jogador.
+_Avoid_: Caminho aleatório, rota livre, passeio do gato, volta da mesa
+
+**Interferência Felina (Mascote Ativa)**:
+A mecânica lúdica e opcional na qual a Mascote da Mesa rastreia a proximidade do disco em relação às bordas laterais do campo e reage com alerta visual e movimento preparatório de patada esportiva, configurável nas opções para coexistir harmoniosamente com a integridade física do jogo competitivo tradicional.
+_Avoid_: Cheat do gato, bug de colisão, pata aleatória, sabotagem do disco
+
 ## Modos de Jogo
 
 **Modo Solo**:
@@ -345,6 +357,10 @@ _Avoid_: Skin de batedor, skin de raquete, batedor customizado
 **Conjunto Temático Esportivo**:
 A coleção integrada pré-configurada que combina Tema de Mesa, Aparência de Disco e Aparência de Rebatedor sob uma mesma identidade esportiva retro-futurista (ex: Cyber Futebol, Neo-Tokyo Basquete, Vôlei Gravitacional, Gridiron Sci-Fi e Beisebol Cibernético).
 _Avoid_: Kit de time, pacote de skins, theme pack, bundle de campo
+
+**Conjunto Temático Kiara Cat**:
+A coleção integrada de identidade felina arcade composta pela Mesa Kiara Cat (`KIARA_CAT`), Aparência de Disco Patinha Neon (`KIARA_PAW`) e Aparência de Rebatedor Neko Striker (`NEKO_STRIKER`), configurada como Livre por Padrão para uso imediato em todas as modalidades de jogo sem vínculo com a progressão do Modo Fases.
+_Avoid_: Tema de gatinho avulso, kit kiara simples, skin fofa
 
 **Desbloqueio Progressivo de Arenas**:
 O sistema de progressão esportiva vinculado ao Modo Fases que mantém as arenas temáticas bloqueadas até que o jogador conclua o respectivo Bloco de Fases Temático de 10 níveis, mantendo a Mesa Clássica permanentemente acessível desde o primeiro momento.

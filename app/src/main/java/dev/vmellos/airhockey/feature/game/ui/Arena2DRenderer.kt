@@ -32,6 +32,7 @@ object Arena2DRenderer {
             TableTheme.TOKAMAK_REACTOR -> drawTokamakTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.CYBER_PONG -> drawCyberPongTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.CYBER_COLOSSEUM -> drawColosseumTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
+            TableTheme.KIARA_CAT -> drawKiaraCatTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> drawChamferedTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
         }
     }
@@ -88,6 +89,10 @@ object Arena2DRenderer {
                 if (drawTopGoal) drawColosseumGoal(goalLeft, goalWidth, topY, scale, topGoalColor, isTop = true)
                 drawColosseumGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
             }
+            TableTheme.KIARA_CAT -> {
+                if (drawTopGoal) drawKiaraCatGoal(goalLeft, goalWidth, topY, scale, topGoalColor, isTop = true)
+                drawKiaraCatGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
+            }
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
                 if (drawTopGoal) drawAngledGoal(goalLeft, goalWidth, topY, scale, NeonOrange, isTop = true)
                 drawAngledGoal(goalLeft, goalWidth, bottomY, scale, NeonCyan, isTop = false)
@@ -115,6 +120,7 @@ object Arena2DRenderer {
             MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(x, y, radius, color, rimColor, scale)
             MalletSkin.PONG_PADDLE -> drawPongMallet(x, y, radius, color, rimColor, scale)
             MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(x, y, radius, color, rimColor, scale)
+            MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = x, cy = y, radius = radius, accentColor = color, rimColor = rimColor, scale = scale)
             MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(x, y, radius, color, rimColor, scale)
         }
     }

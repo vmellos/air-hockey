@@ -3,6 +3,7 @@ package dev.vmellos.airhockey.feature.physics
 import androidx.compose.ui.geometry.Offset
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
+import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.game.GameMode
 import kotlin.math.abs
 import kotlin.math.cos
@@ -111,7 +112,8 @@ class Table3DCameraProjection(
      */
     fun computeEffectiveTargetPreset(
         zoom: CameraZoom3D = CameraZoom3D.STANDARD,
-        screenAspect: Float
+        screenAspect: Float,
+        theme: TableTheme? = null
     ): CameraPreset {
         val base = getBasePreset(zoom)
         if (screenAspect <= 0.05f) {
@@ -153,6 +155,15 @@ class Table3DCameraProjection(
                     CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.15f, 1.85f), Float3(-47f, 0f, 0f))
                     CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 2.60f, 2.25f), Float3(-45f, 0f, 0f))
                 }
+            }
+        }
+
+        // Calibração de Enquadramento 3D para Arena com Mascote (Kiara Cat) em telas de celular retrato
+        if (theme == TableTheme.KIARA_CAT && !isSplitScreen) {
+            return when (zoom) {
+                CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.45f, 2.10f), Float3(-47f, 0f, 0f))
+                CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.85f, 2.45f), Float3(-46f, 0f, 0f))
+                CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 3.25f, 2.80f), Float3(-45f, 0f, 0f))
             }
         }
 

@@ -443,6 +443,10 @@ class AirHockey3DSceneTest {
 
         val standardAsset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = false)
         assertEquals("models/mesa_arcade.glb", standardAsset)
+
+        val kiaraMascot = Theme3DAssetResolver.getMascot3DAsset(TableTheme.KIARA_CAT)
+        assertEquals("models/kiara_3d.glb", kiaraMascot)
+        org.junit.Assert.assertNull(Theme3DAssetResolver.getMascot3DAsset(TableTheme.CLASSIC_NEON))
     }
 
     @Test
@@ -466,6 +470,11 @@ class AirHockey3DSceneTest {
         val soloProj = Table3DCameraProjection(TableDimensions(), GameMode.SOLO)
         val soloPresetPortrait = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f)
         assertEquals(soloProj.getBasePreset(CameraZoom3D.STANDARD), soloPresetPortrait)
+
+        // For Kiara Cat theme on portrait, camera frames wider to accommodate the mascot
+        val kiaraPresetPortrait = soloProj.computeEffectiveTargetPreset(CameraZoom3D.STANDARD, 1080f / 2340f, TableTheme.KIARA_CAT)
+        assertEquals(2.85f, kiaraPresetPortrait.position.y, 1e-4f)
+        assertEquals(2.45f, kiaraPresetPortrait.position.z, 1e-4f)
 
         // For landscape aspect ratios (aspect > 1.15, typical of tablets), camera adapts closer (ADR 0041)
         val tabletAspect = 1920f / 1200f // 1.6

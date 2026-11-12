@@ -297,6 +297,8 @@
     <string name="theme_preset_colosseum_desc">Dark magnetic arena sand with Greek key borders, laurel wreath and gladiator shield</string>
     <string name="theme_preset_arcade_3d">Arcade 3D Realistic</string>
     <string name="theme_preset_arcade_3d_desc">Photorealistic 3D table with Google Filament PBR engine and locked Player 1 arcade view</string>
+    <string name="theme_preset_kiara_cat">Kiara Cat Arcade</string>
+    <string name="theme_preset_kiara_cat_desc">Neon magenta &amp; cyan feline arena with animated 3D Kiara mascot on side rail</string>
     <string name="theme_table_label">Table Theme</string>
     <string name="theme_puck_label">Puck Appearance</string>
     <string name="theme_mallet_label">Striker Appearance</string>
@@ -311,6 +313,7 @@
     <string name="skin_puck_tokamak">Atomic Nucleus Core</string>
     <string name="skin_puck_pong">Phosphor Pixel Block</string>
     <string name="skin_puck_colosseum">Roman Gladiator Shield</string>
+    <string name="skin_puck_kiara_paw">Kiara Neon Paw</string>
     <string name="skin_mallet_classic">Classic Neon</string>
     <string name="skin_mallet_soccer">Magnetic Striker</string>
     <string name="skin_mallet_basketball">Dunk Striker</string>
@@ -322,6 +325,7 @@
     <string name="skin_mallet_tokamak">Magnetic Coil Striker</string>
     <string name="skin_mallet_pong">Arcade Vector Dial</string>
     <string name="skin_mallet_colosseum">Spartan Aegis Striker</string>
+    <string name="skin_mallet_neko_striker">Neko Striker</string>
     <string name="settings_theme_equipped">EQUIPPED</string>
     <string name="settings_theme_equip_action">EQUIP</string>
     <string name="settings_theme_modular_title">Modular Customization</string>

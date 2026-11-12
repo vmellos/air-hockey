@@ -34,6 +34,7 @@ object ProceduralAudioSynthesizer {
             TableTheme.TOKAMAK_REACTOR -> Pair(134.0, 8)
             TableTheme.CYBER_PONG -> Pair(120.0, 8)
             TableTheme.CYBER_COLOSSEUM -> Pair(114.0, 8)
+            TableTheme.KIARA_CAT -> Pair(124.0, 8)
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Pair(125.0, 8)
         }
 
@@ -362,6 +363,34 @@ object ProceduralAudioSynthesizer {
                     phaseBass += 2.0 * PI * (root * 0.5) / SAMPLE_RATE
                     sample += sin(phaseBass) * 0.26
                 }
+
+                TableTheme.KIARA_CAT -> {
+                    // Playful Synthwave Kawaii Pop (F4, G4, Em4, Am4)
+                    val chords = doubleArrayOf(349.23, 392.00, 329.63, 440.00)
+                    val root = chords[subBar]
+
+                    // Bouncy punchy electronic kick
+                    if (tBeat < 0.20) {
+                        phaseKick += 2.0 * PI * (55.0 + 100.0 * exp(-24.0 * tBeat)) / SAMPLE_RATE
+                        sample += sin(phaseKick) * exp(-12.0 * tBeat) * 0.40
+                    }
+                    // Crisp sparkling clap on beats 2 & 4
+                    if (beatIndex % 4 == 1 || beatIndex % 4 == 3) {
+                        if (tBeat < 0.12) {
+                            sample += pseudoNoise() * exp(-22.0 * tBeat) * 0.22
+                        }
+                    }
+                    // Cheerful melodic synth arpeggios (chiptune pop bell/lead)
+                    val arpNotes = doubleArrayOf(root, root * 1.2599, root * 1.4983, root * 2.0)
+                    val aIdx = ((t / (beatDuration / 4.0)).toInt()) % arpNotes.size
+                    phaseLead += 2.0 * PI * arpNotes[aIdx] / SAMPLE_RATE
+                    val leadWave = sin(phaseLead) * 0.7 + (if ((phaseLead % (2.0 * PI)) < PI) 0.3 else -0.3)
+                    sample += leadWave * 0.18
+
+                    // Warm bouncy sub-bass
+                    phaseBass += 2.0 * PI * (root * 0.5) / SAMPLE_RATE
+                    sample += sin(phaseBass) * 0.24
+                }
             }
 
             var mixed = sample * 0.46
@@ -509,6 +538,12 @@ object ProceduralAudioSynthesizer {
                     val bronze = sin(2.0 * PI * freq * t) + 0.6 * sin(2.0 * PI * freq * 1.5 * t)
                     bronze / 1.6 * decay
                 }
+
+                TableTheme.KIARA_CAT -> {
+                    val baseFreq = if (countdownNumber <= 0) 1046.50 else (523.25 + (3 - countdownNumber) * 130.81)
+                    val chime = sin(2.0 * PI * baseFreq * t) + 0.35 * sin(4.0 * PI * baseFreq * t)
+                    chime / 1.35 * decay
+                }
             }
 
             val clamped = (sampleVal * 26000.0).toInt().coerceIn(-32768, 32767).toShort()
@@ -598,6 +633,12 @@ object ProceduralAudioSynthesizer {
                     val bronze = sin(2.0 * PI * 620.0 * t) + sin(2.0 * PI * 1240.0 * t) * 0.5
                     bronze * decay
                 }
+                TableTheme.KIARA_CAT -> {
+                    // Estalo pop brilhante com ressonância harmônica
+                    val snap = sin(2.0 * PI * 540.0 * t) * 0.7
+                    val shimmer = sin(2.0 * PI * 1080.0 * t) * exp(-35.0 * t) * 0.4
+                    (snap + shimmer) * decay
+                }
             }
 
             val clamped = (sampleVal * 25000.0).toInt().coerceIn(-32768, 32767).toShort()
@@ -633,6 +674,7 @@ object ProceduralAudioSynthesizer {
                 TableTheme.TOKAMAK_REACTOR -> (sin(2.0 * PI * 180.0 * t) + 0.4 * sin(2.0 * PI * 540.0 * t)) * decay
                 TableTheme.CYBER_PONG -> (if (sin(2.0 * PI * 240.0 * t) > 0.0) 1.0 else -1.0) * decay
                 TableTheme.CYBER_COLOSSEUM -> sin(2.0 * PI * 85.0 * t) * decay
+                TableTheme.KIARA_CAT -> (sin(2.0 * PI * 310.0 * t) + 0.4 * sin(2.0 * PI * 620.0 * t)) * decay
             }
 
             val clamped = (sampleVal * 24000.0).toInt().coerceIn(-32768, 32767).toShort()
@@ -727,6 +769,12 @@ object ProceduralAudioSynthesizer {
                     val brass = sin(2.0 * PI * note * t) + 0.5 * sin(2.0 * PI * note * 1.5 * t)
                     brass / 1.5 * decay
                 }
+                TableTheme.KIARA_CAT -> {
+                    // Fanfarra lúdica felina arpejada alegre F5 -> A5 -> C6 -> E6
+                    val note = if (t < 0.11) 698.46 else if (t < 0.22) 880.00 else if (t < 0.33) 1046.50 else 1318.51
+                    val meowGlide = sin(2.0 * PI * (note + 40.0 * sin(2.0 * PI * 12.0 * t)) * t)
+                    meowGlide * decay
+                }
             }
 
             val clamped = (sampleVal * 25000.0).toInt().coerceIn(-32768, 32767).toShort()
@@ -809,6 +857,11 @@ object ProceduralAudioSynthesizer {
                     // Trombeta fúnebre do gladiador derrotado
                     val note = if (t < 0.18) 196.0 else 164.81
                     (sin(2.0 * PI * note * t) + 0.4 * sin(2.0 * PI * note * 1.5 * t)) / 1.4 * decay
+                }
+                TableTheme.KIARA_CAT -> {
+                    // Glissando descendente suave e lúdico
+                    val freq = 523.25 * exp(-3.0 * t)
+                    sin(2.0 * PI * freq * t) * decay
                 }
             }
 
