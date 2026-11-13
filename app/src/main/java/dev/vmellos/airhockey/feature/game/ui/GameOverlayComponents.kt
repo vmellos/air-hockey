@@ -59,6 +59,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -66,6 +67,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.R
@@ -662,6 +665,89 @@ fun PeerExitedDialog(
 }
 
 @Composable
+fun NeonBloomIntensityControl(
+    neonBloomIntensity: Float,
+    effectsEnabledInContext: Boolean = true,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: (() -> Unit)? = null,
+    hintText: String? = null,
+    titleFontSize: TextUnit = 14.sp,
+    badgeFontSize: TextUnit = 12.sp,
+    sliderHeight: Dp = 30.dp,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val display = resolveNeonBloomDisplayState(
+        savedIntensity = neonBloomIntensity,
+        effectsEnabledInContext = effectsEnabledInContext
+    )
+    val intensityLabel = when (display.band) {
+        NeonBloomBand.OFF -> stringResource(R.string.neon_bloom_off)
+        NeonBloomBand.SOFT -> stringResource(R.string.neon_bloom_soft)
+        NeonBloomBand.NORMAL -> stringResource(R.string.neon_bloom_normal)
+        NeonBloomBand.VIBRANT -> stringResource(R.string.neon_bloom_vibrant)
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+            .alpha(if (display.isControlEnabled) 1f else 0.58f)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (leadingIcon != null) {
+                    leadingIcon()
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+                Text(
+                    text = stringResource(R.string.neon_bloom_intensity_title),
+                    color = Color(0xFFE2E8F0),
+                    fontSize = titleFontSize,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Text(
+                text = "${display.percent}% • $intensityLabel",
+                color = if (display.isControlEnabled) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                fontSize = badgeFontSize,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Slider(
+            value = display.sliderValue,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            enabled = display.isControlEnabled,
+            valueRange = 0.0f..0.10f,
+            steps = 9,
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF00E5FF),
+                activeTrackColor = Color(0xFF00E5FF),
+                inactiveTrackColor = Color(0xFF1E293B),
+                disabledThumbColor = Color(0xFF475569),
+                disabledActiveTrackColor = Color(0xFF334155),
+                disabledInactiveTrackColor = Color(0xFF1E293B)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(sliderHeight)
+        )
+        if (!hintText.isNullOrBlank()) {
+            Text(
+                text = hintText,
+                color = Color(0xFF94A3B8),
+                fontSize = 11.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun AudioAndVisualControlsSurface(
     isSoundEnabled: Boolean,
     onToggleSound: () -> Unit,
@@ -671,6 +757,7 @@ private fun AudioAndVisualControlsSurface(
     cameraZoom3d: CameraZoom3D,
     onCameraZoom3dChange: ((CameraZoom3D) -> Unit)?,
     neonBloomIntensity: Float,
+    visualEffectsEnabled: Boolean,
     onNeonBloomIntensityChange: ((Float) -> Unit)?
 ) {
     Surface(
@@ -760,51 +847,19 @@ private fun AudioAndVisualControlsSurface(
                         .background(Color(0x1AFFFFFF))
                 )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = stringResource(R.string.neon_bloom_intensity_title),
-                            color = Color(0xFFE2E8F0),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        val pct = kotlin.math.round((neonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
-                        val intensityLabel = when {
-                            pct == 0 -> stringResource(R.string.neon_bloom_off)
-                            pct <= 30 -> stringResource(R.string.neon_bloom_soft)
-                            pct <= 70 -> stringResource(R.string.neon_bloom_normal)
-                            else -> stringResource(R.string.neon_bloom_vibrant)
-                        }
-                        Text(
-                            text = "$pct% • $intensityLabel",
-                            color = Color(0xFF00E5FF),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Slider(
-                        value = neonBloomIntensity.coerceIn(0.0f, 0.10f),
-                        onValueChange = onNeonBloomIntensityChange,
-                        valueRange = 0.0f..0.10f,
-                        steps = 9,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFF00E5FF),
-                            activeTrackColor = Color(0xFF00E5FF),
-                            inactiveTrackColor = Color(0xFF1E293B)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(30.dp)
-                    )
-                }
+                NeonBloomIntensityControl(
+                    neonBloomIntensity = neonBloomIntensity,
+                    effectsEnabledInContext = visualEffectsEnabled,
+                    onValueChange = onNeonBloomIntensityChange,
+                    hintText = if (!visualEffectsEnabled) {
+                        stringResource(R.string.neon_bloom_disabled_in_settings_hint)
+                    } else {
+                        null
+                    },
+                    titleFontSize = 14.sp,
+                    badgeFontSize = 12.sp,
+                    sliderHeight = 30.dp
+                )
             }
 
             // Controle de Zoom da Câmera 3D (quando a Arena 3D estiver ativa)
@@ -897,6 +952,7 @@ fun PauseDialog(
     cameraZoom3d: CameraZoom3D = CameraZoom3D.STANDARD,
     onCameraZoom3dChange: ((CameraZoom3D) -> Unit)? = null,
     neonBloomIntensity: Float = 0.05f,
+    visualEffectsEnabled: Boolean = true,
     onNeonBloomIntensityChange: ((Float) -> Unit)? = null,
     onResume: () -> Unit,
     onRestart: () -> Unit,
@@ -958,6 +1014,7 @@ fun PauseDialog(
                                 cameraZoom3d = cameraZoom3d,
                                 onCameraZoom3dChange = onCameraZoom3dChange,
                                 neonBloomIntensity = neonBloomIntensity,
+                                visualEffectsEnabled = visualEffectsEnabled,
                                 onNeonBloomIntensityChange = onNeonBloomIntensityChange
                             )
                         }
@@ -1020,6 +1077,7 @@ fun PauseDialog(
                         cameraZoom3d = cameraZoom3d,
                         onCameraZoom3dChange = onCameraZoom3dChange,
                         neonBloomIntensity = neonBloomIntensity,
+                        visualEffectsEnabled = visualEffectsEnabled,
                         onNeonBloomIntensityChange = onNeonBloomIntensityChange
                     )
 

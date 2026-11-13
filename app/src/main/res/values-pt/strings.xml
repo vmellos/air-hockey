@@ -204,8 +204,8 @@
 
     <!-- Perfil de Efeitos Visuais -->
     <string name="settings_visual_effects">Efeitos Visuais</string>
-    <string name="settings_visual_effects_desc">Rastro de plasma do disco, vórtice de contagem e faíscas incandescentes</string>
-    <string name="visual_effects_full">Efeitos Arcade Neon</string>
+    <string name="settings_visual_effects_desc">Ativa rastro de plasma, faíscas, vórtice de contagem e brilho neon em partidas</string>
+    <string name="visual_effects_full">Efeitos Visuais da Arena</string>
     <string name="visual_effects_full_desc">Rastro de fogo de plasma, faíscas incandescentes, vórtice de contagem e celebração explosiva</string>
     <string name="visual_effects_off">Modo Desempenho (Mínimo)</string>
     <string name="visual_effects_off_desc">Sem rastros ou partículas para máxima fluidez em dispositivos de entrada</string>
@@ -359,6 +359,8 @@
     <string name="neon_bloom_soft">Suave</string>
     <string name="neon_bloom_normal">Padrão</string>
     <string name="neon_bloom_vibrant">Intenso</string>
+    <string name="neon_bloom_disabled_in_settings_hint">Desativado em Efeitos Visuais nas Configurações</string>
+    <string name="neon_bloom_suspended_in_match_hint">Suspenso nas partidas (Efeitos Visuais desativados)</string>
     <string name="settings_3d_intro_title">Animação Inicial da Arena 3D</string>
     <string name="settings_3d_intro_desc">Apresentação cinematográfica de sobrevoo ao iniciar partidas 3D</string>
     <string name="arena_conquered_badge">ARENA CONQUISTADA</string>

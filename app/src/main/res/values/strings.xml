@@ -206,8 +206,8 @@
 
     <!-- Visual Effects Profile -->
     <string name="settings_visual_effects">Visual Effects</string>
-    <string name="settings_visual_effects_desc">Puck plasma trail, countdown vortex, and incandescent sparks</string>
-    <string name="visual_effects_full">Arcade Neon Effects</string>
+    <string name="settings_visual_effects_desc">Enables plasma trail, sparks, countdown vortex, and neon glow during matches</string>
+    <string name="visual_effects_full">Arena Visual Effects</string>
     <string name="visual_effects_full_desc">Plasma flame trail, incandescent sparks, vortex countdown and celebration shockwaves</string>
     <string name="visual_effects_off">Performance Mode (Clean)</string>
     <string name="visual_effects_off_desc">Zero trails or particles for maximum FPS on entry devices</string>
@@ -361,6 +361,8 @@
     <string name="neon_bloom_soft">Soft</string>
     <string name="neon_bloom_normal">Standard</string>
     <string name="neon_bloom_vibrant">Vibrant</string>
+    <string name="neon_bloom_disabled_in_settings_hint">Disabled under Visual Effects in Settings</string>
+    <string name="neon_bloom_suspended_in_match_hint">Suspended during matches (Visual Effects off)</string>
     <string name="settings_3d_intro_title">3D Arena Intro Animation</string>
     <string name="settings_3d_intro_desc">Cinematic camera flyover when starting 3D matches</string>
     <string name="arena_conquered_badge">ARENA UNLOCKED</string>

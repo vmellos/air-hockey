@@ -51,6 +51,7 @@ import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
 import dev.vmellos.airhockey.core.util.findActivity
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.GameViewModel
@@ -218,6 +219,7 @@ fun GameScreen(
                     }
                 },
                 neonBloomIntensity = prefs.neonBloomIntensity,
+                visualEffectsEnabled = prefs.visualEffectsProfile == VisualEffectsProfile.FULL,
                 onNeonBloomIntensityChange = { newVal ->
                     scope.launch {
                         AirHockeyApp.instance.preferencesRepository.updateNeonBloomIntensity(newVal)

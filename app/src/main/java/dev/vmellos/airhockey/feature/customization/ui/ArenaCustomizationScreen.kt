@@ -122,6 +122,7 @@ import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
 import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
 import dev.vmellos.airhockey.feature.game.ui.*
 import kotlinx.coroutines.launch
 
@@ -355,65 +356,35 @@ fun ArenaCustomizationScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Tune,
-                                contentDescription = null,
-                                tint = Color(0xFF00E5FF),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.neon_bloom_intensity_title),
-                                color = Color(0xFFE2E8F0),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                NeonBloomIntensityControl(
+                    neonBloomIntensity = liveNeonBloomIntensity,
+                    effectsEnabledInContext = true,
+                    onValueChange = { newVal ->
+                        liveNeonBloomIntensity = newVal
+                    },
+                    onValueChangeFinished = {
+                        coroutineScope.launch {
+                            preferencesRepo.updateNeonBloomIntensity(liveNeonBloomIntensity)
                         }
-                        val pct = kotlin.math.round((liveNeonBloomIntensity / 0.10f) * 100).toInt().coerceIn(0, 100)
-                        val intensityLabel = when {
-                            pct == 0 -> stringResource(R.string.neon_bloom_off)
-                            pct <= 30 -> stringResource(R.string.neon_bloom_soft)
-                            pct <= 70 -> stringResource(R.string.neon_bloom_normal)
-                            else -> stringResource(R.string.neon_bloom_vibrant)
-                        }
-                        Text(
-                            text = "$pct% • $intensityLabel",
-                            color = Color(0xFF00E5FF),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                    },
+                    hintText = if (prefs.visualEffectsProfile == VisualEffectsProfile.OFF) {
+                        stringResource(R.string.neon_bloom_suspended_in_match_hint)
+                    } else {
+                        null
+                    },
+                    titleFontSize = 12.sp,
+                    badgeFontSize = 11.sp,
+                    sliderHeight = 28.dp,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(16.dp)
                         )
-                    }
-                    Slider(
-                        value = liveNeonBloomIntensity.coerceIn(0.0f, 0.10f),
-                        onValueChange = { newVal ->
-                            liveNeonBloomIntensity = newVal
-                        },
-                        onValueChangeFinished = {
-                            coroutineScope.launch {
-                                preferencesRepo.updateNeonBloomIntensity(liveNeonBloomIntensity)
-                            }
-                        },
-                        valueRange = 0.0f..0.10f,
-                        steps = 9,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFF00E5FF),
-                            activeTrackColor = Color(0xFF00E5FF),
-                            inactiveTrackColor = Color(0xFF1E293B)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(28.dp)
-                    )
-                }
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
         }
     }

@@ -159,8 +159,8 @@ O sistema de controle por gestos táteis multitoque (arraste com um dedo para ó
 _Avoid_: Pinch zoom simples, touch livre, arrastar câmera, gesto solto
 
 **Controle Direto de Bloom Neon**:
-O mecanismo e interface de ajuste em tempo real da intensidade de dispersão luminosa (bloom) e luminescência dos materiais emissivos na Vitrine de Pré-Visualização 3D, proporcionando feedback visual imediato com persistência automática nas preferências globais do jogador.
-_Avoid_: Slider de brilho, ajuste de luz, efeito neon, bloom slider
+O ajuste em tempo real da intensidade de dispersão luminosa (bloom) e luminescência dos materiais emissivos na Vitrine de Pré-Visualização 3D e no Menu de Pausa da Arena, subordinado em partida à ativação do Perfil de Efeitos Visuais.
+_Avoid_: Slider de brilho, ajuste de luz, efeito neon, bloom slider, brilho do neon descolado
 
 **Mascote da Mesa**:
 O elemento cênico e animado que patrulha autonomamente o piso externo adjacente à arena virtual durante a partida na Dimensão de Renderização 3D (e representado por silhueta móvel com rastro de passos na perspectiva 2D), conferindo dinamismo orgânico ao ambiente esportivo ao alternar caminhada quadrúpede e paradas para limpeza facial.
@@ -329,7 +329,7 @@ O efeito visual luminoso em formato de anel com feixes de plasma expansivos e ra
 _Avoid_: Onda de impacto, explosão de gol, círculo com raios, choque neon
 
 **Perfil de Efeitos Visuais**:
-A configuração gráfica ajustável pelo usuário nas configurações que ativa ou desativa efeitos visuais em partida nas arenas 2D e 3D — incluindo rastro de energia do disco, vórtice de contagem regressiva, ondas de choque, faíscas incandescentes e bloom neon — para alternar entre fidelidade arcade completa e renderização leve com máxima fluidez e economia de bateria.
+A configuração gráfica ajustável pelo usuário nas configurações que ativa ou desativa efeitos visuais em partida nas arenas 2D e 3D — incluindo rastro de energia do disco, vórtice de contagem regressiva, ondas de choque, faíscas incandescentes e o bloom do Brilho do Neon em jogo, preservando a intensidade salva para quando os efeitos forem reativados ou pré-visualizados na vitrine.
 _Avoid_: Gráficos, qualidade gráfica, resolução, modo batata, modos de desempenho
 
 **Música de Fundo Arcade**:
@@ -529,7 +529,7 @@ _Avoid_: Borda preta vazia, área morta, letterbox simples
 ## Regras Esportivas, Inteligência Artificial e Renderização
 
 **Disco Preso**:
-Regra esportiva oficial arbitrada pelo Árbitro Virtual que detecta quando o disco permanece inerte ou inalcançável por mais de 3,5 segundos na mesa, reposicionando-o automaticamente no ponto neutro de saída para assegurar a continuidade do confronto.
+Regra esportiva oficial arbitrada pelo Árbitro Virtual que detecta quando o disco permanece inerte por mais de 3,5 segundos na meia-mesa controlada por inteligência artificial, no Modo IA x IA ou no Vão Físico da Mesa Estendida, reposicionando-o em local jogável sem interferir em discos parados no meio-campo alcançável por jogador humano.
 _Avoid_: Deadlock, disco travado, bug de física, bola presa
 
 **Resgate de Canto**:
