@@ -78,6 +78,15 @@ val NeonMagentaCore = Color(0xFFFCE4EC)
 val VolleyYellow = Color(0xFFFFEA00)
 val VolleyBlue = Color(0xFF2979FF)
 
+/**
+ * Calcula o fator de amortecimento exponencial independente da taxa de quadros
+ * equivalente a [dampingPer60HzFrame] aplicado a 60 FPS.
+ */
+internal fun frameRateIndependentDamping(dtSec: Float, dampingPer60HzFrame: Float): Float {
+    val clampedDt = dtSec.coerceIn(0.001f, 0.10f)
+    return Math.pow(dampingPer60HzFrame.toDouble(), (clampedDt * 60f).toDouble()).toFloat()
+}
+
 class SparkParticle {
     var x: Float = 0f
     var y: Float = 0f
@@ -105,8 +114,9 @@ class SparkParticle {
         if (!active) return
         x += vx * dt
         y += vy * dt
-        vx *= 0.94f
-        vy *= 0.94f
+        val damping = frameRateIndependentDamping(dt, 0.94f)
+        vx *= damping
+        vy *= damping
         life += dt
         if (life >= maxLife) {
             active = false
@@ -120,6 +130,7 @@ class VisualShockwave {
     var color: Color = NeonCyan
     var maxRadius: Float = 160f
     var progress: Float = 0f
+    var durationSec: Float = 0.42f
     var active: Boolean = false
     var isRadiating: Boolean = false
 
@@ -129,13 +140,15 @@ class VisualShockwave {
         color = waveColor
         maxRadius = radius
         progress = 0f
+        durationSec = if (radiating) 0.70f else 0.42f
         active = true
         isRadiating = radiating
     }
 
-    fun update(speed: Float) {
+    fun update(dt: Float) {
         if (!active) return
-        progress += speed
+        val clampedDt = dt.coerceIn(0.001f, 0.10f)
+        progress += clampedDt / durationSec
         if (progress >= 1f) {
             active = false
         }
@@ -211,8 +224,7 @@ class ParticlePool(
             if (p.active) p.update(dt)
         }
         for (sw in shockwaves) {
-            val speed = if (sw.isRadiating) 0.024f else 0.040f
-            if (sw.active) sw.update(speed)
+            if (sw.active) sw.update(dt)
         }
     }
 

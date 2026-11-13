@@ -71,6 +71,8 @@ import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
+import dev.vmellos.airhockey.feature.game.ui.configureFilamentArenaView
+import dev.vmellos.airhockey.feature.game.ui.updateFilamentArenaBloom
 import io.github.sceneview.Scene
 import io.github.sceneview.SceneView
 import io.github.sceneview.node.ModelNode
@@ -763,28 +765,20 @@ internal fun Arena3DLivePreview(
     val modelLoader = rememberModelLoader(engine3d)
     val view3d = rememberView(engine3d) {
         SceneView.createView(engine3d).apply {
-            val normalizedBloom = (neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
-            val calibratedStrength = (normalizedBloom * normalizedBloom) * 0.22f
-            bloomOptions = bloomOptions.apply {
-                enabled = neonBloomIntensity > 0.002f
-                threshold = true
-                highlight = 0.85f
-                strength = calibratedStrength
-                blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
-            }
+            configureFilamentArenaView(
+                view = this,
+                neonBloomIntensity = neonBloomIntensity,
+                bloomEnabledOverride = true
+            )
         }
     }
 
     LaunchedEffect(neonBloomIntensity) {
-        val normalizedBloom = (neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
-        val calibratedStrength = (normalizedBloom * normalizedBloom) * 0.22f
-        view3d.bloomOptions = view3d.bloomOptions.apply {
-            enabled = neonBloomIntensity > 0.002f
-            threshold = true
-            highlight = 0.85f
-            strength = calibratedStrength
-            blendMode = com.google.android.filament.View.BloomOptions.BlendMode.ADD
-        }
+        updateFilamentArenaBloom(
+            view = view3d,
+            neonBloomIntensity = neonBloomIntensity,
+            bloomEnabledOverride = true
+        )
     }
 
     val tableAsset = remember(tableTheme) {

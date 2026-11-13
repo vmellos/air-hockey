@@ -51,7 +51,9 @@ class AirHockeyPhysicsEngine(
     private val paddleRestitution = 1.0f
     private val maxSpeedSq = maxSpeed * maxSpeed
 
+    @Volatile
     var onCollisionListener: ((CollisionEvent, Float) -> Unit)? = null
+    @Volatile
     var onVisualCollisionListener: ((Float, Float, CollisionEvent) -> Unit)? = null
 
     fun resetPositions(scorer: Int = 0) {
