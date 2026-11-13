@@ -379,7 +379,7 @@ A diretriz de conectividade em sessões multijogador na qual apenas o Dispositiv
 _Avoid_: Restrição cega de sala, trava de convidado, lobby bloqueado
 
 **Sincronização de Arena do Anfitrião**:
-A transmissão do identificador de Tema de Mesa ativo enviada pelo Dispositivo Anfitrião ao Dispositivo Convidado no handshake de abertura da sessão multijogador, garantindo paridade visual na renderização da arena independentemente do progresso individual do convidado.
+A transmissão do identificador de Tema de Mesa ativo enviada pelo Dispositivo Anfitrião ao Dispositivo Convidado no handshake de abertura da sessão multijogador, resolvendo o **Kit Cosmético da Arena** completo (Mesa, Disco Temático e Rebatedores P1/P2) de forma determinística a partir do `ArenaKit`, garantindo paridade visual absoluta entre anfitrião e convidado independentemente das preferências locais ou do progresso individual do convidado.
 _Avoid_: Sync de skin, pacote de campo, tema compartilhado
 
 **Seletor Pré-Jogo de Arenas**:
@@ -557,7 +557,7 @@ O mecanismo de ancoragem inteligente na grade de seleção de fases que localiza
 _Avoid_: Scroll manual de fases, reset de topo de grid
 
 **Desacoplamento de Skin em Fases**:
-A regra esportiva visual que garante que o rebatedor do jogador mantenha sua própria aparência equipada durante a campanha solo, enquanto o oponente autônomo (Boss da Arena) assume o taco temático do palco em disputa.
+A regra esportiva visual da campanha solo que acopla o disco temático do palco em disputa (`ArenaKit`) e atribui ao oponente autônomo (Boss da Arena) o rebatedor temático da fase, enquanto permite que o rebatedor do jogador (P1) preserve sua aparência personalizada não-padrão quando equipada para o tema correspondente.
 _Avoid_: Forçar skin da fase, taco mutável, perda de customização
 
 **Partículas Temáticas da Arena**:

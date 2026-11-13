@@ -472,25 +472,28 @@ fun AirHockeyArena3DScene(
 
     val arenaKit = remember(activeTheme) { activeTheme.kit() }
     val themeVisuals = arenaKit.visuals
+    val cosmetics = remember(arenaKit, activeTheme, tableTheme, mode, matchState.currentStage, prefs) {
+        arenaKit.resolveCosmetics(
+            activeTheme = activeTheme,
+            explicitTableTheme = tableTheme,
+            mode = mode,
+            currentStage = matchState.currentStage,
+            prefs = prefs
+        )
+    }
 
     val tableAsset = remember(arenaKit, matchState.capabilities.perspective) {
         arenaKit.tableAsset(matchState.capabilities.perspective)
     }
-    val puckAsset = remember(prefs.puckSkin) {
-        prefs.puckSkin.spec().model3dAsset
+    val puckAsset = remember(cosmetics.puckSkin) {
+        cosmetics.puckSkin.spec().model3dAsset
     }
 
-    val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
-        ArenaPresetCatalog.getMalletSkinForStage(matchState.currentStage)
-    } else {
-        prefs.player2MalletSkin
+    val p1MalletAsset = remember(cosmetics.p1MalletSkin) {
+        cosmetics.p1MalletSkin.spec().model3dAsset(isPlayer1 = true)
     }
-
-    val p1MalletAsset = remember(prefs.player1MalletSkin) {
-        prefs.player1MalletSkin.spec().model3dAsset(isPlayer1 = true)
-    }
-    val p2MalletAsset = remember(effectiveP2MalletSkin) {
-        effectiveP2MalletSkin.spec().model3dAsset(isPlayer1 = false)
+    val p2MalletAsset = remember(cosmetics.p2MalletSkin) {
+        cosmetics.p2MalletSkin.spec().model3dAsset(isPlayer1 = false)
     }
 
     val tableInstance = remember(modelLoader, tableAsset) {
@@ -807,7 +810,7 @@ fun AirHockeyArena3DScene(
             // 1. Pulso de Celebração de Ponto na Barreira da Meta
             if (matchState.status == MatchStatus.GOAL_PAUSE) {
                 val scorer = matchState.lastScorer
-                val goalColor = if (scorer == 2) Color(0xFFFF6D00) else Color(0xFF00E5FF)
+                val goalColor = if (scorer == 2) themeVisuals.secondaryColor else themeVisuals.primaryColor
                 val goalTableY = if (isExtended) {
                     if (scorer == 2) dimensions.totalHeight - 150f else 150f
                 } else {

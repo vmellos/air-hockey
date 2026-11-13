@@ -124,9 +124,14 @@ fun ScoreBoardOverlay(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
                     ) {
+                        val isGuestPerspective = isExtendedGuest || matchState.capabilities.isConnectedGuest
+                        val topScore = if (isGuestPerspective) matchState.scorePlayer1 else matchState.scorePlayer2
+                        val bottomScore = if (isGuestPerspective) matchState.scorePlayer2 else matchState.scorePlayer1
+                        val topScoreColor = if (isGuestPerspective) p1Color else p2Color
+                        val bottomScoreColor = if (isGuestPerspective) p2Color else p1Color
                         Text(
-                            text = "${matchState.scorePlayer2}",
-                            color = p2Color,
+                            text = "$topScore",
+                            color = topScoreColor,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Black,
                             fontFamily = boardFont
@@ -135,11 +140,11 @@ fun ScoreBoardOverlay(
                             modifier = Modifier
                                 .width(22.dp)
                                 .height(1.5.dp)
-                                .background(boardBorder.brush ?: Brush.horizontalGradient(listOf(p2Color.copy(alpha = 0.5f), p1Color.copy(alpha = 0.5f))), RoundedCornerShape(1.dp))
+                                .background(boardBorder.brush ?: Brush.horizontalGradient(listOf(topScoreColor.copy(alpha = 0.5f), bottomScoreColor.copy(alpha = 0.5f))), RoundedCornerShape(1.dp))
                         )
                         Text(
-                            text = "${matchState.scorePlayer1}",
-                            color = p1Color,
+                            text = "$bottomScore",
+                            color = bottomScoreColor,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Black,
                             fontFamily = boardFont
@@ -278,7 +283,7 @@ fun GoalBannerOverlay(
         TableTheme.WASTELAND_APOCALYPSE -> Pair(WastelandFlame, WastelandFlameBright)
         TableTheme.RETRO_SYNTHWAVE -> Pair(SynthPink, SynthCyan)
         TableTheme.TOKAMAK_REACTOR -> Pair(TokamakRadiation, TokamakPlasma)
-        TableTheme.CYBER_PONG -> Pair(PongGreen, PongGreen)
+        TableTheme.CYBER_PONG -> Pair(PongGreen, PongAmber)
         TableTheme.CYBER_COLOSSEUM -> Pair(ColosseumGold, ColosseumCrimson)
         TableTheme.KIARA_CAT -> Pair(Color(0xFFFF1493), NeonCyan)
     }
@@ -294,7 +299,7 @@ fun GoalBannerOverlay(
         TableTheme.WASTELAND_APOCALYPSE -> WastelandFlameBright
         TableTheme.RETRO_SYNTHWAVE -> if (scorer == 1) SynthPinkBright else SynthCyanBright
         TableTheme.TOKAMAK_REACTOR -> if (scorer == 1) TokamakRadiationBright else TokamakPlasmaBright
-        TableTheme.CYBER_PONG -> PongGreenBright
+        TableTheme.CYBER_PONG -> if (scorer == 1) PongGreenBright else PongAmberBright
         TableTheme.CYBER_COLOSSEUM -> if (scorer == 1) ColosseumGoldBright else ColosseumCrimson
         TableTheme.KIARA_CAT -> if (scorer == 1) Color(0xFFFF69B4) else NeonCyanBright
     }

@@ -85,6 +85,15 @@ fun AirHockeyArenaCanvas(
     }
 
     val arenaKit = remember(activeTheme) { activeTheme.kit() }
+    val cosmetics = remember(arenaKit, activeTheme, tableTheme, mode, matchState.currentStage, prefs) {
+        arenaKit.resolveCosmetics(
+            activeTheme = activeTheme,
+            explicitTableTheme = tableTheme,
+            mode = mode,
+            currentStage = matchState.currentStage,
+            prefs = prefs
+        )
+    }
     val themeVisuals = arenaKit.visuals
     val arenaBgColor = themeVisuals.backgroundColor
     val pawPrints2D = remember(activeTheme) { ArrayDeque<MascotPawPrint2D>(32) }
@@ -249,7 +258,8 @@ fun AirHockeyArenaCanvas(
             val goalW = dimensions.goalWidth * scale
             val goalLeft = offsetX + dimensions.goalLeft * scale
             val screenBottom = offsetY + vHeight * scale
-            val bottomGoalColor = if (isExtendedGuest) p2ThemeColor else p1ThemeColor
+            val topGoalColor = if (isConnectedGuest) p1ThemeColor else p2ThemeColor
+            val bottomGoalColor = if (isExtendedGuest || isConnectedGuest) p2ThemeColor else p1ThemeColor
 
             Arena2DRenderer.run {
                 drawTableGoals(
@@ -259,7 +269,7 @@ fun AirHockeyArenaCanvas(
                     topY = offsetY,
                     bottomY = screenBottom,
                     scale = scale,
-                    topGoalColor = p2ThemeColor,
+                    topGoalColor = topGoalColor,
                     bottomGoalColor = bottomGoalColor,
                     perspective = mode.capabilities.perspective
                 )
@@ -289,7 +299,7 @@ fun AirHockeyArenaCanvas(
             // 7. Desenha Rebatedor 1 (Jogador 1)
             val snap = runtime.currentSnapshot()
             val p1Screen = projection.tableToScreen(snap.player1MalletX, snap.player1MalletY, screenW, screenH)
-            val p1Skin = prefs.player1MalletSkin
+            val p1Skin = cosmetics.p1MalletSkin
             val p1Visuals = p1Skin.spec().visuals(isPlayer1 = true)
             Arena2DRenderer.run {
                 drawMalletSkin(
@@ -305,11 +315,7 @@ fun AirHockeyArenaCanvas(
 
             // 8. Desenha Rebatedor 2 (Jogador 2 / Guardião da Arena no Solo)
             val p2Screen = projection.tableToScreen(snap.player2MalletX, snap.player2MalletY, screenW, screenH)
-            val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
-                ArenaPresetCatalog.getMalletSkinForStage(matchState.currentStage)
-            } else {
-                prefs.player2MalletSkin
-            }
+            val effectiveP2MalletSkin = cosmetics.p2MalletSkin
             val p2Visuals = effectiveP2MalletSkin.spec().visuals(isPlayer1 = false)
             Arena2DRenderer.run {
                 drawMalletSkin(
@@ -346,7 +352,7 @@ fun AirHockeyArenaCanvas(
                 }
 
                 // Cor dinâmica do rastro e do disco conforme o último batedor
-                val puckSpec = prefs.puckSkin.spec()
+                val puckSpec = cosmetics.puckSkin.spec()
                 val (puckAccentColor, puckCoreColor) = puckSpec.trailColors(snap.puckLastHitBy)
 
                 // Desenha rastro fluido de plasma com ondulação de chamas
@@ -363,7 +369,7 @@ fun AirHockeyArenaCanvas(
                 // Desenha o disco de acordo com a skin ativa
                 Arena2DRenderer.run {
                     drawPuckSkin(
-                        skin = prefs.puckSkin,
+                        skin = cosmetics.puckSkin,
                         x = puckScreen.x,
                         y = puckScreen.y,
                         radius = dimensions.puckRadius * scale,

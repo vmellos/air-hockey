@@ -335,8 +335,8 @@ fun DrawScope.drawChamferedTable(
 
     // 3. Bordas Chanfradas Neon em 45 graus
     val isSinglePlayerHalfOrange = !isExtendedHost && !isExtendedGuest
-    val topHalfColor = if (isExtendedGuest || isConnectedGuest) NeonOrange else if (isExtendedHost) NeonCyan else NeonOrange
-    val bottomHalfColor = if (isExtendedGuest) NeonOrange else NeonCyan
+    val topHalfColor = if (isConnectedGuest || isExtendedHost) NeonCyan else NeonOrange
+    val bottomHalfColor = if (isExtendedGuest || isConnectedGuest) NeonOrange else NeonCyan
 
     if (isExtendedHost || isExtendedGuest) {
         // Mesa Estendida: Topo aberto com linha tracejada de passagem
@@ -1018,8 +1018,8 @@ fun DrawScope.drawCyberSoccerTable(
     }
 
     // 3. Bordas Chanfradas em Neon Esmeralda / Rubi
-    val topColor = if (isExtendedGuest || isConnectedGuest) NeonRuby else if (isExtendedHost) NeonEmerald else NeonRuby
-    val bottomColor = if (isExtendedGuest) NeonRuby else NeonEmerald
+    val topColor = if (isConnectedGuest || isExtendedHost) NeonEmerald else NeonRuby
+    val bottomColor = if (isExtendedGuest || isConnectedGuest) NeonRuby else NeonEmerald
 
     if (isExtendedHost || isExtendedGuest) {
         val singleColor = if (isExtendedGuest) NeonRuby else NeonEmerald
@@ -1608,8 +1608,8 @@ fun DrawScope.drawNeoBasketballTable(
     }
 
     // 2. Bordas Chanfradas Neon (Metade superior: Ciano / Metade inferior: Âmbar)
-    val topColor = if (isExtendedGuest || isConnectedGuest) NeonCyan else if (isExtendedHost) NeonAmber else NeonCyan
-    val bottomColor = if (isExtendedGuest) NeonCyan else NeonAmber
+    val topColor = if (isConnectedGuest || isExtendedHost) NeonAmber else NeonCyan
+    val bottomColor = if (isExtendedGuest || isConnectedGuest) NeonCyan else NeonAmber
 
     if (isExtendedHost || isExtendedGuest) {
         val singleColor = if (isExtendedGuest) NeonCyan else NeonAmber
@@ -2241,8 +2241,8 @@ fun DrawScope.drawGravityVolleyTable(
     }
 
     // 2. Bordas Chanfradas Neon (Metade superior: Magenta / Metade inferior: Violeta)
-    val topColor = if (isExtendedGuest || isConnectedGuest) NeonMagenta else if (isExtendedHost) NeonViolet else NeonMagenta
-    val bottomColor = if (isExtendedGuest) NeonMagenta else NeonViolet
+    val topColor = if (isConnectedGuest || isExtendedHost) NeonViolet else NeonMagenta
+    val bottomColor = if (isExtendedGuest || isConnectedGuest) NeonMagenta else NeonViolet
 
     if (isExtendedHost || isExtendedGuest) {
         val singleColor = if (isExtendedGuest) NeonMagenta else NeonViolet
@@ -2727,7 +2727,10 @@ fun DrawScope.drawKiaraCatTable(
             style = Stroke(width = 4f * scale)
         )
     } else {
-        // Metade Superior: Ciano Elétrico (P2)
+        val topHalfColor = if (isConnectedGuest) Color(0xFFFF1493) else NeonCyan
+        val bottomHalfColor = if (isConnectedGuest) NeonCyan else Color(0xFFFF1493)
+
+        // Metade Superior
         val topHalfPath = Path().apply {
             moveTo(left, centerY)
             lineTo(left, top + chamfer)
@@ -2736,10 +2739,10 @@ fun DrawScope.drawKiaraCatTable(
             lineTo(right, top + chamfer)
             lineTo(right, centerY)
         }
-        drawPath(path = topHalfPath, color = NeonCyan.copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
-        drawPath(path = topHalfPath, color = NeonCyan, style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(path = topHalfPath, color = topHalfColor.copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
+        drawPath(path = topHalfPath, color = topHalfColor, style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
 
-        // Metade Inferior: Magenta / Pink Neon (P1)
+        // Metade Inferior
         val bottomHalfPath = Path().apply {
             moveTo(right, centerY)
             lineTo(right, bottom - chamfer)
@@ -2748,8 +2751,8 @@ fun DrawScope.drawKiaraCatTable(
             lineTo(left, bottom - chamfer)
             lineTo(left, centerY)
         }
-        drawPath(path = bottomHalfPath, color = Color(0xFFFF1493).copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
-        drawPath(path = bottomHalfPath, color = Color(0xFFFF1493), style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(path = bottomHalfPath, color = bottomHalfColor.copy(alpha = 0.20f), style = Stroke(width = 11f * scale))
+        drawPath(path = bottomHalfPath, color = bottomHalfColor, style = Stroke(width = 5f * scale, cap = StrokeCap.Round, join = StrokeJoin.Round))
 
         // Linha divisória central dourada
         drawLine(

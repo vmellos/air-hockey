@@ -143,8 +143,8 @@ object Arena2DRenderer {
                 drawKiaraCatGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
             }
             TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> {
-                if (drawTopGoal) drawAngledGoal(goalLeft, goalWidth, topY, scale, NeonOrange, isTop = true)
-                drawAngledGoal(goalLeft, goalWidth, bottomY, scale, NeonCyan, isTop = false)
+                if (drawTopGoal) drawAngledGoal(goalLeft, goalWidth, topY, scale, topGoalColor, isTop = true)
+                drawAngledGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
             }
         }
     }
