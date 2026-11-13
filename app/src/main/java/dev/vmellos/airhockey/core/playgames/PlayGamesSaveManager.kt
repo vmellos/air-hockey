@@ -2,43 +2,55 @@ package dev.vmellos.airhockey.core.playgames
 
 import android.app.Activity
 import android.util.Log
-import com.google.android.gms.games.PlayGames
-import com.google.android.gms.games.SnapshotsClient
-import com.google.android.gms.games.snapshot.Snapshot
-import com.google.android.gms.games.snapshot.SnapshotMetadataChange
+import androidx.room.withTransaction
 import dev.vmellos.airhockey.core.database.AppDatabase
 import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
-import dev.vmellos.airhockey.core.preferences.ArenaDimension
-import dev.vmellos.airhockey.core.preferences.MalletSkin
-import dev.vmellos.airhockey.core.preferences.PuckSkin
-import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferencesRepository
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 /**
- * Gerenciador de Sincronização em Nuvem (Jogos Salvos / SnapshotsClient)
+ * Gerenciador de Sincronização Atômica em Nuvem (Jogos Salvos / Snapshots)
  * do Google Play Games Services v2.
  */
 class PlayGamesSaveManager(
     private val database: AppDatabase,
-    private val preferencesRepository: UserPreferencesRepository? = null
+    private val preferencesRepository: UserPreferencesRepository? = null,
+    private val transactionRunner: suspend (suspend () -> Unit) -> Unit = { block ->
+        database.withTransaction { block() }
+    },
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val _syncState = MutableStateFlow<CloudSyncState>(CloudSyncState.Idle)
     val syncState: StateFlow<CloudSyncState> = _syncState.asStateFlow()
 
     companion object {
         private const val TAG = "PlayGamesSaveManager"
         const val SNAPSHOT_NAME = "airhockey_saved_progress"
+
+        internal fun resolveConflictBytes(
+            serverBytes: ByteArray,
+            localConflictBytes: ByteArray
+        ): ByteArray {
+            val serverPayload = PlayGamesSavePayload.fromByteArray(serverBytes)
+            val conflictLocalPayload = PlayGamesSavePayload.fromByteArray(localConflictBytes)
+            val merged = when {
+                serverPayload != null && conflictLocalPayload != null ->
+                    PlayGamesSavePayload.merge(serverPayload, conflictLocalPayload)
+                else -> serverPayload ?: conflictLocalPayload
+            }
+            return merged?.toByteArray() ?: serverBytes
+        }
     }
 
     /**
@@ -47,85 +59,44 @@ class PlayGamesSaveManager(
      */
     fun syncProgressAsync(activity: Activity, onComplete: ((Boolean) -> Unit)? = null) {
         scope.launch {
-            val result = syncProgressInternal(activity)
-            withContext(Dispatchers.Main) {
+            val result = syncWithPort(GmsCloudSnapshotAdapter(activity))
+            withContext(mainDispatcher) {
                 onComplete?.invoke(result.isSuccess)
             }
         }
     }
 
     suspend fun syncProgress(activity: Activity): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            syncProgressInternal(activity)
+        return withContext(ioDispatcher) {
+            syncWithPort(GmsCloudSnapshotAdapter(activity)).map { Unit }
         }
     }
 
-    private suspend fun syncProgressInternal(activity: Activity): Result<Unit> {
+    /**
+     * Executa o ciclo completo de leitura, resolução de conflito, persistência atômica local e envio à nuvem
+     * usando a porta [CloudSnapshotPort] e [CloudPreferencesPort] informadas.
+     */
+    suspend fun syncWithPort(
+        port: CloudSnapshotPort,
+        preferencesPort: CloudPreferencesPort? = preferencesRepository
+    ): Result<PlayGamesSavePayload> {
         _syncState.value = CloudSyncState.Syncing
         return try {
-            val snapshotsClient = PlayGames.getSnapshotsClient(activity)
-
-            // Abre o snapshot na nuvem com política automática de maior progresso
-            val openResult = snapshotsClient.open(
-                SNAPSHOT_NAME,
-                true, // cria caso não exista
-                SnapshotsClient.RESOLUTION_POLICY_HIGHEST_PROGRESS
-            ).await()
-
-            val snapshot: Snapshot = if (openResult.isConflict) {
-                Log.d(TAG, "Conflito detectado no snapshot. Aplicando resolução automática...")
-                val conflict = openResult.conflict ?: throw IllegalStateException("Conflito nulo")
-                val serverBytes = conflict.snapshot.snapshotContents.readFully()
-                val localBytes = conflict.conflictingSnapshot.snapshotContents.readFully()
-
-                val serverPayload = PlayGamesSavePayload.fromByteArray(serverBytes)
-                val conflictLocalPayload = PlayGamesSavePayload.fromByteArray(localBytes)
-
-                val base = serverPayload ?: conflictLocalPayload
-                val merged = if (serverPayload != null && conflictLocalPayload != null) {
-                    PlayGamesSavePayload.merge(serverPayload, conflictLocalPayload)
-                } else base
-
-                val resolvedSnapshot = conflict.snapshot
-                if (merged != null) {
-                    resolvedSnapshot.snapshotContents.writeBytes(merged.toByteArray())
-                }
-
-                val resolveTask = snapshotsClient.resolveConflict(
-                    conflict.conflictId,
-                    resolvedSnapshot
-                ).await()
-                resolveTask.data ?: conflict.snapshot
-            } else {
-                openResult.data ?: throw IllegalStateException("Snapshot retornado nulo")
+            val remoteBytes = port.openAndResolveSnapshot(SNAPSHOT_NAME) { serverBytes, conflictBytes ->
+                resolveConflictBytes(serverBytes, conflictBytes)
             }
-
-            // Lê o payload que está na nuvem
-            val remoteBytes = snapshot.snapshotContents.readFully()
             val remotePayload = PlayGamesSavePayload.fromByteArray(remoteBytes)
 
-            // Carrega dados locais do Room Database e UserPreferences
             val stageDao = database.stageProgressDao()
             val localStages = stageDao.getAllStagesDirect()
 
             val leaderboardDao = database.leaderboardDao()
-            val currentPrefs = preferencesRepository?.userPreferencesFlow?.firstOrNull()
-            val effectivePlayerName = currentPrefs?.playerName?.ifBlank { "Jogador" } ?: "Jogador"
+            val (effectivePlayerName, localPrefPayload) = preferencesPort?.readSyncSnapshot()
+                ?: ("Jogador" to null)
 
             val localStats = leaderboardDao.getProfileStatsDirect(effectivePlayerName)
                 ?: leaderboardDao.getProfileStatsDirect("Jogador")
                 ?: PlayerProfileStatsEntity(playerName = effectivePlayerName)
-
-            val localPrefPayload = currentPrefs?.let { p ->
-                PlayGamesPreferencesPayload(
-                    tableTheme = p.tableTheme.name,
-                    puckSkin = p.puckSkin.name,
-                    malletSkinP1 = p.player1MalletSkin.name,
-                    malletSkinP2 = p.player2MalletSkin.name,
-                    arenaDimension = p.arenaDimension.name,
-                    arena3dIntroEnabled = p.arena3dIntroEnabled
-                )
-            }
 
             val localPayload = PlayGamesSavePayload(
                 stages = localStages,
@@ -133,93 +104,53 @@ class PlayGamesSaveManager(
                 preferences = localPrefPayload
             )
 
-            // Executa o merge de progresso
             val finalPayload = if (remotePayload != null) {
                 PlayGamesSavePayload.merge(localPayload, remotePayload)
             } else {
                 localPayload
             }
 
-            // 1. Atualiza Room Database local com dados consolidados
-            if (finalPayload.stages.isNotEmpty()) {
-                stageDao.upsertAll(finalPayload.stages)
-            }
-            finalPayload.stats?.let { stats ->
-                leaderboardDao.upsertProfileStats(stats)
-                if (stats.playerName.isNotBlank() && stats.playerName != "Jogador") {
-                    preferencesRepository?.setPlayerName(stats.playerName)
+            // 1. Atualiza Room Database localmente em transação atômica única
+            transactionRunner {
+                if (finalPayload.stages.isNotEmpty()) {
+                    stageDao.upsertAll(finalPayload.stages)
+                }
+                finalPayload.stats?.let { stats ->
+                    leaderboardDao.upsertProfileStats(stats)
                 }
             }
 
-            // Atualiza preferências cosméticas locais se fornecidas pelo snapshot remoto
-            finalPayload.preferences?.let { p ->
-                preferencesRepository?.let { repo ->
-                    p.tableTheme?.let { tName ->
-                        try {
-                            repo.setTableTheme(TableTheme.valueOf(tName))
-                        } catch (_: Exception) {}
-                    }
-                    p.puckSkin?.let { sName ->
-                        try {
-                            repo.setPuckSkin(PuckSkin.valueOf(sName))
-                        } catch (_: Exception) {}
-                    }
-                    p.malletSkinP1?.let { m1Name ->
-                        try {
-                            repo.setMalletSkinP1(MalletSkin.valueOf(m1Name))
-                        } catch (_: Exception) {}
-                    }
-                    p.malletSkinP2?.let { m2Name ->
-                        try {
-                            repo.setMalletSkinP2(MalletSkin.valueOf(m2Name))
-                        } catch (_: Exception) {}
-                    }
-                    p.arenaDimension?.let { dName ->
-                        try {
-                            repo.updateArenaDimension(ArenaDimension.valueOf(dName))
-                        } catch (_: Exception) {}
-                    }
-                    p.arena3dIntroEnabled?.let { intro ->
-                        repo.setArena3dIntroEnabled(intro)
-                    }
-                }
-            }
+            // 2. Atualiza nome do jogador e preferências cosméticas em transação única de DataStore
+            preferencesPort?.applyCloudSyncedPreferences(
+                playerName = finalPayload.stats?.playerName,
+                syncedPrefs = finalPayload.preferences
+            )
 
-            // 2. Prepara e envia os bytes atualizados para a nuvem da Google Play
-            val mergedBytes = finalPayload.toByteArray()
-            snapshot.snapshotContents.writeBytes(mergedBytes)
-
+            // 3. Prepara e envia os bytes consolidados para a nuvem
             val highestStage = finalPayload.highestUnlockedStage
             val totalStars = finalPayload.totalStars
             val progressScore = (highestStage.toLong() * 1000L) + totalStars
+            val description = "Fase $highestStage • $totalStars ★"
 
-            val metadataChange = SnapshotMetadataChange.Builder()
-                .setDescription("Fase $highestStage • $totalStars ★")
-                .setProgressValue(progressScore)
-                .build()
+            port.commitSnapshot(
+                snapshotName = SNAPSHOT_NAME,
+                bytes = finalPayload.toByteArray(),
+                description = description,
+                progressScore = progressScore
+            )
 
-            snapshotsClient.commitAndClose(snapshot, metadataChange).await()
-
-            // 3. Submete pontuações consolidadas aos Placares Globais da Google Play (se IDs estiverem configurados)
-            try {
-                val eloId = activity.getString(dev.vmellos.airhockey.R.string.leaderboard_elo_id)
-                if (eloId.isNotBlank() && finalPayload.stats != null) {
-                    PlayGames.getLeaderboardsClient(activity).submitScore(eloId, finalPayload.stats.ratingElo.toLong())
-                }
-                val stageId = activity.getString(dev.vmellos.airhockey.R.string.leaderboard_stages_id)
-                if (stageId.isNotBlank()) {
-                    PlayGames.getLeaderboardsClient(activity).submitScore(stageId, finalPayload.totalStars.toLong())
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "Submissão de placares na sincronização ignorada: ${e.message}")
-            }
+            // 4. Submete pontuações consolidadas aos placares
+            port.submitLeaderboards(
+                eloRating = finalPayload.stats?.ratingElo?.toLong(),
+                totalStars = totalStars.toLong()
+            )
 
             Log.i(TAG, "Sincronização em nuvem concluída com sucesso! Fase $highestStage, $totalStars estrelas.")
             _syncState.value = CloudSyncState.Success(
-                lastSyncTimestamp = System.currentTimeMillis(),
-                summary = "Fase $highestStage • $totalStars ★"
+                lastSyncTimestamp = clock(),
+                summary = description
             )
-            Result.success(Unit)
+            Result.success(finalPayload)
         } catch (e: Exception) {
             Log.w(TAG, "Falha ou cancelamento na sincronização em nuvem: ${e.message}")
             _syncState.value = CloudSyncState.Error(e.message ?: "Erro de sincronização")

@@ -48,11 +48,11 @@ import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.feature.game.ui.*
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import kotlinx.coroutines.launch
 
 /**
@@ -88,7 +88,7 @@ fun PreMatchArenaSelectionScreen(
     }
     var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
-    val arenaItems = ArenaConquestCatalog.ALL_THEMES
+    val arenaItems = ArenaKitCatalog.ALL_KITS
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -130,11 +130,9 @@ fun PreMatchArenaSelectionScreen(
     }
 
     val previewBoxContent = @Composable { boxModifier: Modifier ->
-        val selectedTier = remember(selectedTheme) {
-            ArenaConquestCatalog.getTierForTheme(selectedTheme) ?: ArenaConquestCatalog.TIER_CLASSIC
-        }
-        val previewPuckSkin = selectedTier.puckSkin
-        val previewMalletSkin = selectedTier.malletSkin
+        val selectedKit = remember(selectedTheme) { selectedTheme.kit() }
+        val previewPuckSkin = selectedKit.puckSkin
+        val previewMalletSkin = selectedKit.malletSkin
 
         Box(
             modifier = boxModifier
@@ -244,13 +242,13 @@ fun PreMatchArenaSelectionScreen(
                 val isSelected = selectedTheme == item.theme
 
                 val cardBorder = when {
-                    isSelected -> item.primaryColor
+                    isSelected -> item.visuals.primaryColor
                     isLocked -> Color(0x55FFB800)
                     else -> Color(0xFF1E293B)
                 }
 
                 val cardBg = when {
-                    isSelected -> item.primaryColor.copy(alpha = 0.16f)
+                    isSelected -> item.visuals.primaryColor.copy(alpha = 0.16f)
                     else -> Color(0xFF0D1424)
                 }
 
@@ -282,14 +280,14 @@ fun PreMatchArenaSelectionScreen(
                                 modifier = Modifier
                                     .size(if (isLandscape) 28.dp else 32.dp)
                                     .clip(CutCornerShape(6.dp))
-                                    .background(item.primaryColor.copy(alpha = 0.20f))
-                                    .border(1.dp, item.primaryColor.copy(alpha = 0.6f), CutCornerShape(6.dp)),
+                                    .background(item.visuals.primaryColor.copy(alpha = 0.20f))
+                                    .border(1.dp, item.visuals.primaryColor.copy(alpha = 0.6f), CutCornerShape(6.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = null,
-                                    tint = item.primaryColor,
+                                    tint = item.visuals.primaryColor,
                                     modifier = Modifier.size(if (isLandscape) 16.dp else 18.dp)
                                 )
                             }
@@ -313,14 +311,14 @@ fun PreMatchArenaSelectionScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(if (isLandscape) 22.dp else 24.dp)
-                                        .background(item.primaryColor.copy(alpha = 0.20f), CircleShape)
-                                        .border(1.2.dp, item.primaryColor, CircleShape),
+                                        .background(item.visuals.primaryColor.copy(alpha = 0.20f), CircleShape)
+                                        .border(1.2.dp, item.visuals.primaryColor, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
-                                        tint = item.primaryColor,
+                                        tint = item.visuals.primaryColor,
                                         modifier = Modifier.size(13.dp)
                                     )
                                 }
@@ -347,7 +345,7 @@ fun PreMatchArenaSelectionScreen(
     val actionButtonContent = @Composable {
         Button(
             onClick = {
-                val currentUnlocked = ArenaConquestCatalog.isDefaultUnlocked(selectedTheme) || unlockedThemes.contains(selectedTheme)
+                val currentUnlocked = ArenaPresetCatalog.isDefaultUnlocked(selectedTheme) || unlockedThemes.contains(selectedTheme)
                 val finalTheme = if (currentUnlocked) selectedTheme else TableTheme.CLASSIC_NEON
 
                 coroutineScope.launch {

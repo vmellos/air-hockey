@@ -3,22 +3,33 @@ package dev.vmellos.airhockey.feature.game.ui
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import dev.vmellos.airhockey.feature.game.GameMode
-import dev.vmellos.airhockey.feature.physics.TableDimensions
+import dev.vmellos.airhockey.feature.game.LocalPlayerSlot
+import dev.vmellos.airhockey.feature.physics.MatchFrameSnapshot
 import dev.vmellos.airhockey.feature.physics.TablePoint
+import kotlin.math.hypot
+
+enum class PlayerSlot {
+    P1,
+    P2,
+    GUEST
+}
+
+fun interface MalletTargetSink {
+    fun submitTarget(slot: PlayerSlot, targetX: Float, targetY: Float)
+}
+
+fun interface ScreenToTableMapper {
+    fun map(screenX: Float, screenY: Float): TablePoint?
+}
 
 /**
- * Controlador Unificado de Entrada Multi-toque na Arena (GLOSSARY.md).
+ * Controlador de toque multi-ponteiro desacoplado da árvore de renderização 2D/3D.
  *
- * Centraliza o rastreamento e atribuição estável de dedos aos rebatedores (Player 1 e Player 2)
- * para a renderização 2D (Canvas) e 3D (Sceneview), garantindo:
- * - Raio de captura padronizado (2.2× do raio do rebatedor)
- * - Deslocamento ergonômico vertical de toque (touchOffset = 110f)
- * - Roteamento correto por modo de jogo (SOLO, HOST, GUEST, SPLIT_SCREEN)
- * - Proteção estrita contra movimentação em modo espectador (AI x AI)
- * - Higienização determinística de ponteiros em pausas, contagem e avanço de fases
+ * Isola regras de captura de rebatedor (raio de captura), desvio de polegar e roteamento por
+ * [LocalPlayerSlot] sem reter referências a Canvas, Filament ou engine de física.
  */
 class ArenaInputController(
-    val grabRadiusMultiplier: Float = 2.2f
+    private val grabRadiusMultiplier: Float = 2.2f
 ) {
     var activePointerP1: PointerId? = null
     var activePointerP2: PointerId? = null
@@ -30,100 +41,94 @@ class ArenaInputController(
 
     fun processPointerEvents(
         changes: List<PointerInputChange>,
-        dimensions: TableDimensions,
-        p1MalletX: Float,
-        p1MalletY: Float,
-        p2MalletX: Float,
-        p2MalletY: Float,
-        malletRadius: Float,
+        frame: MatchFrameSnapshot,
         mode: GameMode,
-        touchOffset: Float,
-        isSpectator: Boolean,
-        screenToTable: (Float, Float) -> TablePoint?,
-        onTouchP1: (Float, Float) -> Unit,
-        onTouchP2: (Float, Float) -> Unit,
-        onTouchGuest: (Float, Float) -> Unit
+        mapper: ScreenToTableMapper,
+        sink: MalletTargetSink,
+        touchOffset: Float = 0f
     ) {
-        if (changes.none { it.pressed }) {
+        val capabilities = mode.capabilities
+        if (capabilities.isSpectator) {
             resetPointers()
+            return
         }
 
-        if (isSpectator) return
-
-        val grabRadiusSq = (malletRadius * grabRadiusMultiplier).let { it * it }
+        val grabRadius = frame.dimensions.malletRadius * grabRadiusMultiplier
+        val centerLineY = frame.dimensions.centerLineY
 
         for (change in changes) {
-            val tablePt = screenToTable(change.position.x, change.position.y) ?: continue
-
-            if (change.pressed) {
-                when (mode) {
-                    GameMode.EXTENDED_GUEST, GameMode.CONNECTED_GUEST -> {
-                        val targetY = tablePt.y + touchOffset
-                        val dx = tablePt.x - p2MalletX
-                        val dy = targetY - p2MalletY
-                        val distSq = dx * dx + dy * dy
-
-                        if (activePointerP2 == change.id) {
-                            onTouchGuest(tablePt.x, targetY)
-                            change.consume()
-                        } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
-                            activePointerP2 = change.id
-                            onTouchGuest(tablePt.x, targetY)
-                            change.consume()
-                        }
-                    }
-                    GameMode.EXTENDED_HOST, GameMode.CONNECTED_HOST, GameMode.SOLO -> {
-                        val targetY = tablePt.y - touchOffset
-                        val dx = tablePt.x - p1MalletX
-                        val dy = targetY - p1MalletY
-                        val distSq = dx * dx + dy * dy
-
-                        if (activePointerP1 == change.id) {
-                            onTouchP1(tablePt.x, targetY)
-                            change.consume()
-                        } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
-                            activePointerP1 = change.id
-                            onTouchP1(tablePt.x, targetY)
-                            change.consume()
-                        }
-                    }
-                    GameMode.SPLIT_SCREEN -> {
-                        if (tablePt.y < dimensions.centerLineY) {
-                            val targetY = tablePt.y + touchOffset
-                            val dx = tablePt.x - p2MalletX
-                            val dy = targetY - p2MalletY
-                            val distSq = dx * dx + dy * dy
-
-                            if (activePointerP2 == change.id) {
-                                onTouchP2(tablePt.x, targetY)
-                                change.consume()
-                            } else if (activePointerP2 == null && distSq <= grabRadiusSq) {
-                                activePointerP2 = change.id
-                                onTouchP2(tablePt.x, targetY)
-                                change.consume()
-                            }
-                        } else {
-                            val targetY = tablePt.y - touchOffset
-                            val dx = tablePt.x - p1MalletX
-                            val dy = targetY - p1MalletY
-                            val distSq = dx * dx + dy * dy
-
-                            if (activePointerP1 == change.id) {
-                                onTouchP1(tablePt.x, targetY)
-                                change.consume()
-                            } else if (activePointerP1 == null && distSq <= grabRadiusSq) {
-                                activePointerP1 = change.id
-                                onTouchP1(tablePt.x, targetY)
-                                change.consume()
-                            }
-                        }
-                    }
-                    else -> {}
-                }
-            } else {
-                if (activePointerP1 == change.id) activePointerP1 = null
-                if (activePointerP2 == change.id) activePointerP2 = null
+            // Libera o ponteiro antes de tentar mapear coordenadas da tela para evitar ponteiro preso
+            // caso o toque saia da área válida da mesa durante o movimento de soltura.
+            if (!change.pressed) {
+                if (change.id == activePointerP1) activePointerP1 = null
+                if (change.id == activePointerP2) activePointerP2 = null
+                continue
             }
+
+            val tablePt = mapper.map(change.position.x, change.position.y) ?: continue
+
+            when (capabilities.localPlayer) {
+                LocalPlayerSlot.NONE -> continue
+                LocalPlayerSlot.PLAYER_1 -> {
+                    if (activePointerP1 == null) {
+                        val dist = hypot(tablePt.x - frame.player1MalletX, tablePt.y - frame.player1MalletY)
+                        if (dist <= grabRadius) {
+                            activePointerP1 = change.id
+                        }
+                    }
+                    if (change.id == activePointerP1) {
+                        sink.submitTarget(PlayerSlot.P1, tablePt.x, tablePt.y - touchOffset)
+                        change.consume()
+                    }
+                }
+                LocalPlayerSlot.PLAYER_2 -> {
+                    if (activePointerP1 == null) {
+                        val dist = hypot(tablePt.x - frame.player2MalletX, tablePt.y - frame.player2MalletY)
+                        if (dist <= grabRadius) {
+                            activePointerP1 = change.id
+                        }
+                    }
+                    if (change.id == activePointerP1) {
+                        sink.submitTarget(PlayerSlot.GUEST, tablePt.x, tablePt.y + touchOffset)
+                        change.consume()
+                    }
+                }
+                LocalPlayerSlot.BOTH_SPLIT -> {
+                    // Verifica propriedade ativa antes da metade da tela para não trocar de dono ao cruzar o meio.
+                    when (change.id) {
+                        activePointerP1 -> {
+                            sink.submitTarget(PlayerSlot.P1, tablePt.x, tablePt.y - touchOffset)
+                            change.consume()
+                        }
+                        activePointerP2 -> {
+                            sink.submitTarget(PlayerSlot.P2, tablePt.x, tablePt.y + touchOffset)
+                            change.consume()
+                        }
+                        else -> {
+                            val isBottomHalf = tablePt.y >= centerLineY
+                            if (isBottomHalf && activePointerP1 == null) {
+                                val dist = hypot(tablePt.x - frame.player1MalletX, tablePt.y - frame.player1MalletY)
+                                if (dist <= grabRadius) {
+                                    activePointerP1 = change.id
+                                    sink.submitTarget(PlayerSlot.P1, tablePt.x, tablePt.y - touchOffset)
+                                    change.consume()
+                                }
+                            } else if (!isBottomHalf && activePointerP2 == null) {
+                                val dist = hypot(tablePt.x - frame.player2MalletX, tablePt.y - frame.player2MalletY)
+                                if (dist <= grabRadius) {
+                                    activePointerP2 = change.id
+                                    sink.submitTarget(PlayerSlot.P2, tablePt.x, tablePt.y + touchOffset)
+                                    change.consume()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (changes.none { it.pressed }) {
+            resetPointers()
         }
     }
 }

@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.core.audio
 
+import dev.vmellos.airhockey.core.catalog.preset
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import java.io.File
@@ -23,20 +24,9 @@ object ProceduralAudioSynthesizer {
      * Gera o arquivo BGM temático em loop para a arena correspondente.
      */
     fun generateBgmWav(file: File, theme: TableTheme) {
-        val (bpm, totalBars) = when (theme) {
-            TableTheme.CYBER_SOCCER -> Pair(128.0, 8)
-            TableTheme.NEO_BASKETBALL -> Pair(96.0, 8)
-            TableTheme.GRAVITY_VOLLEY -> Pair(135.0, 8)
-            TableTheme.GRIDIRON_FOOTBALL -> Pair(110.0, 8)
-            TableTheme.CYBER_BASEBALL -> Pair(120.0, 8)
-            TableTheme.WASTELAND_APOCALYPSE -> Pair(132.0, 8)
-            TableTheme.RETRO_SYNTHWAVE -> Pair(118.0, 8)
-            TableTheme.TOKAMAK_REACTOR -> Pair(134.0, 8)
-            TableTheme.CYBER_PONG -> Pair(120.0, 8)
-            TableTheme.CYBER_COLOSSEUM -> Pair(114.0, 8)
-            TableTheme.KIARA_CAT -> Pair(124.0, 8)
-            TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> Pair(125.0, 8)
-        }
+        val profile = theme.preset().audioProfile
+        val bpm = profile.bpm
+        val totalBars = profile.totalBars
 
         val beatDuration = 60.0 / bpm
         val beatsPerBar = 4

@@ -49,7 +49,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.remember
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -86,112 +85,16 @@ fun ScoreBoardOverlay(
     onPauseClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val isExtended = matchState.mode == GameMode.EXTENDED_HOST ||
-            matchState.mode == GameMode.EXTENDED_GUEST ||
-            matchState.mode == GameMode.AI_VS_AI_EXTENDED_HOST ||
-            matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+    val isExtended = matchState.capabilities.isExtended
+    val isExtendedGuest = matchState.capabilities.isExtendedGuest
 
-    val isExtendedGuest = matchState.mode == GameMode.EXTENDED_GUEST ||
-            matchState.mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-
-    val (boardShape, boardBg, boardBorder, p1Color, p2Color, boardFont) = when (tableTheme) {
-        TableTheme.CYBER_PONG -> SixTuple(
-            CutCornerShape(0.dp),
-            Color(0xFF000000),
-            BorderStroke(1.5.dp, PongGreen),
-            PongGreen,
-            PongGreen,
-            FontFamily.Monospace
-        )
-        TableTheme.CYBER_COLOSSEUM -> SixTuple(
-            RoundedCornerShape(6.dp),
-            Color(0xDD1C1408),
-            BorderStroke(1.2.dp, ColosseumGold.copy(alpha = 0.7f)),
-            ColosseumGold,
-            ColosseumCrimson,
-            FontFamily.Serif
-        )
-        TableTheme.CYBER_SOCCER -> SixTuple(
-            RoundedCornerShape(12.dp),
-            Color(0xCC05180D),
-            BorderStroke(1.dp, NeonEmerald.copy(alpha = 0.6f)),
-            NeonEmerald,
-            NeonRuby,
-            FontFamily.SansSerif
-        )
-        TableTheme.NEO_BASKETBALL -> SixTuple(
-            CutCornerShape(8.dp),
-            Color(0xDD140E08),
-            BorderStroke(1.2.dp, NeonAmber.copy(alpha = 0.7f)),
-            NeonAmber,
-            NeonCyan,
-            FontFamily.SansSerif
-        )
-        TableTheme.GRAVITY_VOLLEY -> SixTuple(
-            RoundedCornerShape(16.dp),
-            Color(0xCC0E0A1E),
-            BorderStroke(1.dp, NeonViolet.copy(alpha = 0.6f)),
-            NeonViolet,
-            NeonMagenta,
-            FontFamily.SansSerif
-        )
-        TableTheme.GRIDIRON_FOOTBALL -> SixTuple(
-            CutCornerShape(6.dp),
-            Color(0xDD081420),
-            BorderStroke(1.5.dp, GridironCyan.copy(alpha = 0.7f)),
-            GridironCyan,
-            GridironGold,
-            FontFamily.SansSerif
-        )
-        TableTheme.CYBER_BASEBALL -> SixTuple(
-            CutCornerShape(12.dp),
-            Color(0xCC18080C),
-            BorderStroke(1.dp, BaseballRed.copy(alpha = 0.7f)),
-            BaseballRed,
-            BaseballCyan,
-            FontFamily.SansSerif
-        )
-        TableTheme.WASTELAND_APOCALYPSE -> SixTuple(
-            CutCornerShape(4.dp),
-            Color(0xEE160C06),
-            BorderStroke(1.5.dp, WastelandFlame.copy(alpha = 0.8f)),
-            WastelandFlame,
-            WastelandFlameBright,
-            FontFamily.SansSerif
-        )
-        TableTheme.RETRO_SYNTHWAVE -> SixTuple(
-            RoundedCornerShape(10.dp),
-            Color(0xDD1A0A1C),
-            BorderStroke(1.2.dp, SynthPink.copy(alpha = 0.7f)),
-            SynthPink,
-            SynthCyan,
-            FontFamily.SansSerif
-        )
-        TableTheme.TOKAMAK_REACTOR -> SixTuple(
-            CutCornerShape(10.dp),
-            Color(0xDD081608),
-            BorderStroke(1.2.dp, TokamakRadiation.copy(alpha = 0.7f)),
-            TokamakRadiation,
-            TokamakPlasma,
-            FontFamily.SansSerif
-        )
-        TableTheme.KIARA_CAT -> SixTuple(
-            RoundedCornerShape(12.dp),
-            Color(0xDD12081C),
-            BorderStroke(1.2.dp, Color(0xFFFF1493).copy(alpha = 0.8f)),
-            Color(0xFFFF1493),
-            NeonCyan,
-            FontFamily.SansSerif
-        )
-        TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D -> SixTuple(
-            RoundedCornerShape(12.dp),
-            Color(0x33000000),
-            BorderStroke(1.dp, Color(0x33FFFFFF)),
-            NeonCyan,
-            NeonOrange,
-            FontFamily.Monospace
-        )
-    }
+    val overlayStyle = remember(tableTheme) { tableTheme.kit().overlayStyle }
+    val boardShape = overlayStyle.shape
+    val boardBg = overlayStyle.background
+    val boardBorder = overlayStyle.border
+    val p1Color = overlayStyle.p1Color
+    val p2Color = overlayStyle.p2Color
+    val boardFont = overlayStyle.fontFamily
 
     BoxWithConstraints(
         modifier = modifier
@@ -506,16 +409,6 @@ fun GoalBannerOverlay(
         }
     }
 }
-
-// Estrutura de conveniência interna para estilização de placar
-private data class SixTuple<A, B, C, D, E, F>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D,
-    val fifth: E,
-    val sixth: F
-)
 
 @Composable
 private fun ArcadePrimaryButton(
@@ -1329,11 +1222,11 @@ fun StageResultDialog(
                 )
 
                 // Celebração de Conquista de Arena (sem emojis, com ícone vetorial e tipografia arcade)
-                val conqueredTier = if (isWon && conqueredTheme != null) {
-                    remember(conqueredTheme) { ArenaConquestCatalog.getTierForTheme(conqueredTheme) }
+                val conqueredKit = if (isWon && conqueredTheme != null) {
+                    remember(conqueredTheme) { conqueredTheme.kit() }
                 } else null
 
-                if (conqueredTier != null) {
+                if (conqueredKit != null) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Surface(
                         shape = CutCornerShape(12.dp),
@@ -1341,7 +1234,7 @@ fun StageResultDialog(
                         border = BorderStroke(
                             1.5.dp,
                             Brush.horizontalGradient(
-                                listOf(conqueredTier.primaryColor, conqueredTier.secondaryColor)
+                                listOf(conqueredKit.visuals.primaryColor, conqueredKit.visuals.secondaryColor)
                             )
                         ),
                         modifier = Modifier
@@ -1357,9 +1250,9 @@ fun StageResultDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    imageVector = conqueredTier.icon,
+                                    imageVector = conqueredKit.icon,
                                     contentDescription = null,
-                                    tint = conqueredTier.primaryColor,
+                                    tint = conqueredKit.visuals.primaryColor,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
@@ -1372,8 +1265,8 @@ fun StageResultDialog(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = stringResource(conqueredTier.titleRes).uppercase(),
-                                color = conqueredTier.primaryColor,
+                                text = stringResource(conqueredKit.titleRes).uppercase(),
+                                color = conqueredKit.visuals.primaryColor,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 1.sp

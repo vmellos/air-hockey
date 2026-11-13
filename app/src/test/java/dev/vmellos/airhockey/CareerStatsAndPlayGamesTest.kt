@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -92,7 +93,8 @@ class CareerStatsAndPlayGamesTest {
             durationSeconds = 48
         )
 
-        assertEquals("PLAYER_A", record.winner)
+        assertNotNull(record)
+        assertEquals("PLAYER_A", record!!.winner)
         assertTrue(record.ratingDeltaA > 0)
         assertEquals(5, record.playerAScore)
         assertEquals(2, record.playerBScore)
@@ -131,7 +133,8 @@ class CareerStatsAndPlayGamesTest {
             durationSeconds = 60
         )
 
-        assertEquals("PLAYER_A", record.winner)
+        assertNotNull(record)
+        assertEquals("PLAYER_A", record!!.winner)
         assertEquals(record.ratingDeltaA, -record.ratingDeltaB)
 
         val profileA = repository.getPlayerStatsDirect("Alice")
@@ -147,6 +150,35 @@ class CareerStatsAndPlayGamesTest {
         assertEquals(0, profileB!!.multiplayerWins)
         assertEquals(1, profileB.multiplayerLosses)
         assertEquals(0, profileB.currentWinStreak)
+    }
+
+    @Test
+    fun testSpectatorAiVsAiDoesNotPersistMatchOrAlterElo() = runBlocking {
+        val fakeDao = FakeLeaderboardDao()
+        val repository = LeaderboardRepository(fakeDao)
+
+        val localSpec = repository.recordMatch(
+            gameMode = "AI_VS_AI_LOCAL",
+            playerAName = "Bot 1",
+            playerBName = "Bot 2",
+            scoreA = 7,
+            scoreB = 3,
+            durationSeconds = 55
+        )
+        val extSpec = repository.recordMatch(
+            gameMode = "AI_VS_AI_EXTENDED_HOST",
+            playerAName = "Bot 1",
+            playerBName = "Bot 2",
+            scoreA = 5,
+            scoreB = 7,
+            durationSeconds = 42
+        )
+
+        assertNull(localSpec)
+        assertNull(extSpec)
+        assertTrue(repository.recentMatches.first().isEmpty())
+        assertNull(repository.getPlayerStatsDirect("Bot 1"))
+        assertNull(repository.getPlayerStatsDirect("Bot 2"))
     }
 
     @Test
@@ -207,5 +239,122 @@ class CareerStatsAndPlayGamesTest {
             achievementsFeedback = feedback
         }
         org.junit.Assert.assertNotNull(achievementsFeedback)
+    }
+
+    @Test
+    fun testPlayGamesSaveManagerSyncWithPortMergesAndPersistsAtomically() = runBlocking {
+        val fakeLeaderboardDao = FakeLeaderboardDao()
+        val fakeStageDao = FakeStageProgressDao()
+        fakeStageDao.insertAll(
+            listOf(
+                StageProgressEntity(stageNumber = 1, starsEarned = 2, isUnlocked = true),
+                StageProgressEntity(stageNumber = 2, starsEarned = 0, isUnlocked = true)
+            )
+        )
+        fakeLeaderboardDao.upsertProfileStats(
+            PlayerProfileStatsEntity(
+                playerName = "AtletaLocal",
+                ratingElo = 1120,
+                soloWins = 4
+            )
+        )
+
+        val testDb = object : AppDatabase() {
+            override fun leaderboardDao(): LeaderboardDao = fakeLeaderboardDao
+            override fun stageProgressDao(): StageProgressDao = fakeStageDao
+            override fun clearAllTables() {}
+            override fun createInvalidationTracker(): InvalidationTracker {
+                return InvalidationTracker(this, "match_records")
+            }
+            override fun createOpenHelper(config: DatabaseConfiguration): SupportSQLiteOpenHelper {
+                throw UnsupportedOperationException()
+            }
+        }
+
+        val remoteOnlyPayload = dev.vmellos.airhockey.core.playgames.PlayGamesSavePayload(
+            stages = listOf(
+                StageProgressEntity(stageNumber = 1, starsEarned = 3, isUnlocked = true),
+                StageProgressEntity(stageNumber = 3, starsEarned = 3, isUnlocked = true)
+            ),
+            stats = PlayerProfileStatsEntity(
+                playerName = "AtletaLocal",
+                ratingElo = 1280,
+                soloWins = 9
+            ),
+            preferences = dev.vmellos.airhockey.core.playgames.PlayGamesPreferencesPayload(
+                tableTheme = "TOKAMAK_REACTOR",
+                puckSkin = "KIARA_PAW"
+            )
+        )
+
+        var transactionCount = 0
+        var prefWriteCount = 0
+        var writtenTheme: String? = null
+        var committedBytes: ByteArray? = null
+        var submittedElo: Long? = null
+        var submittedStars: Long? = null
+
+        val fakeSnapshotPort = object : dev.vmellos.airhockey.core.playgames.CloudSnapshotPort {
+            override suspend fun openAndResolveSnapshot(
+                snapshotName: String,
+                resolveConflict: (ByteArray, ByteArray) -> ByteArray
+            ): ByteArray = remoteOnlyPayload.toByteArray()
+
+            override suspend fun commitSnapshot(
+                snapshotName: String,
+                bytes: ByteArray,
+                description: String,
+                progressScore: Long
+            ) {
+                committedBytes = bytes
+            }
+
+            override suspend fun submitLeaderboards(eloRating: Long?, totalStars: Long) {
+                submittedElo = eloRating
+                submittedStars = totalStars
+            }
+        }
+
+        val fakePrefsPort = object : dev.vmellos.airhockey.core.playgames.CloudPreferencesPort {
+            override suspend fun readSyncSnapshot(): Pair<String, dev.vmellos.airhockey.core.playgames.PlayGamesPreferencesPayload?> {
+                return "AtletaLocal" to null
+            }
+
+            override suspend fun applyCloudSyncedPreferences(
+                playerName: String?,
+                syncedPrefs: dev.vmellos.airhockey.core.playgames.PlayGamesPreferencesPayload?
+            ) {
+                prefWriteCount++
+                writtenTheme = syncedPrefs?.tableTheme
+            }
+        }
+
+        val saveManager = PlayGamesSaveManager(
+            database = testDb,
+            transactionRunner = { block ->
+                transactionCount++
+                block()
+            },
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            mainDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            clock = { 987654L }
+        )
+
+        val result = saveManager.syncWithPort(fakeSnapshotPort, fakePrefsPort)
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, transactionCount)
+        assertEquals(1, prefWriteCount)
+        assertEquals("TOKAMAK_REACTOR", writtenTheme)
+        assertNotNull(committedBytes)
+        assertEquals(1280L, submittedElo)
+        assertEquals(6L, submittedStars)
+        assertEquals(3, fakeStageDao.getStageDirect(1)?.starsEarned)
+        assertEquals(true, fakeStageDao.getStageDirect(3)?.isUnlocked)
+        assertEquals(1280, fakeLeaderboardDao.getProfileStatsDirect("AtletaLocal")?.ratingElo)
+        assertEquals(
+            dev.vmellos.airhockey.core.playgames.CloudSyncState.Success(987654L, "Fase 3 • 6 ★"),
+            saveManager.syncState.value
+        )
     }
 }

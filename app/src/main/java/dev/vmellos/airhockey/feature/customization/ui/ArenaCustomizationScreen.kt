@@ -67,10 +67,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TextButton
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.romainguy.kotlin.math.Float3
-import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
 import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
+import dev.vmellos.airhockey.feature.stage.UnlockedCosmetics
 import dev.vmellos.airhockey.feature.game.ui.configureFilamentArenaView
 import dev.vmellos.airhockey.feature.game.ui.updateFilamentArenaBloom
 import io.github.sceneview.Scene
@@ -120,7 +120,6 @@ import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
-import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
 import dev.vmellos.airhockey.feature.game.ui.*
@@ -174,9 +173,10 @@ fun ArenaCustomizationScreen(
     val haptic = LocalHapticFeedback.current
 
     val stageRepo = AirHockeyApp.instance.stageRepository
-    val unlockedThemes by stageRepo.unlockedThemesFlow.collectAsState(initial = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT))
-    val unlockedPucks by stageRepo.unlockedPuckSkinsFlow.collectAsState(initial = setOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW))
-    val unlockedMallets by stageRepo.unlockedMalletSkinsFlow.collectAsState(initial = setOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER))
+    val unlockedCosmetics by stageRepo.unlockedCosmeticsFlow.collectAsState(initial = UnlockedCosmetics())
+    val unlockedThemes = unlockedCosmetics.themes
+    val unlockedPucks = unlockedCosmetics.puckSkins
+    val unlockedMallets = unlockedCosmetics.malletSkins
 
     var lockedDialogInfo by remember { mutableStateOf<LockedArenaInfo?>(null) }
 
@@ -198,42 +198,42 @@ fun ArenaCustomizationScreen(
     }
 
     val bundleItems = remember {
-        ArenaConquestCatalog.ALL_THEMES.map { tier ->
+        ArenaKitCatalog.ALL_KITS.map { kit ->
             ThemeBundleItem(
-                id = tier.theme.name.lowercase(),
-                titleRes = tier.titleRes,
-                descRes = tier.descRes,
-                icon = tier.icon,
-                primaryColor = tier.primaryColor,
-                secondaryColor = tier.secondaryColor,
-                tableTheme = tier.theme,
-                puckSkin = tier.puckSkin,
-                malletSkin = tier.malletSkin
+                id = kit.theme.name.lowercase(),
+                titleRes = kit.titleRes,
+                descRes = kit.descRes,
+                icon = kit.icon,
+                primaryColor = kit.visuals.primaryColor,
+                secondaryColor = kit.visuals.secondaryColor,
+                tableTheme = kit.theme,
+                puckSkin = kit.puckSkin,
+                malletSkin = kit.malletSkin
             )
         }
     }
 
     val tableItems = remember {
-        ArenaConquestCatalog.ALL_THEMES.map { tier ->
-            TableItem(tier.theme, tier.titleRes, tier.descRes, tier.icon, tier.primaryColor, tier.secondaryColor)
+        ArenaKitCatalog.ALL_KITS.map { kit ->
+            TableItem(kit.theme, kit.titleRes, kit.descRes, kit.icon, kit.visuals.primaryColor, kit.visuals.secondaryColor)
         }
     }
 
     val puckItems = remember {
-        ArenaConquestCatalog.ALL_THEMES.map { tier ->
-            PuckItem(tier.puckSkin, tier.puckTitleRes, tier.icon, tier.primaryColor)
+        ArenaKitCatalog.ALL_KITS.map { kit ->
+            PuckItem(kit.puckSkin, kit.preset.puckTitleRes, kit.icon, kit.visuals.primaryColor)
         }
     }
 
     val malletItems = remember {
-        ArenaConquestCatalog.ALL_THEMES.map { tier ->
-            MalletItem(tier.malletSkin, tier.malletTitleRes, tier.icon, tier.primaryColor)
+        ArenaKitCatalog.ALL_KITS.map { kit ->
+            MalletItem(kit.malletSkin, kit.preset.malletTitleRes, kit.icon, kit.visuals.primaryColor)
         }
     }
 
     // Nome descritivo do kit atualmente ativo resolvido pelo Catálogo Canônico
     val currentActivePresetName = stringResource(
-        ArenaConquestCatalog.resolveActivePresetTitleRes(
+        ArenaPresetCatalog.resolveActivePresetTitleRes(
             prefs.tableTheme,
             prefs.puckSkin,
             prefs.player1MalletSkin
@@ -495,7 +495,7 @@ fun ArenaCustomizationScreen(
                 0 -> {
                     // Categoria: CONJUNTOS COMPLETOS
                     items(bundleItems, key = { it.id }) { bundle ->
-                        val unlockStage = ArenaConquestCatalog.getUnlockStageForTheme(bundle.tableTheme)
+                        val unlockStage = ArenaPresetCatalog.getUnlockStageForTheme(bundle.tableTheme)
                         val isLocked = unlockStage > 0 && !unlockedThemes.contains(bundle.tableTheme)
                         val isEquipped = !isLocked && prefs.tableTheme == bundle.tableTheme &&
                                 prefs.puckSkin == bundle.puckSkin &&
@@ -529,7 +529,7 @@ fun ArenaCustomizationScreen(
                 1 -> {
                     // Categoria: MESAS
                     items(tableItems, key = { it.theme.name }) { tableItem ->
-                        val unlockStage = ArenaConquestCatalog.getUnlockStageForTheme(tableItem.theme)
+                        val unlockStage = ArenaPresetCatalog.getUnlockStageForTheme(tableItem.theme)
                         val isLocked = unlockStage > 0 && !unlockedThemes.contains(tableItem.theme)
                         val isEquipped = !isLocked && prefs.tableTheme == tableItem.theme
 
@@ -561,7 +561,7 @@ fun ArenaCustomizationScreen(
                 2 -> {
                     // Categoria: DISCOS
                     items(puckItems, key = { it.skin.name }) { puckItem ->
-                        val unlockStage = ArenaConquestCatalog.getUnlockStageForPuck(puckItem.skin)
+                        val unlockStage = ArenaPresetCatalog.getUnlockStageForPuck(puckItem.skin)
                         val isLocked = unlockStage > 0 && !unlockedPucks.contains(puckItem.skin)
                         val isEquipped = !isLocked && prefs.puckSkin == puckItem.skin
 
@@ -593,7 +593,7 @@ fun ArenaCustomizationScreen(
                 3 -> {
                     // Categoria: REBATEDORES
                     items(malletItems, key = { it.skin.name }) { malletItem ->
-                        val unlockStage = ArenaConquestCatalog.getUnlockStageForMallet(malletItem.skin)
+                        val unlockStage = ArenaPresetCatalog.getUnlockStageForMallet(malletItem.skin)
                         val isLocked = unlockStage > 0 && !unlockedMallets.contains(malletItem.skin)
                         val isEquipped = !isLocked && prefs.player1MalletSkin == malletItem.skin
 
@@ -752,17 +752,18 @@ internal fun Arena3DLivePreview(
         )
     }
 
-    val tableAsset = remember(tableTheme) {
-        Theme3DAssetResolver.getTable3DAsset(tableTheme, isExtended = false)
+    val tableKit = remember(tableTheme) { tableTheme.kit() }
+    val tableAsset = remember(tableKit, isExtended) {
+        tableKit.tableAsset(isExtended = isExtended, isPlayer1 = true)
     }
-    val puckAsset = remember(puckSkin, tableTheme) {
-        Theme3DAssetResolver.getPuck3DAsset(puckSkin, tableTheme)
+    val puckAsset = remember(puckSkin) {
+        puckSkin.spec().model3dAsset
     }
-    val p1MalletAsset = remember(malletSkin, tableTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(malletSkin, isPlayer1 = true, theme = tableTheme)
+    val p1MalletAsset = remember(malletSkin) {
+        malletSkin.spec().model3dAsset(isPlayer1 = true)
     }
-    val p2MalletAsset = remember(malletSkin, tableTheme) {
-        Theme3DAssetResolver.getMallet3DAsset(malletSkin, isPlayer1 = false, theme = tableTheme)
+    val p2MalletAsset = remember(malletSkin) {
+        malletSkin.spec().model3dAsset(isPlayer1 = false)
     }
 
     val tableInstance = remember(modelLoader, tableAsset) {
@@ -797,8 +798,8 @@ internal fun Arena3DLivePreview(
         }
     }
 
-    val mascotAsset = remember(tableTheme) {
-        Theme3DAssetResolver.getMascot3DAsset(tableTheme)
+    val mascotAsset = remember(tableKit) {
+        tableKit.mascot3dAsset
     }
     val mascotInstance = remember(modelLoader, mascotAsset) {
         mascotAsset?.let { path ->
@@ -964,18 +965,19 @@ internal fun ArenaLivePreview(
         label = "puckPulse"
     )
 
-    val themeVisuals = remember(tableTheme) { ArenaThemeCatalog.getVisuals(tableTheme) }
+    val themeVisuals = remember(tableTheme) { tableTheme.kit().visuals }
     val bgColor = themeVisuals.backgroundColor
 
-    val p1Visuals = remember(malletSkin) { ArenaThemeCatalog.getMalletSkinVisuals(malletSkin, isPlayer1 = true) }
+    val malletSpec = remember(malletSkin) { malletSkin.spec() }
+    val p1Visuals = malletSpec.visuals(isPlayer1 = true)
     val p1Color = p1Visuals.color
     val p1Rim = p1Visuals.rimColor
 
-    val p2Visuals = remember(malletSkin) { ArenaThemeCatalog.getMalletSkinVisuals(malletSkin, isPlayer1 = false) }
+    val p2Visuals = malletSpec.visuals(isPlayer1 = false)
     val p2Color = p2Visuals.color
     val p2Rim = p2Visuals.rimColor
 
-    val puckAccent = remember(puckSkin) { ArenaThemeCatalog.getPuckAccent(puckSkin) }
+    val puckAccent = remember(puckSkin) { puckSkin.spec().accentColor }
 
     Box(
         modifier = modifier
@@ -1038,19 +1040,8 @@ internal fun ArenaLivePreview(
             val puckX = left + tableW / 2f
             val puckY = top + tableH * 0.50f
             val puckRadius = 36f * scale * pulseScale
-            when (puckSkin) {
-                PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.SAWBLADE -> drawSawbladePuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.SYNTH_DISC -> drawSynthwavePuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.PONG_SQUARE -> drawPongPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.KIARA_PAW -> drawKiaraPawPuck(puckX, puckY, puckRadius, puckAccent, scale)
-                PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(puckX, puckY, puckRadius, puckAccent, scale)
+            Arena2DRenderer.run {
+                drawPuckSkin(puckSkin, puckX, puckY, puckRadius, puckAccent, scale)
             }
         }
     }

@@ -73,6 +73,7 @@ import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.database.MatchRecordEntity
 import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
+import dev.vmellos.airhockey.feature.game.ModeDisplayKind
 import dev.vmellos.airhockey.core.playgames.PlayGamesAuthState
 import dev.vmellos.airhockey.core.util.findActivity
 import java.text.SimpleDateFormat
@@ -708,20 +709,20 @@ private fun MatchSummaryCard(
                         )
                     }
 
-                    val modeLabel = when (match.gameMode) {
-                        "EXTENDED_TABLE", "EXTENDED_HOST", "EXTENDED_GUEST" -> stringResource(R.string.menu_mode_extended)
-                        "SPLIT_SCREEN" -> stringResource(R.string.menu_mode_split)
-                        "SOLO" -> {
+                    val displayKind = ModeDisplayKind.fromStorageKey(match.gameMode)
+                    val modeLabel = when (displayKind) {
+                        ModeDisplayKind.SOLO -> {
                             val difficultyStr = when (match.aiDifficulty) {
                                 "EASY" -> stringResource(R.string.settings_ai_easy)
                                 "MEDIUM" -> stringResource(R.string.settings_ai_medium)
                                 "HARD" -> stringResource(R.string.settings_ai_hard)
                                 else -> match.aiDifficulty ?: ""
                             }
-                            val soloBase = stringResource(R.string.menu_mode_solo)
+                            val soloBase = stringResource(displayKind.labelResId)
                             if (difficultyStr.isNotBlank()) "$soloBase ($difficultyStr)" else soloBase
                         }
-                        else -> match.gameMode
+                        null -> match.gameMode
+                        else -> stringResource(displayKind.labelResId)
                     }
                     Text(
                         text = modeLabel,

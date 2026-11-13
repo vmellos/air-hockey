@@ -28,21 +28,22 @@ import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
-import dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog
+import dev.vmellos.airhockey.feature.game.ArenaRuntime
 import dev.vmellos.airhockey.feature.game.GameMode
-import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.physics.CollisionEvent
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import dev.vmellos.airhockey.feature.physics.TablePoint
+import dev.vmellos.airhockey.feature.physics.CameraBasis3D
 import dev.vmellos.airhockey.feature.physics.CameraPose3D
 import dev.vmellos.airhockey.feature.physics.CameraPreset
 import dev.vmellos.airhockey.feature.physics.Table3DCameraProjection
+import dev.vmellos.airhockey.feature.physics.VisualCollisionBurst
 import io.github.sceneview.Scene
 import io.github.sceneview.SceneView
 import io.github.sceneview.node.ModelNode
@@ -61,15 +62,12 @@ fun getCameraPreset(
     isSplitScreen: Boolean = false,
     isGuest: Boolean = false,
     isExtended: Boolean = false
-): CameraPreset {
-    val mode = when {
-        isExtended -> GameMode.EXTENDED_HOST
-        isSplitScreen -> GameMode.SPLIT_SCREEN
-        isGuest -> GameMode.CONNECTED_GUEST
-        else -> GameMode.SOLO
-    }
-    return Table3DCameraProjection(TableDimensions(), mode).getBasePreset(zoom)
-}
+): CameraPreset = Table3DCameraProjection.getCameraPreset(
+    zoom = zoom,
+    isSplitScreen = isSplitScreen,
+    isGuest = isGuest,
+    isExtended = isExtended
+)
 
 /**
  * Estado operacional da Arena 3D desacoplado do ciclo de recomposição do Jetpack Compose.
@@ -311,13 +309,13 @@ private class ParticlePool3D(
         w: Float,
         h: Float,
         projection: Table3DCameraProjection,
-        pose: CameraPose3D
+        basis: CameraBasis3D
     ) {
         for (sw in shockwaves) {
             if (!sw.active) continue
-            val center = projection.tableToScreen(sw.x, sw.y, w, h, pose) ?: continue
+            val center = projection.tableToScreen(sw.x, sw.y, w, h, basis) ?: continue
             val currentR = sw.maxRadius * sw.progress
-            val edge = projection.tableToScreen(sw.x + currentR, sw.y, w, h, pose)
+            val edge = projection.tableToScreen(sw.x + currentR, sw.y, w, h, basis)
             val screenR = if (edge != null) abs(edge.x - center.x).coerceAtLeast(4f) else (sw.maxRadius * 0.5f * sw.progress)
             val alpha = (1f - sw.progress).coerceIn(0f, 1f)
 
@@ -331,7 +329,7 @@ private class ParticlePool3D(
 
         for (p in sparks) {
             if (!p.active) continue
-            val pos = projection.tableToScreen(p.x, p.y, w, h, pose) ?: continue
+            val pos = projection.tableToScreen(p.x, p.y, w, h, basis) ?: continue
             val alpha = (1f - (p.life / p.maxLife)).coerceIn(0f, 1f)
             drawScope.drawCircle(
                 color = p.color.copy(alpha = alpha),
@@ -356,27 +354,26 @@ private class ParticlePool3D(
  */
 @Composable
 fun AirHockeyArena3DScene(
-    viewModel: GameViewModel,
+    runtime: ArenaRuntime,
     mode: GameMode,
     zoom: CameraZoom3D = CameraZoom3D.STANDARD,
     tableTheme: TableTheme? = null,
     onPresentationFinished: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val engine = viewModel.engine
-    val dimensions = engine.dimensions
+    val matchState by runtime.matchState.collectAsState()
+    val dimensions = matchState.dimensions
 
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val activeTheme = tableTheme ?: prefs.tableTheme
     val touchOffset = if (prefs.touchOffsetEnabled) 110f else 0f
     val effectsEnabled = prefs.visualEffectsProfile == VisualEffectsProfile.FULL
-    val matchState by viewModel.matchState.collectAsState()
 
-    val isExtendedHost = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
-    val isExtendedGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-    val isExtended = isExtendedHost || isExtendedGuest || mode == GameMode.AI_VS_AI_EXTENDED
-    val isSplitScreen = mode == GameMode.SPLIT_SCREEN
-    val isGuestCamera = mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
+    val isExtendedHost = mode.capabilities.isExtendedHost
+    val isExtendedGuest = mode.capabilities.isExtendedGuest
+    val isExtended = mode.capabilities.isExtended
+    val isSplitScreen = mode.capabilities.isSplitScreen
+    val isGuestCamera = mode.capabilities.isConnectedGuest
     val projection3D = remember(dimensions, mode) { Table3DCameraProjection(dimensions, mode) }
     val canPresentIntro = !isExtended && prefs.arena3dIntroEnabled
     val targetPreset = remember(zoom) {
@@ -395,7 +392,8 @@ fun AirHockeyArena3DScene(
     val particlePool = remember { ParticlePool3D(maxSparks = 60, maxShockwaves = 10) }
     val puckTrail = remember { ArrayDeque<TablePoint>(14) }
     val trailScreenPoints = remember { ArrayList<Offset>(14) }
-    val pendingCollisions = remember { ArrayDeque<Triple<Float, Float, CollisionEvent>>(16) }
+    val burstBuffer = remember { mutableListOf<VisualCollisionBurst>() }
+    var lastBurstSeq by remember(runtime) { mutableLongStateOf(0L) }
 
     // Apresentação de Abertura da Mesa 3D (Voo panorâmico cinematográfico estilo drone)
     LaunchedEffect(matchState.status, canPresentIntro) {
@@ -441,30 +439,13 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    DisposableEffect(engine, effectsEnabled) {
+    LaunchedEffect(effectsEnabled) {
         inputController.resetPointers()
         if (!effectsEnabled) {
-            synchronized(pendingCollisions) { pendingCollisions.clear() }
+            lastBurstSeq = runtime.collectVisualBurstsSince(lastBurstSeq, burstBuffer)
+            burstBuffer.clear()
             puckTrail.clear()
             particlePool.clear()
-            return@DisposableEffect onDispose {
-                inputController.resetPointers()
-            }
-        }
-
-        val listener: (Float, Float, CollisionEvent) -> Unit = { px, py, evt ->
-            synchronized(pendingCollisions) {
-                if (pendingCollisions.size < 16) {
-                    pendingCollisions.addLast(Triple(px, py, evt))
-                }
-            }
-        }
-        engine.onVisualCollisionListener = listener
-        onDispose {
-            inputController.resetPointers()
-            if (engine.onVisualCollisionListener === listener) {
-                engine.onVisualCollisionListener = null
-            }
         }
     }
 
@@ -489,26 +470,27 @@ fun AirHockeyArena3DScene(
         )
     }
 
-    val themeVisuals = remember(activeTheme) { ArenaThemeCatalog.getVisuals(activeTheme) }
+    val arenaKit = remember(activeTheme) { activeTheme.kit() }
+    val themeVisuals = arenaKit.visuals
 
-    val tableAsset = remember(activeTheme, isExtended, isExtendedHost) {
-        Theme3DAssetResolver.getTable3DAsset(activeTheme, isExtended = isExtended, isPlayer1 = isExtendedHost)
+    val tableAsset = remember(arenaKit, matchState.capabilities.perspective) {
+        arenaKit.tableAsset(matchState.capabilities.perspective)
     }
-    val puckAsset = remember(prefs.puckSkin, activeTheme) {
-        Theme3DAssetResolver.getPuck3DAsset(prefs.puckSkin, activeTheme)
+    val puckAsset = remember(prefs.puckSkin) {
+        prefs.puckSkin.spec().model3dAsset
     }
 
     val effectiveP2MalletSkin = if (mode == GameMode.SOLO) {
-        ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
+        ArenaPresetCatalog.getMalletSkinForStage(matchState.currentStage)
     } else {
         prefs.player2MalletSkin
     }
 
     val p1MalletAsset = remember(prefs.player1MalletSkin) {
-        Theme3DAssetResolver.getMallet3DAsset(prefs.player1MalletSkin, isPlayer1 = true)
+        prefs.player1MalletSkin.spec().model3dAsset(isPlayer1 = true)
     }
     val p2MalletAsset = remember(effectiveP2MalletSkin) {
-        Theme3DAssetResolver.getMallet3DAsset(effectiveP2MalletSkin, isPlayer1 = false)
+        effectiveP2MalletSkin.spec().model3dAsset(isPlayer1 = false)
     }
 
     val tableInstance = remember(modelLoader, tableAsset) {
@@ -543,9 +525,8 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    val floorAsset = remember(isExtended, activeTheme) {
-        val isClassicTheme = activeTheme == TableTheme.CLASSIC_NEON || activeTheme == TableTheme.ARCADE_3D
-        if (isExtended || !isClassicTheme) null else "models/piso_arena_cyber.glb"
+    val floorAsset = remember(isExtended, arenaKit) {
+        if (isExtended) null else arenaKit.floor3dAsset
     }
     val floorInstance = remember(modelLoader, floorAsset) {
         floorAsset?.let { path ->
@@ -564,11 +545,11 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    val mascotAsset = remember(isExtended, activeTheme, isExtendedGuest) {
-        if (isExtended && isExtendedGuest) null else Theme3DAssetResolver.getMascot3DAsset(activeTheme)
+    val mascotAsset = remember(arenaKit, isExtendedGuest) {
+        if (isExtendedGuest) null else arenaKit.mascot3dAsset
     }
-    val mascotController = remember(activeTheme) {
-        if (activeTheme == TableTheme.KIARA_CAT) KiaraMascotController() else null
+    val mascotController = remember(arenaKit) {
+        if (arenaKit.hasMascot) KiaraMascotController() else null
     }
     val mascotInstance = remember(modelLoader, mascotAsset) {
         mascotAsset?.let { path ->
@@ -630,7 +611,8 @@ fun AirHockeyArena3DScene(
         if (!effectsEnabled) {
             puckTrail.clear()
             particlePool.clear()
-            synchronized(pendingCollisions) { pendingCollisions.clear() }
+            lastBurstSeq = runtime.collectVisualBurstsSince(lastBurstSeq, burstBuffer)
+            burstBuffer.clear()
             lastFrameTime = 0L
             return@LaunchedEffect
         }
@@ -662,7 +644,7 @@ fun AirHockeyArena3DScene(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF030712))
-            .pointerInput(viewModel, mode, touchOffset, matchState.currentStage) {
+            .pointerInput(runtime, mode, touchOffset, matchState.currentStage) {
                 inputController.resetPointers()
                 awaitPointerEventScope {
                     while (true) {
@@ -678,19 +660,12 @@ fun AirHockeyArena3DScene(
                             continue
                         }
 
-                        val snap = viewModel.currentSnapshot()
+                        val snap = runtime.currentSnapshot()
                         inputController.processPointerEvents(
                             changes = event.changes,
-                            dimensions = dimensions,
-                            p1MalletX = snap.player1MalletX,
-                            p1MalletY = snap.player1MalletY,
-                            p2MalletX = snap.player2MalletX,
-                            p2MalletY = snap.player2MalletY,
-                            malletRadius = dimensions.malletRadius,
+                            frame = snap,
                             mode = mode,
-                            touchOffset = touchOffset,
-                            isSpectator = matchState.isSpectator,
-                            screenToTable = { sx, sy ->
+                            mapper = { sx, sy ->
                                 projection3D.screenToTable(
                                     screenX = sx,
                                     screenY = sy,
@@ -699,9 +674,8 @@ fun AirHockeyArena3DScene(
                                     pose = sceneState.toPose()
                                 )
                             },
-                            onTouchP1 = { x, y -> viewModel.onTouchPlayer1(x, y) },
-                            onTouchP2 = { x, y -> viewModel.onTouchPlayer2(x, y) },
-                            onTouchGuest = { x, y -> viewModel.onTouchGuestGlobal(x, y) }
+                            sink = runtime::submitMalletTarget,
+                            touchOffset = touchOffset
                         )
                     }
                 }
@@ -711,8 +685,13 @@ fun AirHockeyArena3DScene(
         val screenH = constraints.maxHeight.toFloat()
         val screenAspect = if (screenH > 0f) screenW / screenH else 9f / 19.5f
 
-        val effectiveTargetPreset = remember(zoom, screenAspect, activeTheme) {
-            projection3D.computeEffectiveTargetPreset(zoom, screenAspect, activeTheme)
+        val effectiveTargetPreset = remember(zoom, screenAspect, activeTheme, arenaKit.needsWideMascotFraming) {
+            projection3D.computeEffectiveTargetPreset(
+                zoom = zoom,
+                screenAspect = screenAspect,
+                theme = activeTheme,
+                needsWideMascotFraming = arenaKit.needsWideMascotFraming
+            )
         }
         Scene(
             modifier = Modifier.fillMaxSize(),
@@ -750,7 +729,7 @@ fun AirHockeyArena3DScene(
                 }
 
                 // Sincronização em tempo real das coordenadas físicas via snapshot imutável
-                val snap = viewModel.currentSnapshot()
+                val snap = runtime.currentSnapshot()
                 val puckVisible = if (isExtended) projection3D.isVisibleInViewport(snap.puckX, snap.puckY, dimensions.puckRadius) else true
                 if (puckVisible) {
                     puckNode?.position = Float3(
@@ -822,7 +801,8 @@ fun AirHockeyArena3DScene(
                 val w = size.width
                 val h = size.height
                 val currentPose = sceneState.toPose()
-                val snap = viewModel.currentSnapshot()
+                val basis = projection3D.computeBasis(w, h, currentPose) ?: return@Canvas
+                val snap = runtime.currentSnapshot()
 
             // 1. Pulso de Celebração de Ponto na Barreira da Meta
             if (matchState.status == MatchStatus.GOAL_PAUSE) {
@@ -838,7 +818,7 @@ fun AirHockeyArena3DScene(
                     goalTableY,
                     w,
                     h,
-                    currentPose
+                    basis
                 ) ?: Offset(w / 2f, if (scorer == 2) h * 0.25f else h * 0.75f)
 
                 drawCircle(
@@ -855,18 +835,18 @@ fun AirHockeyArena3DScene(
                     radius = w * 0.85f
                 )
 
-                // Celebração luminosa dinâmica ao redor da Mascote Kiara 3D
-                if (activeTheme == TableTheme.KIARA_CAT && !isExtendedGuest && mascotNode != null) {
+                // Celebração luminosa dinâmica ao redor da Mascote 3D
+                if (arenaKit.hasMascot && !isExtendedGuest && mascotNode != null) {
                     val mx = mascotController?.currentX ?: -0.61f
                     val mz = mascotController?.currentZ ?: -0.15f
-                    val tableX = (mx / 0.00108f) + 500f
-                    val tableY = (mz / 0.00096f) + 1000f
+                    val tableX = (mx / Table3DCameraProjection.METRIC_SCALE_X) + 500f
+                    val tableY = (mz / Table3DCameraProjection.METRIC_SCALE_Z_STANDARD) + 1000f
                     val kiaraScreen = projection3D.tableToScreen(
                         tableX,
                         tableY,
                         w,
                         h,
-                        currentPose
+                        basis
                     )
                     kiaraScreen?.let { kPos ->
                         val auraRadius = 85f * (w / 1080f).coerceIn(0.6f, 1.4f)
@@ -905,7 +885,7 @@ fun AirHockeyArena3DScene(
                 trailScreenPoints.clear()
                 for (pt in puckTrail) {
                     if (isExtended && !projection3D.isVisibleInViewport(pt.x, pt.y, 10f)) continue
-                    projection3D.tableToScreen(pt.x, pt.y, w, h, currentPose)?.let { screenPt ->
+                    projection3D.tableToScreen(pt.x, pt.y, w, h, basis)?.let { screenPt ->
                         trailScreenPoints.add(screenPt)
                     }
                 }
@@ -926,21 +906,24 @@ fun AirHockeyArena3DScene(
             }
 
             // 3. Processamento de Eventos de Colisão (Ondas de Choque e Faíscas Temáticas)
-            synchronized(pendingCollisions) {
-                while (pendingCollisions.isNotEmpty()) {
-                    val (cx, cy, evt) = pendingCollisions.removeFirst()
-                    val color = when (evt) {
-                        CollisionEvent.PADDLE_HIT_P1 -> themeVisuals.primaryColor
-                        CollisionEvent.PADDLE_HIT_P2 -> themeVisuals.secondaryColor
-                        CollisionEvent.GOAL_PLAYER1 -> themeVisuals.primaryColor
-                        CollisionEvent.GOAL_PLAYER2 -> themeVisuals.secondaryColor
-                        CollisionEvent.WALL_HIT -> themeVisuals.wallHitColor
-                        else -> themeVisuals.primaryColor
-                    }
-                    particlePool.spawnShockwave(cx, cy, color, maxRadius = 160f)
-                    val sparkCount = if (evt == CollisionEvent.WALL_HIT) 8 else 14
-                    particlePool.spawnSparks(cx, cy, sparkCount, color, spreadSpeed = 520f)
+            burstBuffer.clear()
+            lastBurstSeq = runtime.collectVisualBurstsSince(lastBurstSeq, burstBuffer)
+            for (i in 0 until burstBuffer.size) {
+                val burst = burstBuffer[i]
+                val cx = burst.tableX
+                val cy = burst.tableY
+                val evt = burst.event
+                val color = when (evt) {
+                    CollisionEvent.PADDLE_HIT_P1 -> themeVisuals.primaryColor
+                    CollisionEvent.PADDLE_HIT_P2 -> themeVisuals.secondaryColor
+                    CollisionEvent.GOAL_PLAYER1 -> themeVisuals.primaryColor
+                    CollisionEvent.GOAL_PLAYER2 -> themeVisuals.secondaryColor
+                    CollisionEvent.WALL_HIT -> themeVisuals.wallHitColor
+                    else -> themeVisuals.primaryColor
                 }
+                particlePool.spawnShockwave(cx, cy, color, maxRadius = 160f)
+                val sparkCount = if (evt == CollisionEvent.WALL_HIT) 8 else 14
+                particlePool.spawnSparks(cx, cy, sparkCount, color, spreadSpeed = 520f)
             }
 
             // 4. Desenha Ondas de Choque e Faíscas com Perspectiva 3D
@@ -950,7 +933,7 @@ fun AirHockeyArena3DScene(
                 w,
                 h,
                 projection = projection3D,
-                pose = currentPose
+                basis = basis
             )
             }
         }

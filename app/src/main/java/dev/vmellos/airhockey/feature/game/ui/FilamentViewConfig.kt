@@ -78,6 +78,14 @@ fun configureFilamentArenaView(
 }
 
 /**
+ * Calcula a força calibrada do Bloom HDR conforme a Curva Gama de Bloom (ADR 0039).
+ */
+fun computeCalibratedBloomStrength(neonBloomIntensity: Float): Float {
+    val normalizedBloom = (neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
+    return (normalizedBloom * normalizedBloom) * 0.22f
+}
+
+/**
  * Atualiza em tempo real a intensidade de Bloom HDR conforme a Curva Gama de Bloom (ADR 0039)
  * e o estado de ativação do Perfil de Efeitos Visuais em partida.
  */
@@ -86,8 +94,7 @@ fun updateFilamentArenaBloom(
     neonBloomIntensity: Float,
     bloomEnabledOverride: Boolean = true
 ) {
-    val normalizedBloom = (neonBloomIntensity / 0.10f).coerceIn(0.0f, 1.0f)
-    val calibratedStrength = (normalizedBloom * normalizedBloom) * 0.22f
+    val calibratedStrength = computeCalibratedBloomStrength(neonBloomIntensity)
     view.bloomOptions = view.bloomOptions.apply {
         enabled = bloomEnabledOverride && neonBloomIntensity > 0.002f
         threshold = true

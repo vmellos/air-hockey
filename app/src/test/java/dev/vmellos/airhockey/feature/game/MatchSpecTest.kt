@@ -2,6 +2,8 @@ package dev.vmellos.airhockey.feature.game
 
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.core.preferences.ArenaDimension
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
@@ -147,5 +149,35 @@ class MatchSpecTest {
         assertEquals("GuestTablet", spec.player2Name)
         assertEquals(TableTheme.TOKAMAK_REACTOR, spec.tableTheme)
         assertFalse(spec.hasIntroPresentation)
+    }
+
+    @Test
+    fun forMultiplayer_preservesLocalPuckAndMalletSkinsUnderDifferentHostTheme() {
+        val guestPrefs = UserPreferences(
+            tableTheme = TableTheme.CLASSIC_NEON,
+            puckSkin = PuckSkin.KIARA_PAW,
+            player1MalletSkin = MalletSkin.NEKO_STRIKER
+        )
+
+        val spec = MatchSpec.forMultiplayer(
+            gameMode = GameMode.CONNECTED_GUEST,
+            userPrefs = guestPrefs,
+            bezelGapMm = 0f,
+            targetScore = 5,
+            matchTimeSeconds = 180,
+            aiDifficultyPlayer1 = AiDifficulty.MEDIUM,
+            aiDifficultyPlayer2 = AiDifficulty.MEDIUM,
+            puckMaxSpeed = 6800f,
+            airFriction = 0.40f,
+            player1Name = "Host",
+            player2Name = "Guest",
+            tableTheme = TableTheme.TOKAMAK_REACTOR,
+            arenaDimension = ArenaDimension.THREE_DIMENSIONAL,
+            hasIntroPresentation = false
+        )
+
+        assertEquals(TableTheme.TOKAMAK_REACTOR, spec.tableTheme)
+        assertEquals(PuckSkin.KIARA_PAW, spec.localPuckSkin)
+        assertEquals(MalletSkin.NEKO_STRIKER, spec.localMalletSkin)
     }
 }

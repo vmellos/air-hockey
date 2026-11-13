@@ -84,9 +84,9 @@ class ThemeAudioAndPreferencesTest {
     }
 
     @Test
-    fun testArenaThemeCatalogProvidesVisualsForAllThemes() {
+    fun testArenaKitCatalogProvidesVisualsForAllThemes() {
         for (theme in TableTheme.entries) {
-            val visuals = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(theme)
+            val visuals = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getKit(theme).visuals
             org.junit.Assert.assertNotNull(visuals.backgroundColor)
             org.junit.Assert.assertNotNull(visuals.primaryColor)
             org.junit.Assert.assertNotNull(visuals.secondaryColor)
@@ -94,49 +94,49 @@ class ThemeAudioAndPreferencesTest {
     }
 
     @Test
-    fun testArenaThemeCatalogProvidesMalletSkinVisuals() {
+    fun testArenaKitCatalogProvidesMalletSkinVisuals() {
         for (skin in dev.vmellos.airhockey.core.preferences.MalletSkin.entries) {
-            val p1 = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getMalletSkinVisuals(skin, isPlayer1 = true)
-            val p2 = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getMalletSkinVisuals(skin, isPlayer1 = false)
+            val spec = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getMalletSpec(skin)
+            val p1 = spec.visuals(isPlayer1 = true)
+            val p2 = spec.visuals(isPlayer1 = false)
             org.junit.Assert.assertNotNull(p1.color)
             org.junit.Assert.assertNotNull(p2.color)
         }
     }
 
     @Test
-    fun testArenaThemeCatalogProvidesPuckAccents() {
+    fun testArenaKitCatalogProvidesPuckAccents() {
         for (puck in dev.vmellos.airhockey.core.preferences.PuckSkin.entries) {
-            val accent = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getPuckAccent(puck)
+            val accent = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getPuckSpec(puck).accentColor
             org.junit.Assert.assertNotNull(accent)
         }
     }
 
     @Test
-    fun testTheme3DAssetResolverResolvesExistingAssetsForAllThemes() {
+    fun testArenaKitCatalogResolvesExistingAssetsForAllThemes() {
         val assetsDir = File("src/main/assets")
         assertTrue("Diretório assets deve existir", assetsDir.exists())
 
         for (theme in TableTheme.entries) {
-            val tableModel = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme)
+            val kit = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getKit(theme)
+            val tableModel = kit.tableFullAsset
             assertTrue("Arquivo da mesa 3D deve existir: $tableModel", File(assetsDir, tableModel).exists())
 
-            val halfTableP1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = true)
-            val halfTableP2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = false)
+            val halfTableP1 = kit.tableAsset(isExtended = true, isPlayer1 = true)
+            val halfTableP2 = kit.tableAsset(isExtended = true, isPlayer1 = false)
             assertTrue("Arquivo da meia-mesa P1 deve existir: $halfTableP1", File(assetsDir, halfTableP1).exists())
             assertTrue("Arquivo da meia-mesa P2 deve existir: $halfTableP2", File(assetsDir, halfTableP2).exists())
-
-            assertTrue("Todos os temas devem possuir suporte 3D nativo",
-                dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.hasNative3DSupport(theme))
         }
 
         for (puck in dev.vmellos.airhockey.core.preferences.PuckSkin.entries) {
-            val puckModel = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getPuck3DAsset(puck, TableTheme.CLASSIC_NEON)
+            val puckModel = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getPuckSpec(puck).model3dAsset
             assertTrue("Arquivo do disco 3D deve existir: $puckModel", File(assetsDir, puckModel).exists())
         }
 
         for (mallet in dev.vmellos.airhockey.core.preferences.MalletSkin.entries) {
-            val m1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(mallet, isPlayer1 = true, TableTheme.CLASSIC_NEON)
-            val m2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(mallet, isPlayer1 = false, TableTheme.CLASSIC_NEON)
+            val spec = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getMalletSpec(mallet)
+            val m1 = spec.model3dAsset(isPlayer1 = true)
+            val m2 = spec.model3dAsset(isPlayer1 = false)
             assertTrue("Arquivo do rebatedor p1 deve existir: $m1", File(assetsDir, m1).exists())
             assertTrue("Arquivo do rebatedor p2 deve existir: $m2", File(assetsDir, m2).exists())
         }
@@ -161,43 +161,45 @@ class ThemeAudioAndPreferencesTest {
     }
 
     @Test
-    fun testMalletSkinDecoupledFromTableTheme() {
-        // Garantir que a skin equipada pelo jogador não seja sobreposta pelo tema da arena (ADR 0040)
-        for (theme in TableTheme.entries) {
-            val classicP1 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
-                skin = dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON,
-                isPlayer1 = true,
-                theme = theme
-            )
-            val classicP2 = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
-                skin = dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON,
-                isPlayer1 = false,
-                theme = theme
-            )
-            assertEquals("Skin CLASSIC_NEON P1 deve sempre retornar modelo clássico independente do tema",
-                "models/rebatedor_p1.glb", classicP1)
-            assertEquals("Skin CLASSIC_NEON P2 deve sempre retornar modelo clássico independente do tema",
-                "models/rebatedor_p2.glb", classicP2)
-        }
+    fun testMalletAndPuckSkinsDecoupledFromTableTheme() {
+        // Garantir que skins equipadas não sejam sobrescritas pelo tema da arena (decisão Q2)
+        val classicP1 = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog
+            .getMalletSpec(dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON)
+            .model3dAsset(isPlayer1 = true)
+        val classicP2 = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog
+            .getMalletSpec(dev.vmellos.airhockey.core.preferences.MalletSkin.CLASSIC_NEON)
+            .model3dAsset(isPlayer1 = false)
+        assertEquals("models/rebatedor_p1.glb", classicP1)
+        assertEquals("models/rebatedor_p2.glb", classicP2)
 
-        // Uma skin temática equipada explicitamente deve retornar seu modelo correspondente
-        val soccerMallet = dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver.getMallet3DAsset(
-            skin = dev.vmellos.airhockey.core.preferences.MalletSkin.MAGNETIC_STRIKER,
-            isPlayer1 = true,
-            theme = TableTheme.CYBER_PONG
-        )
+        val classicPuckAsset = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog
+            .getPuckSpec(dev.vmellos.airhockey.core.preferences.PuckSkin.CLASSIC_PLASMA)
+            .model3dAsset
+        assertEquals("models/disco_cyber.glb", classicPuckAsset)
+
+        val soccerMallet = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog
+            .getMalletSpec(dev.vmellos.airhockey.core.preferences.MalletSkin.MAGNETIC_STRIKER)
+            .model3dAsset(isPlayer1 = true)
         assertEquals("models/rebatedor_cyber_soccer_p1.glb", soccerMallet)
     }
 
     @Test
-    fun testArenaThemeCatalogProvidesThemeVisualsForAllThemes() {
+    fun testArenaKitCatalogProvidesThemeVisualsForAllThemes() {
         for (theme in TableTheme.entries) {
-            val visuals = dev.vmellos.airhockey.feature.customization.ArenaThemeCatalog.getVisuals(theme)
+            val kit = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getKit(theme)
+            val visuals = kit.visuals
             org.junit.Assert.assertNotNull("Visuals para o tema $theme não podem ser nulos", visuals)
             org.junit.Assert.assertNotNull(visuals.primaryColor)
             org.junit.Assert.assertNotNull(visuals.secondaryColor)
             org.junit.Assert.assertNotNull(visuals.wallHitColor)
+            org.junit.Assert.assertNotNull(kit.overlayStyle)
         }
+        assertEquals(
+            TableTheme.CLASSIC_NEON,
+            with(dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog) {
+                dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog.getPresetForTheme(TableTheme.ARCADE_3D).theme
+            }
+        )
     }
 
     @Test
@@ -214,5 +216,74 @@ class ThemeAudioAndPreferencesTest {
         val targetIndex = (highestUnlocked - 1).coerceAtLeast(0)
         assertEquals(50, highestUnlocked)
         assertEquals("O índice de rolagem do LazyGrid deve ser 49 para a fase 50", 49, targetIndex)
+    }
+
+    @Test
+    fun testGameAudioEnginePreloadsWavsOffCallerThreadAndPlaysNonBlocking() = kotlinx.coroutines.runBlocking {
+        val cacheDir = tempFolder.newFolder("audio_engine_test")
+        var nextSampleId = 1
+        val playedSamples = mutableListOf<Int>()
+        val startedBgms = mutableListOf<File>()
+        var isBgmPlaying = false
+
+        val fakePort = object : dev.vmellos.airhockey.core.audio.AudioPlaybackPort {
+            override fun loadSample(file: File): Int = nextSampleId++
+            override fun playSample(sampleId: Int, volume: Float, priority: Int, rate: Float) {
+                playedSamples.add(sampleId)
+            }
+            override fun startLoopingBgm(file: File, volume: Float) {
+                startedBgms.add(file)
+                isBgmPlaying = true
+            }
+            override fun setLoopingBgmVolume(volume: Float) {}
+            override fun hasLoadedBgm(): Boolean = startedBgms.isNotEmpty()
+            override fun isLoopingBgmPlaying(): Boolean = isBgmPlaying
+            override fun resumeLoopingBgm(volume: Float) {
+                isBgmPlaying = true
+            }
+            override fun pauseLoopingBgm() {
+                isBgmPlaying = false
+            }
+            override fun stopLoopingBgm() {
+                isBgmPlaying = false
+            }
+            override fun pauseAllSamples() {}
+            override fun resumeAllSamples() {}
+            override fun vibrate(durationMs: Long, amplitude: Int) {}
+            override fun release() {}
+        }
+
+        val engine = dev.vmellos.airhockey.core.audio.GameAudioEngine(
+            cacheDir = cacheDir,
+            playbackPort = fakePort,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.IO,
+            preloadDefaultSynchronously = false
+        )
+        engine.isHapticsEnabled = false
+
+        // Chamada imediata não bloqueia sintetizando 9 WAVs síncronos
+        engine.currentTheme = TableTheme.TOKAMAK_REACTOR
+        engine.playPaddleHit(intensity = 0.8f, isPlayer1 = true)
+
+        // Aguarda carga assíncrona em Dispatchers.IO completar
+        engine.preloadThemeAsync(TableTheme.CLASSIC_NEON).join()
+        engine.preloadThemeAsync(TableTheme.TOKAMAK_REACTOR).join()
+
+        assertTrue(engine.isThemeLoaded(TableTheme.CLASSIC_NEON))
+        assertTrue(engine.isThemeLoaded(TableTheme.TOKAMAK_REACTOR))
+
+        engine.playPaddleHit(intensity = 0.9f, isPlayer1 = true)
+        assertTrue("Após preload em segundo plano, efeito deve tocar imediatamente", playedSamples.isNotEmpty())
+
+        engine.playBgm(TableTheme.TOKAMAK_REACTOR)
+        var waitedMs = 0L
+        while (startedBgms.isEmpty() && waitedMs < 3000L) {
+            kotlinx.coroutines.delay(25)
+            waitedMs += 25
+        }
+        assertEquals(1, startedBgms.size)
+        assertTrue(startedBgms.first().name.contains("tokamak_reactor"))
+
+        engine.release()
     }
 }

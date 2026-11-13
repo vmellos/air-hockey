@@ -11,17 +11,19 @@ import dev.vmellos.airhockey.feature.game.MatchSpec
 import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.network.DiscoveredTable
 import dev.vmellos.airhockey.feature.network.HybridSocketTransportAdapter
+import dev.vmellos.airhockey.feature.network.LanDiscoveryPort
 import dev.vmellos.airhockey.feature.network.NetworkConstants
 import dev.vmellos.airhockey.feature.network.NsdDiscoveryManager
-import dev.vmellos.airhockey.feature.network.TcpControlClient
-import dev.vmellos.airhockey.feature.network.TcpControlServer
+import dev.vmellos.airhockey.feature.network.TableTransport
 import dev.vmellos.airhockey.feature.network.TransportConnectionState
-import dev.vmellos.airhockey.feature.network.UdpTelemetrySocket
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -71,12 +73,90 @@ data class LobbyState(
     val selfPlayerName: String = "",
     val hostThemeName: String? = null,
     val hostArenaDimension: String? = null
+) {
+    /** Projeção de estado específica da visão de Anfitrião (Host). */
+    val hostView: HostLobbyState?
+        get() = if (role == LobbyRole.HOST) {
+            HostLobbyState(
+                tableCode = tableCode,
+                hostIp = hostIp,
+                qrContent = qrContent,
+                targetMode = targetMode,
+                wifiSsid = wifiSsid,
+                isWifiConnected = isWifiConnected,
+                isReadyToPlay = isReadyToPlay,
+                peerPlayerName = peerPlayerName,
+                hostThemeName = hostThemeName,
+                hostArenaDimension = hostArenaDimension
+            )
+        } else {
+            null
+        }
+
+    /** Projeção de estado específica da visão de Convidado (Guest). */
+    val guestView: GuestLobbyState?
+        get() = if (role == LobbyRole.GUEST) {
+            GuestLobbyState(
+                targetMode = targetMode,
+                discoveredTables = discoveredTables,
+                connectionStatus = connectionStatus,
+                hostIp = hostIp,
+                tableCode = tableCode,
+                isScanningQr = isScanningQr,
+                isReadyToPlay = isReadyToPlay,
+                peerPlayerName = peerPlayerName
+            )
+        } else {
+            null
+        }
+}
+
+data class HostLobbyState(
+    val tableCode: String,
+    val hostIp: String,
+    val qrContent: String,
+    val targetMode: String,
+    val wifiSsid: String,
+    val isWifiConnected: Boolean,
+    val isReadyToPlay: Boolean,
+    val peerPlayerName: String,
+    val hostThemeName: String?,
+    val hostArenaDimension: String?
 )
 
-class LobbyViewModel : ViewModel() {
+data class GuestLobbyState(
+    val targetMode: String,
+    val discoveredTables: List<DiscoveredTable>,
+    val connectionStatus: ConnectionStatus,
+    val hostIp: String,
+    val tableCode: String,
+    val isScanningQr: Boolean,
+    val isReadyToPlay: Boolean,
+    val peerPlayerName: String
+)
 
-    private val context = AirHockeyApp.instance.applicationContext
-    val nsdManager = NsdDiscoveryManager(context)
+class LobbyViewModel(
+    discoveryPort: LanDiscoveryPort? = null,
+    private val transportFactory: (isHost: Boolean, targetHostIp: String?) -> TableTransport = { isHost, targetIp ->
+        HybridSocketTransportAdapter(isHost = isHost, targetHostIp = targetIp ?: "127.0.0.1")
+    },
+    private val hostProber: (ip: String, port: Int) -> Boolean = ::probeTcpHost,
+    private val wifiInfoProvider: () -> Pair<String, Boolean> = {
+        readWifiInfo(AirHockeyApp.instance.applicationContext)
+    },
+    private val defaultPlayerNameProvider: () -> String = {
+        dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(
+            AirHockeyApp.instance.applicationContext
+        )
+    },
+    userPreferencesFlowOverride: Flow<UserPreferences>? = null,
+    coroutineScopeOverride: CoroutineScope? = null,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+) : ViewModel() {
+
+    private val lobbyScope: CoroutineScope = coroutineScopeOverride ?: viewModelScope
+    val nsdManager: LanDiscoveryPort = discoveryPort ?: NsdDiscoveryManager(AirHockeyApp.instance.applicationContext)
 
     private val _state = MutableStateFlow(LobbyState())
     val state: StateFlow<LobbyState> = _state.asStateFlow()
@@ -90,13 +170,14 @@ class LobbyViewModel : ViewModel() {
     var onControlMessageReceived: ((String) -> Unit)? = null
 
     init {
-        viewModelScope.launch {
-            AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collect { prefs ->
+        val prefsFlow = userPreferencesFlowOverride ?: AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
+        lobbyScope.launch {
+            prefsFlow.collect { prefs ->
                 _state.update { it.copy(selfPlayerName = prefs.playerName) }
             }
         }
 
-        viewModelScope.launch {
+        lobbyScope.launch {
             nsdManager.discoveredTables.collect { tables ->
                 _state.update { it.copy(discoveredTables = tables) }
             }
@@ -107,40 +188,13 @@ class LobbyViewModel : ViewModel() {
         _state.update { it.copy(targetMode = mode, discoveredTables = nsdManager.discoveredTables.value) }
     }
 
-    @Suppress("DEPRECATION")
-    private fun getNetworkSsid(): String {
-        return try {
-            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
-            val info = wifiManager?.connectionInfo
-            val rawSsid = info?.ssid ?: ""
-            val clean = rawSsid.removeSurrounding("\"")
-            if (clean == "<unknown ssid>" || clean.isBlank()) "" else clean
-        } catch (_: Exception) {
-            ""
-        }
-    }
-
-    private fun checkIsWifiConnected(): Boolean {
-        return try {
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
-            val activeNet = cm?.activeNetwork ?: return false
-            val caps = cm.getNetworkCapabilities(activeNet) ?: return false
-            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
-        } catch (_: Exception) {
-            true
-        }
-    }
-
     fun startAsHost(mode: String = _state.value.targetMode, aiDiff1: String = "", aiDiff2: String = "", arenaDimension: String = "", themeName: String = "") {
         val code = String.format("%04d", Random.nextInt(1000, 9999))
-        val ip = NsdDiscoveryManager.getLocalIpAddress(context)
-        val selfName = _state.value.selfPlayerName.ifBlank {
-            dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(context)
-        }
+        val ip = nsdManager.getLocalIpAddress()
+        val selfName = _state.value.selfPlayerName.ifBlank { defaultPlayerNameProvider() }
         val encodedName = try { java.net.URLEncoder.encode(selfName, "UTF-8") } catch (_: Exception) { "" }
         val qr = "airhockey://connect?ip=$ip&port=8888&code=$code&mode=$mode&hostName=$encodedName"
-        val ssid = getNetworkSsid()
-        val wifiConnected = checkIsWifiConnected()
+        val (ssid, wifiConnected) = wifiInfoProvider()
 
         _state.update {
             it.copy(
@@ -164,7 +218,7 @@ class LobbyViewModel : ViewModel() {
             )
         }
 
-        val transport = HybridSocketTransportAdapter(isHost = true)
+        val transport = transportFactory(true, null)
         val coord = MultiplayerMatchCoordinator(
             transport = transport,
             isHost = true,
@@ -196,7 +250,7 @@ class LobbyViewModel : ViewModel() {
         }
         nsdManager.startDiscovery()
         discoveryPeriodicJob?.cancel()
-        discoveryPeriodicJob = viewModelScope.launch {
+        discoveryPeriodicJob = lobbyScope.launch {
             var cycleCount = 0
             while (isActive && _state.value.role == LobbyRole.GUEST && _state.value.connectionStatus == ConnectionStatus.DISCOVERING) {
                 delay(1500)
@@ -241,9 +295,7 @@ class LobbyViewModel : ViewModel() {
     }
 
     fun connectToTable(hostIp: String, code: String = "", tableMode: String = "") {
-        val selfName = _state.value.selfPlayerName.ifBlank {
-            dev.vmellos.airhockey.core.preferences.UserPreferencesRepository.getDefaultDevicePlayerName(context)
-        }
+        val selfName = _state.value.selfPlayerName.ifBlank { defaultPlayerNameProvider() }
         val mode = if (tableMode.isNotBlank()) tableMode else _state.value.targetMode
         _state.update {
             it.copy(
@@ -261,7 +313,7 @@ class LobbyViewModel : ViewModel() {
         discoveryPeriodicJob?.cancel()
         discoveryPeriodicJob = null
         nsdManager.stopDiscovery()
-        val transport = HybridSocketTransportAdapter(isHost = false, targetHostIp = hostIp)
+        val transport = transportFactory(false, hostIp)
         val coord = MultiplayerMatchCoordinator(
             transport = transport,
             isHost = false,
@@ -275,7 +327,7 @@ class LobbyViewModel : ViewModel() {
 
     private fun bindCoordinator(coord: MultiplayerMatchCoordinator) {
         coordinatorJob?.cancel()
-        coordinatorJob = viewModelScope.launch {
+        coordinatorJob = lobbyScope.launch {
             coord.state.collect { cState ->
                 _state.update {
                     it.copy(
@@ -337,7 +389,7 @@ class LobbyViewModel : ViewModel() {
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        lobbyScope.launch(ioDispatcher) {
             _state.update {
                 it.copy(
                     connectionStatus = ConnectionStatus.CONNECTING,
@@ -351,21 +403,21 @@ class LobbyViewModel : ViewModel() {
             nsdManager.sendDirectedDiscoveryProbe()
 
             // 4. Tenta o Gateway DHCP (essencial quando conectado ao Hotspot do anfitrião)
-            val gatewayIp = NsdDiscoveryManager.getDhcpGatewayIp(context)
-            if (!gatewayIp.isNullOrBlank() && probeHost(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
-                withContext(Dispatchers.Main) {
+            val gatewayIp = nsdManager.getDhcpGatewayIp()
+            if (!gatewayIp.isNullOrBlank() && hostProber(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
+                withContext(mainDispatcher) {
                     connectToTable(gatewayIp, cleanCode)
                 }
                 return@launch
             }
 
             // 5. Varredura rápida concorrente na sub-rede /24
-            val localIp = NsdDiscoveryManager.getLocalIpAddress(context)
+            val localIp = nsdManager.getLocalIpAddress()
             if (localIp.contains(".")) {
                 val prefix = localIp.substringBeforeLast(".") + "."
                 val foundIp = scanSubnetForHost(prefix, NetworkConstants.DEFAULT_TCP_PORT, localIp)
                 if (foundIp != null) {
-                    withContext(Dispatchers.Main) {
+                    withContext(mainDispatcher) {
                         connectToTable(foundIp, cleanCode)
                     }
                     return@launch
@@ -375,8 +427,8 @@ class LobbyViewModel : ViewModel() {
             // 6. Caso especial de ambiente de emulador (10.0.2.x -> tenta o host da máquina 10.0.2.2)
             if (localIp.startsWith("10.0.2.")) {
                 val hostPcIp = "10.0.2.2"
-                if (probeHost(hostPcIp, NetworkConstants.DEFAULT_TCP_PORT)) {
-                    withContext(Dispatchers.Main) {
+                if (hostProber(hostPcIp, NetworkConstants.DEFAULT_TCP_PORT)) {
+                    withContext(mainDispatcher) {
                         connectToTable(hostPcIp, cleanCode)
                     }
                     return@launch
@@ -384,7 +436,7 @@ class LobbyViewModel : ViewModel() {
             }
 
             // 7. Não encontrou na rede local
-            withContext(Dispatchers.Main) {
+            withContext(mainDispatcher) {
                 _state.update {
                     it.copy(
                         connectionStatus = ConnectionStatus.DISCONNECTED,
@@ -397,17 +449,6 @@ class LobbyViewModel : ViewModel() {
         }
     }
 
-    private fun probeHost(ip: String, port: Int): Boolean {
-        return try {
-            java.net.Socket().use { s ->
-                s.connect(java.net.InetSocketAddress(ip, port), 350)
-                true
-            }
-        } catch (_: Exception) {
-            false
-        }
-    }
-
     private suspend fun scanSubnetForHost(prefix: String, port: Int, selfIp: String): String? = coroutineScope {
         val found = CompletableDeferred<String?>()
         val jobs = mutableListOf<Job>()
@@ -415,8 +456,8 @@ class LobbyViewModel : ViewModel() {
         for (i in 1..254) {
             val targetIp = "$prefix$i"
             if (targetIp == selfIp) continue
-            val j = launch(Dispatchers.IO) {
-                if (probeHost(targetIp, port)) {
+            val j = launch(ioDispatcher) {
+                if (hostProber(targetIp, port)) {
                     found.complete(targetIp)
                 }
             }
@@ -572,5 +613,40 @@ class LobbyViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         stopAll()
+    }
+
+    companion object {
+        @Suppress("DEPRECATION")
+        private fun readWifiInfo(context: Context): Pair<String, Boolean> {
+            val ssid = try {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+                val info = wifiManager?.connectionInfo
+                val rawSsid = info?.ssid ?: ""
+                val clean = rawSsid.removeSurrounding("\"")
+                if (clean == "<unknown ssid>" || clean.isBlank()) "" else clean
+            } catch (_: Exception) {
+                ""
+            }
+            val wifiConnected = try {
+                val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+                val activeNet = cm?.activeNetwork ?: return ssid to false
+                val caps = cm.getNetworkCapabilities(activeNet) ?: return ssid to false
+                caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+            } catch (_: Exception) {
+                true
+            }
+            return ssid to wifiConnected
+        }
+
+        private fun probeTcpHost(ip: String, port: Int): Boolean {
+            return try {
+                java.net.Socket().use { s ->
+                    s.connect(java.net.InetSocketAddress(ip, port), 350)
+                    true
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
     }
 }

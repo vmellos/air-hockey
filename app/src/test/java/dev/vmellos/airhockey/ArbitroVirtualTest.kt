@@ -605,4 +605,32 @@ class ArbitroVirtualTest {
         assertEquals(extDims.width / 2f, snap.puckX, 1.0f)
         assertEquals(extDims.hostHalfBottomY - 400f, snap.puckY, 1.0f)
     }
+
+    @Test
+    fun collectVisualBurstsSince_returnsMonotonicBurstsOnlyOncePerSeq() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        arbitro.engine.onVisualCollisionListener?.invoke(120f, 340f, dev.vmellos.airhockey.feature.physics.CollisionEvent.WALL_HIT)
+        arbitro.engine.onVisualCollisionListener?.invoke(500f, 1500f, dev.vmellos.airhockey.feature.physics.CollisionEvent.PADDLE_HIT_P1)
+
+        val collected = mutableListOf<dev.vmellos.airhockey.feature.physics.VisualCollisionBurst>()
+        val seqAfterFirst = arbitro.collectVisualBurstsSince(0L, collected)
+
+        assertEquals(2, collected.size)
+        assertEquals(120f, collected[0].tableX, 0.01f)
+        assertEquals(dev.vmellos.airhockey.feature.physics.CollisionEvent.PADDLE_HIT_P1, collected[1].event)
+        assertTrue(seqAfterFirst > collected[0].seq)
+
+        collected.clear()
+        val seqAfterNoop = arbitro.collectVisualBurstsSince(seqAfterFirst, collected)
+        assertEquals(seqAfterFirst, seqAfterNoop)
+        assertTrue(collected.isEmpty())
+
+        arbitro.restart()
+        collected.clear()
+        assertEquals(seqAfterFirst, arbitro.collectVisualBurstsSince(seqAfterFirst, collected))
+        assertTrue(collected.isEmpty())
+    }
 }

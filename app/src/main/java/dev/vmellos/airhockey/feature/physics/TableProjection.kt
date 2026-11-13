@@ -23,13 +23,13 @@ class TableProjection(
     val dimensions: TableDimensions,
     val mode: GameMode = GameMode.SOLO
 ) {
-    val isExtendedHost: Boolean = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
-    val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-    val isExtended: Boolean = isExtendedHost || isExtendedGuest || mode == GameMode.AI_VS_AI_EXTENDED
+    val isExtendedHost: Boolean = mode.capabilities.isExtendedHost
+    val isExtendedGuest: Boolean = mode.capabilities.isExtendedGuest
+    val isExtended: Boolean = mode.capabilities.isExtended
 
-    val isConnectedHost: Boolean = mode == GameMode.CONNECTED_HOST || mode == GameMode.AI_VS_AI_CONNECTED_HOST
-    val isConnectedGuest: Boolean = mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
-    val isConnected: Boolean = isConnectedHost || isConnectedGuest
+    val isConnectedHost: Boolean = mode.capabilities.isConnectedHost
+    val isConnectedGuest: Boolean = mode.capabilities.isConnectedGuest
+    val isConnected: Boolean = mode.capabilities.isConnected
 
     val viewportVirtualWidth: Float = 1000f
     val viewportVirtualHeight: Float = 2000f

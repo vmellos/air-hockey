@@ -1,9 +1,9 @@
 package dev.vmellos.airhockey.feature.game
 
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.database.MatchRecordEntity
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.leaderboard.LeaderboardRepository
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.stage.StageRepository
 
 /**
@@ -46,6 +46,10 @@ class MatchOutcomeRecorder(
         state: MatchState,
         aiDifficulty: String?
     ): MatchOutcomeResult {
+        if (!state.capabilities.recordsStats) {
+            return MatchOutcomeResult(matchRecord = null)
+        }
+
         val duration = state.remainingTimeSeconds.coerceAtLeast(0)
         val modeStr = state.mode.name
 
@@ -65,8 +69,13 @@ class MatchOutcomeRecorder(
 
         var newElo: Int? = null
         if (record != null && eloLeaderboardId.isNotBlank()) {
-            val profile = leaderboardRepository.getPlayerStatsDirect(state.player1Name)
-            val elo = profile?.ratingElo ?: (1000 + record.ratingDeltaA)
+            val isGuest = state.capabilities.isGuest
+            val localName = state.localPlayerName.ifBlank {
+                if (isGuest) state.player2Name else state.player1Name
+            }
+            val delta = if (isGuest) record.ratingDeltaB else record.ratingDeltaA
+            val profile = leaderboardRepository.getPlayerStatsDirect(localName)
+            val elo = profile?.ratingElo ?: (1000 + delta)
             newElo = elo
             playGamesPort.submitScore(eloLeaderboardId, elo.toLong())
         }
@@ -77,7 +86,7 @@ class MatchOutcomeRecorder(
 
         if (state.mode == GameMode.SOLO) {
             try {
-                val currentTheme = ArenaConquestCatalog.getThemeForStage(state.currentStage)
+                val currentTheme = ArenaPresetCatalog.getThemeForStage(state.currentStage)
                 val previouslyUnlocked = stageRepository.isThemeUnlocked(currentTheme)
                 stars = stageRepository.recordStageResult(
                     stageNumber = state.currentStage,

@@ -10,15 +10,20 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dev.vmellos.airhockey.core.catalog.canonical
+import dev.vmellos.airhockey.core.catalog.preset
 import dev.vmellos.airhockey.core.localization.LocaleHelper
+import dev.vmellos.airhockey.core.playgames.CloudPreferencesPort
+import dev.vmellos.airhockey.core.playgames.PlayGamesPreferencesPayload
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "air_hockey_preferences")
 
-class UserPreferencesRepository(private val context: Context) {
+class UserPreferencesRepository(private val context: Context) : CloudPreferencesPort {
 
     private object PreferencesKeys {
         val APP_LANGUAGE = stringPreferencesKey("app_language")
@@ -287,75 +292,13 @@ class UserPreferencesRepository(private val context: Context) {
     }
 
     suspend fun applyThemePreset(theme: TableTheme) {
+        val canonicalTheme = theme.canonical()
+        val preset = canonicalTheme.preset()
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.TABLE_THEME] = theme.name
-            when (theme) {
-                TableTheme.CLASSIC_NEON -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CLASSIC_PLASMA.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.CLASSIC_NEON.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
-                }
-                TableTheme.CYBER_SOCCER -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CYBER_SOCCER_BALL.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.MAGNETIC_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.MAGNETIC_STRIKER.name
-                }
-                TableTheme.NEO_BASKETBALL -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.NEO_BASKETBALL.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.DUNK_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.DUNK_STRIKER.name
-                }
-                TableTheme.GRAVITY_VOLLEY -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GRAVITY_VOLLEY.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPIKE_EMITTER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPIKE_EMITTER.name
-                }
-                TableTheme.GRIDIRON_FOOTBALL -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GRIDIRON_FOOTBALL.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.LINEBACKER_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.LINEBACKER_STRIKER.name
-                }
-                TableTheme.CYBER_BASEBALL -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CYBER_BASEBALL.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SLUGGER_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SLUGGER_STRIKER.name
-                }
-                TableTheme.WASTELAND_APOCALYPSE -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SAWBLADE.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.RIPPER_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.RIPPER_STRIKER.name
-                }
-                TableTheme.RETRO_SYNTHWAVE -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.SYNTH_DISC.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.OUTRUN_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.OUTRUN_STRIKER.name
-                }
-                TableTheme.TOKAMAK_REACTOR -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.ATOMIC_CORE.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.MAGNETIC_COIL.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.MAGNETIC_COIL.name
-                }
-                TableTheme.CYBER_PONG -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.PONG_SQUARE.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.PONG_PADDLE.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.PONG_PADDLE.name
-                }
-                TableTheme.CYBER_COLOSSEUM -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.GLADIATOR_SHIELD.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.SPARTAN_AEGIS.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.SPARTAN_AEGIS.name
-                }
-                TableTheme.ARCADE_3D -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.CLASSIC_PLASMA.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.CLASSIC_NEON.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.CLASSIC_NEON.name
-                }
-                TableTheme.KIARA_CAT -> {
-                    preferences[PreferencesKeys.PUCK_SKIN] = PuckSkin.KIARA_PAW.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P1] = MalletSkin.NEKO_STRIKER.name
-                    preferences[PreferencesKeys.MALLET_SKIN_P2] = MalletSkin.NEKO_STRIKER.name
-                }
-            }
+            preferences[PreferencesKeys.TABLE_THEME] = canonicalTheme.name
+            preferences[PreferencesKeys.PUCK_SKIN] = preset.puckSkin.name
+            preferences[PreferencesKeys.MALLET_SKIN_P1] = preset.malletSkin.name
+            preferences[PreferencesKeys.MALLET_SKIN_P2] = preset.malletSkin.name
         }
     }
 
@@ -380,6 +323,66 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun updateCameraZoom3d(zoom: CameraZoom3D) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.CAMERA_ZOOM_3D] = zoom.name
+        }
+    }
+
+    override suspend fun readSyncSnapshot(): Pair<String, PlayGamesPreferencesPayload?> {
+        val current = userPreferencesFlow.firstOrNull()
+        val effectiveName = current?.playerName?.ifBlank { "Jogador" } ?: "Jogador"
+        val payload = current?.let { p ->
+            PlayGamesPreferencesPayload(
+                tableTheme = p.tableTheme.name,
+                puckSkin = p.puckSkin.name,
+                malletSkinP1 = p.player1MalletSkin.name,
+                malletSkinP2 = p.player2MalletSkin.name,
+                arenaDimension = p.arenaDimension.name,
+                arena3dIntroEnabled = p.arena3dIntroEnabled
+            )
+        }
+        return effectiveName to payload
+    }
+
+    /**
+     * Aplica de forma atômica todas as preferências vindas da nuvem em uma única transação de DataStore.
+     */
+    override suspend fun applyCloudSyncedPreferences(
+        playerName: String?,
+        syncedPrefs: PlayGamesPreferencesPayload?
+    ) {
+        context.dataStore.edit { preferences ->
+            if (!playerName.isNullOrBlank() && playerName != "Jogador") {
+                preferences[PreferencesKeys.PLAYER_NAME] = playerName.trim().take(24)
+            }
+            syncedPrefs?.let { p ->
+                p.tableTheme?.let { name ->
+                    runCatching { TableTheme.valueOf(name).canonical() }.getOrNull()?.let {
+                        preferences[PreferencesKeys.TABLE_THEME] = it.name
+                    }
+                }
+                p.puckSkin?.let { name ->
+                    runCatching { PuckSkin.valueOf(name) }.getOrNull()?.let {
+                        preferences[PreferencesKeys.PUCK_SKIN] = it.name
+                    }
+                }
+                p.malletSkinP1?.let { name ->
+                    runCatching { MalletSkin.valueOf(name) }.getOrNull()?.let {
+                        preferences[PreferencesKeys.MALLET_SKIN_P1] = it.name
+                    }
+                }
+                p.malletSkinP2?.let { name ->
+                    runCatching { MalletSkin.valueOf(name) }.getOrNull()?.let {
+                        preferences[PreferencesKeys.MALLET_SKIN_P2] = it.name
+                    }
+                }
+                p.arenaDimension?.let { name ->
+                    runCatching { ArenaDimension.valueOf(name) }.getOrNull()?.let {
+                        preferences[PreferencesKeys.ARENA_DIMENSION] = it.name
+                    }
+                }
+                p.arena3dIntroEnabled?.let { intro ->
+                    preferences[PreferencesKeys.ARENA_3D_INTRO_ENABLED] = intro
+                }
+            }
         }
     }
 }

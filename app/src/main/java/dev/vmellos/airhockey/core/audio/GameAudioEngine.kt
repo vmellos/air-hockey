@@ -1,28 +1,43 @@
 package dev.vmellos.airhockey.core.audio
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.SoundPool
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.physics.AudioOutputPort
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Motor de áudio do jogo com síntese procedural temática adaptativa.
+ * Motor de áudio do jogo com síntese procedural temática adaptativa fora da thread principal.
  * Fornece BGM, contagem regressiva, impactos e fanfarras de gols exclusivos por arena.
  */
-class GameAudioEngine(private val context: Context) {
+class GameAudioEngine(
+    private val cacheDir: File,
+    private val playbackPort: AudioPlaybackPort,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    preloadDefaultSynchronously: Boolean = false
+) : AudioOutputPort {
 
-    private val soundPool: SoundPool
-    private val vibrator: Vibrator?
+    constructor(context: Context) : this(
+        cacheDir = context.cacheDir,
+        playbackPort = AndroidAudioPlaybackAdapter(context),
+        ioDispatcher = Dispatchers.IO,
+        preloadDefaultSynchronously = false
+    )
 
-    private val loadedSoundIds = java.util.Collections.synchronizedSet(mutableSetOf<Int>())
+    private val audioScope = CoroutineScope(SupervisorJob() + ioDispatcher)
+    private val themeLoadLock = Any()
+    private val pendingThemeLoads = ConcurrentHashMap<TableTheme, Job>()
+
+    @Volatile
+    private var pendingBgmJob: Job? = null
 
     // Controles de Efeitos Sonoros
     @Volatile
@@ -44,8 +59,8 @@ class GameAudioEngine(private val context: Context) {
             val changed = field != value
             field = value
             if (changed) {
-                ensureThemeLoaded(value)
-                if (isAppInForeground && bgmPlayer?.isPlaying == true && isMusicEnabled) {
+                preloadThemeAsync(value)
+                if (isAppInForeground && playbackPort.isLoopingBgmPlaying() && isMusicEnabled) {
                     playBgm(value)
                 }
             }
@@ -63,12 +78,10 @@ class GameAudioEngine(private val context: Context) {
     var musicVolume: Float = 0.10f
         set(value) {
             field = value.coerceIn(0f, 1f)
-            try {
-                bgmPlayer?.setVolume(field, field)
-            } catch (_: Exception) {}
+            playbackPort.setLoopingBgmVolume(field)
         }
 
-    private var bgmPlayer: MediaPlayer? = null
+    @Volatile
     private var playingBgmTheme: TableTheme? = null
 
     // Cache de IDs de som por tema
@@ -87,50 +100,52 @@ class GameAudioEngine(private val context: Context) {
     private val themeSounds = ConcurrentHashMap<TableTheme, ThemeSoundSet>()
 
     // Sons padrão (fallback instantâneo)
-    private var defaultPaddleHitId: Int = 0
-    private var defaultWallHitId: Int = 0
-    private var defaultGoalScoredId: Int = 0
-    private var defaultGoalConcededId: Int = 0
-    private var defaultCountdown3Id: Int = 0
-    private var defaultCountdown2Id: Int = 0
-    private var defaultCountdown1Id: Int = 0
-    private var defaultCountdownGoId: Int = 0
-    private var defaultScoreBlipId: Int = 0
+    @Volatile private var defaultPaddleHitId: Int = 0
+    @Volatile private var defaultWallHitId: Int = 0
+    @Volatile private var defaultGoalScoredId: Int = 0
+    @Volatile private var defaultGoalConcededId: Int = 0
+    @Volatile private var defaultCountdown3Id: Int = 0
+    @Volatile private var defaultCountdown2Id: Int = 0
+    @Volatile private var defaultCountdown1Id: Int = 0
+    @Volatile private var defaultCountdownGoId: Int = 0
+    @Volatile private var defaultScoreBlipId: Int = 0
 
     init {
-        val audioAttributes = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build()
-
-        soundPool = SoundPool.Builder()
-            .setMaxStreams(12)
-            .setAudioAttributes(audioAttributes)
-            .build()
-
-        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
-            if (status == 0) {
-                loadedSoundIds.add(sampleId)
-            }
-        }
-
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
+        if (preloadDefaultSynchronously) {
+            ensureThemeLoaded(TableTheme.CLASSIC_NEON)
         } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            preloadThemeAsync(TableTheme.CLASSIC_NEON)
         }
-
-        // Carrega tema clássico imediatamente para prover fallbacks
-        ensureThemeLoaded(TableTheme.CLASSIC_NEON)
     }
 
-    @Synchronized
-    fun ensureThemeLoaded(theme: TableTheme): ThemeSoundSet {
+    /**
+     * Agenda o pré-carregamento e síntese dos arquivos WAV do [theme] em background,
+     * sem bloquear a thread chamadora.
+     */
+    fun preloadThemeAsync(theme: TableTheme): Job {
+        if (themeSounds.containsKey(theme)) {
+            return pendingThemeLoads[theme] ?: Job().apply { complete() }
+        }
+        val existing = pendingThemeLoads[theme]
+        if (existing != null && existing.isActive) {
+            return existing
+        }
+        val job = audioScope.launch {
+            try {
+                ensureThemeLoaded(theme)
+            } finally {
+                pendingThemeLoads.remove(theme)
+            }
+        }
+        pendingThemeLoads[theme] = job
+        return job
+    }
+
+    fun isThemeLoaded(theme: TableTheme): Boolean = themeSounds.containsKey(theme)
+
+    fun ensureThemeLoaded(theme: TableTheme): ThemeSoundSet = synchronized(themeLoadLock) {
         themeSounds[theme]?.let { return it }
 
-        val cacheDir = context.cacheDir
         val prefix = "sfx_${theme.name.lowercase()}"
 
         val paddleWav = File(cacheDir, "${prefix}_paddle.wav")
@@ -154,15 +169,15 @@ class GameAudioEngine(private val context: Context) {
             if (!cGoWav.exists() || cGoWav.length() == 0L) ProceduralAudioSynthesizer.generateCountdownWav(cGoWav, theme, 0)
             if (!scoreWav.exists() || scoreWav.length() == 0L) ProceduralAudioSynthesizer.generateScoreBlipWav(scoreWav, theme)
 
-            val pId = soundPool.load(paddleWav.absolutePath, 1)
-            val wId = soundPool.load(wallWav.absolutePath, 1)
-            val gsId = soundPool.load(goalScoredWav.absolutePath, 1)
-            val gcId = soundPool.load(goalConcededWav.absolutePath, 1)
-            val c3Id = soundPool.load(c3Wav.absolutePath, 1)
-            val c2Id = soundPool.load(c2Wav.absolutePath, 1)
-            val c1Id = soundPool.load(c1Wav.absolutePath, 1)
-            val cGoId = soundPool.load(cGoWav.absolutePath, 1)
-            val sId = soundPool.load(scoreWav.absolutePath, 1)
+            val pId = playbackPort.loadSample(paddleWav)
+            val wId = playbackPort.loadSample(wallWav)
+            val gsId = playbackPort.loadSample(goalScoredWav)
+            val gcId = playbackPort.loadSample(goalConcededWav)
+            val c3Id = playbackPort.loadSample(c3Wav)
+            val c2Id = playbackPort.loadSample(c2Wav)
+            val c1Id = playbackPort.loadSample(c1Wav)
+            val cGoId = playbackPort.loadSample(cGoWav)
+            val sId = playbackPort.loadSample(scoreWav)
 
             val soundSet = ThemeSoundSet(
                 hitPaddleId = pId,
@@ -200,20 +215,27 @@ class GameAudioEngine(private val context: Context) {
         }
     }
 
+    private fun resolveSoundSetNonBlocking(): ThemeSoundSet? {
+        val cached = themeSounds[currentTheme]
+        if (cached != null) return cached
+        preloadThemeAsync(currentTheme)
+        return themeSounds[TableTheme.CLASSIC_NEON]
+    }
+
     private fun calculateEffectiveVolume(baseMultiplier: Float = 1.0f): Float {
         val normalized = volume.coerceIn(0f, 1f)
         return (normalized * normalized * baseMultiplier).coerceIn(0f, 1f)
     }
 
-    fun playPaddleHit(intensity: Float = 1.0f, isPlayer1: Boolean = true) {
+    override fun playPaddleHit(intensity: Float, isPlayer1: Boolean) {
         if (!isAppInForeground) return
         if (isSoundEnabled) {
-            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-            val soundId = if (currentSet.hitPaddleId != 0) currentSet.hitPaddleId else defaultPaddleHitId
+            val currentSet = resolveSoundSetNonBlocking()
+            val soundId = currentSet?.hitPaddleId?.takeIf { it != 0 } ?: defaultPaddleHitId
             if (soundId != 0) {
                 val effVol = calculateEffectiveVolume(intensity.coerceIn(0.25f, 1.0f))
                 val rate = if (isPlayer1) 1.0f else 0.92f
-                soundPool.play(soundId, effVol, effVol, 1, 0, rate)
+                playbackPort.playSample(soundId, effVol, priority = 1, rate = rate)
             }
         }
         if (isHapticsEnabled) {
@@ -221,14 +243,14 @@ class GameAudioEngine(private val context: Context) {
         }
     }
 
-    fun playWallHit() {
+    override fun playWallHit() {
         if (!isAppInForeground) return
         if (isSoundEnabled) {
-            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-            val soundId = if (currentSet.hitWallId != 0) currentSet.hitWallId else defaultWallHitId
+            val currentSet = resolveSoundSetNonBlocking()
+            val soundId = currentSet?.hitWallId?.takeIf { it != 0 } ?: defaultWallHitId
             if (soundId != 0) {
                 val effVol = calculateEffectiveVolume(0.7f)
-                soundPool.play(soundId, effVol, effVol, 1, 0, 1.0f)
+                playbackPort.playSample(soundId, effVol, priority = 1, rate = 1.0f)
             }
         }
         if (isHapticsEnabled) {
@@ -240,17 +262,17 @@ class GameAudioEngine(private val context: Context) {
      * Ponto marcado pelo jogador (Ponto Pró).
      * Toca fanfarra triunfante exclusiva do tema + progressão harmônica proporcional aos pontos.
      */
-    fun playGoalScored(currentScore: Int = 0, targetScore: Int = 3) {
+    override fun playGoalScored(score: Int, target: Int) {
         if (!isAppInForeground) return
         if (isSoundEnabled) {
-            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-            val soundId = if (currentSet.goalScoredId != 0) currentSet.goalScoredId else defaultGoalScoredId
+            val currentSet = resolveSoundSetNonBlocking()
+            val soundId = currentSet?.goalScoredId?.takeIf { it != 0 } ?: defaultGoalScoredId
             if (soundId != 0) {
                 val effVol = calculateEffectiveVolume(1.0f)
-                soundPool.play(soundId, effVol, effVol, 2, 0, 1.0f)
+                playbackPort.playSample(soundId, effVol, priority = 2, rate = 1.0f)
             }
-            if (currentScore > 0) {
-                playScoreAnnouncement(currentScore, targetScore)
+            if (score > 0) {
+                playScoreAnnouncement(score, target)
             }
         }
         if (isHapticsEnabled) {
@@ -262,14 +284,14 @@ class GameAudioEngine(private val context: Context) {
      * Ponto sofrido pelo jogador (Ponto Contra / Oponente marcou).
      * Toca alarme / som descendente exclusivo do tema.
      */
-    fun playGoalConceded(currentScore: Int = 0, targetScore: Int = 3) {
+    override fun playGoalConceded(score: Int, target: Int) {
         if (!isAppInForeground) return
         if (isSoundEnabled) {
-            val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-            val soundId = if (currentSet.goalConcededId != 0) currentSet.goalConcededId else defaultGoalConcededId
+            val currentSet = resolveSoundSetNonBlocking()
+            val soundId = currentSet?.goalConcededId?.takeIf { it != 0 } ?: defaultGoalConcededId
             if (soundId != 0) {
                 val effVol = calculateEffectiveVolume(0.95f)
-                soundPool.play(soundId, effVol, effVol, 2, 0, 1.0f)
+                playbackPort.playSample(soundId, effVol, priority = 2, rate = 1.0f)
             }
         }
         if (isHapticsEnabled) {
@@ -280,8 +302,8 @@ class GameAudioEngine(private val context: Context) {
     /**
      * Método de compatibilidade legado.
      */
-    fun playGoal() {
-        playGoalScored()
+    override fun playGoal() {
+        playGoalScored(0, 3)
     }
 
     /**
@@ -289,26 +311,26 @@ class GameAudioEngine(private val context: Context) {
      */
     fun playScoreAnnouncement(currentScore: Int, targetScore: Int) {
         if (!isAppInForeground || !isSoundEnabled) return
-        val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-        val scoreId = if (currentSet.scoreBlipId != 0) currentSet.scoreBlipId else defaultScoreBlipId
+        val currentSet = resolveSoundSetNonBlocking()
+        val scoreId = currentSet?.scoreBlipId?.takeIf { it != 0 } ?: defaultScoreBlipId
         if (scoreId != 0) {
             val progress = (currentScore.coerceAtLeast(1) - 1).coerceAtMost(10)
             val rate = (1.0f + progress * 0.10f).coerceIn(0.5f, 2.0f)
             val effVol = calculateEffectiveVolume(0.80f)
-            soundPool.play(scoreId, effVol, effVol, 1, 0, rate)
+            playbackPort.playSample(scoreId, effVol, priority = 1, rate = rate)
         }
     }
 
-    fun playCountdownBeep(countdownNumber: Int) {
+    override fun playCountdownBeep(number: Int) {
         if (!isAppInForeground || !isSoundEnabled) return
-        val currentSet = themeSounds[currentTheme] ?: ensureThemeLoaded(currentTheme)
-        val soundId = when (countdownNumber) {
-            3 -> currentSet.countdown3Id
-            2 -> currentSet.countdown2Id
-            1 -> currentSet.countdown1Id
-            else -> currentSet.countdownGoId
+        val currentSet = resolveSoundSetNonBlocking()
+        val soundId = when (number) {
+            3 -> currentSet?.countdown3Id ?: 0
+            2 -> currentSet?.countdown2Id ?: 0
+            1 -> currentSet?.countdown1Id ?: 0
+            else -> currentSet?.countdownGoId ?: 0
         }
-        val effSoundId = if (soundId != 0) soundId else when (countdownNumber) {
+        val effSoundId = if (soundId != 0) soundId else when (number) {
             3 -> defaultCountdown3Id
             2 -> defaultCountdown2Id
             1 -> defaultCountdown1Id
@@ -316,14 +338,14 @@ class GameAudioEngine(private val context: Context) {
         }
         if (effSoundId != 0) {
             val effVol = calculateEffectiveVolume(0.85f)
-            soundPool.play(effSoundId, effVol, effVol, 1, 0, 1.0f)
+            playbackPort.playSample(effSoundId, effVol, priority = 1, rate = 1.0f)
         }
         if (isHapticsEnabled) {
-            triggerVibration(durationMs = if (countdownNumber <= 0) 50 else 25, amplitude = 180)
+            triggerVibration(durationMs = if (number <= 0) 50 else 25, amplitude = 180)
         }
     }
 
-    fun playCountdownBeep(isFinal: Boolean = false) {
+    override fun playCountdownBeep(isFinal: Boolean) {
         playCountdownBeep(if (isFinal) 0 else 3)
     }
 
@@ -331,101 +353,72 @@ class GameAudioEngine(private val context: Context) {
 
     fun playBgm(theme: TableTheme = currentTheme) {
         if (!isMusicEnabled || !isAppInForeground) return
-        try {
-            if (bgmPlayer != null && playingBgmTheme == theme) {
-                val player = bgmPlayer ?: return
-                val vol = musicVolume.coerceIn(0f, 1f)
-                player.setVolume(vol, vol)
-                if (!player.isPlaying) {
-                    player.start()
+        val vol = musicVolume.coerceIn(0f, 1f)
+
+        if (playbackPort.hasLoadedBgm() && playingBgmTheme == theme) {
+            playbackPort.resumeLoopingBgm(vol)
+            return
+        }
+
+        stopBgm()
+        playingBgmTheme = theme
+
+        val bgmFileName = "bgm_${theme.name.lowercase()}_v1.wav"
+        val file = File(cacheDir, bgmFileName)
+
+        pendingBgmJob = audioScope.launch {
+            try {
+                if (!file.exists() || file.length() == 0L) {
+                    ProceduralAudioSynthesizer.generateBgmWav(file, theme)
                 }
-                return
+                if (!isActive || !isMusicEnabled || !isAppInForeground || playingBgmTheme != theme) {
+                    return@launch
+                }
+                playbackPort.startLoopingBgm(file, musicVolume.coerceIn(0f, 1f))
+            } catch (_: Exception) {
+                // Recupera silenciosamente em caso de falha do subsistema de áudio
             }
-
-            stopBgm()
-            playingBgmTheme = theme
-
-            val bgmFileName = "bgm_${theme.name.lowercase()}_v1.wav"
-            val file = File(context.cacheDir, bgmFileName)
-            if (!file.exists() || file.length() == 0L) {
-                ProceduralAudioSynthesizer.generateBgmWav(file, theme)
-            }
-
-            bgmPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_GAME)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                setDataSource(file.absolutePath)
-                isLooping = true
-                prepare()
-                val vol = musicVolume.coerceIn(0f, 1f)
-                setVolume(vol, vol)
-                start()
-            }
-        } catch (_: Exception) {
-            // Silently recover if audio subsystem fails
         }
     }
 
     fun pauseBgm() {
-        try {
-            if (bgmPlayer?.isPlaying == true) {
-                bgmPlayer?.pause()
-            }
-        } catch (_: Exception) {}
+        playbackPort.pauseLoopingBgm()
     }
 
     fun resumeBgm() {
         if (!isMusicEnabled || !isAppInForeground) return
-        try {
-            if (bgmPlayer != null && bgmPlayer?.isPlaying == false) {
-                val vol = musicVolume.coerceIn(0f, 1f)
-                bgmPlayer?.setVolume(vol, vol)
-                bgmPlayer?.start()
-            }
-        } catch (_: Exception) {}
-    }
-
-    fun stopBgm() {
-        try {
-            bgmPlayer?.stop()
-            bgmPlayer?.release()
-            bgmPlayer = null
-            playingBgmTheme = null
-        } catch (_: Exception) {}
-    }
-
-    private fun triggerVibration(durationMs: Long, amplitude: Int) {
-        vibrator ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect = VibrationEffect.createOneShot(durationMs, amplitude.coerceIn(1, 255))
-            vibrator.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(durationMs)
+        if (playbackPort.hasLoadedBgm() && !playbackPort.isLoopingBgmPlaying()) {
+            playbackPort.resumeLoopingBgm(musicVolume.coerceIn(0f, 1f))
         }
     }
 
-    fun stopAll() {
-        soundPool.autoPause()
+    fun stopBgm() {
+        pendingBgmJob?.cancel()
+        pendingBgmJob = null
+        playingBgmTheme = null
+        playbackPort.stopLoopingBgm()
+    }
+
+    private fun triggerVibration(durationMs: Long, amplitude: Int) {
+        playbackPort.vibrate(durationMs, amplitude)
+    }
+
+    override fun stopAll() {
+        playbackPort.pauseAllSamples()
         stopBgm()
-        vibrator?.cancel()
     }
 
     fun resumeAudio() {
         if (!isAppInForeground) return
-        soundPool.autoResume()
-        if (isMusicEnabled && bgmPlayer != null) {
+        playbackPort.resumeAllSamples()
+        if (isMusicEnabled && playbackPort.hasLoadedBgm()) {
             resumeBgm()
         }
     }
 
     fun release() {
         stopAll()
-        stopBgm()
-        soundPool.release()
+        audioScope.cancel()
+        playbackPort.release()
     }
 }

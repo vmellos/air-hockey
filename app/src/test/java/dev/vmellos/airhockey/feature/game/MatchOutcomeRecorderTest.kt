@@ -3,8 +3,8 @@ package dev.vmellos.airhockey.feature.game
 import dev.vmellos.airhockey.FakeLeaderboardDao
 import dev.vmellos.airhockey.FakeStageProgressDao
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.feature.leaderboard.LeaderboardRepository
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.feature.stage.StageRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -82,7 +82,7 @@ class MatchOutcomeRecorderTest {
         )
 
         val bossStage = 10
-        val bossTheme = ArenaConquestCatalog.getThemeForStage(bossStage)
+        val bossTheme = ArenaPresetCatalog.getThemeForStage(bossStage)
 
         val state = MatchState(
             mode = GameMode.SOLO,
@@ -140,5 +140,81 @@ class MatchOutcomeRecorderTest {
         // Only ELO leaderboard submitted, stage leaderboard is skipped
         assertEquals(1, playGamesPort.submissions.size)
         assertEquals("elo_board", playGamesPort.submissions[0].first)
+    }
+
+    @Test
+    fun recordOutcome_spectatorAiVsAiSkipsStatsAndPlayGames() = runBlocking {
+        val fakeLeaderboardDao = FakeLeaderboardDao()
+        val fakeStageDao = FakeStageProgressDao()
+        val leaderboardRepo = LeaderboardRepository(fakeLeaderboardDao)
+        val stageRepo = StageRepository(fakeStageDao)
+        val playGamesPort = RecordingPlayGamesPort()
+
+        val recorder = MatchOutcomeRecorder(
+            leaderboardRepository = leaderboardRepo,
+            stageRepository = stageRepo,
+            playGamesPort = playGamesPort,
+            eloLeaderboardId = "elo_board",
+            stageLeaderboardId = "stage_board"
+        )
+
+        val state = MatchState(
+            mode = GameMode.AI_VS_AI_LOCAL,
+            status = MatchStatus.GAME_OVER,
+            scorePlayer1 = 7,
+            scorePlayer2 = 2,
+            targetScore = 7,
+            remainingTimeSeconds = 60,
+            player1Name = "Bot 1",
+            player2Name = "Bot 2",
+            winner = 1
+        )
+
+        val result = recorder.recordOutcome(state, aiDifficulty = null)
+
+        assertNull(result.matchRecord)
+        assertNull(result.eloRating)
+        assertEquals(0, result.starsEarned)
+        assertTrue(fakeLeaderboardDao.matches.isEmpty())
+        assertTrue(playGamesPort.submissions.isEmpty())
+    }
+
+    @Test
+    fun recordOutcome_guestUsesPlayer2NameAndDeltaBForElo() = runBlocking {
+        val fakeLeaderboardDao = FakeLeaderboardDao()
+        val fakeStageDao = FakeStageProgressDao()
+        val leaderboardRepo = LeaderboardRepository(fakeLeaderboardDao)
+        val stageRepo = StageRepository(fakeStageDao)
+        val playGamesPort = RecordingPlayGamesPort()
+
+        val recorder = MatchOutcomeRecorder(
+            leaderboardRepository = leaderboardRepo,
+            stageRepository = stageRepo,
+            playGamesPort = playGamesPort,
+            eloLeaderboardId = "elo_board"
+        )
+
+        val state = MatchState(
+            mode = GameMode.CONNECTED_GUEST,
+            status = MatchStatus.GAME_OVER,
+            scorePlayer1 = 3,
+            scorePlayer2 = 5,
+            targetScore = 5,
+            remainingTimeSeconds = 80,
+            isHost = false,
+            player1Name = "HostPlayer",
+            player2Name = "GuestPlayer",
+            localPlayerName = "GuestPlayer",
+            winner = 2
+        )
+
+        val result = recorder.recordOutcome(state, aiDifficulty = null)
+
+        assertNotNull(result.matchRecord)
+        assertNotNull(result.eloRating)
+        assertTrue("Vitória do convidado deve elevar seu Elo acima de 1000", result.eloRating!! > 1000)
+        assertEquals(1, playGamesPort.submissions.size)
+        assertEquals("elo_board", playGamesPort.submissions[0].first)
+        assertEquals(result.eloRating!!.toLong(), playGamesPort.submissions[0].second)
     }
 }

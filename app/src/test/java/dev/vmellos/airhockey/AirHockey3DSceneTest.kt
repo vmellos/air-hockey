@@ -3,14 +3,16 @@ package dev.vmellos.airhockey
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.game.GameMode
-import dev.vmellos.airhockey.feature.game.ui.Theme3DAssetResolver
+import dev.vmellos.airhockey.feature.game.TablePerspective
 import dev.vmellos.airhockey.feature.game.ui.getCameraPreset
+import dev.vmellos.airhockey.feature.game.ui.kit
 import dev.vmellos.airhockey.feature.game.ui.screenToTable3D
 import dev.vmellos.airhockey.feature.game.ui.tableToScreen3D
 import dev.vmellos.airhockey.feature.physics.CameraPose3D
 import dev.vmellos.airhockey.feature.physics.Table3DCameraProjection
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -422,31 +424,45 @@ class AirHockey3DSceneTest {
     }
 
     @Test
-    fun theme3DAssetResolver_extendedTable_selectsHalfTableModels() {
+    fun arenaKitCatalog_extendedTable_selectsHalfTableModelsAndMascot() {
         for (theme in TableTheme.entries) {
-            val p1Asset = Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = true)
-            val p2Asset = Theme3DAssetResolver.getTable3DAsset(theme, isExtended = true, isPlayer1 = false)
+            val kit = theme.kit()
+            val p1Asset = kit.tableAsset(TablePerspective.EXTENDED_HOST)
+            val p2Asset = kit.tableAsset(TablePerspective.EXTENDED_GUEST)
+            val fullAsset = kit.tableAsset(TablePerspective.LOCAL_FULL)
             assertNotNull(p1Asset)
             assertNotNull(p2Asset)
             assert(p1Asset.endsWith("_half_p1.glb")) { "Theme $theme p1 asset $p1Asset should end with _half_p1.glb" }
             assert(p2Asset.endsWith("_half_p2.glb")) { "Theme $theme p2 asset $p2Asset should end with _half_p2.glb" }
+            assertEquals(kit.tableFullAsset, fullAsset)
         }
 
-        val p1Asset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = true, isPlayer1 = true)
+        val p1Asset = TableTheme.CLASSIC_NEON.kit().tableAsset(TablePerspective.EXTENDED_HOST)
         assertEquals("models/mesa_arcade_half_p1.glb", p1Asset)
 
-        val soccerP1 = Theme3DAssetResolver.getTable3DAsset(TableTheme.CYBER_SOCCER, isExtended = true, isPlayer1 = true)
+        val soccerP1 = TableTheme.CYBER_SOCCER.kit().tableAsset(TablePerspective.EXTENDED_HOST)
         assertEquals("models/mesa_cyber_soccer_half_p1.glb", soccerP1)
 
-        val soccerP2 = Theme3DAssetResolver.getTable3DAsset(TableTheme.CYBER_SOCCER, isExtended = true, isPlayer1 = false)
+        val soccerP2 = TableTheme.CYBER_SOCCER.kit().tableAsset(TablePerspective.EXTENDED_GUEST)
         assertEquals("models/mesa_cyber_soccer_half_p2.glb", soccerP2)
 
-        val standardAsset = Theme3DAssetResolver.getTable3DAsset(TableTheme.CLASSIC_NEON, isExtended = false)
+        val standardAsset = TableTheme.CLASSIC_NEON.kit().tableAsset(TablePerspective.LOCAL_FULL)
         assertEquals("models/mesa_arcade.glb", standardAsset)
 
-        val kiaraMascot = Theme3DAssetResolver.getMascot3DAsset(TableTheme.KIARA_CAT)
-        assertEquals("models/kiara_3d.glb", kiaraMascot)
-        org.junit.Assert.assertNull(Theme3DAssetResolver.getMascot3DAsset(TableTheme.CLASSIC_NEON))
+        val kiaraKit = TableTheme.KIARA_CAT.kit()
+        assertEquals("models/kiara_3d.glb", kiaraKit.mascot3dAsset)
+        assertTrue(kiaraKit.hasMascot)
+        assertTrue(kiaraKit.needsWideMascotFraming)
+        assertNull(TableTheme.CLASSIC_NEON.kit().mascot3dAsset)
+        assertFalse(TableTheme.CLASSIC_NEON.kit().needsWideMascotFraming)
+
+        // Decisão Q3: neither EXTENDED_HOST nor EXTENDED_GUEST draws top goal
+        assertFalse(!TablePerspective.EXTENDED_HOST.isExtended)
+        assertFalse(!TablePerspective.EXTENDED_GUEST.isExtended)
+        assertTrue(!TablePerspective.LOCAL_FULL.isExtended)
+        assertTrue(!TablePerspective.SPLIT_DUAL.isExtended)
+        assertTrue(!TablePerspective.CONNECTED_HOST.isExtended)
+        assertTrue(!TablePerspective.CONNECTED_GUEST.isExtended)
     }
 
     @Test
@@ -670,5 +686,57 @@ class AirHockey3DSceneTest {
         assertEquals(0, zeroSliderWhileEffectsOn.percent)
         assertEquals(dev.vmellos.airhockey.feature.game.ui.NeonBloomBand.OFF, zeroSliderWhileEffectsOn.band)
         assertTrue(zeroSliderWhileEffectsOn.isControlEnabled)
+    }
+
+    @Test
+    fun cameraBasis3D_matchesPoseOverloadAndRoundTripsOnTablePlane() {
+        val proj = Table3DCameraProjection(TableDimensions(), GameMode.CONNECTED_GUEST)
+        val preset = proj.getBasePreset(CameraZoom3D.STANDARD)
+        val pose = CameraPose3D(
+            x = preset.position.x,
+            y = preset.position.y,
+            z = preset.position.z,
+            pitch = preset.rotation.x,
+            yaw = preset.rotation.y
+        )
+        val screenW = 1080f
+        val screenH = 2400f
+        val basis = proj.computeBasis(screenW, screenH, pose)
+        assertNotNull(basis)
+
+        val projectedViaBasis = proj.tableToScreen(320f, 450f, screenW, screenH, basis!!, elevationY = 0f)
+        val projectedViaPose = proj.tableToScreen(320f, 450f, screenW, screenH, pose, elevationY = 0f)
+        assertNotNull(projectedViaBasis)
+        assertNotNull(projectedViaPose)
+        assertEquals(projectedViaPose!!.x, projectedViaBasis!!.x, 1e-4f)
+        assertEquals(projectedViaPose.y, projectedViaBasis.y, 1e-4f)
+
+        val recovered = proj.screenToTable(projectedViaBasis.x, projectedViaBasis.y, screenW, screenH, basis)
+        assertNotNull(recovered)
+        assertEquals(320f, recovered!!.x, 0.5f)
+        assertEquals(450f, recovered.y, 0.5f)
+    }
+
+    @Test
+    fun effectiveTargetPreset_respectsNeedsWideMascotFramingAndBloomGammaCurve() {
+        val proj = Table3DCameraProjection(TableDimensions(), GameMode.SOLO)
+        val standardPortrait = proj.computeEffectiveTargetPreset(
+            zoom = CameraZoom3D.STANDARD,
+            screenAspect = 9f / 19.5f,
+            theme = TableTheme.CLASSIC_NEON,
+            needsWideMascotFraming = false
+        )
+        val mascotFramingPreset = proj.computeEffectiveTargetPreset(
+            zoom = CameraZoom3D.STANDARD,
+            screenAspect = 9f / 19.5f,
+            theme = TableTheme.CLASSIC_NEON,
+            needsWideMascotFraming = true
+        )
+        assertTrue(mascotFramingPreset.position.y > standardPortrait.position.y)
+        assertEquals(2.85f, mascotFramingPreset.position.y, 1e-4f)
+
+        assertEquals(0.0f, dev.vmellos.airhockey.feature.game.ui.computeCalibratedBloomStrength(0.0f), 1e-5f)
+        assertEquals(0.055f, dev.vmellos.airhockey.feature.game.ui.computeCalibratedBloomStrength(0.05f), 1e-5f)
+        assertEquals(0.22f, dev.vmellos.airhockey.feature.game.ui.computeCalibratedBloomStrength(0.10f), 1e-5f)
     }
 }

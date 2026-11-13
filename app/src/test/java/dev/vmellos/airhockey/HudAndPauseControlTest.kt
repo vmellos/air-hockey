@@ -52,11 +52,12 @@ class HudAndPauseControlTest {
     @Test
     fun testAiVsAiExtendedGuestModeClassification() {
         val mode = GameMode.AI_VS_AI_EXTENDED_GUEST
-        val isGuestMode = mode == GameMode.EXTENDED_GUEST ||
-                mode == GameMode.CONNECTED_GUEST ||
-                mode == GameMode.AI_VS_AI_EXTENDED_GUEST
+        val capabilities = mode.capabilities
 
-        assertTrue("AI_VS_AI_EXTENDED_GUEST deve ser classificado como modo convidado para delegação de pausa", isGuestMode)
+        assertTrue("AI_VS_AI_EXTENDED_GUEST deve ser classificado como modo convidado para delegação de pausa", capabilities.isGuest)
+        assertTrue(capabilities.isExtended)
+        assertTrue(capabilities.isSpectator)
+        assertTrue(!capabilities.recordsStats)
     }
 
     @Test

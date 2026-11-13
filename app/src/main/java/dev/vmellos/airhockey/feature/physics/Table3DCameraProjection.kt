@@ -1,7 +1,9 @@
 package dev.vmellos.airhockey.feature.physics
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import dev.romainguy.kotlin.math.Float3
+import dev.vmellos.airhockey.core.catalog.canonical
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.feature.game.GameMode
@@ -36,6 +38,31 @@ data class CameraPose3D(
 }
 
 /**
+ * Base vetorial ortonormal pré-calculada a partir da pose da câmera e da proporção do viewport,
+ * evitando recalcular trigonometria de ângulos de Euler para cada partícula ou ponto do rastro.
+ */
+@Immutable
+data class CameraBasis3D(
+    val pose: CameraPose3D,
+    val aspect: Float,
+    val tanHalfFov: Float = Table3DCameraProjection.TAN_HALF_FOV
+) {
+    val cosPitch: Float
+    val sinPitch: Float
+    val cosYaw: Float
+    val sinYaw: Float
+
+    init {
+        val alpha = Math.toRadians(pose.pitch.toDouble()).toFloat()
+        cosPitch = cos(alpha)
+        sinPitch = sin(alpha)
+        val beta = Math.toRadians(pose.yaw.toDouble()).toFloat()
+        cosYaw = cos(beta)
+        sinYaw = sin(beta)
+    }
+}
+
+/**
  * Módulo profundo de projeção espacial, enquadramento e desprojeção 3D da Arena (GLOSSARY.md).
  *
  * Encapsula:
@@ -49,11 +76,11 @@ class Table3DCameraProjection(
     val dimensions: TableDimensions,
     val mode: GameMode = GameMode.SOLO
 ) {
-    val isExtendedHost: Boolean = mode == GameMode.EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_HOST
-    val isExtendedGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-    val isExtended: Boolean = isExtendedHost || isExtendedGuest || mode == GameMode.AI_VS_AI_EXTENDED
-    val isSplitScreen: Boolean = mode == GameMode.SPLIT_SCREEN
-    val isGuestCamera: Boolean = mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
+    val isExtendedHost: Boolean = mode.capabilities.isExtendedHost
+    val isExtendedGuest: Boolean = mode.capabilities.isExtendedGuest
+    val isExtended: Boolean = mode.capabilities.isExtended
+    val isSplitScreen: Boolean = mode.capabilities.isSplitScreen
+    val isGuestCamera: Boolean = mode.capabilities.isConnectedGuest
 
     companion object {
         // Lente padrão de 28mm em sensor full-frame (24mm vertical) do Filament
@@ -63,6 +90,24 @@ class Table3DCameraProjection(
         const val METRIC_SCALE_X: Float = 0.00108f
         const val METRIC_SCALE_Z_STANDARD: Float = 0.00096f
         const val METRIC_SCALE_Z_EXTENDED: Float = 0.00108f
+
+        /**
+         * Retorna o preset estático da câmera 3D para o nível de zoom e modalidade informados.
+         */
+        fun getCameraPreset(
+            zoom: CameraZoom3D,
+            isSplitScreen: Boolean = false,
+            isGuest: Boolean = false,
+            isExtended: Boolean = false
+        ): CameraPreset {
+            val mode = when {
+                isExtended -> GameMode.EXTENDED_HOST
+                isSplitScreen -> GameMode.SPLIT_SCREEN
+                isGuest -> GameMode.CONNECTED_GUEST
+                else -> GameMode.SOLO
+            }
+            return Table3DCameraProjection(TableDimensions(), mode).getBasePreset(zoom)
+        }
     }
 
     /**
@@ -113,7 +158,8 @@ class Table3DCameraProjection(
     fun computeEffectiveTargetPreset(
         zoom: CameraZoom3D = CameraZoom3D.STANDARD,
         screenAspect: Float,
-        theme: TableTheme? = null
+        theme: TableTheme? = null,
+        needsWideMascotFraming: Boolean = false
     ): CameraPreset {
         val base = getBasePreset(zoom)
         if (screenAspect <= 0.05f) {
@@ -158,8 +204,9 @@ class Table3DCameraProjection(
             }
         }
 
-        // Calibração de Enquadramento 3D para Arena com Mascote (Kiara Cat) em telas de celular retrato
-        if (theme == TableTheme.KIARA_CAT && !isSplitScreen) {
+        // Calibração de Enquadramento 3D para Arena com Mascote em telas de celular retrato
+        val needsWideFraming = needsWideMascotFraming || (theme != null && theme.canonical() == TableTheme.KIARA_CAT)
+        if (needsWideFraming && !isSplitScreen) {
             return when (zoom) {
                 CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.45f, 2.10f), Float3(-47f, 0f, 0f))
                 CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.85f, 2.45f), Float3(-46f, 0f, 0f))
@@ -331,6 +378,14 @@ class Table3DCameraProjection(
     }
 
     /**
+     * Pré-calcula a base vetorial ortonormal da câmera para reuso em múltiplos pontos por frame.
+     */
+    fun computeBasis(screenW: Float, screenH: Float, pose: CameraPose3D): CameraBasis3D? {
+        if (screenW <= 0f || screenH <= 0f) return null
+        return CameraBasis3D(pose = pose, aspect = screenW / screenH, tanHalfFov = TAN_HALF_FOV)
+    }
+
+    /**
      * Desprojeção em Perspectiva 3D: Converte coordenadas da tela (pixels) para coordenadas virtuais da mesa.
      */
     fun screenToTable(
@@ -340,10 +395,22 @@ class Table3DCameraProjection(
         screenH: Float,
         pose: CameraPose3D
     ): TablePoint? {
-        if (screenW <= 0f || screenH <= 0f) return null
-        val aspect = screenW / screenH
+        val basis = computeBasis(screenW, screenH, pose) ?: return null
+        return screenToTable(screenX, screenY, screenW, screenH, basis)
+    }
 
-        val tanHalfFov = TAN_HALF_FOV
+    fun screenToTable(
+        screenX: Float,
+        screenY: Float,
+        screenW: Float,
+        screenH: Float,
+        basis: CameraBasis3D
+    ): TablePoint? {
+        if (screenW <= 0f || screenH <= 0f) return null
+        val pose = basis.pose
+        val aspect = basis.aspect
+        val tanHalfFov = basis.tanHalfFov
+
         val ndcX = (2f * screenX / screenW) - 1f
         val ndcY = 1f - (2f * screenY / screenH)
 
@@ -351,21 +418,13 @@ class Table3DCameraProjection(
         val ry = ndcY * tanHalfFov
         val rz = -1f
 
-        val alpha = Math.toRadians(pose.pitch.toDouble()).toFloat()
-        val cosA = cos(alpha)
-        val sinA = sin(alpha)
-
         val pitchDx = rx
-        val pitchDy = ry * cosA - rz * sinA
-        val pitchDz = ry * sinA + rz * cosA
+        val pitchDy = ry * basis.cosPitch - rz * basis.sinPitch
+        val pitchDz = ry * basis.sinPitch + rz * basis.cosPitch
 
-        val beta = Math.toRadians(pose.yaw.toDouble()).toFloat()
-        val cosB = cos(beta)
-        val sinB = sin(beta)
-
-        val dx = pitchDx * cosB + pitchDz * sinB
+        val dx = pitchDx * basis.cosYaw + pitchDz * basis.sinYaw
         val dy = pitchDy
-        val dz = -pitchDx * sinB + pitchDz * cosB
+        val dz = -pitchDx * basis.sinYaw + pitchDz * basis.cosYaw
 
         if (abs(dy) < 1e-4f) return null
         val t = -pose.y / dy
@@ -398,9 +457,22 @@ class Table3DCameraProjection(
         pose: CameraPose3D,
         elevationY: Float = 0.0075f
     ): Offset? {
+        val basis = computeBasis(screenW, screenH, pose) ?: return null
+        return tableToScreen(tableX, tableY, screenW, screenH, basis, elevationY)
+    }
+
+    fun tableToScreen(
+        tableX: Float,
+        tableY: Float,
+        screenW: Float,
+        screenH: Float,
+        basis: CameraBasis3D,
+        elevationY: Float = 0.0075f
+    ): Offset? {
         if (screenW <= 0f || screenH <= 0f) return null
-        val aspect = screenW / screenH
-        val tanHalfFov = TAN_HALF_FOV
+        val pose = basis.pose
+        val aspect = basis.aspect
+        val tanHalfFov = basis.tanHalfFov
 
         val lx = if (isExtended) {
             if (isExtendedGuest) 1000f - tableX else tableX
@@ -419,21 +491,14 @@ class Table3DCameraProjection(
         val dy = worldY - pose.y
         val dz = worldZ - pose.z
 
-        val beta = Math.toRadians(-pose.yaw.toDouble()).toFloat()
-        val cosB = cos(beta)
-        val sinB = sin(beta)
-
-        val yawDx = dx * cosB - dz * sinB
+        // Rotação inversa de Yaw (-beta): cos(-beta) = cosYaw, sin(-beta) = -sinYaw
+        val yawDx = dx * basis.cosYaw + dz * basis.sinYaw
         val yawDy = dy
-        val yawDz = dx * sinB + dz * cosB
-
-        val alpha = Math.toRadians(pose.pitch.toDouble()).toFloat()
-        val cosA = cos(alpha)
-        val sinA = sin(alpha)
+        val yawDz = -dx * basis.sinYaw + dz * basis.cosYaw
 
         val camXPrime = yawDx
-        val camYPrime = yawDy * cosA + yawDz * sinA
-        val camZPrime = -yawDy * sinA + yawDz * cosA
+        val camYPrime = yawDy * basis.cosPitch + yawDz * basis.sinPitch
+        val camZPrime = -yawDy * basis.sinPitch + yawDz * basis.cosPitch
 
         if (camZPrime >= -0.05f) return null
 
