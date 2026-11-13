@@ -421,6 +421,8 @@ class GameViewModel : ViewModel(), ArenaRuntime {
         if (_matchState.value.status == MatchStatus.PAUSED) {
             arbitro?.resume()
             startCountdown()
+        } else {
+            broadcastState()
         }
     }
 

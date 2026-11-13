@@ -134,9 +134,16 @@ fun GameScreen(
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
                 runtime.requestPause()
                 AirHockeyApp.instance.audioEngine.stopAll()
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+                // Durante a contagem regressiva ou apresentação, ignora ON_PAUSE transitório de transição de rota/permissão
+                val currentStatus = runtime.matchState.value.status
+                if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.GOAL_PAUSE) {
+                    runtime.requestPause()
+                    AirHockeyApp.instance.audioEngine.stopAll()
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

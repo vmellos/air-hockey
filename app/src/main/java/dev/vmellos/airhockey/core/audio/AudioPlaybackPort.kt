@@ -132,8 +132,21 @@ class AndroidAudioPlaybackAdapter(context: Context) : AudioPlaybackPort {
     @Synchronized
     override fun stopLoopingBgm() {
         try {
-            bgmPlayer?.stop()
-            bgmPlayer?.release()
+            bgmPlayer?.let { player ->
+                player.setOnCompletionListener(null)
+                player.setOnPreparedListener(null)
+                player.setOnErrorListener(null)
+                player.setOnInfoListener(null)
+                try {
+                    if (player.isPlaying) {
+                        player.stop()
+                    }
+                } catch (_: Exception) {}
+                try {
+                    player.reset()
+                } catch (_: Exception) {}
+                player.release()
+            }
         } catch (_: Exception) {
         } finally {
             bgmPlayer = null

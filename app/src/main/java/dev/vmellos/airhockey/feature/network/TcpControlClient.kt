@@ -60,7 +60,11 @@ class TcpControlClient {
             } catch (e: Exception) {
                 writer = null
                 if (isActive) {
-                    Log.w(TAG, "Conexão TCP com $hostIp:$port falhou ou caiu", e)
+                    if (e is java.net.SocketException) {
+                        Log.d(TAG, "Conexão TCP com $hostIp:$port finalizada: ${e.message}")
+                    } else {
+                        Log.w(TAG, "Conexão TCP com $hostIp:$port falhou ou caiu", e)
+                    }
                     onDisconnected?.invoke()
                 }
             }
@@ -87,11 +91,11 @@ class TcpControlClient {
         sendScope.launch {
             val w = writer
             if (w == null) {
-                Log.w(TAG, "Mensagem descartada (sem conexão com o anfitrião): $msg")
+                Log.d(TAG, "Mensagem descartada (sem conexão com o anfitrião): $msg")
                 return@launch
             }
             w.println(msg)
-            if (w.checkError()) Log.w(TAG, "Falha ao enviar mensagem TCP: $msg")
+            if (w.checkError()) Log.d(TAG, "Falha ao enviar mensagem TCP (anfitrião desconectado): $msg")
         }
     }
 

@@ -60,7 +60,11 @@ class TcpControlServer(
                             }
                         }
                     } catch (e: Exception) {
-                        if (isActive) Log.w(TAG, "Leitura TCP interrompida", e)
+                        if (isActive && e !is java.net.SocketException) {
+                            Log.w(TAG, "Leitura TCP interrompida", e)
+                        } else if (isActive) {
+                            Log.d(TAG, "Conexão TCP finalizada: ${e.message}")
+                        }
                     }
 
                     writer = null
@@ -68,7 +72,11 @@ class TcpControlServer(
                 }
             } catch (e: Exception) {
                 if (isActive) {
-                    Log.e(TAG, "Servidor TCP falhou na porta $port", e)
+                    if (e is java.net.SocketException) {
+                        Log.d(TAG, "Servidor TCP finalizado na porta $port")
+                    } else {
+                        Log.e(TAG, "Servidor TCP falhou na porta $port", e)
+                    }
                     onClientDisconnected?.invoke()
                 }
             }
@@ -79,11 +87,11 @@ class TcpControlServer(
         sendScope.launch {
             val w = writer
             if (w == null) {
-                Log.w(TAG, "Mensagem descartada (sem convidado conectado): $msg")
+                Log.d(TAG, "Mensagem descartada (sem convidado conectado): $msg")
                 return@launch
             }
             w.println(msg)
-            if (w.checkError()) Log.w(TAG, "Falha ao enviar mensagem TCP: $msg")
+            if (w.checkError()) Log.d(TAG, "Falha ao enviar mensagem TCP (cliente desconectado): $msg")
         }
     }
 

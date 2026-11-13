@@ -510,6 +510,7 @@ class LobbyViewModel(
     }
 
     fun consumeStartMatchTrigger() {
+        coordinator?.consumeStartMatchTrigger()
         _state.update { it.copy(startMatchTrigger = 0L) }
     }
 
