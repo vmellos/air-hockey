@@ -36,6 +36,8 @@ data class MatchFrameSnapshot(
     val puckLastHitBy: Int = 0,
     val timestampNano: Long = System.nanoTime()
 ) {
+    fun puckSpeed(): Float = kotlin.math.hypot(puckVx, puckVy)
+
     fun toTelemetryPacket(sequenceNumber: Long): HostTelemetryPacket {
         return HostTelemetryPacket(
             sequenceNumber = sequenceNumber,
@@ -207,13 +209,19 @@ class ArbitroVirtual(
     var pendingCollisionIntensity: Float = 0f
         private set
 
+    private val simulationLock = Any()
+
     // Acumuladores de tempo determinísticos desacoplados de corrotinas externas
+    private var realTimeAccumulator: Float = 0f
     private var goalPauseAccumulator: Float = 0f
     private var countdownStepAccumulator: Float = 0f
     private var secondTimerAccumulator: Float = 0f
     private var deadPuckAccumulator: Float = 0f
 
     companion object {
+        const val FIXED_DT_SEC: Float = 1f / 120f
+        const val MAX_FRAME_ELAPSED_SEC: Float = 0.10f
+        const val MAX_CATCHUP_STEPS: Int = 12
         const val GOAL_PAUSE_DURATION_SEC: Float = 1.20f
         const val COUNTDOWN_STEP_DURATION_SEC: Float = 0.90f
         const val DEAD_PUCK_TIMEOUT_SEC: Float = 3.50f
@@ -248,40 +256,61 @@ class ArbitroVirtual(
         )
     }
 
+    fun currentSnapshot(): MatchFrameSnapshot = _frames.value
+
+    fun getPlayer2Target(): Pair<Float, Float> = synchronized(simulationLock) {
+        Pair(engine.player2Mallet.targetX, engine.player2Mallet.targetY)
+    }
+
     private fun publishSnapshot() {
         _frames.value = buildSnapshot()
+    }
+
+    private fun recordPendingCollision(eventCode: Byte, intensity: Float) {
+        val prevIsPaddle = pendingCollisionEvent.toInt() == 1 || pendingCollisionEvent.toInt() == 2
+        if (eventCode.toInt() == 3 && prevIsPaddle) {
+            return
+        }
+        val nextIsPaddle = eventCode.toInt() == 1 || eventCode.toInt() == 2
+        pendingCollisionEvent = eventCode
+        pendingCollisionIntensity = if (prevIsPaddle && nextIsPaddle) {
+            maxOf(pendingCollisionIntensity, intensity)
+        } else {
+            intensity
+        }
     }
 
     private fun setupCollisionListeners() {
         engine.onCollisionListener = { event, intensity ->
             when (event) {
                 CollisionEvent.PADDLE_HIT_P1 -> {
-                    pendingCollisionEvent = 1
-                    pendingCollisionIntensity = intensity
+                    recordPendingCollision(1, intensity)
                     audioPort.playPaddleHit(intensity, isPlayer1 = true)
                 }
                 CollisionEvent.PADDLE_HIT_P2 -> {
-                    pendingCollisionEvent = 2
-                    pendingCollisionIntensity = intensity
+                    recordPendingCollision(2, intensity)
                     audioPort.playPaddleHit(intensity, isPlayer1 = false)
                 }
                 CollisionEvent.WALL_HIT -> {
-                    pendingCollisionEvent = 3
-                    pendingCollisionIntensity = intensity
+                    recordPendingCollision(3, intensity)
                     audioPort.playWallHit()
                 }
                 CollisionEvent.GOAL_PLAYER1 -> {
-                    handleGoal(scorer = 1)
+                    handleGoalInternal(scorer = 1)
                 }
                 CollisionEvent.GOAL_PLAYER2 -> {
-                    handleGoal(scorer = 2)
+                    handleGoalInternal(scorer = 2)
                 }
                 CollisionEvent.NONE -> {}
             }
         }
     }
 
-    fun handleGoal(scorer: Int) {
+    fun handleGoal(scorer: Int) = synchronized(simulationLock) {
+        handleGoalInternal(scorer)
+    }
+
+    private fun handleGoalInternal(scorer: Int) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
 
         val p1 = if (scorer == 1) _matchState.value.scorePlayer1 + 1 else _matchState.value.scorePlayer1
@@ -324,7 +353,45 @@ class ArbitroVirtual(
         onGoalScoredCallback?.invoke(scorer, isGameOver)
     }
 
-    fun tickPhysics(dt: Float) {
+    /**
+     * Avança a simulação usando acumulador de passo fixo (120 Hz) desacoplado do FPS da tela.
+     * Retorna o número de passos fixos executados neste ciclo.
+     */
+    fun advanceRealTime(elapsedSec: Float): Int = synchronized(simulationLock) {
+        if (elapsedSec <= 0f || !elapsedSec.isFinite()) return 0
+        if (!isActiveLoopStatus(_matchState.value.status)) {
+            realTimeAccumulator = 0f
+            return 0
+        }
+
+        realTimeAccumulator += elapsedSec.coerceAtMost(MAX_FRAME_ELAPSED_SEC)
+        var steps = 0
+        while (realTimeAccumulator >= FIXED_DT_SEC && steps < MAX_CATCHUP_STEPS) {
+            if (!isActiveLoopStatus(_matchState.value.status)) {
+                realTimeAccumulator = 0f
+                break
+            }
+            tickInternal(FIXED_DT_SEC)
+            realTimeAccumulator -= FIXED_DT_SEC
+            steps++
+        }
+        if (steps >= MAX_CATCHUP_STEPS && realTimeAccumulator >= FIXED_DT_SEC) {
+            realTimeAccumulator = 0f
+        }
+        steps
+    }
+
+    private fun isActiveLoopStatus(status: MatchStatus): Boolean {
+        return status == MatchStatus.COUNTDOWN ||
+            status == MatchStatus.PLAYING ||
+            status == MatchStatus.GOAL_PAUSE
+    }
+
+    fun tickPhysics(dt: Float) = synchronized(simulationLock) {
+        tickPhysicsInternal(dt)
+    }
+
+    private fun tickPhysicsInternal(dt: Float) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
 
         // REGRA DO DISCO PRESO (GLOSSARY.md / ADR 0039):
@@ -360,27 +427,31 @@ class ArbitroVirtual(
      * Unifica a simulação física a 120 Hz, contagem regressiva de início/retomada,
      * pausa pós-gol e acumulador de segundos da partida em uma única linha do tempo sem corrotinas soltas.
      */
-    fun tick(dt: Float) {
+    fun tick(dt: Float) = synchronized(simulationLock) {
+        tickInternal(dt)
+    }
+
+    private fun tickInternal(dt: Float) {
         when (_matchState.value.status) {
             MatchStatus.PLAYING -> {
-                tickPhysics(dt)
+                tickPhysicsInternal(dt)
                 if (isHost) {
                     secondTimerAccumulator += dt
                     if (secondTimerAccumulator >= 1.0f) {
                         val elapsedSec = secondTimerAccumulator.toInt()
                         secondTimerAccumulator -= elapsedSec
-                        repeat(elapsedSec) { tickTimer() }
+                        repeat(elapsedSec) { tickTimerInternal() }
                     }
                 }
             }
             MatchStatus.COUNTDOWN -> {
                 if (isHost) {
-                    tickMalletsOnly(dt)
+                    tickMalletsOnlyInternal(dt)
                     countdownStepAccumulator += dt
                     if (countdownStepAccumulator >= COUNTDOWN_STEP_DURATION_SEC) {
                         countdownStepAccumulator -= COUNTDOWN_STEP_DURATION_SEC
                         val next = _matchState.value.countdownNumber - 1
-                        setCountdown(next)
+                        setCountdownInternal(next)
                     }
                 }
             }
@@ -389,8 +460,8 @@ class ArbitroVirtual(
                     goalPauseAccumulator += dt
                     if (goalPauseAccumulator >= GOAL_PAUSE_DURATION_SEC) {
                         goalPauseAccumulator = 0f
-                        resetPositions(_matchState.value.lastScorer)
-                        startCountdown()
+                        resetPositionsInternal(_matchState.value.lastScorer)
+                        startCountdownInternal()
                     }
                 }
             }
@@ -398,49 +469,46 @@ class ArbitroVirtual(
         }
     }
 
-    fun tickMalletsOnly(dt: Float) {
+    fun tickMalletsOnly(dt: Float) = synchronized(simulationLock) {
+        tickMalletsOnlyInternal(dt)
+    }
+
+    private fun tickMalletsOnlyInternal(dt: Float) {
         if (_matchState.value.status == MatchStatus.COUNTDOWN && isHost) {
             engine.tickMalletsOnly(dt)
             publishSnapshot()
         }
     }
 
-    fun consumeCollisionTelemetry(): Pair<Byte, Float> {
+    fun consumeCollisionTelemetry(): Pair<Byte, Float> = synchronized(simulationLock) {
         val evt = pendingCollisionEvent
         val intensity = pendingCollisionIntensity
         pendingCollisionEvent = 0
         pendingCollisionIntensity = 0f
-        return Pair(evt, intensity)
+        Pair(evt, intensity)
     }
 
-    fun onTouchPlayer1(x: Float, y: Float) {
+    private fun applyPlayerTouch(mallet: Mallet, isPlayer1: Boolean, x: Float, y: Float) {
         if (!isInputAllowed()) return
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            val (cx, cy) = engine.clampPreparatoryPosition(x, y, engine.player1Mallet.radius, isPlayer1 = true)
-            engine.player1Mallet.targetX = cx
-            engine.player1Mallet.targetY = cy
-            engine.player1Mallet.x = cx
-            engine.player1Mallet.y = cy
+            val (cx, cy) = engine.clampPreparatoryPosition(x, y, mallet.radius, isPlayer1 = isPlayer1)
+            mallet.targetX = cx
+            mallet.targetY = cy
+            mallet.x = cx
+            mallet.y = cy
         } else {
-            engine.player1Mallet.targetX = x
-            engine.player1Mallet.targetY = y
+            mallet.targetX = x
+            mallet.targetY = y
         }
         publishSnapshot()
     }
 
-    fun onTouchPlayer2(x: Float, y: Float) {
-        if (!isInputAllowed()) return
-        if (_matchState.value.status == MatchStatus.COUNTDOWN) {
-            val (cx, cy) = engine.clampPreparatoryPosition(x, y, engine.player2Mallet.radius, isPlayer1 = false)
-            engine.player2Mallet.targetX = cx
-            engine.player2Mallet.targetY = cy
-            engine.player2Mallet.x = cx
-            engine.player2Mallet.y = cy
-        } else {
-            engine.player2Mallet.targetX = x
-            engine.player2Mallet.targetY = y
-        }
-        publishSnapshot()
+    fun onTouchPlayer1(x: Float, y: Float) = synchronized(simulationLock) {
+        applyPlayerTouch(engine.player1Mallet, isPlayer1 = true, x = x, y = y)
+    }
+
+    fun onTouchPlayer2(x: Float, y: Float) = synchronized(simulationLock) {
+        applyPlayerTouch(engine.player2Mallet, isPlayer1 = false, x = x, y = y)
     }
 
     fun submitPlayer1Target(targetX: Float, targetY: Float) {
@@ -451,7 +519,11 @@ class ArbitroVirtual(
         onTouchPlayer2(targetX, targetY)
     }
 
-    fun onTouchGuestGlobal(globalX: Float, globalY: Float): Pair<Float, Float>? {
+    fun onTouchGuestGlobal(globalX: Float, globalY: Float): Pair<Float, Float>? = synchronized(simulationLock) {
+        onTouchGuestGlobalInternal(globalX, globalY)
+    }
+
+    private fun onTouchGuestGlobalInternal(globalX: Float, globalY: Float): Pair<Float, Float>? {
         if (!isInputAllowed()) return null
         val radius = engine.player2Mallet.radius
         val clampedX = globalX.coerceIn(radius, engine.dimensions.width - radius)
@@ -470,14 +542,14 @@ class ArbitroVirtual(
         return Pair(clampedX, clampedY)
     }
 
-    fun onGuestTouchLocal(localX: Float, localY: Float): Pair<Float, Float>? {
+    fun onGuestTouchLocal(localX: Float, localY: Float): Pair<Float, Float>? = synchronized(simulationLock) {
         if (!isInputAllowed()) return null
         val globalX = 1000f - localX
         val globalY = 1000f - localY
-        return onTouchGuestGlobal(globalX, globalY)
+        return onTouchGuestGlobalInternal(globalX, globalY)
     }
 
-    fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) {
+    fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) = synchronized(simulationLock) {
         engine.player2Mallet.targetX = globalTargetX
         engine.player2Mallet.targetY = globalTargetY
         if (_matchState.value.status == MatchStatus.COUNTDOWN) {
@@ -495,7 +567,7 @@ class ArbitroVirtual(
         collisionEvent: Byte = 0,
         collisionIntensity: Float = 0f,
         puckLastHitBy: Byte = 0
-    ) {
+    ) = synchronized(simulationLock) {
         engine.puck.x = puckX
         engine.puck.y = puckY
         engine.puck.vx = puckVx
@@ -543,7 +615,7 @@ class ArbitroVirtual(
         )
     }
 
-    fun applyRemoteState(remote: ControlMessages.RemoteMatchState) {
+    fun applyRemoteState(remote: ControlMessages.RemoteMatchState) = synchronized(simulationLock) {
         val newStatus = try {
             MatchStatus.valueOf(remote.statusName)
         } catch (_: Exception) {
@@ -584,7 +656,11 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun setCountdown(number: Int) {
+    fun setCountdown(number: Int) = synchronized(simulationLock) {
+        setCountdownInternal(number)
+    }
+
+    private fun setCountdownInternal(number: Int) {
         if (_matchState.value.status == MatchStatus.PAUSED) return
         countdownStepAccumulator = 0f
         audioPort.playCountdownBeep(number)
@@ -598,13 +674,22 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun startCountdown() {
-        if (_matchState.value.status == MatchStatus.PAUSED) return
-        countdownStepAccumulator = 0f
-        setCountdown(3)
+    fun startCountdown() = synchronized(simulationLock) {
+        startCountdownInternal()
     }
 
-    fun tickTimer() {
+    private fun startCountdownInternal() {
+        if (_matchState.value.status == MatchStatus.PAUSED) return
+        realTimeAccumulator = 0f
+        countdownStepAccumulator = 0f
+        setCountdownInternal(3)
+    }
+
+    fun tickTimer() = synchronized(simulationLock) {
+        tickTimerInternal()
+    }
+
+    private fun tickTimerInternal() {
         _matchState.update { current ->
             if (current.status != MatchStatus.PLAYING) return@update current
             current.copy(remainingTimeSeconds = current.remainingTimeSeconds + 1)
@@ -612,7 +697,8 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun pause() {
+    fun pause() = synchronized(simulationLock) {
+        realTimeAccumulator = 0f
         val currentStatus = _matchState.value.status
         if (currentStatus == MatchStatus.PLAYING || currentStatus == MatchStatus.COUNTDOWN || currentStatus == MatchStatus.GOAL_PAUSE || currentStatus == MatchStatus.PRESENTATION) {
             audioPort.stopAll()
@@ -621,8 +707,9 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun resume() {
+    fun resume() = synchronized(simulationLock) {
         if (_matchState.value.status == MatchStatus.PAUSED) {
+            realTimeAccumulator = 0f
             countdownStepAccumulator = 0f
             audioPort.playCountdownBeep(3)
             _matchState.update { it.copy(status = MatchStatus.COUNTDOWN, countdownNumber = 3) }
@@ -630,15 +717,17 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun finishPresentationAndStartCountdown() {
+    fun finishPresentationAndStartCountdown() = synchronized(simulationLock) {
         if (_matchState.value.status == MatchStatus.PAUSED) return
-        startCountdown()
+        startCountdownInternal()
     }
 
-    fun restart() {
+    fun restart() = synchronized(simulationLock) {
+        realTimeAccumulator = 0f
         goalPauseAccumulator = 0f
         countdownStepAccumulator = 0f
         secondTimerAccumulator = 0f
+        deadPuckAccumulator = 0f
         engine.resetPositions(0)
         _matchState.update {
             it.copy(
@@ -654,22 +743,28 @@ class ArbitroVirtual(
         publishSnapshot()
     }
 
-    fun resetPositions(scorer: Int = 0) {
+    fun resetPositions(scorer: Int = 0) = synchronized(simulationLock) {
+        resetPositionsInternal(scorer)
+    }
+
+    private fun resetPositionsInternal(scorer: Int) {
         engine.resetPositions(scorer)
         publishSnapshot()
     }
 
-    fun updateStarsEarned(stars: Int, newlyConqueredTheme: TableTheme? = null) {
+    fun updateStarsEarned(stars: Int, newlyConqueredTheme: TableTheme? = null) = synchronized(simulationLock) {
         _matchState.update { it.copy(starsEarned = stars, newlyConqueredTheme = newlyConqueredTheme) }
         publishSnapshot()
     }
 
-    fun setPeerExited() {
+    fun setPeerExited() = synchronized(simulationLock) {
+        realTimeAccumulator = 0f
         _matchState.update { it.copy(peerExited = true, status = MatchStatus.PAUSED) }
         publishSnapshot()
     }
 
-    fun setIdle() {
+    fun setIdle() = synchronized(simulationLock) {
+        realTimeAccumulator = 0f
         audioPort.stopAll()
         _matchState.update { it.copy(status = MatchStatus.IDLE) }
         publishSnapshot()

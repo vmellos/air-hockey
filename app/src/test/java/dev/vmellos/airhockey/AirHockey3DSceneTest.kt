@@ -595,4 +595,51 @@ class AirHockey3DSceneTest {
         val guestTopZ = guestProj.mapEngineZ(dims.hostHalfBottomY)
         assertEquals(-1.08f, guestTopZ, 1e-4f)
     }
+
+    @Test
+    fun stepSmoothPose_isFrameRateIndependentAcross30HzAnd60Hz() {
+        val proj = Table3DCameraProjection(TableDimensions(), GameMode.SOLO)
+        val target = proj.getBasePreset(CameraZoom3D.STANDARD)
+        val start = CameraPose3D(
+            x = 0.40f,
+            y = 2.50f,
+            z = 2.40f,
+            focusX = 0f,
+            focusY = 0f,
+            focusZ = -0.30f,
+            pitch = -50f,
+            yaw = 10f
+        )
+
+        val afterFirst60 = proj.stepSmoothPose(start, target, dtSec = 1f / 60f)
+        val afterTwo60 = proj.stepSmoothPose(afterFirst60, target, dtSec = 1f / 60f)
+        val afterOne30 = proj.stepSmoothPose(start, target, dtSec = 1f / 30f)
+
+        assertEquals(afterTwo60.x, afterOne30.x, 1e-4f)
+        assertEquals(afterTwo60.y, afterOne30.y, 1e-4f)
+        assertEquals(afterTwo60.z, afterOne30.z, 1e-4f)
+        assertEquals(afterTwo60.pitch, afterOne30.pitch, 1e-3f)
+        assertEquals(afterTwo60.yaw, afterOne30.yaw, 1e-3f)
+    }
+
+    @Test
+    fun visualEffects_timingAndDamping_areFrameRateIndependent() {
+        val damp60 = dev.vmellos.airhockey.feature.game.ui.frameRateIndependentDamping(1f / 60f, 0.94f)
+        val damp30 = dev.vmellos.airhockey.feature.game.ui.frameRateIndependentDamping(1f / 30f, 0.94f)
+        assertEquals(0.94f, damp60, 1e-4f)
+        assertEquals(damp60 * damp60, damp30, 1e-4f)
+
+        val waveA = dev.vmellos.airhockey.feature.game.ui.VisualShockwave().apply {
+            init(startX = 100f, startY = 200f, waveColor = androidx.compose.ui.graphics.Color.Cyan, radius = 160f)
+        }
+        val waveB = dev.vmellos.airhockey.feature.game.ui.VisualShockwave().apply {
+            init(startX = 100f, startY = 200f, waveColor = androidx.compose.ui.graphics.Color.Cyan, radius = 160f)
+        }
+        waveA.update(0.015f)
+        waveA.update(0.015f)
+        waveB.update(0.030f)
+
+        assertEquals(waveA.progress, waveB.progress, 1e-5f)
+        assertTrue(waveB.active)
+    }
 }

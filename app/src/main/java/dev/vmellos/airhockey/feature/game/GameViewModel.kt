@@ -11,9 +11,12 @@ import dev.vmellos.airhockey.feature.network.ControlMessages
 import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import dev.vmellos.airhockey.feature.physics.ArbitroVirtual
 import dev.vmellos.airhockey.feature.physics.AudioOutputPort
+import dev.vmellos.airhockey.feature.physics.MatchFrameSnapshot
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,12 +44,26 @@ class GameViewModel : ViewModel() {
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
 
     private var fallbackEngine = AirHockeyPhysicsEngine(TableDimensions())
+    private val fallbackSnapshot = MatchFrameSnapshot(
+        puckX = fallbackEngine.puck.x,
+        puckY = fallbackEngine.puck.y,
+        puckVx = 0f,
+        puckVy = 0f,
+        player1MalletX = fallbackEngine.player1Mallet.x,
+        player1MalletY = fallbackEngine.player1Mallet.y,
+        player2MalletX = fallbackEngine.player2Mallet.x,
+        player2MalletY = fallbackEngine.player2Mallet.y
+    )
     var arbitro: ArbitroVirtual? = null
         private set
 
     val engine: AirHockeyPhysicsEngine
         get() = arbitro?.engine ?: fallbackEngine
 
+    fun currentSnapshot(): MatchFrameSnapshot = arbitro?.currentSnapshot() ?: fallbackSnapshot
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val simulationDispatcher = Dispatchers.Default.limitedParallelism(1)
     private var physicsJob: Job? = null
     private var matchStateCollectJob: Job? = null
 
@@ -193,6 +210,7 @@ class GameViewModel : ViewModel() {
             spec
         }
 
+        stopGameLoops()
         hasRecordedMatch = false
 
         val newArbitro = ArbitroVirtual(
@@ -210,6 +228,7 @@ class GameViewModel : ViewModel() {
             }
         )
         arbitro = newArbitro
+        _matchState.value = newArbitro.matchState.value
 
         matchStateCollectJob?.cancel()
         var prevCountdown = -1
@@ -256,45 +275,63 @@ class GameViewModel : ViewModel() {
         stopGameLoops()
         val currentArbitro = arbitro ?: return
 
-        // Loop unificado de simulação física e regras esportivas determinísticas a 120 Hz
-        physicsJob = viewModelScope.launch {
-            val dt = 1f / 120f
-            val delayMillis = 8L
-            while (isActive && currentArbitro.matchState.value.status in listOf(MatchStatus.COUNTDOWN, MatchStatus.PLAYING, MatchStatus.GOAL_PAUSE)) {
-                val start = System.currentTimeMillis()
+        // Loop unificado de simulação física e regras esportivas em ritmo real (passo fixo 120 Hz) fora da thread de UI
+        physicsJob = viewModelScope.launch(simulationDispatcher) {
+            var lastTimeNanos = System.nanoTime()
+            val frameDelayMillis = 8L
+            while (isActive && currentArbitro.matchState.value.status in ACTIVE_LOOP_STATUSES) {
+                val loopStartNanos = System.nanoTime()
+                val elapsedSec = ((loopStartNanos - lastTimeNanos) / 1_000_000_000f).coerceAtLeast(0f)
+                lastTimeNanos = loopStartNanos
 
-                currentArbitro.tick(dt)
-
-                if (currentArbitro.matchState.value.status == MatchStatus.PLAYING) {
-                    if (currentArbitro.isHost) {
-                        val (evt, intensity) = currentArbitro.consumeCollisionTelemetry()
-                        onHostBroadcastTelemetry?.invoke(
-                            currentArbitro.engine.puck.x, currentArbitro.engine.puck.y,
-                            currentArbitro.engine.puck.vx, currentArbitro.engine.puck.vy,
-                            currentArbitro.engine.player1Mallet.x, currentArbitro.engine.player1Mallet.y,
-                            currentArbitro.engine.player2Mallet.x, currentArbitro.engine.player2Mallet.y,
-                            evt, intensity,
-                            currentArbitro.engine.puck.lastHitBy.toByte()
-                        )
-                    } else if (currentArbitro.aiControllerP2 != null) {
-                        onGuestSendInput?.invoke(currentArbitro.engine.player2Mallet.targetX, currentArbitro.engine.player2Mallet.targetY)
-                    }
-                } else if (currentArbitro.matchState.value.status == MatchStatus.COUNTDOWN && currentArbitro.isHost) {
-                    onHostBroadcastTelemetry?.invoke(
-                        currentArbitro.engine.puck.x, currentArbitro.engine.puck.y,
-                        0f, 0f,
-                        currentArbitro.engine.player1Mallet.x, currentArbitro.engine.player1Mallet.y,
-                        currentArbitro.engine.player2Mallet.x, currentArbitro.engine.player2Mallet.y,
-                        0.toByte(), 0f,
-                        currentArbitro.engine.puck.lastHitBy.toByte()
-                    )
+                val stepsExecuted = currentArbitro.advanceRealTime(elapsedSec)
+                if (stepsExecuted > 0) {
+                    emitLoopTelemetry(currentArbitro)
                 }
 
-                val elapsed = System.currentTimeMillis() - start
-                val sleep = (delayMillis - elapsed).coerceAtLeast(1L)
-                delay(sleep)
+                val workMillis = (System.nanoTime() - loopStartNanos) / 1_000_000L
+                val sleepMillis = (frameDelayMillis - workMillis).coerceAtLeast(1L)
+                delay(sleepMillis)
             }
         }
+    }
+
+    private fun emitLoopTelemetry(currentArbitro: ArbitroVirtual) {
+        val status = currentArbitro.matchState.value.status
+        val snap = currentArbitro.currentSnapshot()
+        if (status == MatchStatus.PLAYING) {
+            if (currentArbitro.isHost) {
+                val (evt, intensity) = currentArbitro.consumeCollisionTelemetry()
+                onHostBroadcastTelemetry?.invoke(
+                    snap.puckX, snap.puckY,
+                    snap.puckVx, snap.puckVy,
+                    snap.player1MalletX, snap.player1MalletY,
+                    snap.player2MalletX, snap.player2MalletY,
+                    evt, intensity,
+                    snap.puckLastHitBy.toByte()
+                )
+            } else if (currentArbitro.aiControllerP2 != null) {
+                val (tx, ty) = currentArbitro.getPlayer2Target()
+                onGuestSendInput?.invoke(tx, ty)
+            }
+        } else if (status == MatchStatus.COUNTDOWN && currentArbitro.isHost) {
+            onHostBroadcastTelemetry?.invoke(
+                snap.puckX, snap.puckY,
+                0f, 0f,
+                snap.player1MalletX, snap.player1MalletY,
+                snap.player2MalletX, snap.player2MalletY,
+                0.toByte(), 0f,
+                snap.puckLastHitBy.toByte()
+            )
+        }
+    }
+
+    companion object {
+        private val ACTIVE_LOOP_STATUSES = setOf(
+            MatchStatus.COUNTDOWN,
+            MatchStatus.PLAYING,
+            MatchStatus.GOAL_PAUSE
+        )
     }
 
     private fun stopGameLoops() {

@@ -282,20 +282,23 @@ class Table3DCameraProjection(
     }
 
     /**
-     * Interpola suavemente a pose atual em direção ao preset alvo.
+     * Interpola suavemente a pose atual em direção ao preset alvo de forma independente do FPS.
      */
     fun stepSmoothPose(
         current: CameraPose3D,
         target: CameraPreset,
-        factor: Float = 0.15f
+        factor: Float = 0.15f,
+        dtSec: Float = 1f / 60f
     ): CameraPose3D {
+        val clampedDt = dtSec.coerceIn(0.001f, 0.10f)
+        val effectiveFactor = (1.0 - Math.pow((1.0 - factor.coerceIn(0f, 1f)).toDouble(), (clampedDt * 60f).toDouble())).toFloat()
         val finalFocusZ = computeFinalFocusZ(target)
         return CameraPose3D(
-            x = current.x + (target.position.x - current.x) * factor,
-            y = current.y + (target.position.y - current.y) * factor,
-            z = current.z + (target.position.z - current.z) * factor,
-            pitch = current.pitch + (target.rotation.x - current.pitch) * factor,
-            yaw = current.yaw + (target.rotation.y - current.yaw) * factor,
+            x = current.x + (target.position.x - current.x) * effectiveFactor,
+            y = current.y + (target.position.y - current.y) * effectiveFactor,
+            z = current.z + (target.position.z - current.z) * effectiveFactor,
+            pitch = current.pitch + (target.rotation.x - current.pitch) * effectiveFactor,
+            yaw = current.yaw + (target.rotation.y - current.yaw) * effectiveFactor,
             focusX = 0f,
             focusY = 0f,
             focusZ = finalFocusZ

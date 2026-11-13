@@ -6,6 +6,7 @@ import dev.vmellos.airhockey.feature.physics.ArbitroVirtual
 import dev.vmellos.airhockey.feature.physics.AudioOutputPort
 import dev.vmellos.airhockey.feature.physics.TableDimensions
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ArbitroVirtualTest {
@@ -399,5 +400,120 @@ class ArbitroVirtualTest {
         arbitro.tick(1.6f)
         assertEquals(dims.width / 2f, arbitro.frames.value.puckX, 1.0f)
         assertEquals(dims.centerLineY, arbitro.frames.value.puckY, 1.0f)
+    }
+
+    @Test
+    fun advanceRealTime_runsCountdownIn2700MsEvenOn33HzDevice() {
+        val dims = TableDimensions()
+        val audio = TestAudioPort()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SOLO, audioPort = audio)
+        assertEquals(MatchStatus.COUNTDOWN, arbitro.currentSnapshot().matchStatus)
+        assertEquals(3, arbitro.currentSnapshot().countdownNumber)
+
+        var totalSteps = 0
+        // Simula dispositivo lento (~33 Hz / ~30ms por frame): 91 iterações = 2,73s reais
+        repeat(91) { index ->
+            totalSteps += arbitro.advanceRealTime(0.030f)
+            if (index == 30) {
+                assertEquals(2, arbitro.currentSnapshot().countdownNumber)
+            }
+            if (index == 60) {
+                assertEquals(1, arbitro.currentSnapshot().countdownNumber)
+            }
+        }
+
+        assertTrue("Expected ~327 fixed steps for 2.73s, got $totalSteps", totalSteps in 326..328)
+        assertEquals(MatchStatus.PLAYING, arbitro.matchState.value.status)
+        assertEquals(MatchStatus.PLAYING, arbitro.currentSnapshot().matchStatus)
+        assertEquals(0, arbitro.currentSnapshot().countdownNumber)
+    }
+
+    @Test
+    fun advanceRealTime_puckDisplacementMatchesAcross60HzAnd30HzFrames() {
+        val dims = TableDimensions()
+        val arbitro60 = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort()).apply {
+            setCountdown(0)
+            engine.puck.x = dims.width * 0.25f
+            engine.puck.y = dims.centerLineY
+            engine.puck.vx = 0f
+            engine.puck.vy = 1000f
+        }
+        val arbitro30 = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort()).apply {
+            setCountdown(0)
+            engine.puck.x = dims.width * 0.25f
+            engine.puck.y = dims.centerLineY
+            engine.puck.vx = 0f
+            engine.puck.vy = 1000f
+        }
+
+        var steps60 = 0
+        repeat(24) { steps60 += arbitro60.advanceRealTime(1f / 60f) }
+
+        var steps30 = 0
+        repeat(12) { steps30 += arbitro30.advanceRealTime(1f / 30f) }
+
+        val snap60 = arbitro60.currentSnapshot()
+        val snap30 = arbitro30.currentSnapshot()
+        assertTrue(kotlin.math.abs(steps60 - steps30) <= 1)
+        assertTrue("Puck must travel real-time distance at 30 Hz", snap30.puckY > dims.centerLineY + 320f)
+        assertEquals(snap60.puckY, snap30.puckY, 12.0f)
+        assertEquals(snap60.puckVy, snap30.puckVy, 12.0f)
+    }
+
+    @Test
+    fun advanceRealTime_clampsSpiralOfDeathAndResetsAccumulatorOnPauseAndRestart() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        assertEquals(0, arbitro.advanceRealTime(0f))
+        assertEquals(0, arbitro.advanceRealTime(-0.5f))
+
+        // Trava longa (2,5s) é limitada pelo teto MAX_FRAME_ELAPSED_SEC / MAX_CATCHUP_STEPS
+        val stepsAfterHugeStall = arbitro.advanceRealTime(2.5f)
+        assertTrue(
+            "Expected catchup steps in 11..${ArbitroVirtual.MAX_CATCHUP_STEPS}, got $stepsAfterHugeStall",
+            stepsAfterHugeStall in 11..ArbitroVirtual.MAX_CATCHUP_STEPS
+        )
+
+        // Reinicia acumulador limpo e valida descarte de resto sub-step em pause()/resume() e restart()
+        arbitro.restart()
+        arbitro.setCountdown(0)
+        assertEquals(0, arbitro.advanceRealTime(0.005f))
+        arbitro.pause()
+        arbitro.resume()
+        assertEquals(0, arbitro.advanceRealTime(0.005f))
+
+        arbitro.restart()
+        arbitro.setCountdown(0)
+        assertEquals(0, arbitro.advanceRealTime(0.005f))
+    }
+
+    @Test
+    fun recordPendingCollision_prioritizesPaddleHitOverWallHitAcrossMultiStepBatch() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.PADDLE_HIT_P1, 0.90f)
+        arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.WALL_HIT, 0.40f)
+
+        val (eventCode, intensity) = arbitro.consumeCollisionTelemetry()
+        assertEquals(1.toByte(), eventCode)
+        assertEquals(0.90f, intensity, 1e-4f)
+
+        val (clearedCode, clearedIntensity) = arbitro.consumeCollisionTelemetry()
+        assertEquals(0.toByte(), clearedCode)
+        assertEquals(0f, clearedIntensity, 1e-4f)
+
+        arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.PADDLE_HIT_P1, 0.40f)
+        arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.PADDLE_HIT_P2, 0.85f)
+        val (paddleCode, paddleIntensity) = arbitro.consumeCollisionTelemetry()
+        assertEquals(2.toByte(), paddleCode)
+        assertEquals(0.85f, paddleIntensity, 1e-4f)
+
+        arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.WALL_HIT, 0.35f)
+        val (wallCode, _) = arbitro.consumeCollisionTelemetry()
+        assertEquals(3.toByte(), wallCode)
     }
 }

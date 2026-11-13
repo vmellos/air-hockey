@@ -76,8 +76,12 @@ _Avoid_: Scoreboard do topo, placar superior, painel de pontos, score hud
 O estado operacional da interface e dos controles acionado durante o Modo IA x IA no qual o toque manual sobre a mesa é desativado em favor da simulação autônoma dos robôs, permitindo ao usuário acompanhar o duelo e interagir apenas através do menu de pausa.
 _Avoid_: Tela travada, modo observador, bot view
 
+**Contagem Regressiva**:
+O intervalo preparatório em três tempos (~2,7 segundos em tempo real) antes de iniciar o movimento do disco na largada da partida, após cada ponto marcado ou ao retomar de uma pausa.
+_Avoid_: Timer de início, delay inicial, espera de 3 segundos fixa
+
 **Retomada com Contagem Regressiva**:
-O intervalo preparatório de 3 segundos disparado ao despausar a partida antes de restabelecer o movimento físico do disco.
+A aplicação da Contagem Regressiva especificamente ao despausar a partida antes de restabelecer o movimento físico do disco.
 _Avoid_: Unpause countdown, re-start, contagem de despause
 
 **Posicionamento Preparatório**:
@@ -259,7 +263,7 @@ O recurso sem fio do dispositivo anfitrião que emite uma rede Wi-Fi local diret
 _Avoid_: Roteador do telefone, hotspot pessoal, ancoragem, tethering
 
 **Árbitro Virtual**:
-O componente central de regras responsável por validar impactos, registrar pontos e controlar o cronômetro da partida.
+O componente central de autoridade esportiva responsável por governar a linha do tempo determinística da partida em ritmo real (contagem regressiva, pausas, cronômetro e disco preso), validar impactos, coordenar a inteligência artificial e registrar pontos, desacoplado da taxa de quadros do aparelho.
 _Avoid_: Engine, juiz, supervisor, fiscal
 
 **Previsão no Cliente**:
@@ -325,7 +329,7 @@ O efeito visual luminoso em formato de anel com feixes de plasma expansivos e ra
 _Avoid_: Onda de impacto, explosão de gol, círculo com raios, choque neon
 
 **Perfil de Efeitos Visuais**:
-A configuração gráfica ajustável pelo usuário nas configurações que ativa ou desativa o rastro de plasma do disco, o vórtice de contagem regressiva e as faíscas incandescentes, permitindo alternar entre a fidelidade visual arcade completa e a renderização limpa para máxima fluidez e economia de bateria.
+A configuração gráfica ajustável pelo usuário nas configurações que ativa ou desativa efeitos visuais em partida nas arenas 2D e 3D — incluindo rastro de energia do disco, vórtice de contagem regressiva, ondas de choque, faíscas incandescentes e bloom neon — para alternar entre fidelidade arcade completa e renderização leve com máxima fluidez e economia de bateria.
 _Avoid_: Gráficos, qualidade gráfica, resolução, modo batata, modos de desempenho
 
 **Música de Fundo Arcade**:

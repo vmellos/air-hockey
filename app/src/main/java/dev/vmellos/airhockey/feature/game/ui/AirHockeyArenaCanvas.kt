@@ -120,14 +120,15 @@ fun AirHockeyArenaCanvas(
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
 
+                        val snap = viewModel.currentSnapshot()
                         inputController.processPointerEvents(
                             changes = event.changes,
                             dimensions = dimensions,
-                            p1MalletX = engine.player1Mallet.x,
-                            p1MalletY = engine.player1Mallet.y,
-                            p2MalletX = engine.player2Mallet.x,
-                            p2MalletY = engine.player2Mallet.y,
-                            malletRadius = engine.player1Mallet.radius,
+                            p1MalletX = snap.player1MalletX,
+                            p1MalletY = snap.player1MalletY,
+                            p2MalletX = snap.player2MalletX,
+                            p2MalletY = snap.player2MalletY,
+                            malletRadius = dimensions.malletRadius,
                             mode = mode,
                             touchOffset = touchOffset,
                             isSpectator = matchState.isSpectator,
@@ -315,52 +316,53 @@ fun AirHockeyArenaCanvas(
             }
 
             // 7. Desenha Rebatedor 1 (Jogador 1)
-            val p1Screen = projection.tableToScreen(engine.player1Mallet.x, engine.player1Mallet.y, screenW, screenH)
+            val snap = viewModel.currentSnapshot()
+            val p1Screen = projection.tableToScreen(snap.player1MalletX, snap.player1MalletY, screenW, screenH)
             val effectiveP1MalletSkin = when {
                 activeTheme == TableTheme.CLASSIC_NEON && prefs.player1MalletSkin == MalletSkin.NEKO_STRIKER -> MalletSkin.CLASSIC_NEON
                 else -> prefs.player1MalletSkin
             }
             when (effectiveP1MalletSkin) {
-                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonEmerald, rimColor = NeonEmeraldBright, scale = scale)
-                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonAmber, rimColor = NeonAmberBright, scale = scale)
-                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonViolet, rimColor = NeonVioletBright, scale = scale)
-                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = GridironCyan, rimColor = GridironGold, scale = scale)
-                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = BaseballRed, rimColor = BaseballRedBright, scale = scale)
-                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = WastelandFlame, rimColor = WastelandFlameBright, scale = scale)
-                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = SynthPink, rimColor = SynthPinkBright, scale = scale)
-                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = TokamakRadiation, rimColor = TokamakRadiationBright, scale = scale)
-                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = PongGreen, rimColor = PongGreenBright, scale = scale)
-                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = ColosseumGold, rimColor = ColosseumGoldBright, scale = scale)
-                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = Color(0xFFFF1493), rimColor = Color(0xFFFF69B4), scale = scale)
-                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p1Screen.x, cy = p1Screen.y, radius = engine.player1Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
+                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonEmerald, rimColor = NeonEmeraldBright, scale = scale)
+                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonAmber, rimColor = NeonAmberBright, scale = scale)
+                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonViolet, rimColor = NeonVioletBright, scale = scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = GridironCyan, rimColor = GridironGold, scale = scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = BaseballRed, rimColor = BaseballRedBright, scale = scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = WastelandFlame, rimColor = WastelandFlameBright, scale = scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = SynthPink, rimColor = SynthPinkBright, scale = scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = TokamakRadiation, rimColor = TokamakRadiationBright, scale = scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = PongGreen, rimColor = PongGreenBright, scale = scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = ColosseumGold, rimColor = ColosseumGoldBright, scale = scale)
+                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = Color(0xFFFF1493), rimColor = Color(0xFFFF69B4), scale = scale)
+                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p1Screen.x, cy = p1Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
             }
 
             // 8. Desenha Rebatedor 2 (Jogador 2 / Guardião da Arena no Solo)
-            val p2Screen = projection.tableToScreen(engine.player2Mallet.x, engine.player2Mallet.y, screenW, screenH)
+            val p2Screen = projection.tableToScreen(snap.player2MalletX, snap.player2MalletY, screenW, screenH)
             val effectiveP2MalletSkin = when {
                 mode == GameMode.SOLO -> ArenaConquestCatalog.getTierForStage(matchState.currentStage).malletSkin
                 activeTheme == TableTheme.CLASSIC_NEON && prefs.player2MalletSkin == MalletSkin.NEKO_STRIKER -> MalletSkin.CLASSIC_NEON
                 else -> prefs.player2MalletSkin
             }
             when (effectiveP2MalletSkin) {
-                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonRuby, rimColor = NeonRubyBright, scale = scale)
-                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
-                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonMagenta, rimColor = NeonMagentaBright, scale = scale)
-                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = GridironGold, rimColor = GridironCyan, scale = scale)
-                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = BaseballCyan, rimColor = BaseballCyanBright, scale = scale)
-                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = WastelandFlameBright, rimColor = WastelandFlame, scale = scale)
-                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = SynthCyan, rimColor = SynthCyanBright, scale = scale)
-                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = TokamakPlasma, rimColor = TokamakPlasmaBright, scale = scale)
-                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = PongGreenBright, rimColor = PongGreen, scale = scale)
-                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = ColosseumCrimson, rimColor = ColosseumGold, scale = scale)
-                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
-                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p2Screen.x, cy = p2Screen.y, radius = engine.player2Mallet.radius * scale, accentColor = NeonOrange, rimColor = NeonOrangeBright, scale = scale)
+                MalletSkin.MAGNETIC_STRIKER -> drawCyberStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonRuby, rimColor = NeonRubyBright, scale = scale)
+                MalletSkin.DUNK_STRIKER -> drawDunkStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
+                MalletSkin.SPIKE_EMITTER -> drawSpikeEmitterMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonMagenta, rimColor = NeonMagentaBright, scale = scale)
+                MalletSkin.LINEBACKER_STRIKER -> drawGridironMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = GridironGold, rimColor = GridironCyan, scale = scale)
+                MalletSkin.SLUGGER_STRIKER -> drawSluggerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = BaseballCyan, rimColor = BaseballCyanBright, scale = scale)
+                MalletSkin.RIPPER_STRIKER -> drawRipperMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = WastelandFlameBright, rimColor = WastelandFlame, scale = scale)
+                MalletSkin.OUTRUN_STRIKER -> drawOutrunStrikerMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = SynthCyan, rimColor = SynthCyanBright, scale = scale)
+                MalletSkin.MAGNETIC_COIL -> drawMagneticCoilMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = TokamakPlasma, rimColor = TokamakPlasmaBright, scale = scale)
+                MalletSkin.PONG_PADDLE -> drawPongMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = PongGreenBright, rimColor = PongGreen, scale = scale)
+                MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = ColosseumCrimson, rimColor = ColosseumGold, scale = scale)
+                MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonCyan, rimColor = NeonCyanBright, scale = scale)
+                MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(cx = p2Screen.x, cy = p2Screen.y, radius = dimensions.malletRadius * scale, accentColor = NeonOrange, rimColor = NeonOrangeBright, scale = scale)
             }
 
             // 9. Desenha Disco e Rastro de Energia (Prints 2 e 3)
-            if (projection.isVisibleInViewport(engine.puck.x, engine.puck.y, engine.puck.radius)) {
-                val puckScreen = projection.tableToScreen(engine.puck.x, engine.puck.y, screenW, screenH)
-                val spd = engine.puck.speed()
+            if (projection.isVisibleInViewport(snap.puckX, snap.puckY, dimensions.puckRadius)) {
+                val puckScreen = projection.tableToScreen(snap.puckX, snap.puckY, screenW, screenH)
+                val spd = snap.puckSpeed()
 
                 // Atualiza histórico do rastro de plasma (higienizado fora do estado PLAYING)
                 if (matchState.status != MatchStatus.PLAYING) {
@@ -372,7 +374,7 @@ fun AirHockeyArenaCanvas(
 
                     // Em velocidade ultra-alta, emite micro-faíscas incandescentes da cauda de fogo
                     if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL && spd > 2200f && (framePulse % 4L == 0L)) {
-                        val sparkColor = if (engine.puck.lastHitBy == 1) p1ThemeColor else if (engine.puck.lastHitBy == 2) p2ThemeColor else wallHitColor
+                        val sparkColor = if (snap.puckLastHitBy == 1) p1ThemeColor else if (snap.puckLastHitBy == 2) p2ThemeColor else wallHitColor
                         particlePool.spawnSparks(puckScreen.x, puckScreen.y, 2, sparkColor, spreadSpeed = 200f * scale, duration = 0.35f)
                     }
                 } else if (puckTrail.isNotEmpty()) {
@@ -385,62 +387,62 @@ fun AirHockeyArenaCanvas(
                     else -> prefs.puckSkin
                 }
                 val (puckAccentColor, puckCoreColor) = when (effectivePuckSkin) {
-                    PuckSkin.CYBER_SOCCER_BALL -> when (engine.puck.lastHitBy) {
+                    PuckSkin.CYBER_SOCCER_BALL -> when (snap.puckLastHitBy) {
                         1 -> Pair(NeonEmerald, NeonEmeraldCore)
                         2 -> Pair(NeonRuby, NeonRubyCore)
                         else -> Pair(CyberSoccerGold, WhiteHot)
                     }
-                    PuckSkin.NEO_BASKETBALL -> when (engine.puck.lastHitBy) {
+                    PuckSkin.NEO_BASKETBALL -> when (snap.puckLastHitBy) {
                         1 -> Pair(NeonAmber, NeonAmberCore)
                         2 -> Pair(NeonCyan, NeonCyanCore)
                         else -> Pair(NeonAmberBright, WhiteHot)
                     }
-                    PuckSkin.GRAVITY_VOLLEY -> when (engine.puck.lastHitBy) {
+                    PuckSkin.GRAVITY_VOLLEY -> when (snap.puckLastHitBy) {
                         1 -> Pair(NeonViolet, NeonVioletCore)
                         2 -> Pair(NeonMagenta, NeonMagentaCore)
                         else -> Pair(VolleyYellow, WhiteHot)
                     }
-                    PuckSkin.GRIDIRON_FOOTBALL -> when (engine.puck.lastHitBy) {
+                    PuckSkin.GRIDIRON_FOOTBALL -> when (snap.puckLastHitBy) {
                         1 -> Pair(GridironCyan, GridironCyanCore)
                         2 -> Pair(GridironGold, GridironGoldCore)
                         else -> Pair(GridironGoldBright, WhiteHot)
                     }
-                    PuckSkin.CYBER_BASEBALL -> when (engine.puck.lastHitBy) {
+                    PuckSkin.CYBER_BASEBALL -> when (snap.puckLastHitBy) {
                         1 -> Pair(BaseballRed, BaseballRedCore)
                         2 -> Pair(BaseballCyan, BaseballCyanCore)
                         else -> Pair(BaseballRedBright, WhiteHot)
                     }
-                    PuckSkin.SAWBLADE -> when (engine.puck.lastHitBy) {
+                    PuckSkin.SAWBLADE -> when (snap.puckLastHitBy) {
                         1 -> Pair(WastelandFlame, WastelandFlameCore)
                         2 -> Pair(WastelandFlameBright, WastelandFlameCore)
                         else -> Pair(WastelandHazardYellow, WhiteHot)
                     }
-                    PuckSkin.SYNTH_DISC -> when (engine.puck.lastHitBy) {
+                    PuckSkin.SYNTH_DISC -> when (snap.puckLastHitBy) {
                         1 -> Pair(SynthPink, SynthPinkCore)
                         2 -> Pair(SynthCyan, SynthCyanCore)
                         else -> Pair(SynthSunYellow, WhiteHot)
                     }
-                    PuckSkin.ATOMIC_CORE -> when (engine.puck.lastHitBy) {
+                    PuckSkin.ATOMIC_CORE -> when (snap.puckLastHitBy) {
                         1 -> Pair(TokamakRadiation, TokamakRadiationCore)
                         2 -> Pair(TokamakPlasma, TokamakPlasmaCore)
                         else -> Pair(TokamakRadiationBright, WhiteHot)
                     }
-                    PuckSkin.PONG_SQUARE -> when (engine.puck.lastHitBy) {
+                    PuckSkin.PONG_SQUARE -> when (snap.puckLastHitBy) {
                         1 -> Pair(PongGreen, PongGreenCore)
                         2 -> Pair(PongGreenBright, PongGreenCore)
                         else -> Pair(PongGreenBright, WhiteHot)
                     }
-                    PuckSkin.GLADIATOR_SHIELD -> when (engine.puck.lastHitBy) {
+                    PuckSkin.GLADIATOR_SHIELD -> when (snap.puckLastHitBy) {
                         1 -> Pair(ColosseumGold, ColosseumGoldCore)
                         2 -> Pair(ColosseumCrimson, ColosseumCrimsonCore)
                         else -> Pair(ColosseumGoldBright, WhiteHot)
                     }
-                    PuckSkin.KIARA_PAW -> when (engine.puck.lastHitBy) {
+                    PuckSkin.KIARA_PAW -> when (snap.puckLastHitBy) {
                         1 -> Pair(Color(0xFFFF1493), Color(0xFFFF69B4))
                         2 -> Pair(NeonCyan, NeonCyanBright)
                         else -> Pair(Color(0xFFFFC107), WhiteHot)
                     }
-                    PuckSkin.CLASSIC_PLASMA -> when (engine.puck.lastHitBy) {
+                    PuckSkin.CLASSIC_PLASMA -> when (snap.puckLastHitBy) {
                         1 -> Pair(NeonCyan, NeonCyanCore)
                         2 -> Pair(NeonOrange, NeonOrangeCore)
                         else -> Pair(NeonCyanBright, WhiteHot)
@@ -450,7 +452,7 @@ fun AirHockeyArenaCanvas(
                 // Desenha rastro fluido de plasma com ondulação de chamas
                 drawDynamicEnergyTrail(
                     trailPoints = puckTrail,
-                    puckRadius = engine.puck.radius * scale,
+                    puckRadius = dimensions.puckRadius * scale,
                     color = puckAccentColor,
                     coreColor = puckCoreColor,
                     framePulse = framePulse,
@@ -460,18 +462,18 @@ fun AirHockeyArenaCanvas(
 
                 // Desenha o disco de acordo com a skin ativa
                 when (prefs.puckSkin) {
-                    PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.SAWBLADE -> drawSawbladePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.SYNTH_DISC -> drawSynthwavePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.PONG_SQUARE -> drawPongPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.KIARA_PAW -> drawKiaraPawPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
-                    PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(cx = puckScreen.x, cy = puckScreen.y, radius = engine.puck.radius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.SAWBLADE -> drawSawbladePuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.SYNTH_DISC -> drawSynthwavePuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.PONG_SQUARE -> drawPongPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.KIARA_PAW -> drawKiaraPawPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
+                    PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(cx = puckScreen.x, cy = puckScreen.y, radius = dimensions.puckRadius * scale, accentColor = puckAccentColor, scale = scale)
                 }
             }
         }
