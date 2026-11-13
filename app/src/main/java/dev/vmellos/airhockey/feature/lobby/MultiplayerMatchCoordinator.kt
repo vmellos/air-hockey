@@ -212,6 +212,10 @@ class MultiplayerMatchCoordinator(
         }
     }
 
+    fun consumeStartMatchTrigger() {
+        _state.update { it.copy(startMatchTrigger = 0L) }
+    }
+
     companion object {
         fun isCompatibleMode(hostMode: String, guestMode: String): Boolean {
             if (hostMode.isBlank() || guestMode.isBlank() || guestMode.equals("ANY", ignoreCase = true)) return true

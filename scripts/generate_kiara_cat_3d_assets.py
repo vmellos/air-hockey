@@ -35,6 +35,27 @@ def add_bevel(obj, width=0.003, segments=4):
     bev.segments = segments
     return bev
 
+def create_semicircle_mesh(name, center_x, center_y, z_pos, r_out, r_in, n_segments=36):
+    """Cria um semicírculo planar voltado para o interior da meia-mesa (-Y)"""
+    verts = []
+    faces = []
+    for i in range(n_segments + 1):
+        theta = math.pi + (i / n_segments) * math.pi
+        verts.append((center_x + r_out * math.cos(theta), center_y + r_out * math.sin(theta), z_pos))
+        verts.append((center_x + r_in * math.cos(theta), center_y + r_in * math.sin(theta), z_pos))
+    for i in range(n_segments):
+        v0 = 2 * i
+        v1 = 2 * i + 1
+        v2 = 2 * i + 3
+        v3 = 2 * i + 2
+        faces.append((v0, v1, v2, v3))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    return obj
+
 # Paleta Kiara Cat
 PINK_MAGENTA = (1.0, 0.08, 0.58, 1.0)
 CYAN_ELECTRIC = (0.0, 0.9, 1.0, 1.0)
@@ -206,7 +227,7 @@ def generate_table():
     rail_h = 0.065
     goal_w = 0.38
 
-    mat_surface = create_pbr("KiaraTable_Surface", DARK_SURFACE, metallic=0.6, roughness=0.25)
+    mat_surface = create_pbr("KiaraTable_Surface", DARK_SURFACE, metallic=0.15, roughness=0.55)
     mat_rail = create_pbr("KiaraTable_Rail", DARK_RAIL, metallic=0.92, roughness=0.2)
     mat_bumper = create_pbr("KiaraTable_Bumper", DARK_BUMPER, metallic=0.8, roughness=0.35)
     mat_p1_laser = create_pbr("KiaraTable_P1Laser", PINK_MAGENTA, emission=PINK_MAGENTA, emission_strength=5.0)
@@ -342,74 +363,142 @@ def generate_table():
 def generate_half_table(name, faction_color, is_p1=True):
     reset_scene()
     w = 1.08
-    l = 1.08  # Meio campo
+    l_half = 2.16
     h_surface = 0.04
     rail_w = 0.075
     rail_h = 0.065
     goal_w = 0.38
+    side_seg_w = (w - goal_w) / 2
+    led_thick = 0.007
+    led_h = 0.016
 
-    mat_surface = create_pbr(f"{name}_Surface", DARK_SURFACE, metallic=0.6, roughness=0.25)
-    mat_rail = create_pbr(f"{name}_Rail", DARK_RAIL, metallic=0.92, roughness=0.2)
-    mat_laser = create_pbr(f"{name}_Laser", faction_color, emission=faction_color, emission_strength=5.0)
+    mat_surface = create_pbr(f"{name}_Surface", DARK_SURFACE, metallic=0.15, roughness=0.55)
+    mat_rail = create_pbr(f"{name}_Rail", DARK_RAIL, metallic=0.92, roughness=0.22)
+    mat_bumper = create_pbr(f"{name}_Bumper", DARK_BUMPER, metallic=0.80, roughness=0.35)
+    mat_laser = create_pbr(f"{name}_Laser", faction_color, emission=faction_color, emission_strength=5.5)
     mat_neutral = create_pbr(f"{name}_Neutral", GOLD_AMBER, emission=GOLD_AMBER, emission_strength=4.5)
 
-    # 1. Meia Superfície (0 até -l em Y)
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, -l / 2, -h_surface / 2))
+    # 1. Piso da Meia-Mesa (X em [-w/2, w/2], Y em [-l_half/2, l_half/2])
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, -h_surface / 2))
     floor = bpy.context.active_object
     floor.name = f"{name}_Surface"
-    floor.scale = (w, l, h_surface)
+    floor.scale = (w, l_half, h_surface)
     bpy.ops.object.transform_apply(scale=True)
     add_bevel(floor, width=0.004, segments=4)
     floor.data.materials.append(mat_surface)
 
-    # 2. Trilhos Laterais
-    for x_pos in [-w/2 - rail_w/2, w/2 + rail_w/2]:
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(x_pos, -l / 2, rail_h / 2))
+    # 2. Semicírculo Central Neon no Topo (Y = +1.08)
+    top_y = l_half / 2
+    arc_outer = create_semicircle_mesh(f"{name}_CenterArcOuter", 0, top_y, 0.0015, r_out=0.18, r_in=0.165)
+    arc_outer.data.materials.append(mat_neutral)
+
+    # Orelhas de Gato no Semicírculo Central (voltadas para o interior da meia-mesa, em direção a -Y)
+    for side, ox in [("L", -0.11), ("R", 0.11)]:
+        bpy.ops.mesh.primitive_cone_add(
+            radius1=0.035,
+            radius2=0.002,
+            depth=0.05,
+            vertices=3,
+            location=(ox, top_y - 0.16, 0.002)
+        )
+        cear = bpy.context.active_object
+        cear.name = f"{name}_Ear_{side}"
+        cear.rotation_euler = (0, 0, math.radians(180))
+        cear.data.materials.append(mat_neutral)
+
+    # 3. Faixa de Junção Laser no Topo (Eletro-borda de passagem contínua)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, top_y - 0.003, 0.0015))
+    top_edge_laser = bpy.context.active_object
+    top_edge_laser.name = f"{name}_TopEdgeLaser"
+    top_edge_laser.scale = (w * 0.98, 0.006, 0.002)
+    bpy.ops.object.transform_apply(scale=True)
+    top_edge_laser.data.materials.append(mat_neutral)
+
+    # 4. Área da Meta Neon na Base (Y = -l_half/2 + 0.32 = -0.76)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, -l_half/2 + 0.32, 0.0015))
+    crease = bpy.context.active_object
+    crease.name = f"{name}_Crease"
+    crease.scale = (goal_w * 1.5, 0.008, 0.002)
+    bpy.ops.object.transform_apply(scale=True)
+    crease.data.materials.append(mat_laser)
+
+    # 5. Trilhos Laterais (Estendem-se do fundo até o topo)
+    rail_len = l_half + rail_w
+    rail_center_y = -rail_w / 2
+
+    for sx, r_name in [(-(w + rail_w)/2, "RailL"), ((w + rail_w)/2, "RailR")]:
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(sx, rail_center_y, rail_h / 2))
         rail = bpy.context.active_object
-        rail.scale = (rail_w, l + rail_w, rail_h)
+        rail.name = f"{name}_{r_name}"
+        rail.scale = (rail_w, rail_len, rail_h)
         bpy.ops.object.transform_apply(scale=True)
-        add_bevel(rail, width=0.005, segments=4)
+        add_bevel(rail, width=0.004, segments=4)
         rail.data.materials.append(mat_rail)
 
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(x_pos + (-0.015 if x_pos > 0 else 0.015), -l / 2, rail_h * 0.65))
-        laser = bpy.context.active_object
-        laser.scale = (0.006, l, 0.006)
+        # Friso LED no trilho lateral
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(sx, rail_center_y, rail_h * 0.72))
+        led = bpy.context.active_object
+        led.scale = (led_thick, rail_len * 0.94, led_h)
         bpy.ops.object.transform_apply(scale=True)
-        laser.data.materials.append(mat_laser)
+        led.data.materials.append(mat_laser)
 
-    # 3. Trilho de Fundo (Meta)
-    seg_w = (w - goal_w) / 2
-    y_pos = -l - rail_w / 2
-    for x_dir in [-1, 1]:
-        x_pos = x_dir * (goal_w/2 + seg_w/2)
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(x_pos, y_pos, rail_h / 2))
-        back_rail = bpy.context.active_object
-        back_rail.scale = (seg_w, rail_w, rail_h)
+    # 6. Trilho Inferior (Fundo) com Abertura da Meta
+    bottom_y = -l_half/2 - rail_w/2
+    for seg_x in [-w/2 + side_seg_w/2, w/2 - side_seg_w/2]:
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(seg_x, bottom_y, rail_h / 2))
+        seg = bpy.context.active_object
+        seg.scale = (side_seg_w, rail_w, rail_h)
         bpy.ops.object.transform_apply(scale=True)
-        add_bevel(back_rail, width=0.005, segments=4)
-        back_rail.data.materials.append(mat_rail)
+        add_bevel(seg, width=0.003, segments=4)
+        seg.data.materials.append(mat_rail)
 
-    # Barreira de Gol Laser
-    bpy.ops.mesh.primitive_cylinder_add(
-        radius=0.012,
-        depth=goal_w * 0.98,
-        vertices=24,
-        location=(0, y_pos + 0.01, rail_h * 0.75)
-    )
-    arch = bpy.context.active_object
-    arch.rotation_euler = (0, math.radians(90), 0)
-    arch.data.materials.append(mat_laser)
+        # LED na borda da meta
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(seg_x, bottom_y, rail_h * 0.75))
+        f_led = bpy.context.active_object
+        f_led.scale = (side_seg_w * 0.95, led_thick, led_h)
+        bpy.ops.object.transform_apply(scale=True)
+        f_led.data.materials.append(mat_laser)
 
-    # 4. Semicírculo Central na Borda Aberta (Y = 0)
-    bpy.ops.mesh.primitive_torus_add(
-        major_radius=0.18,
-        minor_radius=0.004,
-        major_segments=48,
-        minor_segments=16,
-        location=(0, 0, 0.002)
-    )
-    scirc = bpy.context.active_object
-    scirc.data.materials.append(mat_neutral)
+    # 7. Protetores de Canto Angulares (Dois cantos inferiores)
+    c_offset_x = (w + rail_w) / 2
+    c_offset_y = bottom_y
+    for cx in [-c_offset_x, c_offset_x]:
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(cx, c_offset_y, rail_h * 0.55))
+        bumper = bpy.context.active_object
+        bumper.scale = (rail_w * 1.35, rail_w * 1.35, rail_h * 1.15)
+        bpy.ops.object.transform_apply(scale=True)
+        add_bevel(bumper, width=0.005, segments=4)
+        bumper.data.materials.append(mat_bumper)
+
+        # Indicador Chevron Luminoso
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.015, depth=rail_h * 1.2, vertices=16, location=(cx, c_offset_y, rail_h * 0.6))
+        chev = bpy.context.active_object
+        chev.data.materials.append(mat_laser)
+
+    # 8. Barreira de Energia da Meta 3D (Portal Laser)
+    post_h = 0.12
+    post_r = 0.018
+    for post_x in [-goal_w / 2, goal_w / 2]:
+        bpy.ops.mesh.primitive_cylinder_add(radius=post_r, depth=post_h, vertices=24, location=(post_x, bottom_y, post_h / 2))
+        post = bpy.context.active_object
+        post.data.materials.append(mat_rail)
+
+        bpy.ops.mesh.primitive_cylinder_add(radius=post_r * 1.25, depth=0.02, vertices=24, location=(post_x, bottom_y, post_h))
+        cap = bpy.context.active_object
+        cap.data.materials.append(mat_laser)
+
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, bottom_y, post_h))
+    lintel = bpy.context.active_object
+    lintel.scale = (goal_w + post_r * 2, 0.025, 0.018)
+    bpy.ops.object.transform_apply(scale=True)
+    add_bevel(lintel, width=0.003, segments=4)
+    lintel.data.materials.append(mat_rail)
+
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, bottom_y + 0.01, post_h * 0.5))
+    barrier = bpy.context.active_object
+    barrier.scale = (goal_w * 0.98, 0.008, post_h * 0.85)
+    bpy.ops.object.transform_apply(scale=True)
+    barrier.data.materials.append(mat_laser)
 
     out_path = os.path.join(OUTPUT_DIR, f"{name}.glb")
     bpy.ops.export_scene.gltf(filepath=out_path, export_format='GLB')

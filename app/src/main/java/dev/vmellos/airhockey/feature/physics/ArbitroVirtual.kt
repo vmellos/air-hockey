@@ -678,7 +678,7 @@ class ArbitroVirtual(
             MatchStatus.PLAYING
         }
         val prev = _matchState.value
-        val effectiveStatus = if (prev.status == MatchStatus.PAUSED && (newStatus == MatchStatus.COUNTDOWN || newStatus == MatchStatus.PLAYING)) {
+        val effectiveStatus = if (!isGuest && prev.status == MatchStatus.PAUSED && (newStatus == MatchStatus.COUNTDOWN || newStatus == MatchStatus.PLAYING)) {
             MatchStatus.PAUSED
         } else {
             newStatus
@@ -695,7 +695,7 @@ class ArbitroVirtual(
             )
         }
 
-        if (newStatus == MatchStatus.COUNTDOWN && remote.countdownNumber != prev.countdownNumber) {
+        if (newStatus == MatchStatus.COUNTDOWN && (remote.countdownNumber != prev.countdownNumber || prev.status == MatchStatus.PAUSED)) {
             audioPort.playCountdownBeep(remote.countdownNumber)
         } else if (newStatus == MatchStatus.PLAYING && prev.status == MatchStatus.COUNTDOWN) {
             audioPort.playCountdownBeep(0)

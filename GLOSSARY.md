@@ -81,7 +81,7 @@ O intervalo preparatório em três tempos (~2,7 segundos em tempo real) antes de
 _Avoid_: Timer de início, delay inicial, espera de 3 segundos fixa
 
 **Retomada com Contagem Regressiva**:
-A aplicação da Contagem Regressiva especificamente ao despausar a partida antes de restabelecer o movimento físico do disco.
+A aplicação da Contagem Regressiva especificamente ao despausar a partida antes de restabelecer o movimento físico do disco. Em partidas multijogador em rede (Mesa Estendida e Mesa Conectada), a retomada é simétrica e imediata: quando qualquer um dos participantes aciona o comando para continuar no Menu de Pausa da Arena, ambos os dispositivos encerram a pausa e executam sincronizadamente a contagem de saída.
 _Avoid_: Unpause countdown, re-start, contagem de despause
 
 **Posicionamento Preparatório**:
@@ -297,7 +297,7 @@ O cartão interativo no menu principal estilizado em vidro escuro com indicador 
 _Avoid_: Card de update, banner de reinício, update snackbar, restart card
 
 **Menu de Pausa da Arena**:
-O painel modal translúcido com bordas chanfradas neon acionado durante a partida para suspender temporariamente a disputa, alternar ajustes rápidos de áudio e música, reiniciar o confronto ou retornar ao menu principal.
+O painel modal translúcido com bordas chanfradas neon acionado durante a partida para suspender temporariamente a disputa, alternar ajustes rápidos de áudio e música, reiniciar o confronto ou retornar ao menu principal. Em sessões multijogador em rede (Mesa Estendida e Mesa Conectada), a ativação e a liberação da pausa são simétricas e coordenadas entre o Dispositivo Anfitrião e o Dispositivo Convidado, garantindo que o destravamento por qualquer jogador sincronize a Retomada com Contagem Regressiva em ambos os aparelhos.
 _Avoid_: Pause menu, tela de pausa, popup de pause, pause dialog
 
 **Diálogo de Fim de Partida**:
@@ -364,7 +364,7 @@ _Avoid_: Kit de time, pacote de skins, theme pack, bundle de campo
 
 **Conjunto Temático Kiara Cat**:
 A coleção integrada de identidade felina arcade composta pela Mesa Kiara Cat (`KIARA_CAT`), Aparência de Disco Patinha Neon (`KIARA_PAW`) e Aparência de Rebatedor Neko Striker (`NEKO_STRIKER`), configurada como Livre por Padrão para uso imediato em todas as modalidades de jogo sem vínculo com a progressão do Modo Fases.
-_Avoid_: Tema de gatinho avulso, kit kiara simples, skin fofa
+_Avoid_: Tema de gatinho avulso, kit kiara simples, skin fofa, Kiki (utilizar canonicamente Conjunto Temático Kiara Cat)
 
 **Desbloqueio Progressivo de Arenas**:
 O sistema de progressão esportiva vinculado ao Modo Fases que mantém as arenas temáticas bloqueadas até que o jogador conclua o respectivo Bloco de Fases Temático de 10 níveis, mantendo a Mesa Clássica permanentemente acessível desde o primeiro momento.
