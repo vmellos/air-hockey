@@ -235,8 +235,7 @@ fun AirHockeyAppNavigation(
                     )
 
                     lobbyViewModel.consumeStartMatchTrigger()
-                    gameViewModel.initializeMatch(spec)
-                    lobbyViewModel.coordinator?.let { gameViewModel.attachCoordinator(it) }
+                    gameViewModel.startMatch(spec, lobbyViewModel.coordinator)
 
                     navController.navigate("game/${spec.mode.name}") {
                         popUpTo("menu")
@@ -281,7 +280,7 @@ fun AirHockeyAppNavigation(
                         player1Name = p1,
                         player2Name = p2
                     )
-                    gameViewModel.initializeMatch(spec)
+                    gameViewModel.startMatch(spec)
                     navController.navigate("game/AI_VS_AI_LOCAL") {
                         popUpTo("menu")
                     }
@@ -311,7 +310,7 @@ fun AirHockeyAppNavigation(
                             player1Name = context.getString(R.string.player_1_default),
                             player2Name = context.getString(R.string.player_2_default)
                         )
-                        gameViewModel.initializeMatch(spec)
+                        gameViewModel.startMatch(spec)
                         navController.navigate("game/SPLIT_SCREEN") {
                             popUpTo("menu")
                         }
@@ -330,7 +329,7 @@ fun AirHockeyAppNavigation(
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai)
                     )
-                    gameViewModel.initializeMatch(spec)
+                    gameViewModel.startMatch(spec)
                     navController.navigate("game/SOLO")
                 },
                 onBack = {
@@ -351,10 +350,10 @@ fun AirHockeyAppNavigation(
             }
 
             GameScreen(
-                viewModel = gameViewModel,
+                runtime = gameViewModel,
                 mode = mode,
                 onExitToMenu = {
-                    gameViewModel.stopMatch()
+                    gameViewModel.exitMatch()
                     lobbyViewModel.sendControlMessage(ControlMessages.EXIT)
                     lobbyViewModel.stopAll()
                     navController.navigate("menu") {
@@ -362,7 +361,7 @@ fun AirHockeyAppNavigation(
                     }
                 },
                 onExitToStages = {
-                    gameViewModel.stopMatch()
+                    gameViewModel.exitMatch()
                     navController.navigate("stages") {
                         popUpTo("stages") { inclusive = true }
                     }
@@ -375,7 +374,7 @@ fun AirHockeyAppNavigation(
                         player1Name = p1,
                         player2Name = context.getString(R.string.player_ai)
                     )
-                    gameViewModel.initializeMatch(spec)
+                    gameViewModel.startMatch(spec)
                 }
             )
         }

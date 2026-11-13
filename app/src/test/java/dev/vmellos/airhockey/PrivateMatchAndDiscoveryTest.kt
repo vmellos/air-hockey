@@ -327,4 +327,104 @@ class PrivateMatchAndDiscoveryTest {
         )
         assertEquals("192.168.15.200", targetAddr.hostAddress)
     }
+
+    @Test
+    fun testLobbyViewModelWithFakeLanDiscoveryPortAndLoopbackTransport() = runBlocking {
+        val fakeDiscoveryTables = kotlinx.coroutines.flow.MutableStateFlow<List<DiscoveredTable>>(emptyList())
+        val fakePort = object : dev.vmellos.airhockey.feature.network.LanDiscoveryPort {
+            var broadcastingCode: String? = null
+            var probeCount = 0
+            override val discoveredTables = fakeDiscoveryTables
+            override fun startBroadcast(tableCode: String, port: Int, mode: String, hostName: String) {
+                broadcastingCode = tableCode
+            }
+            override fun stopBroadcast() {
+                broadcastingCode = null
+            }
+            override fun startDiscovery() {}
+            override fun stopDiscovery() {}
+            override fun sendDirectedDiscoveryProbe() {
+                probeCount++
+            }
+            override fun restartNsdDiscovery() {}
+            override fun getLocalIpAddress(): String = "192.168.50.10"
+            override fun getDhcpGatewayIp(): String? = "192.168.50.1"
+        }
+
+        val (hostTransport, guestTransport) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+        val hostScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined
+        )
+        val guestScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        val hostVm = dev.vmellos.airhockey.feature.lobby.LobbyViewModel(
+            discoveryPort = fakePort,
+            transportFactory = { _, _ -> hostTransport },
+            wifiInfoProvider = { "TestWifi" to true },
+            defaultPlayerNameProvider = { "HostUnit" },
+            userPreferencesFlowOverride = kotlinx.coroutines.flow.flowOf(
+                dev.vmellos.airhockey.core.preferences.UserPreferences(playerName = "HostUnit")
+            ),
+            coroutineScopeOverride = hostScope,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            mainDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        hostVm.startAsHost(
+            mode = "CONNECTED",
+            arenaDimension = "THREE_DIMENSIONAL",
+            themeName = "TOKAMAK_REACTOR"
+        )
+
+        val hostView = hostVm.state.value.hostView
+        assertTrue(hostView != null)
+        assertEquals("192.168.50.10", hostView!!.hostIp)
+        assertEquals(hostView.tableCode, fakePort.broadcastingCode)
+        assertTrue(hostVm.state.value.guestView == null)
+
+        val guestVm = dev.vmellos.airhockey.feature.lobby.LobbyViewModel(
+            discoveryPort = fakePort,
+            transportFactory = { _, _ -> guestTransport },
+            wifiInfoProvider = { "TestWifi" to true },
+            defaultPlayerNameProvider = { "GuestUnit" },
+            userPreferencesFlowOverride = kotlinx.coroutines.flow.flowOf(
+                dev.vmellos.airhockey.core.preferences.UserPreferences(
+                    playerName = "GuestUnit",
+                    puckSkin = dev.vmellos.airhockey.core.preferences.PuckSkin.KIARA_PAW,
+                    player1MalletSkin = dev.vmellos.airhockey.core.preferences.MalletSkin.NEKO_STRIKER
+                )
+            ),
+            coroutineScopeOverride = guestScope,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            mainDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        guestVm.connectToTable(hostIp = "192.168.50.10", code = hostView.tableCode, tableMode = "CONNECTED")
+        delay(80)
+
+        assertTrue(hostVm.state.value.isReadyToPlay)
+        assertTrue(guestVm.state.value.isReadyToPlay)
+        assertEquals("HostUnit", guestVm.state.value.peerPlayerName)
+        assertEquals("GuestUnit", hostVm.state.value.peerPlayerName)
+
+        hostVm.startHostMatch(gapMm = 0f)
+        delay(80)
+
+        assertTrue(guestVm.state.value.startMatchTrigger > 0L)
+        val guestSpec = guestVm.buildMatchSpec(
+            userPrefs = dev.vmellos.airhockey.core.preferences.UserPreferences(
+                tableTheme = dev.vmellos.airhockey.core.preferences.TableTheme.CLASSIC_NEON,
+                puckSkin = dev.vmellos.airhockey.core.preferences.PuckSkin.KIARA_PAW,
+                player1MalletSkin = dev.vmellos.airhockey.core.preferences.MalletSkin.NEKO_STRIKER
+            )
+        )
+        assertEquals(dev.vmellos.airhockey.core.preferences.TableTheme.TOKAMAK_REACTOR, guestSpec.tableTheme)
+        assertEquals(dev.vmellos.airhockey.core.preferences.PuckSkin.KIARA_PAW, guestSpec.localPuckSkin)
+        assertEquals(dev.vmellos.airhockey.core.preferences.MalletSkin.NEKO_STRIKER, guestSpec.localMalletSkin)
+
+        hostVm.stopAll()
+        guestVm.stopAll()
+    }
 }

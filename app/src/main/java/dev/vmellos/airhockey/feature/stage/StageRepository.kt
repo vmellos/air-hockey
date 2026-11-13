@@ -1,5 +1,7 @@
 package dev.vmellos.airhockey.feature.stage
 
+import androidx.compose.runtime.Immutable
+import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.database.StageProgressDao
 import dev.vmellos.airhockey.core.database.StageProgressEntity
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
@@ -9,6 +11,13 @@ import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
+@Immutable
+data class UnlockedCosmetics(
+    val themes: Set<TableTheme> = setOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT),
+    val puckSkins: Set<PuckSkin> = setOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW),
+    val malletSkins: Set<MalletSkin> = setOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER)
+)
 
 data class StageConfig(
     val stageNumber: Int,
@@ -75,42 +84,34 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
         stageProgressDao.getAllStagesDirect().sumOf { it.starsEarned }
     }
 
-    val unlockedThemesFlow: Flow<Set<TableTheme>> = stagesFlow.map { stages ->
+    val unlockedCosmeticsFlow: Flow<UnlockedCosmetics> = stagesFlow.map { stages ->
         val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT)
-        ArenaConquestCatalog.TIERS.forEach { tier ->
-            if (completedStages.contains(tier.unlockStage)) {
-                unlocked.add(tier.theme)
+        val themes = mutableSetOf(TableTheme.CLASSIC_NEON, TableTheme.ARCADE_3D, TableTheme.KIARA_CAT)
+        val pucks = mutableSetOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW)
+        val mallets = mutableSetOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER)
+        ArenaPresetCatalog.TIERS.forEach { preset ->
+            if (completedStages.contains(preset.unlockStage)) {
+                themes.add(preset.theme)
+                pucks.add(preset.puckSkin)
+                mallets.add(preset.malletSkin)
             }
         }
-        unlocked
+        UnlockedCosmetics(
+            themes = themes,
+            puckSkins = pucks,
+            malletSkins = mallets
+        )
     }
 
-    val unlockedPuckSkinsFlow: Flow<Set<PuckSkin>> = stagesFlow.map { stages ->
-        val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(PuckSkin.CLASSIC_PLASMA, PuckSkin.KIARA_PAW)
-        ArenaConquestCatalog.TIERS.forEach { tier ->
-            if (completedStages.contains(tier.unlockStage)) {
-                unlocked.add(tier.puckSkin)
-            }
-        }
-        unlocked
-    }
+    val unlockedThemesFlow: Flow<Set<TableTheme>> = unlockedCosmeticsFlow.map { it.themes }
 
-    val unlockedMalletSkinsFlow: Flow<Set<MalletSkin>> = stagesFlow.map { stages ->
-        val completedStages = stages.filter { it.starsEarned > 0 }.map { it.stageNumber }.toSet()
-        val unlocked = mutableSetOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER)
-        ArenaConquestCatalog.TIERS.forEach { tier ->
-            if (completedStages.contains(tier.unlockStage)) {
-                unlocked.add(tier.malletSkin)
-            }
-        }
-        unlocked
-    }
+    val unlockedPuckSkinsFlow: Flow<Set<PuckSkin>> = unlockedCosmeticsFlow.map { it.puckSkins }
+
+    val unlockedMalletSkinsFlow: Flow<Set<MalletSkin>> = unlockedCosmeticsFlow.map { it.malletSkins }
 
     suspend fun isThemeUnlocked(theme: TableTheme): Boolean {
-        if (ArenaConquestCatalog.isDefaultUnlocked(theme)) return true
-        val requiredStage = ArenaConquestCatalog.getUnlockStageForTheme(theme)
+        if (ArenaPresetCatalog.isDefaultUnlocked(theme)) return true
+        val requiredStage = ArenaPresetCatalog.getUnlockStageForTheme(theme)
         if (requiredStage <= 0) return true
         val stage = stageProgressDao.getStageDirect(requiredStage)
         return (stage?.starsEarned ?: 0) > 0
@@ -132,7 +133,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
 
     fun getStageConfig(stageNumber: Int): StageConfig {
         val validStage = stageNumber.coerceIn(1, 100)
-        val stageTheme = ArenaConquestCatalog.getThemeForStage(validStage)
+        val stageTheme = ArenaPresetCatalog.getThemeForStage(validStage)
         return when (validStage) {
             in 1..10 -> StageConfig(
                 stageNumber = validStage,

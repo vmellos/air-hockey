@@ -44,7 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
+import dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -232,11 +232,11 @@ fun StageCard(
 ) {
     val cardShape = CutCornerShape(12.dp)
     val isBossStage = stage.stageNumber % 10 == 0
-    val tier = remember(stage.stageNumber) { ArenaConquestCatalog.getTierForStage(stage.stageNumber) }
+    val kit = remember(stage.stageNumber) { ArenaKitCatalog.getKitForStage(stage.stageNumber) }
 
     if (stage.isUnlocked) {
         val isCompleted = stage.starsEarned > 0
-        val accentColor = if (isBossStage) tier.primaryColor else if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
+        val accentColor = if (isBossStage) kit.visuals.primaryColor else if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
 
         Box(
             modifier = modifier
@@ -246,7 +246,7 @@ fun StageCard(
                     width = if (isBossStage) 1.5.dp else 1.2.dp,
                     brush = Brush.horizontalGradient(
                         colors = if (isBossStage) {
-                            listOf(tier.primaryColor, tier.secondaryColor)
+                            listOf(kit.visuals.primaryColor, kit.visuals.secondaryColor)
                         } else {
                             listOf(
                                 accentColor.copy(alpha = 0.90f),
@@ -306,9 +306,9 @@ fun StageCard(
                             letterSpacing = 0.5.sp
                         )
                         Icon(
-                            imageVector = tier.icon,
+                            imageVector = kit.icon,
                             contentDescription = null,
-                            tint = tier.primaryColor,
+                            tint = kit.visuals.primaryColor,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -349,7 +349,7 @@ fun StageCard(
                 .background(Color(0x99080E1A), cardShape)
                 .border(
                     width = 1.dp,
-                    color = if (isBossStage) tier.primaryColor.copy(alpha = 0.35f) else Color(0x22FFFFFF),
+                    color = if (isBossStage) kit.visuals.primaryColor.copy(alpha = 0.35f) else Color(0x22FFFFFF),
                     shape = cardShape
                 ),
             contentAlignment = Alignment.Center
@@ -361,14 +361,14 @@ fun StageCard(
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = stringResource(R.string.stage_locked),
-                    tint = if (isBossStage) tier.primaryColor.copy(alpha = 0.70f) else Color(0xFF475569),
+                    tint = if (isBossStage) kit.visuals.primaryColor.copy(alpha = 0.70f) else Color(0xFF475569),
                     modifier = Modifier.size(24.dp)
                 )
                 if (isBossStage) {
                     Icon(
-                        imageVector = tier.icon,
+                        imageVector = kit.icon,
                         contentDescription = null,
-                        tint = tier.primaryColor.copy(alpha = 0.40f),
+                        tint = kit.visuals.primaryColor.copy(alpha = 0.40f),
                         modifier = Modifier.size(16.dp)
                     )
                 }

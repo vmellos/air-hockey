@@ -1,5 +1,6 @@
 package dev.vmellos.airhockey.feature.physics
 
+import androidx.compose.runtime.Immutable
 import dev.vmellos.airhockey.feature.ai.AirHockeyAiController
 import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.MatchSpec
@@ -13,9 +14,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+@Immutable
+data class VisualCollisionBurst(
+    val seq: Long,
+    val tableX: Float,
+    val tableY: Float,
+    val event: CollisionEvent
+)
+
 /**
  * Snapshot imutável do estado e da física da partida a cada instante.
  */
+@Immutable
 data class MatchFrameSnapshot(
     val puckX: Float,
     val puckY: Float,
@@ -34,6 +44,7 @@ data class MatchFrameSnapshot(
     val winner: Int = 0,
     val lastScorer: Int = 0,
     val puckLastHitBy: Int = 0,
+    val dimensions: TableDimensions = TableDimensions(),
     val timestampNano: Long = System.nanoTime()
 ) {
     fun puckSpeed(): Float = kotlin.math.hypot(puckVx, puckVy)
@@ -123,18 +134,18 @@ class ArbitroVirtual(
     )
 
     val mode: GameMode = spec.mode
-    val isGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
-    val isHost: Boolean = !isGuest
+    val isGuest: Boolean = mode.capabilities.isGuest
+    val isHost: Boolean = mode.capabilities.isHost
     private val projection: TableProjection = TableProjection(dimensions, mode)
 
-    val engine: AirHockeyPhysicsEngine = AirHockeyPhysicsEngine(
+    internal val engine: AirHockeyPhysicsEngine = AirHockeyPhysicsEngine(
         dimensions = dimensions,
         maxSpeed = spec.puckMaxSpeed,
         airFrictionPerSec = spec.airFriction
     )
 
-    val aiControllerP1: AirHockeyAiController? = when (mode) {
-        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(
+    val aiControllerP1: AirHockeyAiController? = if (mode.capabilities.hasLocalAiP1) {
+        AirHockeyAiController(
             difficulty = spec.aiDifficultyPlayer1,
             isPlayer1 = true,
             customMaxSpeed = spec.customAiMaxSpeed,
@@ -142,44 +153,18 @@ class ArbitroVirtual(
             customAimingErrorRange = spec.customAiAimingErrorRange,
             customBankShotChance = spec.customAiBankShotChance
         )
-        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(
-            difficulty = spec.aiDifficultyPlayer1,
-            isPlayer1 = true,
-            customMaxSpeed = spec.customAiMaxSpeed,
-            customReactionDelay = spec.customAiReactionDelay,
-            customAimingErrorRange = spec.customAiAimingErrorRange,
-            customBankShotChance = spec.customAiBankShotChance
-        ) else null
-        else -> null
-    }
+    } else null
 
-    val aiControllerP2: AirHockeyAiController? = when (mode) {
-        GameMode.SOLO -> AirHockeyAiController(
-            difficulty = spec.aiDifficulty,
+    val aiControllerP2: AirHockeyAiController? = if (mode.capabilities.hasLocalAiP2) {
+        AirHockeyAiController(
+            difficulty = if (mode == GameMode.SOLO) spec.aiDifficulty else spec.aiDifficultyPlayer2,
             isPlayer1 = false,
             customMaxSpeed = spec.customAiMaxSpeed,
             customReactionDelay = spec.customAiReactionDelay,
             customAimingErrorRange = spec.customAiAimingErrorRange,
             customBankShotChance = spec.customAiBankShotChance
         )
-        GameMode.AI_VS_AI_LOCAL, GameMode.AI_VS_AI_CONNECTED_HOST -> AirHockeyAiController(
-            difficulty = spec.aiDifficultyPlayer2,
-            isPlayer1 = false,
-            customMaxSpeed = spec.customAiMaxSpeed,
-            customReactionDelay = spec.customAiReactionDelay,
-            customAimingErrorRange = spec.customAiAimingErrorRange,
-            customBankShotChance = spec.customAiBankShotChance
-        )
-        GameMode.AI_VS_AI_EXTENDED, GameMode.AI_VS_AI_EXTENDED_HOST -> if (isHost) AirHockeyAiController(
-            difficulty = spec.aiDifficultyPlayer2,
-            isPlayer1 = false,
-            customMaxSpeed = spec.customAiMaxSpeed,
-            customReactionDelay = spec.customAiReactionDelay,
-            customAimingErrorRange = spec.customAiAimingErrorRange,
-            customBankShotChance = spec.customAiBankShotChance
-        ) else null
-        else -> null
-    }
+    } else null
 
     private val _matchState = MutableStateFlow(
         MatchState(
@@ -194,10 +179,12 @@ class ArbitroVirtual(
             peerExited = false,
             player1Name = spec.player1Name,
             player2Name = spec.player2Name,
+            localPlayerName = if (mode.capabilities.isGuest) spec.player2Name else spec.player1Name,
             currentStage = spec.stageNumber,
             starsEarned = 0,
             tableTheme = spec.tableTheme,
-            arenaDimension = spec.arenaDimension
+            arenaDimension = spec.arenaDimension,
+            dimensions = dimensions
         )
     )
     val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
@@ -209,6 +196,9 @@ class ArbitroVirtual(
         private set
     var pendingCollisionIntensity: Float = 0f
         private set
+
+    private val visualBurstRing = ArrayDeque<VisualCollisionBurst>(32)
+    private var visualBurstSeq: Long = 0L
 
     private val simulationLock = Any()
 
@@ -253,11 +243,32 @@ class ArbitroVirtual(
             matchStatus = s.status,
             winner = s.winner,
             lastScorer = s.lastScorer,
-            puckLastHitBy = engine.puck.lastHitBy
+            puckLastHitBy = engine.puck.lastHitBy,
+            dimensions = dimensions
         )
     }
 
     fun currentSnapshot(): MatchFrameSnapshot = _frames.value
+
+    fun collectVisualBurstsSince(lastSeq: Long, out: MutableList<VisualCollisionBurst>): Long = synchronized(simulationLock) {
+        var highestSeq = lastSeq
+        for (burst in visualBurstRing) {
+            if (burst.seq > lastSeq) {
+                out.add(burst)
+                if (burst.seq > highestSeq) highestSeq = burst.seq
+            }
+        }
+        highestSeq
+    }
+
+    private fun recordVisualBurst(tableX: Float, tableY: Float, event: CollisionEvent) {
+        if (event == CollisionEvent.NONE) return
+        if (visualBurstRing.size >= 32) {
+            visualBurstRing.removeFirst()
+        }
+        visualBurstSeq++
+        visualBurstRing.addLast(VisualCollisionBurst(visualBurstSeq, tableX, tableY, event))
+    }
 
     fun getPlayer2Target(): Pair<Float, Float> = synchronized(simulationLock) {
         Pair(engine.player2Mallet.targetX, engine.player2Mallet.targetY)
@@ -304,6 +315,9 @@ class ArbitroVirtual(
                 }
                 CollisionEvent.NONE -> {}
             }
+        }
+        engine.onVisualCollisionListener = { px, py, evt ->
+            recordVisualBurst(px, py, evt)
         }
     }
 
@@ -582,13 +596,6 @@ class ArbitroVirtual(
         return Pair(clampedX, clampedY)
     }
 
-    fun onGuestTouchLocal(localX: Float, localY: Float): Pair<Float, Float>? = synchronized(simulationLock) {
-        if (!isInputAllowed()) return null
-        val globalX = 1000f - localX
-        val globalY = 1000f - localY
-        return onTouchGuestGlobalInternal(globalX, globalY)
-    }
-
     fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) = synchronized(simulationLock) {
         engine.player2Mallet.targetX = globalTargetX
         engine.player2Mallet.targetY = globalTargetY
@@ -631,9 +638,18 @@ class ArbitroVirtual(
 
         if (collisionEvent.toInt() != 0) {
             when (collisionEvent.toInt()) {
-                1 -> audioPort.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = true)
-                2 -> audioPort.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = false)
-                3 -> audioPort.playWallHit()
+                1 -> {
+                    audioPort.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = true)
+                    recordVisualBurst(puckX, puckY, CollisionEvent.PADDLE_HIT_P1)
+                }
+                2 -> {
+                    audioPort.playPaddleHit(collisionIntensity.coerceAtLeast(0.4f), isPlayer1 = false)
+                    recordVisualBurst(puckX, puckY, CollisionEvent.PADDLE_HIT_P2)
+                }
+                3 -> {
+                    audioPort.playWallHit()
+                    recordVisualBurst(puckX, puckY, CollisionEvent.WALL_HIT)
+                }
             }
         }
         publishSnapshot()
@@ -768,6 +784,7 @@ class ArbitroVirtual(
         countdownStepAccumulator = 0f
         secondTimerAccumulator = 0f
         deadPuckAccumulator = 0f
+        visualBurstRing.clear()
         engine.resetPositions(0)
         _matchState.update {
             it.copy(

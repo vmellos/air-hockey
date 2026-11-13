@@ -53,23 +53,23 @@ import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import dev.vmellos.airhockey.core.preferences.VisualEffectsProfile
 import dev.vmellos.airhockey.core.util.findActivity
+import dev.vmellos.airhockey.feature.game.ArenaRuntime
 import dev.vmellos.airhockey.feature.game.GameMode
-import dev.vmellos.airhockey.feature.game.GameViewModel
 import dev.vmellos.airhockey.feature.game.MatchStatus
 import kotlinx.coroutines.launch
 
 @Composable
 fun GameScreen(
-    viewModel: GameViewModel,
+    runtime: ArenaRuntime,
     mode: GameMode,
     onExitToMenu: () -> Unit,
     onExitToStages: () -> Unit = onExitToMenu,
     onStartNextStage: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val matchState by viewModel.matchState.collectAsState()
-    val isSoundEnabled by viewModel.soundEnabled.collectAsState()
-    val isMusicEnabled by viewModel.musicEnabled.collectAsState()
+    val matchState by runtime.matchState.collectAsState()
+    val isSoundEnabled by runtime.soundEnabled.collectAsState()
+    val isMusicEnabled by runtime.musicEnabled.collectAsState()
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val effectiveTheme = matchState.tableTheme ?: prefs.tableTheme
     val scope = rememberCoroutineScope()
@@ -118,7 +118,7 @@ fun GameScreen(
     BackHandler(enabled = true) {
         when {
             matchState.peerExited || matchState.status == MatchStatus.GAME_OVER -> {
-                viewModel.stopMatch()
+                runtime.exitMatch()
                 onExitToMenu()
             }
             matchState.status == MatchStatus.PAUSED -> {
@@ -126,7 +126,7 @@ fun GameScreen(
             }
             else -> {
                 // Em partida (PLAYING, COUNTDOWN, GOAL_PAUSE): pausa o jogo e espera ação
-                viewModel.pauseMatch()
+                runtime.requestPause()
             }
         }
     }
@@ -135,14 +135,14 @@ fun GameScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
-                viewModel.pauseMatch()
+                runtime.requestPause()
                 AirHockeyApp.instance.audioEngine.stopAll()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.stopMatch()
+            runtime.exitMatch()
             AirHockeyApp.instance.audioEngine.stopAll()
         }
     }
@@ -158,19 +158,19 @@ fun GameScreen(
         // Mesa de Jogo (Modo 3D Sceneview quando Dimensão 3D estiver ativa, ou 2D Canvas)
         if (is3dActive) {
             AirHockeyArena3DScene(
-                viewModel = viewModel,
+                runtime = runtime,
                 mode = mode,
                 zoom = prefs.cameraZoom3d,
                 tableTheme = effectiveTheme,
                 onPresentationFinished = {
                     is3dPresenting = false
-                    viewModel.startCountdownAfterPresentation()
+                    runtime.startPresentationCompleted()
                 },
                 modifier = Modifier.fillMaxSize()
             )
         } else {
             AirHockeyArenaCanvas(
-                viewModel = viewModel,
+                runtime = runtime,
                 mode = mode,
                 tableTheme = effectiveTheme,
                 modifier = Modifier.fillMaxSize()
@@ -182,8 +182,8 @@ fun GameScreen(
             matchState = matchState,
             tableTheme = effectiveTheme,
             isSoundEnabled = isSoundEnabled,
-            onToggleSound = { viewModel.toggleSound() },
-            onPauseClick = { viewModel.pauseMatch() }
+            onToggleSound = { runtime.toggleSound() },
+            onPauseClick = { runtime.requestPause() }
         )
 
         // Overlay de Contagem Regressiva estilizado por tema (iniciado após a apresentação 3D)
@@ -208,9 +208,9 @@ fun GameScreen(
         if (matchState.status == MatchStatus.PAUSED && !matchState.peerExited) {
             PauseDialog(
                 isSoundEnabled = isSoundEnabled,
-                onToggleSound = { viewModel.toggleSound() },
+                onToggleSound = { runtime.toggleSound() },
                 isMusicEnabled = isMusicEnabled,
-                onToggleMusic = { viewModel.toggleMusic() },
+                onToggleMusic = { runtime.toggleMusic() },
                 is3dActive = is3dActive,
                 cameraZoom3d = prefs.cameraZoom3d,
                 onCameraZoom3dChange = { newZoom ->
@@ -225,10 +225,10 @@ fun GameScreen(
                         AirHockeyApp.instance.preferencesRepository.updateNeonBloomIntensity(newVal)
                     }
                 },
-                onResume = { viewModel.resumeMatch() },
-                onRestart = { viewModel.restartMatch() },
+                onResume = { runtime.requestResume() },
+                onRestart = { runtime.requestRestart() },
                 onExit = {
-                    viewModel.stopMatch()
+                    runtime.exitMatch()
                     onExitToMenu()
                 }
             )
@@ -238,7 +238,7 @@ fun GameScreen(
         if (matchState.peerExited) {
             PeerExitedDialog(
                 onExit = {
-                    viewModel.stopMatch()
+                    runtime.exitMatch()
                     onExitToMenu()
                 }
             )
@@ -258,26 +258,26 @@ fun GameScreen(
                     onSelectStages = {
                         if (activity != null) {
                             AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
-                                viewModel.stopMatch()
+                                runtime.exitMatch()
                                 onExitToStages()
                             }
                         } else {
-                            viewModel.stopMatch()
+                            runtime.exitMatch()
                             onExitToStages()
                         }
                     },
                     onRetry = {
                         // Não exibe anúncio intersticial na revanche/retry imediato para preservar a retenção do jogador
-                        viewModel.restartMatch()
+                        runtime.requestRestart()
                     },
                     onNextStage = {
                         if (activity != null) {
                             AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
-                                viewModel.stopMatch()
+                                runtime.exitMatch()
                                 onStartNextStage(matchState.currentStage + 1)
                             }
                         } else {
-                            viewModel.stopMatch()
+                            runtime.exitMatch()
                             onStartNextStage(matchState.currentStage + 1)
                         }
                     }
@@ -287,16 +287,16 @@ fun GameScreen(
                     matchState = matchState,
                     onPlayAgain = {
                         // Revanche imediata sem anúncio para fluidez contínua de jogo
-                        viewModel.restartMatch()
+                        runtime.requestRestart()
                     },
                     onExit = {
                         if (activity != null) {
                             AirHockeyApp.instance.adManager.showInterstitialIfAllowed(activity) {
-                                viewModel.stopMatch()
+                                runtime.exitMatch()
                                 onExitToMenu()
                             }
                         } else {
-                            viewModel.stopMatch()
+                            runtime.exitMatch()
                             onExitToMenu()
                         }
                     }

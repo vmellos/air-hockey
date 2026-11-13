@@ -35,7 +35,7 @@ data class DiscoveredTable(
     val lastSeenMs: Long = System.currentTimeMillis()
 )
 
-class NsdDiscoveryManager(private val context: Context) {
+class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
 
     private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -57,7 +57,7 @@ class NsdDiscoveryManager(private val context: Context) {
 
     private val tableRegistry = TableDiscoveryRegistry()
     private val _discoveredTables = MutableStateFlow<List<DiscoveredTable>>(emptyList())
-    val discoveredTables: StateFlow<List<DiscoveredTable>> = _discoveredTables.asStateFlow()
+    override val discoveredTables: StateFlow<List<DiscoveredTable>> = _discoveredTables.asStateFlow()
 
     private val resolveChannel = Channel<NsdServiceInfo>(Channel.UNLIMITED)
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -89,11 +89,11 @@ class NsdDiscoveryManager(private val context: Context) {
         }
     }
 
-    fun startBroadcast(
+    override fun startBroadcast(
         tableCode: String,
-        port: Int = NetworkConstants.DEFAULT_TCP_PORT,
-        mode: String = "EXTENDED",
-        hostName: String = ""
+        port: Int,
+        mode: String,
+        hostName: String
     ) {
         stopBroadcast()
         isBroadcasting = true
@@ -209,7 +209,7 @@ class NsdDiscoveryManager(private val context: Context) {
         }
     }
 
-    fun stopBroadcast() {
+    override fun stopBroadcast() {
         val closedCode = activeBroadcastTableCode
         val closedIp = activeBroadcastHostIp ?: ""
         if (closedCode != null) {
@@ -280,7 +280,7 @@ class NsdDiscoveryManager(private val context: Context) {
         }
     }
 
-    fun startDiscovery() {
+    override fun startDiscovery() {
         stopDiscovery()
         isDiscovering = true
         acquireMulticastLock()
@@ -299,7 +299,7 @@ class NsdDiscoveryManager(private val context: Context) {
         startUdpDiscovery()
     }
 
-    fun restartNsdDiscovery() {
+    override fun restartNsdDiscovery() {
         if (!isDiscovering || isRestartingNsd) return
         isRestartingNsd = true
         scope.launch {
@@ -399,7 +399,7 @@ class NsdDiscoveryManager(private val context: Context) {
         }
     }
 
-    fun stopDiscovery() {
+    override fun stopDiscovery() {
         isDiscovering = false
         udpDiscoveryJob?.cancel()
         udpDiscoveryJob = null
@@ -422,7 +422,7 @@ class NsdDiscoveryManager(private val context: Context) {
      * Envia uma sondagem ativa imediata de descoberta (UDP Broadcast, Unicast para Gateway e Sub-rede /24).
      * Reutiliza o socket de descoberta ativo se disponível, garantindo recebimento das respostas.
      */
-    fun sendDirectedDiscoveryProbe() {
+    override fun sendDirectedDiscoveryProbe() {
         scope.launch {
             try {
                 val activeSocket = udpDiscoverySocket?.takeIf { !it.isClosed }
@@ -513,6 +513,10 @@ class NsdDiscoveryManager(private val context: Context) {
             nsdManager.resolveService(service, resolveListener)
         } catch (_: Exception) {}
     }
+
+    override fun getLocalIpAddress(): String = Companion.getLocalIpAddress(context)
+
+    override fun getDhcpGatewayIp(): String? = Companion.getDhcpGatewayIp(context)
 
     companion object {
 

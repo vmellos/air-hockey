@@ -1,20 +1,18 @@
 package dev.vmellos.airhockey.feature.game
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
-import dev.vmellos.airhockey.core.preferences.AiDifficulty
-import dev.vmellos.airhockey.core.preferences.ArenaDimension
+import dev.vmellos.airhockey.feature.game.ui.PlayerSlot
 import dev.vmellos.airhockey.feature.lobby.MultiplayerMatchCoordinator
 import dev.vmellos.airhockey.feature.network.ControlMessages
-import dev.vmellos.airhockey.feature.physics.AirHockeyPhysicsEngine
 import dev.vmellos.airhockey.feature.physics.ArbitroVirtual
 import dev.vmellos.airhockey.feature.physics.AudioOutputPort
 import dev.vmellos.airhockey.feature.physics.MatchFrameSnapshot
 import dev.vmellos.airhockey.feature.physics.TableDimensions
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
-import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.physics.VisualCollisionBurst
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -28,49 +26,59 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-class GameViewModel : ViewModel() {
+@Stable
+interface ArenaRuntime {
+    val matchState: StateFlow<MatchState>
+    val soundEnabled: StateFlow<Boolean>
+    val musicEnabled: StateFlow<Boolean>
+    fun currentSnapshot(): MatchFrameSnapshot
+    fun collectVisualBurstsSince(lastSeq: Long, out: MutableList<VisualCollisionBurst>): Long
+    fun submitMalletTarget(slot: PlayerSlot, targetX: Float, targetY: Float)
+    fun startPresentationCompleted()
+    fun requestPause()
+    fun requestResume()
+    fun requestRestart()
+    fun toggleSound()
+    fun toggleMusic()
+    fun exitMatch()
+}
+
+class GameViewModel : ViewModel(), ArenaRuntime {
 
     private val audioEngine = AirHockeyApp.instance.audioEngine
 
-    val soundEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
+    override val soundEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
         .map { it.soundEnabled }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val musicEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
+    override val musicEnabled: StateFlow<Boolean> = AirHockeyApp.instance.preferencesRepository.userPreferencesFlow
         .map { it.musicEnabled }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     private val _matchState = MutableStateFlow(MatchState())
-    val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
+    override val matchState: StateFlow<MatchState> = _matchState.asStateFlow()
 
-    private var fallbackEngine = AirHockeyPhysicsEngine(TableDimensions())
+    private val fallbackDimensions = TableDimensions()
     private val fallbackSnapshot = MatchFrameSnapshot(
-        puckX = fallbackEngine.puck.x,
-        puckY = fallbackEngine.puck.y,
+        puckX = fallbackDimensions.width / 2f,
+        puckY = fallbackDimensions.centerLineY,
         puckVx = 0f,
         puckVy = 0f,
-        player1MalletX = fallbackEngine.player1Mallet.x,
-        player1MalletY = fallbackEngine.player1Mallet.y,
-        player2MalletX = fallbackEngine.player2Mallet.x,
-        player2MalletY = fallbackEngine.player2Mallet.y
+        player1MalletX = fallbackDimensions.width / 2f,
+        player1MalletY = fallbackDimensions.totalHeight - 250f,
+        player2MalletX = fallbackDimensions.width / 2f,
+        player2MalletY = 250f,
+        dimensions = fallbackDimensions
     )
-    var arbitro: ArbitroVirtual? = null
-        private set
 
-    val engine: AirHockeyPhysicsEngine
-        get() = arbitro?.engine ?: fallbackEngine
-
-    fun currentSnapshot(): MatchFrameSnapshot = arbitro?.currentSnapshot() ?: fallbackSnapshot
+    private var arbitro: ArbitroVirtual? = null
+    private var coordinator: MultiplayerMatchCoordinator? = null
+    private val coordinatorJobs = mutableListOf<Job>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val simulationDispatcher = Dispatchers.Default.limitedParallelism(1)
     private var physicsJob: Job? = null
     private var matchStateCollectJob: Job? = null
-
-    // Callbacks de rede para Mesa Estendida
-    var coordinator: MultiplayerMatchCoordinator? = null
-        private set
-    private val coordinatorJobs = mutableListOf<Job>()
 
     @Volatile
     private var hasRecordedMatch = false
@@ -84,11 +92,6 @@ class GameViewModel : ViewModel() {
         eloLeaderboardId = AirHockeyApp.instance.getString(R.string.leaderboard_elo_id),
         stageLeaderboardId = AirHockeyApp.instance.getString(R.string.leaderboard_stages_id)
     )
-
-    var onHostBroadcastTelemetry: ((Float, Float, Float, Float, Float, Float, Float, Float, Byte, Float, Byte) -> Unit)? = null
-    var onHostBroadcastState: ((ControlMessages.RemoteMatchState) -> Unit)? = null
-    var onGuestSendInput: ((Float, Float) -> Unit)? = null
-    var onGuestSendControl: ((String) -> Unit)? = null
 
     private val audioPort = object : AudioOutputPort {
         override fun playPaddleHit(intensity: Float, isPlayer1: Boolean) {
@@ -116,71 +119,22 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun attachCoordinator(coord: MultiplayerMatchCoordinator) {
-        coordinatorJobs.forEach { it.cancel() }
-        coordinatorJobs.clear()
-        coordinator = coord
-        val isHost = coord.isHost
+    override fun currentSnapshot(): MatchFrameSnapshot = arbitro?.currentSnapshot() ?: fallbackSnapshot
 
-        if (isHost) {
-            onHostBroadcastTelemetry = { px, py, pvx, pvy, hmx, hmy, gmx, gmy, evt, intensity, lastHit ->
-                coord.broadcastTelemetry(px, py, pvx, pvy, hmx, hmy, gmx, gmy, collisionEvent = evt, collisionIntensity = intensity, puckLastHitBy = lastHit)
-            }
-            onHostBroadcastState = { remote ->
-                coord.broadcastState(remote)
-            }
-            coordinatorJobs += viewModelScope.launch {
-                coord.transport.guestInputs.collect { input ->
-                    onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
-                }
-            }
-            coord.onPeerPauseRequested = { pauseMatch() }
-            coord.onPeerResumeRequested = { resumeMatch() }
-            coord.onPeerRestartRequested = { restartMatch() }
-            coordinatorJobs += viewModelScope.launch {
-                coord.state.collect { state ->
-                    if (state.peerExited) onPeerExited()
-                }
-            }
+    override fun collectVisualBurstsSince(
+        lastSeq: Long,
+        out: MutableList<VisualCollisionBurst>
+    ): Long = arbitro?.collectVisualBurstsSince(lastSeq, out) ?: lastSeq
+
+    fun startMatch(spec: MatchSpec, coordinator: MultiplayerMatchCoordinator? = null) {
+        val capabilities = spec.mode.capabilities
+        val isExtended = capabilities.isExtended
+        val isGuest = capabilities.isGuest
+        val bezelUnits = if (isExtended) {
+            TableDimensions.calculateBezelUnits(spec.bezelGapMm, spec.screenHeightPx, spec.yDpi)
         } else {
-            coordinatorJobs += viewModelScope.launch {
-                coord.transport.telemetryFrames.collect { t ->
-                    onGuestReceiveTelemetry(
-                        t.puckX, t.puckY,
-                        t.puckVx, t.puckVy,
-                        t.hostMalletX, t.hostMalletY,
-                        t.guestMalletX, t.guestMalletY,
-                        t.collisionEvent,
-                        t.collisionIntensity,
-                        t.puckLastHitBy
-                    )
-                }
-            }
-            coordinatorJobs += viewModelScope.launch {
-                coord.state.collect { state ->
-                    state.remoteMatchState?.let { onGuestReceiveState(it) }
-                    if (state.peerExited) onPeerExited()
-                }
-            }
-            onGuestSendInput = { gx, gy ->
-                coord.sendGuestInput(gx, gy)
-            }
-            onGuestSendControl = { msg ->
-                when (msg) {
-                    ControlMessages.PAUSE -> coord.requestPause()
-                    ControlMessages.RESUME -> coord.requestResume()
-                    ControlMessages.RESTART -> coord.requestRestart()
-                }
-            }
+            0f
         }
-    }
-
-    fun initializeMatch(spec: MatchSpec) {
-        val mode = spec.mode
-        val isExtended = mode == GameMode.EXTENDED_HOST || mode == GameMode.EXTENDED_GUEST ||
-                mode == GameMode.AI_VS_AI_EXTENDED || mode == GameMode.AI_VS_AI_EXTENDED_HOST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST
-        val isGuest = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
-        val bezelUnits = if (isExtended) TableDimensions.calculateBezelUnits(spec.bezelGapMm, spec.screenHeightPx, spec.yDpi) else 0f
 
         val dimensions = TableDimensions(
             width = 1000f,
@@ -189,35 +143,34 @@ class GameViewModel : ViewModel() {
             isExtendedMode = isExtended
         )
 
-        val resolvedSpec = if (mode == GameMode.SOLO) {
-            val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(spec.stageNumber)
-            spec.copy(
-                targetScore = stageConfig.targetScore,
-                aiDifficulty = stageConfig.aiDifficulty,
-                puckMaxSpeed = stageConfig.puckSpeed.maxSpeed,
-                airFriction = stageConfig.puckSpeed.airFriction,
-                tableTheme = stageConfig.tableTheme,
-                customAiMaxSpeed = stageConfig.aiMaxSpeed,
-                customAiReactionDelay = stageConfig.aiReactionDelay,
-                customAiAimingErrorRange = stageConfig.aiAimingError,
-                customAiBankShotChance = stageConfig.aiBankShotChance
-            )
-        } else if (isExtended) {
-            spec.copy(
-                hasIntroPresentation = false
-            )
-        } else {
-            spec
+        val resolvedSpec = when {
+            spec.mode == GameMode.SOLO -> {
+                val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(spec.stageNumber)
+                spec.copy(
+                    targetScore = stageConfig.targetScore,
+                    aiDifficulty = stageConfig.aiDifficulty,
+                    puckMaxSpeed = stageConfig.puckSpeed.maxSpeed,
+                    airFriction = stageConfig.puckSpeed.airFriction,
+                    tableTheme = stageConfig.tableTheme,
+                    customAiMaxSpeed = stageConfig.aiMaxSpeed,
+                    customAiReactionDelay = stageConfig.aiReactionDelay,
+                    customAiAimingErrorRange = stageConfig.aiAimingError,
+                    customAiBankShotChance = stageConfig.aiBankShotChance
+                )
+            }
+            isExtended -> spec.copy(hasIntroPresentation = false)
+            else -> spec
         }
 
         stopGameLoops()
+        clearCoordinator()
         hasRecordedMatch = false
 
         val newArbitro = ArbitroVirtual(
             dimensions = dimensions,
             spec = resolvedSpec,
             audioPort = audioPort,
-            onGoalScoredCallback = { scorer, isGameOver ->
+            onGoalScoredCallback = { _, isGameOver ->
                 if (isGameOver) {
                     handleGameOver()
                     broadcastState()
@@ -229,6 +182,10 @@ class GameViewModel : ViewModel() {
         )
         arbitro = newArbitro
         _matchState.value = newArbitro.matchState.value
+
+        if (coordinator != null) {
+            bindCoordinator(coordinator)
+        }
 
         matchStateCollectJob?.cancel()
         var prevCountdown = -1
@@ -253,7 +210,61 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun startCountdownAfterPresentation() {
+    private fun clearCoordinator() {
+        coordinatorJobs.forEach { it.cancel() }
+        coordinatorJobs.clear()
+        coordinator = null
+    }
+
+    private fun bindCoordinator(coord: MultiplayerMatchCoordinator) {
+        coordinator = coord
+        if (coord.isHost) {
+            coordinatorJobs += viewModelScope.launch {
+                coord.transport.guestInputs.collect { input ->
+                    arbitro?.onHostReceiveGuestInput(input.guestTargetX, input.guestTargetY)
+                }
+            }
+            coord.onPeerPauseRequested = { requestPause() }
+            coord.onPeerResumeRequested = { requestResume() }
+            coord.onPeerRestartRequested = { requestRestart() }
+            coordinatorJobs += viewModelScope.launch {
+                coord.state.collect { state ->
+                    if (state.peerExited) onPeerExited()
+                }
+            }
+        } else {
+            coordinatorJobs += viewModelScope.launch {
+                coord.transport.telemetryFrames.collect { t ->
+                    arbitro?.applyRemoteTelemetry(
+                        puckX = t.puckX,
+                        puckY = t.puckY,
+                        puckVx = t.puckVx,
+                        puckVy = t.puckVy,
+                        hostMalletX = t.hostMalletX,
+                        hostMalletY = t.hostMalletY,
+                        guestMalletX = t.guestMalletX,
+                        guestMalletY = t.guestMalletY,
+                        collisionEvent = t.collisionEvent,
+                        collisionIntensity = t.collisionIntensity,
+                        puckLastHitBy = t.puckLastHitBy
+                    )
+                }
+            }
+            coordinatorJobs += viewModelScope.launch {
+                coord.state.collect { state ->
+                    state.remoteMatchState?.let { remote ->
+                        arbitro?.applyRemoteState(remote)
+                        if (remote.statusName == MatchStatus.GAME_OVER.name) {
+                            handleGameOver()
+                        }
+                    }
+                    if (state.peerExited) onPeerExited()
+                }
+            }
+        }
+    }
+
+    override fun startPresentationCompleted() {
         if (_matchState.value.status == MatchStatus.PAUSED) return
         if (_matchState.value.status == MatchStatus.PRESENTATION) {
             arbitro?.finishPresentationAndStartCountdown()
@@ -297,31 +308,34 @@ class GameViewModel : ViewModel() {
     }
 
     private fun emitLoopTelemetry(currentArbitro: ArbitroVirtual) {
+        val coord = coordinator ?: return
         val status = currentArbitro.matchState.value.status
         val snap = currentArbitro.currentSnapshot()
         if (status == MatchStatus.PLAYING) {
             if (currentArbitro.isHost) {
                 val (evt, intensity) = currentArbitro.consumeCollisionTelemetry()
-                onHostBroadcastTelemetry?.invoke(
+                coord.broadcastTelemetry(
                     snap.puckX, snap.puckY,
                     snap.puckVx, snap.puckVy,
                     snap.player1MalletX, snap.player1MalletY,
                     snap.player2MalletX, snap.player2MalletY,
-                    evt, intensity,
-                    snap.puckLastHitBy.toByte()
+                    collisionEvent = evt,
+                    collisionIntensity = intensity,
+                    puckLastHitBy = snap.puckLastHitBy.toByte()
                 )
             } else if (currentArbitro.aiControllerP2 != null) {
                 val (tx, ty) = currentArbitro.getPlayer2Target()
-                onGuestSendInput?.invoke(tx, ty)
+                coord.sendGuestInput(tx, ty)
             }
         } else if (status == MatchStatus.COUNTDOWN && currentArbitro.isHost) {
-            onHostBroadcastTelemetry?.invoke(
+            coord.broadcastTelemetry(
                 snap.puckX, snap.puckY,
                 0f, 0f,
                 snap.player1MalletX, snap.player1MalletY,
                 snap.player2MalletX, snap.player2MalletY,
-                0.toByte(), 0f,
-                snap.puckLastHitBy.toByte()
+                collisionEvent = 0.toByte(),
+                collisionIntensity = 0f,
+                puckLastHitBy = snap.puckLastHitBy.toByte()
             )
         }
     }
@@ -339,71 +353,31 @@ class GameViewModel : ViewModel() {
         physicsJob = null
     }
 
-    fun onTouchPlayer1(x: Float, y: Float) {
-        arbitro?.onTouchPlayer1(x, y)
-    }
-
-    fun onTouchPlayer2(x: Float, y: Float) {
-        arbitro?.onTouchPlayer2(x, y)
-    }
-
-    fun onTouchGuestGlobal(globalX: Float, globalY: Float) {
-        val coords = arbitro?.onTouchGuestGlobal(globalX, globalY)
-        if (coords != null) {
-            onGuestSendInput?.invoke(coords.first, coords.second)
+    override fun submitMalletTarget(slot: PlayerSlot, targetX: Float, targetY: Float) {
+        when (slot) {
+            PlayerSlot.P1 -> arbitro?.onTouchPlayer1(targetX, targetY)
+            PlayerSlot.P2 -> arbitro?.onTouchPlayer2(targetX, targetY)
+            PlayerSlot.GUEST -> {
+                val coords = arbitro?.onTouchGuestGlobal(targetX, targetY)
+                if (coords != null) {
+                    coordinator?.sendGuestInput(coords.first, coords.second)
+                }
+            }
         }
     }
 
-    fun onGuestTouchLocal(localX: Float, localY: Float) {
-        val coords = arbitro?.onGuestTouchLocal(localX, localY)
-        if (coords != null) {
-            onGuestSendInput?.invoke(coords.first, coords.second)
-        }
-    }
-
-    fun toggleSound() {
+    override fun toggleSound() {
         val repo = AirHockeyApp.instance.preferencesRepository
         viewModelScope.launch {
             repo.setSoundEnabled(!soundEnabled.value)
         }
     }
 
-    fun toggleMusic() {
+    override fun toggleMusic() {
         val repo = AirHockeyApp.instance.preferencesRepository
         viewModelScope.launch {
             repo.setMusicEnabled(!musicEnabled.value)
         }
-    }
-
-    fun onGuestReceiveTelemetry(
-        puckX: Float, puckY: Float,
-        puckVx: Float, puckVy: Float,
-        hostMalletX: Float, hostMalletY: Float,
-        guestMalletX: Float, guestMalletY: Float,
-        collisionEvent: Byte = 0,
-        collisionIntensity: Float = 0f,
-        puckLastHitBy: Byte = 0
-    ) {
-        arbitro?.applyRemoteTelemetry(
-            puckX = puckX, puckY = puckY,
-            puckVx = puckVx, puckVy = puckVy,
-            hostMalletX = hostMalletX, hostMalletY = hostMalletY,
-            guestMalletX = guestMalletX, guestMalletY = guestMalletY,
-            collisionEvent = collisionEvent,
-            collisionIntensity = collisionIntensity,
-            puckLastHitBy = puckLastHitBy
-        )
-    }
-
-    fun onGuestReceiveState(remote: ControlMessages.RemoteMatchState) {
-        arbitro?.applyRemoteState(remote)
-        if (remote.statusName == MatchStatus.GAME_OVER.name) {
-            handleGameOver()
-        }
-    }
-
-    fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) {
-        arbitro?.onHostReceiveGuestInput(globalTargetX, globalTargetY)
     }
 
     private fun broadcastState() {
@@ -418,19 +392,16 @@ class GameViewModel : ViewModel() {
                 winner = s.winner,
                 lastScorer = s.lastScorer
             )
-            onHostBroadcastState?.invoke(remote)
+            coordinator?.broadcastState(remote)
         }
     }
 
-    private val MatchState.isGuestMode: Boolean
-        get() = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
-
-    fun pauseMatch() {
+    override fun requestPause() {
         stopGameLoops()
         audioEngine.stopAll()
 
-        if (_matchState.value.isGuestMode) {
-            onGuestSendControl?.invoke(ControlMessages.PAUSE)
+        if (_matchState.value.capabilities.isGuest) {
+            coordinator?.requestPause()
             arbitro?.pause()
             return
         }
@@ -442,9 +413,9 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun resumeMatch() {
-        if (_matchState.value.isGuestMode) {
-            onGuestSendControl?.invoke(ControlMessages.RESUME)
+    override fun requestResume() {
+        if (_matchState.value.capabilities.isGuest) {
+            coordinator?.requestResume()
             return
         }
         if (_matchState.value.status == MatchStatus.PAUSED) {
@@ -453,17 +424,9 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun togglePause() {
-        if (_matchState.value.status == MatchStatus.PLAYING) {
-            pauseMatch()
-        } else if (_matchState.value.status == MatchStatus.PAUSED) {
-            resumeMatch()
-        }
-    }
-
-    fun restartMatch() {
-        if (_matchState.value.isGuestMode) {
-            onGuestSendControl?.invoke(ControlMessages.RESTART)
+    override fun requestRestart() {
+        if (_matchState.value.capabilities.isGuest) {
+            coordinator?.requestRestart()
             return
         }
         stopGameLoops()
@@ -475,21 +438,15 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun onPeerExited() {
+    private fun onPeerExited() {
         stopGameLoops()
         arbitro?.setPeerExited()
     }
 
-    fun stopMatch() {
+    override fun exitMatch() {
         stopGameLoops()
         audioEngine.stopAll()
-        coordinatorJobs.forEach { it.cancel() }
-        coordinatorJobs.clear()
-        coordinator = null
-        onHostBroadcastTelemetry = null
-        onHostBroadcastState = null
-        onGuestSendInput = null
-        onGuestSendControl = null
+        clearCoordinator()
         arbitro?.setIdle()
     }
 
@@ -510,6 +467,6 @@ class GameViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
-        stopMatch()
+        exitMatch()
     }
 }

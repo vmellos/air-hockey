@@ -251,7 +251,7 @@ O mecanismo de escaneamento local (via mDNS/NSD e beacon UDP) no qual o disposit
 _Avoid_: Busca por modo restrito, filtro cego de lobby, salas isoladas por tela
 
 **Expiração de Mesas Descobertas**:
-O mecanismo de higienização contínua executado no dispositivo convidado que remove automaticamente mesas da lista do lobby caso nenhum beacon periódico seja recebido dentro da janela de tolerância (TTL de 3,5 segundos), prevenindo a exibição de salas inativas decorrentes de encerramento abrupto ou oscilações de sinal.
+O mecanismo de higienização contínua executado no dispositivo convidado que remove automaticamente mesas da lista do lobby caso nenhum beacon periódico seja recebido dentro da janela de tolerância (TTL de 7 segundos), prevenindo a exibição de salas inativas decorrentes de encerramento abrupto ou oscilações de sinal.
 _Avoid_: Mesa fantasma, lista estática, salas órfãs, cache infinito de mesas
 
 **Aviso de Encerramento de Mesa**:
@@ -567,6 +567,27 @@ _Avoid_: Faíscas monocromáticas, efeitos fixos azul e vermelho
 **Design System Cyber-Obsidian**:
 O padrão de interface gráfica padronizado adotado nas telas de navegação, diálogos e botões, composto por superfícies escuras Obsidian (`#070B14`), glassmorphism translúcido, acentos luminosos em Ciano Elétrico (`#00E5FF`) e Ouro Arcade (`#FFB800`), e molduras chanfradas elegantes.
 _Avoid_: Cores primárias genéricas, botões vermelho e azul estridentes
+
+## Módulos Arquiteturais Profundos e Interfaces de Sistema
+
+**Especificação de Partida (`MatchSpec`)**:
+O contrato imutável construído na abertura da sessão esportiva que consolida modalidade, Vão Físico, Pontuação Alvo, limites cinemáticos do Disco, tema da Mesa e identidade local dos equipamentos de Disco e Rebatedor por Aparelho.
+
+**Capacidades da Modalidade (`ModeCapabilities`)**:
+O módulo declarativo de regras por `GameMode` que determina perspectiva da Mesa (`TablePerspective`), política de registro de placar (`StatsPolicy`), controle local/autônomo e papéis de rede sem ramificações espalhadas pela interface.
+
+**Porta de Execução da Arena (`ArenaRuntime`)**:
+A interface estável observada pelos renderizadores 2D/3D e pelo HUD de partida para leitura instantânea de estado (`StateFlow<MatchState>`), captura de snapshot físico, drenagem de eventos de colisão e submissão de comandos do Rebatedor e pausa.
+
+**Catálogo de Presets e Kits da Arena (`ArenaPresetCatalog` / `ArenaKitCatalog`)**:
+Os dois módulos complementares de identidade visual e acústica: `ArenaPresetCatalog` provê em Kotlin puro os parâmetros acústicos, tiers da Conquista da Arena e presets canônicos de cada Mesa; `ArenaKitCatalog` concentra paletas 2D, recursos 3D (.glb) da Mesa, Disco, Rebatedor e estilos de sobreposição com liberdade local de escolha entre Aparelhos.
+
+**Base Vetorial da Câmera 3D (`CameraBasis3D`)**:
+A estrutura imutável pré-calculada por quadro em `Table3DCameraProjection` que reaproveita seno/cosseno de pitch/yaw e proporção de tela entre a projeção de partículas, o rastro do Disco e a desprojeção de toque para a Mesa.
+
+**Portas de Descoberta, Snapshot em Nuvem e Áudio (`LanDiscoveryPort`, `CloudSnapshotPort`, `AudioPlaybackPort`)**:
+Os pontos de acoplamento estreitos (*seams*) que isolam respectivamente a descoberta em rede local (`TableDiscoveryRegistry` com expiração em TTL de 7 segundos), o sincronismo atômico de progresso em nuvem (`PlayGamesSaveManager` em transação única de banco Room e DataStore) e a reprodução de áudio cuja síntese WAV executa integralmente fora da thread principal.
+
 
 
 

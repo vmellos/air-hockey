@@ -2,13 +2,38 @@ package dev.vmellos.airhockey.feature.game.ui
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import dev.vmellos.airhockey.core.catalog.canonical
 import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.feature.game.TablePerspective
 
 /**
- * Renderizador 2D unificado para superfícies de jogo e preview de personalização.
+ * Renderizador 2D unificado para superfícies de jogo, metas, rebatedores, discos e previews.
  */
 object Arena2DRenderer {
+
+    fun DrawScope.drawTableSurface(
+        theme: TableTheme,
+        left: Float,
+        top: Float,
+        width: Float,
+        height: Float,
+        scale: Float,
+        perspective: TablePerspective
+    ) {
+        drawTableSurface(
+            theme = theme,
+            left = left,
+            top = top,
+            width = width,
+            height = height,
+            scale = scale,
+            isExtendedHost = perspective == TablePerspective.EXTENDED_HOST,
+            isExtendedGuest = perspective == TablePerspective.EXTENDED_GUEST,
+            isConnectedGuest = perspective == TablePerspective.CONNECTED_GUEST
+        )
+    }
 
     fun DrawScope.drawTableSurface(
         theme: TableTheme,
@@ -21,7 +46,7 @@ object Arena2DRenderer {
         isExtendedGuest: Boolean = false,
         isConnectedGuest: Boolean = false
     ) {
-        when (theme) {
+        when (theme.canonical()) {
             TableTheme.CYBER_SOCCER -> drawCyberSoccerTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.NEO_BASKETBALL -> drawNeoBasketballTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
             TableTheme.GRAVITY_VOLLEY -> drawGravityVolleyTable(left, top, width, height, scale, isExtendedHost, isExtendedGuest, isConnectedGuest)
@@ -46,9 +71,33 @@ object Arena2DRenderer {
         scale: Float,
         topGoalColor: Color,
         bottomGoalColor: Color,
+        perspective: TablePerspective
+    ) {
+        drawTableGoals(
+            theme = theme,
+            goalLeft = goalLeft,
+            goalWidth = goalWidth,
+            topY = topY,
+            bottomY = bottomY,
+            scale = scale,
+            topGoalColor = topGoalColor,
+            bottomGoalColor = bottomGoalColor,
+            drawTopGoal = !perspective.isExtended
+        )
+    }
+
+    fun DrawScope.drawTableGoals(
+        theme: TableTheme,
+        goalLeft: Float,
+        goalWidth: Float,
+        topY: Float,
+        bottomY: Float,
+        scale: Float,
+        topGoalColor: Color,
+        bottomGoalColor: Color,
         drawTopGoal: Boolean = true
     ) {
-        when (theme) {
+        when (theme.canonical()) {
             TableTheme.CYBER_SOCCER -> {
                 if (drawTopGoal) drawCyberSoccerGoal(goalLeft, goalWidth, topY, scale, topGoalColor, isTop = true)
                 drawCyberSoccerGoal(goalLeft, goalWidth, bottomY, scale, bottomGoalColor, isTop = false)
@@ -122,6 +171,30 @@ object Arena2DRenderer {
             MalletSkin.SPARTAN_AEGIS -> drawSpartanAegisMallet(x, y, radius, color, rimColor, scale)
             MalletSkin.NEKO_STRIKER -> drawNekoStriker(cx = x, cy = y, radius = radius, accentColor = color, rimColor = rimColor, scale = scale)
             MalletSkin.CLASSIC_NEON -> drawPseudo3DMallet(x, y, radius, color, rimColor, scale)
+        }
+    }
+
+    fun DrawScope.drawPuckSkin(
+        skin: PuckSkin,
+        x: Float,
+        y: Float,
+        radius: Float,
+        accentColor: Color,
+        scale: Float
+    ) {
+        when (skin) {
+            PuckSkin.CYBER_SOCCER_BALL -> drawCyberSoccerPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.NEO_BASKETBALL -> drawNeoBasketballPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.GRAVITY_VOLLEY -> drawGravityVolleyPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.GRIDIRON_FOOTBALL -> drawGridironPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.CYBER_BASEBALL -> drawCyberBaseballPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.SAWBLADE -> drawSawbladePuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.SYNTH_DISC -> drawSynthwavePuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.ATOMIC_CORE -> drawAtomicCorePuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.PONG_SQUARE -> drawPongPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.GLADIATOR_SHIELD -> drawGladiatorShieldPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.KIARA_PAW -> drawKiaraPawPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
+            PuckSkin.CLASSIC_PLASMA -> drawEnergyRingPuck(cx = x, cy = y, radius = radius, accentColor = accentColor, scale = scale)
         }
     }
 }

@@ -3,6 +3,7 @@ package dev.vmellos.airhockey.feature.leaderboard
 import dev.vmellos.airhockey.core.database.LeaderboardDao
 import dev.vmellos.airhockey.core.database.MatchRecordEntity
 import dev.vmellos.airhockey.core.database.PlayerProfileStatsEntity
+import dev.vmellos.airhockey.feature.game.ModeDisplayKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -33,7 +34,10 @@ class LeaderboardRepository(
         scoreA: Int,
         scoreB: Int,
         durationSeconds: Int
-    ): MatchRecordEntity = withContext(Dispatchers.IO) {
+    ): MatchRecordEntity? = withContext(Dispatchers.IO) {
+        if (ModeDisplayKind.fromStorageKey(gameMode) == ModeDisplayKind.AI_VS_AI) {
+            return@withContext null
+        }
         val winner = when {
             scoreA > scoreB -> "PLAYER_A"
             scoreB > scoreA -> "PLAYER_B"

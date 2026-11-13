@@ -2,6 +2,8 @@ package dev.vmellos.airhockey.feature.game
 
 import dev.vmellos.airhockey.core.preferences.AiDifficulty
 import dev.vmellos.airhockey.core.preferences.ArenaDimension
+import dev.vmellos.airhockey.core.preferences.MalletSkin
+import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
@@ -32,6 +34,8 @@ data class MatchSpec(
     val hasIntroPresentation: Boolean = false,
     val tableTheme: TableTheme? = null,
     val arenaDimension: ArenaDimension = ArenaDimension.THREE_DIMENSIONAL,
+    val localPuckSkin: PuckSkin = PuckSkin.CLASSIC_PLASMA,
+    val localMalletSkin: MalletSkin = MalletSkin.CLASSIC_NEON,
     val customAiMaxSpeed: Float? = null,
     val customAiReactionDelay: Float? = null,
     val customAiAimingErrorRange: Float? = null,
@@ -57,6 +61,8 @@ data class MatchSpec(
                 stageNumber = stageNumber,
                 hasIntroPresentation = hasIntro,
                 arenaDimension = userPrefs.arenaDimension,
+                localPuckSkin = userPrefs.puckSkin,
+                localMalletSkin = userPrefs.player1MalletSkin,
                 customAiMaxSpeed = StageConfig.calculateAiMaxSpeed(stageNumber),
                 customAiReactionDelay = StageConfig.calculateAiReactionDelay(stageNumber),
                 customAiAimingErrorRange = StageConfig.calculateAiAimingError(stageNumber),
@@ -88,6 +94,8 @@ data class MatchSpec(
                 player2Name = player2Name,
                 tableTheme = chosenTheme,
                 arenaDimension = chosenDimension,
+                localPuckSkin = userPrefs.puckSkin,
+                localMalletSkin = userPrefs.player1MalletSkin,
                 hasIntroPresentation = hasIntro
             )
         }
@@ -125,6 +133,8 @@ data class MatchSpec(
                 player2Name = player2Name,
                 tableTheme = chosenTheme,
                 arenaDimension = chosenDimension,
+                localPuckSkin = userPrefs.puckSkin,
+                localMalletSkin = userPrefs.player1MalletSkin,
                 hasIntroPresentation = hasIntro
             )
         }
@@ -162,6 +172,8 @@ data class MatchSpec(
                 player2Name = player2Name,
                 tableTheme = tableTheme,
                 arenaDimension = arenaDimension,
+                localPuckSkin = userPrefs.puckSkin,
+                localMalletSkin = userPrefs.player1MalletSkin,
                 hasIntroPresentation = hasIntroPresentation
             )
         }

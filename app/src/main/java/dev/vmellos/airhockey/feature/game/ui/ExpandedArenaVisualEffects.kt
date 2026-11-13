@@ -5,12 +5,75 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import kotlin.math.cos
 import kotlin.math.sin
+
+private fun buildChamferedArenaPath(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    chamfer: Float,
+    isExtended: Boolean,
+    closePath: Boolean = true
+): Path = Path().apply {
+    if (isExtended) {
+        moveTo(left, top)
+        lineTo(left, bottom - chamfer)
+        lineTo(left + chamfer, bottom)
+        lineTo(right - chamfer, bottom)
+        lineTo(right, bottom - chamfer)
+        lineTo(right, top)
+        if (closePath) close()
+    } else {
+        moveTo(left, top + chamfer)
+        lineTo(left + chamfer, top)
+        lineTo(right - chamfer, top)
+        lineTo(right, top + chamfer)
+        lineTo(right, bottom - chamfer)
+        lineTo(right - chamfer, bottom)
+        lineTo(left + chamfer, bottom)
+        lineTo(left, bottom - chamfer)
+        if (closePath) close()
+    }
+}
+
+private fun DrawScope.drawChamferedExtendedOrFullBorder(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    chamfer: Float,
+    borderColor: Color,
+    strokeWidth: Float,
+    scale: Float,
+    isExtended: Boolean
+) {
+    if (isExtended) {
+        val openBorder = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = true, closePath = false)
+        drawPath(
+            path = openBorder,
+            color = borderColor,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+        drawLine(
+            color = borderColor.copy(alpha = 0.65f),
+            start = Offset(left, top),
+            end = Offset(right, top),
+            strokeWidth = 3f * scale,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f * scale, 18f * scale), 0f)
+        )
+    } else {
+        val fullBorder = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = false, closePath = true)
+        drawPath(path = fullBorder, color = borderColor, style = Stroke(width = strokeWidth))
+    }
+}
 
 // ============================================================================
 // 1. PALETA DE CORES: GRIDIRON SCI-FI (FUTEBOL AMERICANO)
@@ -122,29 +185,10 @@ fun DrawScope.drawGridironTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
     // 1. Fundo do gramado escuro com cantos chanfrados
-    val arenaPath = Path().apply {
-        if (isExtendedHost || isExtendedGuest) {
-            moveTo(left, top)
-            lineTo(left, bottom - chamfer)
-            lineTo(left + chamfer, bottom)
-            lineTo(right - chamfer, bottom)
-            lineTo(right, bottom - chamfer)
-            lineTo(right, top)
-            close()
-        } else {
-            moveTo(left, top + chamfer)
-            lineTo(left + chamfer, top)
-            lineTo(right - chamfer, top)
-            lineTo(right, top + chamfer)
-            lineTo(right, bottom - chamfer)
-            lineTo(right - chamfer, bottom)
-            lineTo(left + chamfer, bottom)
-            lineTo(left, bottom - chamfer)
-            close()
-        }
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -169,7 +213,7 @@ fun DrawScope.drawGridironTable(
     // Linhas de jardas a cada intervalo
     for (i in 1 until yardStripes) {
         val y = top + i * yardH
-        val is50Yard = (i == yardStripes / 2)
+        val is50Yard = !isExtended && (i == yardStripes / 2)
         val lineColor = if (is50Yard) GridironGold.copy(alpha = 0.5f) else GridironYardLine
         val strokeW = if (is50Yard) 2.5f * scale else 1.2f * scale
         drawLine(
@@ -213,8 +257,19 @@ fun DrawScope.drawGridironTable(
     // Bordas Chanfradas em Dourado / Ciano
     val topColor = if (isExtendedGuest || isConnectedGuest) GridironGold else GridironCyan
     val bottomColor = if (isExtendedGuest) GridironGold else GridironCyan
+    val borderColor = if (isExtended) bottomColor else topColor
 
-    drawPath(path = arenaPath, color = topColor, style = Stroke(width = 4f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = borderColor,
+        strokeWidth = 4f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawGridironGoal(
@@ -413,18 +468,9 @@ fun DrawScope.drawCyberBaseballTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
-    val arenaPath = Path().apply {
-        moveTo(left, top + chamfer)
-        lineTo(left + chamfer, top)
-        lineTo(right - chamfer, top)
-        lineTo(right, top + chamfer)
-        lineTo(right, bottom - chamfer)
-        lineTo(right - chamfer, bottom)
-        lineTo(left + chamfer, bottom)
-        lineTo(left, bottom - chamfer)
-        close()
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -435,31 +481,43 @@ fun DrawScope.drawCyberBaseballTable(
         )
     )
 
-    // O Diamante de Beisebol (Losango conectando as 4 bases)
-    val diamondPath = Path().apply {
-        moveTo(centerX, bottom - 100f * scale) // Home Plate
-        lineTo(right - 80f * scale, centerY)   // 1ª Base
-        lineTo(centerX, top + 100f * scale)    // 2ª Base
-        lineTo(left + 80f * scale, centerY)    // 3ª Base
-        close()
-    }
-    drawPath(path = diamondPath, color = Color(0x18FF1744))
-    drawPath(path = diamondPath, color = BaseballRed.copy(alpha = 0.5f), style = Stroke(width = 2f * scale))
+    if (!isExtended) {
+        // O Diamante de Beisebol (Losango conectando as 4 bases)
+        val diamondPath = Path().apply {
+            moveTo(centerX, bottom - 100f * scale) // Home Plate
+            lineTo(right - 80f * scale, centerY)   // 1ª Base
+            lineTo(centerX, top + 100f * scale)    // 2ª Base
+            lineTo(left + 80f * scale, centerY)    // 3ª Base
+            close()
+        }
+        drawPath(path = diamondPath, color = Color(0x18FF1744))
+        drawPath(path = diamondPath, color = BaseballRed.copy(alpha = 0.5f), style = Stroke(width = 2f * scale))
 
-    // Montinho central do arremessador
-    drawCircle(
-        color = BaseballRed.copy(alpha = 0.25f),
-        radius = 55f * scale,
-        center = Offset(centerX, centerY)
-    )
-    drawRect(
-        color = Color.White.copy(alpha = 0.9f),
-        topLeft = Offset(centerX - 18f * scale, centerY - 5f * scale),
-        size = Size(36f * scale, 10f * scale)
-    )
+        // Montinho central do arremessador
+        drawCircle(
+            color = BaseballRed.copy(alpha = 0.25f),
+            radius = 55f * scale,
+            center = Offset(centerX, centerY)
+        )
+        drawRect(
+            color = Color.White.copy(alpha = 0.9f),
+            topLeft = Offset(centerX - 18f * scale, centerY - 5f * scale),
+            size = Size(36f * scale, 10f * scale)
+        )
+    }
 
     // Bordas Chanfradas em Vermelho / Ciano
-    drawPath(path = arenaPath, color = BaseballRed, style = Stroke(width = 4f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = BaseballRed,
+        strokeWidth = 4f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawBaseballGoal(
@@ -632,18 +690,9 @@ fun DrawScope.drawWastelandTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
-    val arenaPath = Path().apply {
-        moveTo(left, top + chamfer)
-        lineTo(left + chamfer, top)
-        lineTo(right - chamfer, top)
-        lineTo(right, top + chamfer)
-        lineTo(right, bottom - chamfer)
-        lineTo(right - chamfer, bottom)
-        lineTo(left + chamfer, bottom)
-        lineTo(left, bottom - chamfer)
-        close()
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -691,24 +740,36 @@ fun DrawScope.drawWastelandTable(
         )
     }
 
-    // Círculo central com fissuras de magma incandescente
-    drawCircle(
-        color = WastelandFlame.copy(alpha = 0.6f),
-        radius = 75f * scale,
-        center = Offset(centerX, centerY),
-        style = Stroke(width = 3f * scale)
-    )
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(WastelandFlameBright.copy(alpha = 0.35f), Color.Transparent),
+    if (!isExtended) {
+        // Círculo central com fissuras de magma incandescente
+        drawCircle(
+            color = WastelandFlame.copy(alpha = 0.6f),
+            radius = 75f * scale,
             center = Offset(centerX, centerY),
-            radius = 65f * scale
-        ),
-        radius = 65f * scale,
-        center = Offset(centerX, centerY)
-    )
+            style = Stroke(width = 3f * scale)
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(WastelandFlameBright.copy(alpha = 0.35f), Color.Transparent),
+                center = Offset(centerX, centerY),
+                radius = 65f * scale
+            ),
+            radius = 65f * scale,
+            center = Offset(centerX, centerY)
+        )
+    }
 
-    drawPath(path = arenaPath, color = WastelandFlame, style = Stroke(width = 4.5f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = WastelandFlame,
+        strokeWidth = 4.5f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawWastelandGoal(
@@ -864,18 +925,9 @@ fun DrawScope.drawRetroSynthwaveTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
-    val arenaPath = Path().apply {
-        moveTo(left, top + chamfer)
-        lineTo(left + chamfer, top)
-        lineTo(right - chamfer, top)
-        lineTo(right, top + chamfer)
-        lineTo(right, bottom - chamfer)
-        lineTo(right - chamfer, bottom)
-        lineTo(left + chamfer, bottom)
-        lineTo(left, bottom - chamfer)
-        close()
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -910,30 +962,42 @@ fun DrawScope.drawRetroSynthwaveTable(
         )
     }
 
-    // Sol Neon Fatiado (Retro Sun) no centro
-    val sunRadius = 70f * scale
-    drawCircle(
-        brush = Brush.verticalGradient(
-            colors = listOf(SynthSunYellow, SynthSunOrange, SynthPink),
-            startY = centerY - sunRadius,
-            endY = centerY + sunRadius
-        ),
-        radius = sunRadius,
-        center = Offset(centerX, centerY)
-    )
-
-    // Fatias horizontais do sol clássico dos anos 80
-    for (i in 1..4) {
-        val sliceY = centerY + (i * 12f * scale)
-        val sliceH = 4f * scale * (i * 0.8f)
-        drawRect(
-            color = SynthDark,
-            topLeft = Offset(centerX - sunRadius, sliceY),
-            size = Size(sunRadius * 2f, sliceH)
+    if (!isExtended) {
+        // Sol Neon Fatiado (Retro Sun) no centro
+        val sunRadius = 70f * scale
+        drawCircle(
+            brush = Brush.verticalGradient(
+                colors = listOf(SynthSunYellow, SynthSunOrange, SynthPink),
+                startY = centerY - sunRadius,
+                endY = centerY + sunRadius
+            ),
+            radius = sunRadius,
+            center = Offset(centerX, centerY)
         )
+
+        // Fatias horizontais do sol clássico dos anos 80
+        for (i in 1..4) {
+            val sliceY = centerY + (i * 12f * scale)
+            val sliceH = 4f * scale * (i * 0.8f)
+            drawRect(
+                color = SynthDark,
+                topLeft = Offset(centerX - sunRadius, sliceY),
+                size = Size(sunRadius * 2f, sliceH)
+            )
+        }
     }
 
-    drawPath(path = arenaPath, color = SynthPink, style = Stroke(width = 4f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = SynthPink,
+        strokeWidth = 4f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawSynthwaveGoal(
@@ -1076,18 +1140,9 @@ fun DrawScope.drawTokamakTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
-    val arenaPath = Path().apply {
-        moveTo(left, top + chamfer)
-        lineTo(left + chamfer, top)
-        lineTo(right - chamfer, top)
-        lineTo(right, top + chamfer)
-        lineTo(right, bottom - chamfer)
-        lineTo(right - chamfer, bottom)
-        lineTo(left + chamfer, bottom)
-        lineTo(left, bottom - chamfer)
-        close()
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -1111,33 +1166,45 @@ fun DrawScope.drawTokamakTable(
         cyc += coilStep
     }
 
-    // Símbolo sutil de Radiação Trefoil no centro
-    drawCircle(
-        color = TokamakRadiation.copy(alpha = 0.65f),
-        radius = 70f * scale,
-        center = Offset(centerX, centerY),
-        style = Stroke(width = 2.5f * scale)
-    )
-    for (i in 0 until 3) {
-        val angle = i * 120f
-        rotate(degrees = angle, pivot = Offset(centerX, centerY)) {
-            val bladePath = Path().apply {
-                moveTo(centerX, centerY - 15f * scale)
-                lineTo(centerX - 35f * scale, centerY - 55f * scale)
-                arcTo(
-                    rect = androidx.compose.ui.geometry.Rect(centerX - 55f * scale, centerY - 55f * scale, centerX + 55f * scale, centerY + 55f * scale),
-                    startAngleDegrees = -120f,
-                    sweepAngleDegrees = 60f,
-                    forceMoveTo = false
-                )
-                close()
+    if (!isExtended) {
+        // Símbolo sutil de Radiação Trefoil no centro
+        drawCircle(
+            color = TokamakRadiation.copy(alpha = 0.65f),
+            radius = 70f * scale,
+            center = Offset(centerX, centerY),
+            style = Stroke(width = 2.5f * scale)
+        )
+        for (i in 0 until 3) {
+            val angle = i * 120f
+            rotate(degrees = angle, pivot = Offset(centerX, centerY)) {
+                val bladePath = Path().apply {
+                    moveTo(centerX, centerY - 15f * scale)
+                    lineTo(centerX - 35f * scale, centerY - 55f * scale)
+                    arcTo(
+                        rect = androidx.compose.ui.geometry.Rect(centerX - 55f * scale, centerY - 55f * scale, centerX + 55f * scale, centerY + 55f * scale),
+                        startAngleDegrees = -120f,
+                        sweepAngleDegrees = 60f,
+                        forceMoveTo = false
+                    )
+                    close()
+                }
+                drawPath(path = bladePath, color = TokamakRadiation.copy(alpha = 0.4f))
             }
-            drawPath(path = bladePath, color = TokamakRadiation.copy(alpha = 0.4f))
         }
+        drawCircle(color = TokamakRadiationBright, radius = 12f * scale, center = Offset(centerX, centerY))
     }
-    drawCircle(color = TokamakRadiationBright, radius = 12f * scale, center = Offset(centerX, centerY))
 
-    drawPath(path = arenaPath, color = TokamakRadiation, style = Stroke(width = 4f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = TokamakRadiation,
+        strokeWidth = 4f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawTokamakGoal(
@@ -1281,7 +1348,7 @@ fun DrawScope.drawCyberPongTable(
     val right = left + width
     val bottom = top + height
     val centerY = top + height / 2f
-    val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
     // Fundo preto absoluto de tubo CRT
     drawRect(
@@ -1303,26 +1370,41 @@ fun DrawScope.drawCyberPongTable(
         sy += scanStep
     }
 
-    // Linha tracejada clássica do Pong (Segmentos retangulares pixelados)
+    // Linha tracejada clássica do Pong (no vão do topo quando Estendida, ou no centro em Mesa Completa)
+    val dividerY = if (isExtended) top else centerY
     val dashH = 20f * scale
     val dashGap = 16f * scale
     var dx = left + 10f * scale
     while (dx < right - 10f * scale) {
         drawRect(
             color = PongGreen.copy(alpha = 0.8f),
-            topLeft = Offset(dx, centerY - 2.5f * scale),
+            topLeft = Offset(dx, dividerY - 2.5f * scale),
             size = Size(18f * scale, 5f * scale)
         )
         dx += dashH + dashGap
     }
 
-    // Borda fosfórica limpa de vetor
-    drawRect(
-        color = PongGreen,
-        topLeft = Offset(left, top),
-        size = Size(width, height),
-        style = Stroke(width = 4f * scale)
-    )
+    // Borda fosfórica limpa de vetor (em U aberta no topo quando Estendida)
+    if (isExtended) {
+        val openBorder = Path().apply {
+            moveTo(left, top)
+            lineTo(left, bottom)
+            lineTo(right, bottom)
+            lineTo(right, top)
+        }
+        drawPath(
+            path = openBorder,
+            color = PongGreen,
+            style = Stroke(width = 4f * scale, cap = StrokeCap.Square, join = StrokeJoin.Miter)
+        )
+    } else {
+        drawRect(
+            color = PongGreen,
+            topLeft = Offset(left, top),
+            size = Size(width, height),
+            style = Stroke(width = 4f * scale)
+        )
+    }
 }
 
 fun DrawScope.drawPongGoal(
@@ -1414,18 +1496,9 @@ fun DrawScope.drawColosseumTable(
     val chamfer = 40f * scale
     val centerY = top + height / 2f
     val centerX = left + width / 2f
+    val isExtended = isExtendedHost || isExtendedGuest
 
-    val arenaPath = Path().apply {
-        moveTo(left, top + chamfer)
-        lineTo(left + chamfer, top)
-        lineTo(right - chamfer, top)
-        lineTo(right, top + chamfer)
-        lineTo(right, bottom - chamfer)
-        lineTo(right - chamfer, bottom)
-        lineTo(left + chamfer, bottom)
-        lineTo(left, bottom - chamfer)
-        close()
-    }
+    val arenaPath = buildChamferedArenaPath(left, top, right, bottom, chamfer, isExtended = isExtended, closePath = true)
 
     drawPath(
         path = arenaPath,
@@ -1455,26 +1528,38 @@ fun DrawScope.drawColosseumTable(
         my += meanderH
     }
 
-    // Coroa de Louros Imperial no círculo central
-    drawCircle(
-        color = ColosseumGold,
-        radius = 70f * scale,
-        center = Offset(centerX, centerY),
-        style = Stroke(width = 2.5f * scale)
-    )
-    for (i in 0 until 12) {
-        val angle = i * 30f
-        rotate(degrees = angle, pivot = Offset(centerX, centerY)) {
-            drawOval(
-                color = ColosseumGold.copy(alpha = 0.5f),
-                topLeft = Offset(centerX - 8f * scale, centerY - 70f * scale),
-                size = Size(16f * scale, 10f * scale)
-            )
+    if (!isExtended) {
+        // Coroa de Louros Imperial no círculo central
+        drawCircle(
+            color = ColosseumGold,
+            radius = 70f * scale,
+            center = Offset(centerX, centerY),
+            style = Stroke(width = 2.5f * scale)
+        )
+        for (i in 0 until 12) {
+            val angle = i * 30f
+            rotate(degrees = angle, pivot = Offset(centerX, centerY)) {
+                drawOval(
+                    color = ColosseumGold.copy(alpha = 0.5f),
+                    topLeft = Offset(centerX - 8f * scale, centerY - 70f * scale),
+                    size = Size(16f * scale, 10f * scale)
+                )
+            }
         }
+        drawCircle(color = ColosseumCrimson, radius = 14f * scale, center = Offset(centerX, centerY))
     }
-    drawCircle(color = ColosseumCrimson, radius = 14f * scale, center = Offset(centerX, centerY))
 
-    drawPath(path = arenaPath, color = ColosseumGold, style = Stroke(width = 4.5f * scale))
+    drawChamferedExtendedOrFullBorder(
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        chamfer = chamfer,
+        borderColor = ColosseumGold,
+        strokeWidth = 4.5f * scale,
+        scale = scale,
+        isExtended = isExtended
+    )
 }
 
 fun DrawScope.drawColosseumGoal(

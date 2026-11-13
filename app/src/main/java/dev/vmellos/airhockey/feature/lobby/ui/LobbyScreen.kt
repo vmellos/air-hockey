@@ -99,9 +99,9 @@ import dev.vmellos.airhockey.feature.customization.ui.PreMatchArenaSelectionScre
 import dev.vmellos.airhockey.feature.lobby.ConnectionStatus
 import dev.vmellos.airhockey.feature.lobby.LobbyRole
 import dev.vmellos.airhockey.feature.lobby.LobbyViewModel
+import dev.vmellos.airhockey.feature.game.ui.kit
 import dev.vmellos.airhockey.feature.qrcode.QrCodeGenerator
 import dev.vmellos.airhockey.feature.qrcode.QrCodeScannerView
-import dev.vmellos.airhockey.feature.stage.ArenaConquestCatalog
 
 @Composable
 fun LobbyScreen(
@@ -729,7 +729,7 @@ private fun HostLobbyView(
     }
 
     val userPrefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = dev.vmellos.airhockey.core.preferences.UserPreferences())
-    val arenaTier = remember(userPrefs.tableTheme) { ArenaConquestCatalog.getTierForTheme(userPrefs.tableTheme) }
+    val arenaKit = remember(userPrefs.tableTheme) { userPrefs.tableTheme.kit() }
 
     val qrBitmap = remember(state.qrContent) {
         if (state.qrContent.isNotBlank()) QrCodeGenerator.generateQrBitmap(state.qrContent, 400) else null
@@ -772,29 +772,27 @@ private fun HostLobbyView(
                 }
             }
 
-            if (arenaTier != null) {
-                Surface(
-                    color = arenaTier.primaryColor.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, arenaTier.primaryColor.copy(alpha = 0.5f)),
-                    modifier = Modifier.then(
-                        if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
-                    )
+            Surface(
+                color = arenaKit.visuals.primaryColor.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, arenaKit.visuals.primaryColor.copy(alpha = 0.5f)),
+                modifier = Modifier.then(
+                    if (onChangeMode != null) Modifier.clickable { onChangeMode() } else Modifier
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Icon(arenaTier.icon, contentDescription = null, tint = arenaTier.primaryColor, modifier = Modifier.size(16.dp))
-                        Text(
-                            text = stringResource(arenaTier.titleRes).uppercase(),
-                            color = arenaTier.primaryColor,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp
-                        )
-                    }
+                    Icon(arenaKit.icon, contentDescription = null, tint = arenaKit.visuals.primaryColor, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = stringResource(arenaKit.titleRes).uppercase(),
+                        color = arenaKit.visuals.primaryColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp
+                    )
                 }
             }
         }
