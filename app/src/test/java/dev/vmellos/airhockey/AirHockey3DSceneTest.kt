@@ -642,4 +642,33 @@ class AirHockey3DSceneTest {
         assertEquals(waveA.progress, waveB.progress, 1e-5f)
         assertTrue(waveB.active)
     }
+
+    @Test
+    fun neonBloomDisplayState_reflectsDisabledEffectsWithoutOverwritingSavedPreference() {
+        val enabledNormal = dev.vmellos.airhockey.feature.game.ui.resolveNeonBloomDisplayState(
+            savedIntensity = 0.05f,
+            effectsEnabledInContext = true
+        )
+        assertEquals(50, enabledNormal.percent)
+        assertEquals(dev.vmellos.airhockey.feature.game.ui.NeonBloomBand.NORMAL, enabledNormal.band)
+        assertTrue(enabledNormal.isControlEnabled)
+        assertEquals(0.05f, enabledNormal.sliderValue, 1e-5f)
+
+        val suppressedInMatch = dev.vmellos.airhockey.feature.game.ui.resolveNeonBloomDisplayState(
+            savedIntensity = 0.05f,
+            effectsEnabledInContext = false
+        )
+        assertEquals(0, suppressedInMatch.percent)
+        assertEquals(dev.vmellos.airhockey.feature.game.ui.NeonBloomBand.OFF, suppressedInMatch.band)
+        org.junit.Assert.assertFalse(suppressedInMatch.isControlEnabled)
+        assertEquals(0.0f, suppressedInMatch.sliderValue, 1e-5f)
+
+        val zeroSliderWhileEffectsOn = dev.vmellos.airhockey.feature.game.ui.resolveNeonBloomDisplayState(
+            savedIntensity = 0.0f,
+            effectsEnabledInContext = true
+        )
+        assertEquals(0, zeroSliderWhileEffectsOn.percent)
+        assertEquals(dev.vmellos.airhockey.feature.game.ui.NeonBloomBand.OFF, zeroSliderWhileEffectsOn.band)
+        assertTrue(zeroSliderWhileEffectsOn.isControlEnabled)
+    }
 }

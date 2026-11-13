@@ -125,6 +125,7 @@ class ArbitroVirtual(
     val mode: GameMode = spec.mode
     val isGuest: Boolean = mode == GameMode.EXTENDED_GUEST || mode == GameMode.CONNECTED_GUEST || mode == GameMode.AI_VS_AI_EXTENDED_GUEST || mode == GameMode.AI_VS_AI_CONNECTED_GUEST
     val isHost: Boolean = !isGuest
+    private val projection: TableProjection = TableProjection(dimensions, mode)
 
     val engine: AirHockeyPhysicsEngine = AirHockeyPhysicsEngine(
         dimensions = dimensions,
@@ -394,15 +395,16 @@ class ArbitroVirtual(
     private fun tickPhysicsInternal(dt: Float) {
         if (_matchState.value.status != MatchStatus.PLAYING) return
 
-        // REGRA DO DISCO PRESO (GLOSSARY.md / ADR 0039):
-        // Se o disco permanecer praticamente imóvel (< 30f) por mais de 3,5 segundos,
-        // o Árbitro Virtual intervém, apita e reinicia no centro neutro da mesa.
+        // REGRA DO DISCO PRESO (GLOSSARY.md / ADR 0039 / ADR 0044):
+        // Monitora imobilidade (< 30f por > 3,5s) apenas em áreas de IA ou no Vão Físico da Mesa Estendida,
+        // isentando integralmente discos parados sob posse/alcance exclusivo de jogador humano.
         val puckSpeed = engine.puck.speed()
-        if (puckSpeed < 30f) {
+        if (puckSpeed < 30f && isDeadPuckEligible()) {
             deadPuckAccumulator += dt
             if (deadPuckAccumulator >= DEAD_PUCK_TIMEOUT_SEC) {
                 deadPuckAccumulator = 0f
-                engine.puck.reset(dimensions.width / 2f, dimensions.centerLineY)
+                val resetSpot = resolveDeadPuckResetPosition()
+                engine.puck.reset(resetSpot.x, resetSpot.y)
                 audioPort.playCountdownBeep(true)
                 publishSnapshot()
                 return
@@ -419,6 +421,44 @@ class ArbitroVirtual(
             aiControllerP2.update(engine, dt)
         }
         publishSnapshot()
+    }
+
+    private fun isDeadPuckEligible(): Boolean {
+        if (!isHost) return false
+        val puckY = engine.puck.y
+        val puckR = engine.puck.radius
+        val hasAiP1 = aiControllerP1 != null
+        val hasAiP2 = aiControllerP2 != null
+
+        if (dimensions.isExtendedMode) {
+            val hostReachMaxY = dimensions.hostHalfBottomY + puckR
+            val guestReachMinY = dimensions.guestHalfTopY - puckR
+            val inUnreachableBezelGap = puckY > hostReachMaxY && puckY < guestReachMinY
+            if (inUnreachableBezelGap) return true
+            if (puckY <= hostReachMaxY && hasAiP2) return true
+            if (puckY >= guestReachMinY && hasAiP1) return true
+            return false
+        }
+
+        val centerY = dimensions.centerLineY
+        return when {
+            puckY < centerY - puckR -> hasAiP2
+            puckY > centerY + puckR -> hasAiP1
+            else -> hasAiP1 || hasAiP2
+        }
+    }
+
+    private fun resolveDeadPuckResetPosition(): TablePoint {
+        if (dimensions.isExtendedMode) {
+            // Nunca reposiciona dentro do Vão Físico: devolve em Saque de Início válido para quem não tocou por último
+            val serveRecipient = if (engine.puck.lastHitBy == 1) 1 else 2
+            return projection.getServePosition(serveRecipient)
+        }
+        if (aiControllerP2 != null && aiControllerP1 == null) {
+            // No Modo Fases, travamentos no lado da IA cedem Saque de Início à meia-mesa do jogador humano
+            return projection.getServePosition(scorer = 2)
+        }
+        return TablePoint(dimensions.width / 2f, dimensions.centerLineY)
     }
 
     /**

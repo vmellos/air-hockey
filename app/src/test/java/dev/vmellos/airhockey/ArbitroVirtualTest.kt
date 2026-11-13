@@ -396,10 +396,10 @@ class ArbitroVirtualTest {
         arbitro.tick(2.0f)
         assertEquals(900f, arbitro.frames.value.puckX, 1.0f)
 
-        // Avança mais 1.6s (total 3.6s > 3.5s): o Árbitro Virtual declara Disco Preso e reinicia no centro
+        // Avança mais 1.6s (total 3.6s > 3.5s): no Modo Fases, Disco Preso no lado da IA cede Saque de Início ao jogador humano
         arbitro.tick(1.6f)
         assertEquals(dims.width / 2f, arbitro.frames.value.puckX, 1.0f)
-        assertEquals(dims.centerLineY, arbitro.frames.value.puckY, 1.0f)
+        assertEquals(dims.centerLineY + 300f, arbitro.frames.value.puckY, 1.0f)
     }
 
     @Test
@@ -515,5 +515,94 @@ class ArbitroVirtualTest {
         arbitro.engine.onCollisionListener?.invoke(dev.vmellos.airhockey.feature.physics.CollisionEvent.WALL_HIT, 0.35f)
         val (wallCode, _) = arbitro.consumeCollisionTelemetry()
         assertEquals(3.toByte(), wallCode)
+    }
+
+    @Test
+    fun deadPuckRule_doesNotResetPuckStoppedInHumanHalfDuringStageMode() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SOLO, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        val humanHalfX = 300f
+        val humanHalfY = dims.centerLineY + dims.puckRadius + 150f
+        arbitro.engine.puck.x = humanHalfX
+        arbitro.engine.puck.y = humanHalfY
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+
+        // Avança 6 segundos em passos pequenos: disco parado no campo humano nunca é movido para a IA
+        repeat(60) { arbitro.tick(0.10f) }
+
+        val snap = arbitro.currentSnapshot()
+        assertEquals(humanHalfX, snap.puckX, 1.0f)
+        assertEquals(humanHalfY, snap.puckY, 1.0f)
+    }
+
+    @Test
+    fun deadPuckRule_doesNotResetInSplitScreenHumanMatch() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.SPLIT_SCREEN, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        arbitro.engine.puck.x = 250f
+        arbitro.engine.puck.y = 400f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+
+        repeat(60) { arbitro.tick(0.10f) }
+
+        val snap = arbitro.currentSnapshot()
+        assertEquals(250f, snap.puckX, 1.0f)
+        assertEquals(400f, snap.puckY, 1.0f)
+    }
+
+    @Test
+    fun deadPuckRule_resetsInAiVsAiMatchToNeutralCenter() {
+        val dims = TableDimensions()
+        val arbitro = ArbitroVirtual(dims, mode = GameMode.AI_VS_AI_LOCAL, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        // Disco travado em uma metade controlada por bot em IA x IA reinicia no centro neutro após 3,5s
+        arbitro.engine.puck.x = 880f
+        arbitro.engine.puck.y = 1880f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+        // Mantém ambos os bots longe do disco durante o teste simulando bloqueio
+        arbitro.engine.player1Mallet.x = 200f
+        arbitro.engine.player1Mallet.y = 1500f
+
+        arbitro.tick(3.6f)
+        assertEquals(dims.width / 2f, arbitro.currentSnapshot().puckX, 1.0f)
+        assertEquals(dims.centerLineY, arbitro.currentSnapshot().puckY, 1.0f)
+    }
+
+    @Test
+    fun deadPuckRule_resetsExtendedBezelGapDeadPuckOutsideGap() {
+        val extDims = TableDimensions(isExtendedMode = true, bezelGapUnits = 200f)
+        val arbitro = ArbitroVirtual(extDims, mode = GameMode.EXTENDED_HOST, audioPort = TestAudioPort())
+        arbitro.setCountdown(0)
+
+        // 1. Disco na metade humana inferior não sofre reset após 6s
+        val playableX = 280f
+        val playableY = extDims.guestHalfTopY + 300f
+        arbitro.engine.puck.x = playableX
+        arbitro.engine.puck.y = playableY
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+        repeat(60) { arbitro.tick(0.10f) }
+        assertEquals(playableX, arbitro.currentSnapshot().puckX, 1.0f)
+        assertEquals(playableY, arbitro.currentSnapshot().puckY, 1.0f)
+
+        // 2. Disco imóvel na zona inalcançável do Vão Físico (lastHitBy = 1 -> cede Saque de Início ao P2 fora do vão)
+        arbitro.engine.puck.x = 500f
+        arbitro.engine.puck.y = extDims.hostHalfBottomY + 100f
+        arbitro.engine.puck.vx = 0f
+        arbitro.engine.puck.vy = 0f
+        arbitro.engine.puck.lastHitBy = 1
+
+        arbitro.tick(3.6f)
+        val snap = arbitro.currentSnapshot()
+        assertEquals(extDims.width / 2f, snap.puckX, 1.0f)
+        assertEquals(extDims.hostHalfBottomY - 400f, snap.puckY, 1.0f)
     }
 }

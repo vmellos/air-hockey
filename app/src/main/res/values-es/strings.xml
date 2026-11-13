@@ -204,8 +204,8 @@
 
     <!-- Perfil de Efectos Visuales -->
     <string name="settings_visual_effects">Efectos Visuales</string>
-    <string name="settings_visual_effects_desc">Estela de plasma del disco, vórtice de cuenta atrás y chispas incandescentes</string>
-    <string name="visual_effects_full">Efectos Arcade Neón</string>
+    <string name="settings_visual_effects_desc">Activa estela de plasma, chispas, vórtice de cuenta atrás y brillo neón en partidas</string>
+    <string name="visual_effects_full">Efectos Visuales de la Arena</string>
     <string name="visual_effects_full_desc">Estela de plasma de fuego, chispas incandescentes, vórtice de cuenta atrás y celebración explosiva</string>
     <string name="visual_effects_off">Modo Rendimiento (Mínimo)</string>
     <string name="visual_effects_off_desc">Sin estelas ni partículas para máxima fluidez en dispositivos básicos</string>
@@ -359,6 +359,8 @@
     <string name="neon_bloom_soft">Suave</string>
     <string name="neon_bloom_normal">Estándar</string>
     <string name="neon_bloom_vibrant">Intenso</string>
+    <string name="neon_bloom_disabled_in_settings_hint">Desactivado en Efectos Visuales en Ajustes</string>
+    <string name="neon_bloom_suspended_in_match_hint">Suspendido en partidas (Efectos Visuales desactivados)</string>
     <string name="settings_3d_intro_title">Animación Inicial de Arena 3D</string>
     <string name="settings_3d_intro_desc">Presentación cinemática de sobrevuelo al iniciar partidas 3D</string>
     <string name="arena_conquered_badge">ARENA DESBLOQUEADA</string>
