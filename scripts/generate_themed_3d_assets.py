@@ -410,7 +410,14 @@ def generate_neo_basketball_puck():
     puck.name = "BasketballPuckChassis"
     add_bevel(puck, width=0.003, segments=4)
     bpy.ops.object.shade_smooth()
-    mat_ball = create_pbr("BasketballLeather", (0.50, 0.18, 0.03, 1.0), metallic=0.20, roughness=0.60)
+    mat_ball = create_pbr(
+        "BasketballLeather",
+        (0.95, 0.36, 0.04, 1.0),
+        metallic=0.15,
+        roughness=0.50,
+        emission=(0.90, 0.30, 0.02, 1.0),
+        emission_strength=2.4
+    )
     puck.data.materials.append(mat_ball)
 
     # 2.2 Friso Neon Equatorial Dourado Fino (Calibrado 5.0)
@@ -420,13 +427,13 @@ def generate_neo_basketball_puck():
     equator_glow.data.materials.append(mat_gold_glow)
 
     # 2.3 Ranhuras Pretas Recuadas Características do Basquete (0x140803 do 2D)
-    mat_black_seam = create_pbr("BasketballSeamBlack", (0.012, 0.010, 0.010, 1.0), metallic=0.10, roughness=0.85)
+    mat_black_seam = create_pbr("BasketballSeamBlack", (0.010, 0.008, 0.008, 1.0), metallic=0.10, roughness=0.85)
 
     # Seams Cruzadas
     for rot in [0.0, math.pi / 2.0]:
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, depth * 0.51))
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, depth * 0.505))
         seam = bpy.context.active_object
-        seam.scale = (radius * 1.95, 0.0022, 0.0015)
+        seam.scale = (radius * 1.95, 0.0038, 0.0022)
         seam.rotation_euler = (0, 0, rot)
         bpy.ops.object.transform_apply(scale=True, rotation=True)
         seam.data.materials.append(mat_black_seam)

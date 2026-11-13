@@ -29,6 +29,8 @@ import dev.vmellos.airhockey.core.catalog.canonical
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
 import dev.vmellos.airhockey.core.preferences.TableTheme
+import dev.vmellos.airhockey.core.preferences.UserPreferences
+import dev.vmellos.airhockey.feature.game.GameMode
 import dev.vmellos.airhockey.feature.game.TablePerspective
 
 @Immutable
@@ -143,6 +145,49 @@ fun PuckSkin.spec(): PuckSpec = ArenaKitCatalog.getPuckSpec(this)
 fun MalletSkin.spec(): MalletSpec = ArenaKitCatalog.getMalletSpec(this)
 
 /**
+ * Conjunto efetivo de disco e rebatedores resolvido para renderização em cena 2D/3D.
+ */
+data class EffectiveArenaCosmetics(
+    val puckSkin: PuckSkin,
+    val p1MalletSkin: MalletSkin,
+    val p2MalletSkin: MalletSkin
+)
+
+/**
+ * Resolve o kit efetivo da partida, garantindo paridade no multiplayer/seleção pré-jogo e
+ * acoplando o disco temático + rebatedor do boss na campanha solo.
+ */
+fun ArenaKit.resolveCosmetics(
+    activeTheme: TableTheme,
+    explicitTableTheme: TableTheme?,
+    mode: GameMode,
+    currentStage: Int,
+    prefs: UserPreferences
+): EffectiveArenaCosmetics {
+    if (mode == GameMode.SOLO) {
+        val hasCustomP1Mallet = prefs.tableTheme == activeTheme &&
+            prefs.player1MalletSkin != MalletSkin.CLASSIC_NEON
+        return EffectiveArenaCosmetics(
+            puckSkin = puckSkin,
+            p1MalletSkin = if (hasCustomP1Mallet) prefs.player1MalletSkin else malletSkin,
+            p2MalletSkin = ArenaPresetCatalog.getMalletSkinForStage(currentStage)
+        )
+    }
+    if (explicitTableTheme != null) {
+        return EffectiveArenaCosmetics(
+            puckSkin = puckSkin,
+            p1MalletSkin = malletSkin,
+            p2MalletSkin = malletSkin
+        )
+    }
+    return EffectiveArenaCosmetics(
+        puckSkin = prefs.puckSkin,
+        p1MalletSkin = prefs.player1MalletSkin,
+        p2MalletSkin = prefs.player2MalletSkin
+    )
+}
+
+/**
  * Catálogo visual unificado para kits de Arena, Discos e Rebatedores em 2D, 3D e HUD.
  */
 object ArenaKitCatalog {
@@ -201,13 +246,13 @@ object ArenaKitCatalog {
         TableTheme.CYBER_PONG to ArenaKit(
             preset = ArenaPresetCatalog.getPresetForTheme(TableTheme.CYBER_PONG),
             icon = Icons.Default.VideogameAsset,
-            visuals = ThemeVisuals(PongDark, PongGreen, PongGreenBright, wallHitColor = PongGreenBright),
+            visuals = ThemeVisuals(PongDark, PongGreen, PongAmber, wallHitColor = PongGreenBright),
             overlayStyle = ArenaOverlayStyle(
                 shape = CutCornerShape(0.dp),
                 background = Color(0xFF000000),
                 border = BorderStroke(1.5.dp, PongGreen),
                 p1Color = PongGreen,
-                p2Color = PongGreen,
+                p2Color = PongAmber,
                 fontFamily = FontFamily.Monospace
             ),
             tableFullAsset = "models/mesa_cyber_pong.glb",
@@ -389,7 +434,7 @@ object ArenaKitCatalog {
             icon = Icons.Default.VideogameAsset,
             accentColor = PongGreen,
             hit1Accent = PongGreen, hit1Core = PongGreenCore,
-            hit2Accent = PongGreenBright, hit2Core = PongGreenCore,
+            hit2Accent = PongAmber, hit2Core = PongAmberCore,
             neutralAccent = PongGreenBright, neutralCore = WhiteHot,
             model3dAsset = "models/disco_cyber_pong.glb"
         ),
@@ -509,7 +554,7 @@ object ArenaKitCatalog {
             titleRes = KIT_BY_THEME.getValue(TableTheme.CYBER_PONG).preset.malletTitleRes,
             icon = Icons.Default.VideogameAsset,
             p1Visuals = MalletSkinVisuals(PongGreen, PongGreenBright),
-            p2Visuals = MalletSkinVisuals(PongGreenBright, PongGreen),
+            p2Visuals = MalletSkinVisuals(PongAmber, PongAmberBright),
             p1Model3dAsset = "models/rebatedor_cyber_pong_p1.glb",
             p2Model3dAsset = "models/rebatedor_cyber_pong_p2.glb"
         ),

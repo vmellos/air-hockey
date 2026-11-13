@@ -546,13 +546,19 @@ fun ArenaCustomizationScreen(
                                 lockedDialogInfo = LockedArenaInfo(tableItem.titleRes, unlockStage)
                             },
                             onPreview = {
+                                val kit = tableItem.theme.kit()
                                 previewTableTheme = tableItem.theme
+                                previewPuckSkin = kit.puckSkin
+                                previewMalletSkin = kit.malletSkin
                             },
                             onEquip = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val kit = tableItem.theme.kit()
                                 previewTableTheme = tableItem.theme
+                                previewPuckSkin = kit.puckSkin
+                                previewMalletSkin = kit.malletSkin
                                 coroutineScope.launch {
-                                    preferencesRepo.setTableTheme(tableItem.theme)
+                                    preferencesRepo.applyThemePreset(tableItem.theme)
                                 }
                             }
                         )

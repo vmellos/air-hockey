@@ -255,8 +255,8 @@ fun DrawScope.drawGridironTable(
     }
 
     // Bordas Chanfradas em Dourado / Ciano
-    val topColor = if (isExtendedGuest || isConnectedGuest) GridironGold else GridironCyan
-    val bottomColor = if (isExtendedGuest) GridironGold else GridironCyan
+    val topColor = if (isConnectedGuest || isExtendedHost) GridironCyan else GridironGold
+    val bottomColor = if (isExtendedGuest || isConnectedGuest) GridironGold else GridironCyan
     val borderColor = if (isExtended) bottomColor else topColor
 
     drawChamferedExtendedOrFullBorder(
