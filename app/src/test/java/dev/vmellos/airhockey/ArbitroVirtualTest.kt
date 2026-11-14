@@ -633,4 +633,85 @@ class ArbitroVirtualTest {
         assertEquals(seqAfterFirst, arbitro.collectVisualBurstsSince(seqAfterFirst, collected))
         assertTrue(collected.isEmpty())
     }
+
+    @Test
+    fun guestExtrapolation_advancesPuckAndReflectsWallsBetweenTelemetryPackets() {
+        val dims = TableDimensions()
+        val guestArbitro = ArbitroVirtual(dims, mode = GameMode.CONNECTED_GUEST, audioPort = TestAudioPort())
+        guestArbitro.setCountdown(0) // PLAYING
+
+        guestArbitro.applyRemoteTelemetry(
+            puckX = 500f,
+            puckY = 1000f,
+            puckVx = 0f,
+            puckVy = -2400f,
+            hostMalletX = 500f,
+            hostMalletY = 1750f,
+            guestMalletX = 500f,
+            guestMalletY = 250f
+        )
+
+        repeat(6) {
+            guestArbitro.tick(ArbitroVirtual.FIXED_DT_SEC)
+        }
+
+        val snapAfterTicks = guestArbitro.currentSnapshot()
+        assertTrue(
+            "Guest must extrapolate puck movement between network packets (expected y < 920, got ${snapAfterTicks.puckY})",
+            snapAfterTicks.puckY < 920f
+        )
+
+        // Verifica que colisão lateral refletida no Convidado mantém o disco na arena sem alterar placar
+        guestArbitro.applyRemoteTelemetry(
+            puckX = dims.width - dims.puckRadius - 2f,
+            puckY = 1000f,
+            puckVx = 1800f,
+            puckVy = 0f,
+            hostMalletX = 500f,
+            hostMalletY = 1750f,
+            guestMalletX = 500f,
+            guestMalletY = 250f
+        )
+        guestArbitro.tick(ArbitroVirtual.FIXED_DT_SEC)
+        assertTrue("Lateral wall bounce must invert puckVx", guestArbitro.currentSnapshot().puckVx < 0f)
+        assertEquals(0, guestArbitro.currentSnapshot().scorePlayer1)
+    }
+
+    @Test
+    fun guestLocalTouch_remainsSovereignOverStaleTelemetryDuringActiveDrag() {
+        val dims = TableDimensions()
+        val guestArbitro = ArbitroVirtual(dims, mode = GameMode.CONNECTED_GUEST, audioPort = TestAudioPort())
+        guestArbitro.setCountdown(0) // PLAYING
+
+        // Jogador P2 arrasta rapidamente o rebatedor local para (260, 420)
+        val clamped = guestArbitro.onTouchGuestGlobal(260f, 420f)
+        assertTrue(clamped != null)
+        assertEquals(260f, guestArbitro.currentSnapshot().player2MalletX, 1f)
+        assertEquals(420f, guestArbitro.currentSnapshot().player2MalletY, 1f)
+
+        // Telemetria atrasada do Host chega indicando posição antiga de 1 RTT atrás (720, 220)
+        guestArbitro.applyRemoteTelemetry(
+            puckX = 500f,
+            puckY = 1000f,
+            puckVx = 0f,
+            puckVy = 0f,
+            hostMalletX = 500f,
+            hostMalletY = 1750f,
+            guestMalletX = 720f,
+            guestMalletY = 220f
+        )
+
+        assertEquals(
+            "Active local touch must stay sovereign on X without rubber-banding",
+            260f,
+            guestArbitro.currentSnapshot().player2MalletX,
+            1f
+        )
+        assertEquals(
+            "Active local touch must stay sovereign on Y without rubber-banding",
+            420f,
+            guestArbitro.currentSnapshot().player2MalletY,
+            1f
+        )
+    }
 }

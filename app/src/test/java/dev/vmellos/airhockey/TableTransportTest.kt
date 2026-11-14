@@ -208,4 +208,24 @@ class TableTransportTest {
         val recInput1 = host.guestInputs.first()
         assertEquals(1L, recInput1.sequenceNumber)
     }
+
+    @Test
+    fun testStartEventWithModeSerializationRoundTrip() {
+        val startEvent = TableControlEvent.Start(
+            gapMm = 0.0f,
+            maxSpeed = 6800f,
+            aiDiff1 = "",
+            aiDiff2 = "",
+            themeName = "KIARA_CAT",
+            arenaDimension = "THREE_DIMENSIONAL",
+            mode = "CONNECTED"
+        )
+        val wire = startEvent.toWireString()
+        assertEquals("START:0.0:6800.0:::KIARA_CAT:THREE_DIMENSIONAL:CONNECTED", wire)
+
+        val parsed = TableControlEvent.fromWireString(wire) as TableControlEvent.Start
+        assertEquals("CONNECTED", parsed.mode)
+        assertEquals("KIARA_CAT", parsed.themeName)
+        assertEquals("THREE_DIMENSIONAL", parsed.arenaDimension)
+    }
 }

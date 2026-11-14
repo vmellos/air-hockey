@@ -152,8 +152,8 @@ class HybridSocketTransportAdapter(
         val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++hostTelemetrySeq
         val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
         udpSocket.sendHostTelemetryPacket(outgoing)
-        // Fallback de contingência periódica throttled via TCP para contornar bloqueios de UDP (~15 Hz)
-        if (seq % 8L == 0L) {
+        // Fallback TCP somente quando o canal UDP não estiver saudável (~15 Hz)
+        if (!isUdpHealthy() && seq % 8L == 0L) {
             tcpServer?.sendMessage(TableControlEvent.TelemetryFallback(outgoing).toWireString())
         }
     }
@@ -162,8 +162,8 @@ class HybridSocketTransportAdapter(
         val seq = if (packet.sequenceNumber > 0L) packet.sequenceNumber else ++guestInputSeq
         val outgoing = if (packet.sequenceNumber > 0L) packet else packet.copy(sequenceNumber = seq)
         udpSocket.sendGuestInputPacket(outgoing)
-        // Fallback de contingência periódica throttled via TCP (~15 Hz)
-        if (seq % 8L == 0L) {
+        // Fallback TCP somente quando o canal UDP não estiver saudável (~15 Hz)
+        if (!isUdpHealthy() && seq % 8L == 0L) {
             tcpClient?.sendMessage(TableControlEvent.GuestInputFallback(outgoing).toWireString())
         }
     }

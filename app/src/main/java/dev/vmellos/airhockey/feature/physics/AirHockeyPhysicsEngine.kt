@@ -67,18 +67,34 @@ class AirHockeyPhysicsEngine(
      * Executa um tick físico determinístico com substepping dinâmico para prevenir tunneling.
      */
     fun tick(dt: Float) {
-        val speed = puck.speed()
-        val displacement = speed * dt
-        val maxSafeStep = puck.radius * 0.45f
-        val steps = if (displacement > maxSafeStep && maxSafeStep > 0f) {
-            min(ceil(displacement / maxSafeStep).toInt(), 6)
-        } else {
-            1
-        }
-
+        val steps = computeSubSteps(dt)
         val subDt = dt / steps
         for (i in 0 until steps) {
             subTick(subDt)
+        }
+    }
+
+    /**
+     * Executa extrapolação cinemática local no Dispositivo Convidado (120 Hz / dead reckoning)
+     * entre pacotes de telemetria UDP do Anfitrião, mantendo colisão imediata no rebatedor local
+     * e reflexão elástica nas tabelas sem disparar eventos autoritativos de gol ou rede.
+     */
+    fun tickGuestExtrapolation(dt: Float, isLocalP2TouchActive: Boolean) {
+        val steps = computeSubSteps(dt)
+        val subDt = dt / steps
+        for (i in 0 until steps) {
+            guestExtrapolateSubTick(subDt, isLocalP2TouchActive)
+        }
+    }
+
+    private fun computeSubSteps(dt: Float): Int {
+        val speed = puck.speed()
+        val displacement = speed * dt
+        val maxSafeStep = puck.radius * 0.45f
+        return if (displacement > maxSafeStep && maxSafeStep > 0f) {
+            min(ceil(displacement / maxSafeStep).toInt(), 6)
+        } else {
+            1
         }
     }
 
@@ -150,10 +166,28 @@ class AirHockeyPhysicsEngine(
         puck.y += puck.vy * dt
 
         // Resolução de colisões
-        resolvePaddleCollision(player1Mallet, isPlayer1 = true)
-        resolvePaddleCollision(player2Mallet, isPlayer1 = false)
-        resolveWallCollisions()
+        resolvePaddleCollision(player1Mallet, isPlayer1 = true, emitEvents = true)
+        resolvePaddleCollision(player2Mallet, isPlayer1 = false, emitEvents = true)
+        resolveWallCollisions(emitEvents = true)
 
+        applyPuckAirFrictionAndClamp(dt)
+    }
+
+    private fun guestExtrapolateSubTick(dt: Float, isLocalP2TouchActive: Boolean) {
+        smoothMalletToTarget(player1Mallet, isPlayer1 = true, dt = dt, smoothingRate = 35f)
+        if (!isLocalP2TouchActive) {
+            smoothMalletToTarget(player2Mallet, isPlayer1 = false, dt = dt, smoothingRate = 35f)
+        }
+
+        puck.x += puck.vx * dt
+        puck.y += puck.vy * dt
+
+        resolvePaddleCollision(player2Mallet, isPlayer1 = false, emitEvents = false)
+        resolveWallCollisions(emitEvents = false)
+        applyPuckAirFrictionAndClamp(dt)
+    }
+
+    private fun applyPuckAirFrictionAndClamp(dt: Float) {
         // Aplica atrito do ar contínuo
         val frictionFactor = (1f - airFrictionPerSec * dt).coerceIn(0f, 1f)
         puck.vx *= frictionFactor
@@ -173,24 +207,20 @@ class AirHockeyPhysicsEngine(
     }
 
     private fun updateMalletPositions(dt: Float) {
-        // Interpola suavemente a posição do rebathedor até o toque do jogador
-        val smoothing = (30f * dt).coerceIn(0f, 1f)
+        smoothMalletToTarget(player1Mallet, isPlayer1 = true, dt = dt, smoothingRate = 30f)
+        smoothMalletToTarget(player2Mallet, isPlayer1 = false, dt = dt, smoothingRate = 30f)
+    }
 
-        val oldP1X = player1Mallet.x
-        val oldP1Y = player1Mallet.y
-        player1Mallet.x += (player1Mallet.targetX - player1Mallet.x) * smoothing
-        player1Mallet.y += (player1Mallet.targetY - player1Mallet.y) * smoothing
-        clampMalletToHalf(player1Mallet, isPlayer1 = true)
-        player1Mallet.vx = if (dt > 0) (player1Mallet.x - oldP1X) / dt else 0f
-        player1Mallet.vy = if (dt > 0) (player1Mallet.y - oldP1Y) / dt else 0f
-
-        val oldP2X = player2Mallet.x
-        val oldP2Y = player2Mallet.y
-        player2Mallet.x += (player2Mallet.targetX - player2Mallet.x) * smoothing
-        player2Mallet.y += (player2Mallet.targetY - player2Mallet.y) * smoothing
-        clampMalletToHalf(player2Mallet, isPlayer1 = false)
-        player2Mallet.vx = if (dt > 0) (player2Mallet.x - oldP2X) / dt else 0f
-        player2Mallet.vy = if (dt > 0) (player2Mallet.y - oldP2Y) / dt else 0f
+    private fun smoothMalletToTarget(mallet: Mallet, isPlayer1: Boolean, dt: Float, smoothingRate: Float) {
+        // Interpola suavemente a posição do rebatedor até o alvo configurado
+        val smoothing = (smoothingRate * dt).coerceIn(0f, 1f)
+        val oldX = mallet.x
+        val oldY = mallet.y
+        mallet.x += (mallet.targetX - mallet.x) * smoothing
+        mallet.y += (mallet.targetY - mallet.y) * smoothing
+        clampMalletToHalf(mallet, isPlayer1 = isPlayer1)
+        mallet.vx = if (dt > 0f) (mallet.x - oldX) / dt else 0f
+        mallet.vy = if (dt > 0f) (mallet.y - oldY) / dt else 0f
     }
 
     fun clampMalletToHalf(mallet: Mallet, isPlayer1: Boolean) {
@@ -199,7 +229,7 @@ class AirHockeyPhysicsEngine(
         mallet.y = clamped.y
     }
 
-    private fun resolvePaddleCollision(mallet: Mallet, isPlayer1: Boolean) {
+    private fun resolvePaddleCollision(mallet: Mallet, isPlayer1: Boolean, emitEvents: Boolean = true) {
         val dx = puck.x - mallet.x
         val dy = puck.y - mallet.y
         val distSq = dx * dx + dy * dy
@@ -227,44 +257,52 @@ class AirHockeyPhysicsEngine(
 
                 val impactIntensity = (sqrt(puck.speedSquared()) / 3000f).coerceIn(0.2f, 1.0f)
                 puck.lastHitBy = if (isPlayer1) 1 else 2
-                val event = if (isPlayer1) CollisionEvent.PADDLE_HIT_P1 else CollisionEvent.PADDLE_HIT_P2
-                onCollisionListener?.invoke(event, impactIntensity)
-                onVisualCollisionListener?.invoke(puck.x, puck.y, event)
+                if (emitEvents) {
+                    val event = if (isPlayer1) CollisionEvent.PADDLE_HIT_P1 else CollisionEvent.PADDLE_HIT_P2
+                    onCollisionListener?.invoke(event, impactIntensity)
+                    onVisualCollisionListener?.invoke(puck.x, puck.y, event)
+                }
             }
         }
     }
 
-    private fun resolveWallCollisions() {
+    private fun resolveWallCollisions(emitEvents: Boolean = true) {
         val r = puck.radius
 
         // Parede Esquerda
         if (puck.x - r < 0f) {
             puck.x = r
             puck.vx = -puck.vx * wallRestitution
-            onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
-            onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+            if (emitEvents) {
+                onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+            }
         }
 
         // Parede Direita
         if (puck.x + r > dimensions.width) {
             puck.x = dimensions.width - r
             puck.vx = -puck.vx * wallRestitution
-            onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
-            onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+            if (emitEvents) {
+                onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+            }
         }
 
         // Meta em Y <= 0 (Defendida pelo Player 2 / IA no Topo -> Ponto para Player 1)
         if (puck.y - r < 0f) {
             val isInGoal = puck.x in dimensions.goalLeft..dimensions.goalRight
             if (isInGoal) {
-                if (puck.y < -r * 0.5f) {
+                if (emitEvents && puck.y < -r * 0.5f) {
                     onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER1, 1.0f)
                 }
             } else {
                 puck.y = r
                 puck.vy = -puck.vy * wallRestitution
-                onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
-                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+                if (emitEvents) {
+                    onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                    onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+                }
             }
         }
 
@@ -272,14 +310,16 @@ class AirHockeyPhysicsEngine(
         if (puck.y + r > dimensions.totalHeight) {
             val isInGoal = puck.x in dimensions.goalLeft..dimensions.goalRight
             if (isInGoal) {
-                if (puck.y > dimensions.totalHeight + r * 0.5f) {
+                if (emitEvents && puck.y > dimensions.totalHeight + r * 0.5f) {
                     onCollisionListener?.invoke(CollisionEvent.GOAL_PLAYER2, 1.0f)
                 }
             } else {
                 puck.y = dimensions.totalHeight - r
                 puck.vy = -puck.vy * wallRestitution
-                onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
-                onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+                if (emitEvents) {
+                    onCollisionListener?.invoke(CollisionEvent.WALL_HIT, 0.7f)
+                    onVisualCollisionListener?.invoke(puck.x, puck.y, CollisionEvent.WALL_HIT)
+                }
             }
         }
     }

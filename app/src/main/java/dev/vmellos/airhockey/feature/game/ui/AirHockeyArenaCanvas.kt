@@ -334,13 +334,25 @@ fun AirHockeyArenaCanvas(
                 val puckScreen = projection.tableToScreen(snap.puckX, snap.puckY, screenW, screenH)
                 val spd = snap.puckSpeed()
 
-                // Atualiza histórico do rastro de plasma (higienizado fora do estado PLAYING)
+                // Atualiza histórico do rastro de plasma com amostragem espacial (higienizado fora do estado PLAYING)
                 if (matchState.status != MatchStatus.PLAYING) {
                     puckTrail.clear()
                 } else if (spd > 220f && prefs.visualEffectsProfile == VisualEffectsProfile.FULL) {
-                    puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
                     val maxPoints = 14
-                    if (puckTrail.size > maxPoints) puckTrail.removeLast()
+                    val head = puckTrail.firstOrNull()
+                    if (head != null) {
+                        val moved = hypot(puckScreen.x - head.x, puckScreen.y - head.y)
+                        val minStep = (3.5f * scale).coerceAtLeast(1.5f)
+                        if (moved > 350f * scale) {
+                            puckTrail.clear()
+                            puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
+                        } else if (moved >= minStep) {
+                            puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
+                            if (puckTrail.size > maxPoints) puckTrail.removeLast()
+                        }
+                    } else {
+                        puckTrail.addFirst(Offset(puckScreen.x, puckScreen.y))
+                    }
 
                     // Em velocidade ultra-alta, emite micro-faíscas incandescentes da cauda de fogo
                     if (prefs.visualEffectsProfile == VisualEffectsProfile.FULL && spd > 2200f && (framePulse % 4L == 0L)) {
@@ -377,6 +389,8 @@ fun AirHockeyArenaCanvas(
                         scale = scale
                     )
                 }
+            } else if (puckTrail.isNotEmpty()) {
+                puckTrail.clear()
             }
         }
     }

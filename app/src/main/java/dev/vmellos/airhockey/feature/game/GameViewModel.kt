@@ -207,6 +207,8 @@ class GameViewModel : ViewModel(), ArenaRuntime {
             if (!resolvedSpec.hasIntroPresentation) {
                 startCountdown()
             }
+        } else if (!resolvedSpec.hasIntroPresentation) {
+            startGameLoops()
         }
     }
 
@@ -254,6 +256,10 @@ class GameViewModel : ViewModel(), ArenaRuntime {
                 coord.state.collect { state ->
                     state.remoteMatchState?.let { remote ->
                         arbitro?.applyRemoteState(remote)
+                        val curStatus = arbitro?.matchState?.value?.status
+                        if (curStatus in ACTIVE_LOOP_STATUSES && physicsJob?.isActive != true) {
+                            startGameLoops()
+                        }
                         if (remote.statusName == MatchStatus.GAME_OVER.name) {
                             handleGameOver()
                         }
@@ -282,9 +288,12 @@ class GameViewModel : ViewModel(), ArenaRuntime {
         startGameLoops()
     }
 
+    private var guestHeartbeatCounter = 0
+
     private fun startGameLoops() {
         stopGameLoops()
         val currentArbitro = arbitro ?: return
+        guestHeartbeatCounter = 0
 
         // Loop unificado de simulação física e regras esportivas em ritmo real (passo fixo 120 Hz) fora da thread de UI
         physicsJob = viewModelScope.launch(simulationDispatcher) {
@@ -324,6 +333,9 @@ class GameViewModel : ViewModel(), ArenaRuntime {
                     puckLastHitBy = snap.puckLastHitBy.toByte()
                 )
             } else if (currentArbitro.aiControllerP2 != null) {
+                val (tx, ty) = currentArbitro.getPlayer2Target()
+                coord.sendGuestInput(tx, ty)
+            } else if (++guestHeartbeatCounter % 8 == 0) {
                 val (tx, ty) = currentArbitro.getPlayer2Target()
                 coord.sendGuestInput(tx, ty)
             }

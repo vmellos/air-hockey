@@ -42,6 +42,10 @@ class TcpControlServer(
                 serverSocket = server
                 while (isActive) {
                     val socket = server.accept() ?: break
+                    runCatching {
+                        socket.tcpNoDelay = true
+                        socket.trafficClass = 0x10
+                    }
                     clientSocket = socket
                     val clientIp = socket.inetAddress.hostAddress ?: ""
                     val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
