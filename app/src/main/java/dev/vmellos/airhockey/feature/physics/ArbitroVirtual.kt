@@ -208,6 +208,12 @@ class ArbitroVirtual(
     private var countdownStepAccumulator: Float = 0f
     private var secondTimerAccumulator: Float = 0f
     private var deadPuckAccumulator: Float = 0f
+    private var hasGuestLocalTouch: Boolean = false
+    private var lastGuestLocalTouchNano: Long = 0L
+
+    private fun isGuestLocalTouchActive(): Boolean {
+        return hasGuestLocalTouch && (System.nanoTime() - lastGuestLocalTouchNano) in 0L..GUEST_LOCAL_TOUCH_SOVEREIGN_NS
+    }
 
     companion object {
         const val FIXED_DT_SEC: Float = 1f / 120f
@@ -216,6 +222,7 @@ class ArbitroVirtual(
         const val GOAL_PAUSE_DURATION_SEC: Float = 1.20f
         const val COUNTDOWN_STEP_DURATION_SEC: Float = 0.90f
         const val DEAD_PUCK_TIMEOUT_SEC: Float = 3.50f
+        const val GUEST_LOCAL_TOUCH_SOVEREIGN_NS: Long = 250_000_000L
     }
 
     init {
@@ -431,8 +438,12 @@ class ArbitroVirtual(
             aiControllerP1?.update(engine, dt)
             aiControllerP2?.update(engine, dt)
             engine.tick(dt)
-        } else if (aiControllerP2 != null) {
-            aiControllerP2.update(engine, dt)
+        } else {
+            aiControllerP2?.update(engine, dt)
+            engine.tickGuestExtrapolation(
+                dt = dt,
+                isLocalP2TouchActive = isGuestLocalTouchActive() && aiControllerP2 == null
+            )
         }
         publishSnapshot()
     }
@@ -588,12 +599,33 @@ class ArbitroVirtual(
         }
         val clampedY = globalY.coerceIn(radius, maxY)
 
-        engine.player2Mallet.targetX = clampedX
-        engine.player2Mallet.targetY = clampedY
-        engine.player2Mallet.x = clampedX
-        engine.player2Mallet.y = clampedY
+        val (finalX, finalY) = if (_matchState.value.status == MatchStatus.COUNTDOWN) {
+            engine.clampPreparatoryPosition(clampedX, clampedY, radius, isPlayer1 = false)
+        } else {
+            Pair(clampedX, clampedY)
+        }
+
+        val now = System.nanoTime()
+        if (_matchState.value.status == MatchStatus.COUNTDOWN) {
+            engine.player2Mallet.vx = 0f
+            engine.player2Mallet.vy = 0f
+        } else if (hasGuestLocalTouch) {
+            val dtTouch = (now - lastGuestLocalTouchNano) / 1_000_000_000f
+            if (dtTouch in 0.001f..0.060f) {
+                engine.player2Mallet.vx = (finalX - engine.player2Mallet.x) / dtTouch
+                engine.player2Mallet.vy = (finalY - engine.player2Mallet.y) / dtTouch
+            }
+        }
+
+        hasGuestLocalTouch = true
+        lastGuestLocalTouchNano = now
+
+        engine.player2Mallet.targetX = finalX
+        engine.player2Mallet.targetY = finalY
+        engine.player2Mallet.x = finalX
+        engine.player2Mallet.y = finalY
         publishSnapshot()
-        return Pair(clampedX, clampedY)
+        return Pair(finalX, finalY)
     }
 
     fun onHostReceiveGuestInput(globalTargetX: Float, globalTargetY: Float) = synchronized(simulationLock) {
@@ -615,15 +647,44 @@ class ArbitroVirtual(
         collisionIntensity: Float = 0f,
         puckLastHitBy: Byte = 0
     ) = synchronized(simulationLock) {
-        engine.puck.x = puckX
-        engine.puck.y = puckY
         engine.puck.vx = puckVx
         engine.puck.vy = puckVy
         engine.puck.lastHitBy = puckLastHitBy.toInt()
-        engine.player1Mallet.x = hostMalletX
-        engine.player1Mallet.y = hostMalletY
 
-        if (_matchState.value.status != MatchStatus.COUNTDOWN) {
+        val errX = puckX - engine.puck.x
+        val errY = puckY - engine.puck.y
+        val errDistSq = errX * errX + errY * errY
+        if (_matchState.value.status != MatchStatus.PLAYING || errDistSq > 32400f || collisionEvent.toInt() != 0) {
+            engine.puck.x = puckX
+            engine.puck.y = puckY
+        } else {
+            val blend = if (errDistSq > 1600f) 0.65f else 0.42f
+            engine.puck.x += errX * blend
+            engine.puck.y += errY * blend
+        }
+
+        engine.player1Mallet.targetX = hostMalletX
+        engine.player1Mallet.targetY = hostMalletY
+        if (_matchState.value.status != MatchStatus.PLAYING) {
+            engine.player1Mallet.x = hostMalletX
+            engine.player1Mallet.y = hostMalletY
+        } else {
+            val hdx = hostMalletX - engine.player1Mallet.x
+            val hdy = hostMalletY - engine.player1Mallet.y
+            val hDistSq = hdx * hdx + hdy * hdy
+            if (hDistSq > 22500f) {
+                engine.player1Mallet.x = hostMalletX
+                engine.player1Mallet.y = hostMalletY
+            } else if (hDistSq > 1f) {
+                engine.player1Mallet.x += hdx * 0.55f
+                engine.player1Mallet.y += hdy * 0.55f
+            }
+        }
+
+        val isLocalTouchActive = isGuestLocalTouchActive() && aiControllerP2 == null
+        if (_matchState.value.status != MatchStatus.COUNTDOWN && !isLocalTouchActive) {
+            engine.player2Mallet.targetX = guestMalletX
+            engine.player2Mallet.targetY = guestMalletY
             val dx = guestMalletX - engine.player2Mallet.x
             val dy = guestMalletY - engine.player2Mallet.y
             val distSq = dx * dx + dy * dy
@@ -665,8 +726,8 @@ class ArbitroVirtual(
             hostMalletY = telemetry.hostMalletY,
             guestMalletX = telemetry.guestMalletX,
             guestMalletY = telemetry.guestMalletY,
-            collisionEvent = 0,
-            collisionIntensity = 0f,
+            collisionEvent = telemetry.collisionEvent,
+            collisionIntensity = telemetry.collisionIntensity,
             puckLastHitBy = telemetry.puckLastHitBy
         )
     }
@@ -784,6 +845,8 @@ class ArbitroVirtual(
         countdownStepAccumulator = 0f
         secondTimerAccumulator = 0f
         deadPuckAccumulator = 0f
+        hasGuestLocalTouch = false
+        lastGuestLocalTouchNano = 0L
         visualBurstRing.clear()
         engine.resetPositions(0)
         _matchState.update {

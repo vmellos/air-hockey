@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -54,6 +55,7 @@ import io.github.sceneview.rememberView
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -376,7 +378,7 @@ fun AirHockeyArena3DScene(
     val isGuestCamera = mode.capabilities.isConnectedGuest
     val projection3D = remember(dimensions, mode) { Table3DCameraProjection(dimensions, mode) }
     val canPresentIntro = !isExtended && prefs.arena3dIntroEnabled
-    val targetPreset = remember(zoom) {
+    val targetPreset = remember(zoom, projection3D) {
         projection3D.getBasePreset(zoom)
     }
     val sceneState = remember(isSplitScreen, isExtended, isGuestCamera) {
@@ -384,7 +386,7 @@ fun AirHockeyArena3DScene(
     }
 
     val coroutineScope = rememberCoroutineScope()
-    val presentationAnim = remember(isSplitScreen, isExtended) {
+    val presentationAnim = remember(isSplitScreen, isExtended, isGuestCamera) {
         Animatable(if (canPresentIntro) 0f else 1f)
     }
 
@@ -640,9 +642,6 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    fun mapEngineX(engineX: Float): Float = projection3D.mapEngineX(engineX)
-    fun mapEngineZ(engineY: Float): Float = projection3D.mapEngineZ(engineY)
-
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -688,7 +687,7 @@ fun AirHockeyArena3DScene(
         val screenH = constraints.maxHeight.toFloat()
         val screenAspect = if (screenH > 0f) screenW / screenH else 9f / 19.5f
 
-        val effectiveTargetPreset = remember(zoom, screenAspect, activeTheme, arenaKit.needsWideMascotFraming) {
+        val effectiveTargetPreset = remember(zoom, screenAspect, activeTheme, arenaKit.needsWideMascotFraming, projection3D) {
             projection3D.computeEffectiveTargetPreset(
                 zoom = zoom,
                 screenAspect = screenAspect,
@@ -696,6 +695,9 @@ fun AirHockeyArena3DScene(
                 needsWideMascotFraming = arenaKit.needsWideMascotFraming
             )
         }
+        val currentProjection3D by rememberUpdatedState(projection3D)
+        val currentEffectiveTargetPreset by rememberUpdatedState(effectiveTargetPreset)
+        val currentIsExtended by rememberUpdatedState(isExtended)
         Scene(
             modifier = Modifier.fillMaxSize(),
             engine = engine3d,
@@ -705,6 +707,9 @@ fun AirHockeyArena3DScene(
             cameraManipulator = null,
             childNodes = childNodes,
             onFrame = { frameTimeNanos ->
+                val proj = currentProjection3D
+                val targetCamPreset = currentEffectiveTargetPreset
+                val extMode = currentIsExtended
                 val frameDtSec = if (sceneState.lastFrameNanoTime > 0L) {
                     ((frameTimeNanos - sceneState.lastFrameNanoTime) / 1_000_000_000f).coerceIn(0.001f, 0.050f)
                 } else 1f / 60f
@@ -712,7 +717,7 @@ fun AirHockeyArena3DScene(
 
                 val p = sceneState.presentationProgress
                 if (p < 1f) {
-                    val pose = projection3D.computePresentationPose(p, effectiveTargetPreset)
+                    val pose = proj.computePresentationPose(p, targetCamPreset)
                     sceneState.updateFromPose(pose)
                     cameraNode.position = pose.toPosition()
                     cameraNode.lookAt(
@@ -721,9 +726,9 @@ fun AirHockeyArena3DScene(
                         smooth = false
                     )
                 } else {
-                    val pose = projection3D.stepSmoothPose(
+                    val pose = proj.stepSmoothPose(
                         current = sceneState.toPose(),
-                        target = effectiveTargetPreset,
+                        target = targetCamPreset,
                         dtSec = frameDtSec
                     )
                     sceneState.updateFromPose(pose)
@@ -733,12 +738,12 @@ fun AirHockeyArena3DScene(
 
                 // Sincronização em tempo real das coordenadas físicas via snapshot imutável
                 val snap = runtime.currentSnapshot()
-                val puckVisible = if (isExtended) projection3D.isVisibleInViewport(snap.puckX, snap.puckY, dimensions.puckRadius) else true
+                val puckVisible = if (extMode) proj.isVisibleInViewport(snap.puckX, snap.puckY, dimensions.puckRadius) else true
                 if (puckVisible) {
                     puckNode?.position = Float3(
-                        mapEngineX(snap.puckX),
+                        proj.mapEngineX(snap.puckX),
                         0.0075f,
-                        mapEngineZ(snap.puckY)
+                        proj.mapEngineZ(snap.puckY)
                     )
                 } else {
                     puckNode?.position = Float3(0f, -5f, 0f)
@@ -751,23 +756,23 @@ fun AirHockeyArena3DScene(
                 }
                 puckNode?.rotation = Float3(0f, sceneState.puckYawDeg, 0f)
 
-                val p1Visible = if (isExtended) projection3D.isVisibleInViewport(snap.player1MalletX, snap.player1MalletY, dimensions.malletRadius) else true
+                val p1Visible = if (extMode) proj.isVisibleInViewport(snap.player1MalletX, snap.player1MalletY, dimensions.malletRadius) else true
                 if (p1Visible) {
                     p1Node?.position = Float3(
-                        mapEngineX(snap.player1MalletX),
+                        proj.mapEngineX(snap.player1MalletX),
                         0.0f,
-                        mapEngineZ(snap.player1MalletY)
+                        proj.mapEngineZ(snap.player1MalletY)
                     )
                 } else {
                     p1Node?.position = Float3(0f, -5f, 0f)
                 }
 
-                val p2Visible = if (isExtended) projection3D.isVisibleInViewport(snap.player2MalletX, snap.player2MalletY, dimensions.malletRadius) else true
+                val p2Visible = if (extMode) proj.isVisibleInViewport(snap.player2MalletX, snap.player2MalletY, dimensions.malletRadius) else true
                 if (p2Visible) {
                     p2Node?.position = Float3(
-                        mapEngineX(snap.player2MalletX),
+                        proj.mapEngineX(snap.player2MalletX),
                         0.0f,
-                        mapEngineZ(snap.player2MalletY)
+                        proj.mapEngineZ(snap.player2MalletY)
                     )
                 } else {
                     p2Node?.position = Float3(0f, -5f, 0f)
@@ -775,8 +780,8 @@ fun AirHockeyArena3DScene(
 
                 // Cinemática e Comportamento Autônomo da Mascote Kiara 3D (ADR 0042)
                 mascotController?.let { ctrl ->
-                    val puckX = mapEngineX(snap.puckX)
-                    val puckZ = mapEngineZ(snap.puckY)
+                    val puckX = proj.mapEngineX(snap.puckX)
+                    val puckZ = proj.mapEngineZ(snap.puckY)
                     ctrl.update(frameDtSec, puckX, puckZ)
                     mascotNode?.position = ctrl.toPosition()
                     mascotNode?.rotation = ctrl.toRotation()
@@ -876,8 +881,19 @@ fun AirHockeyArena3DScene(
             } else {
                 val spd = snap.puckSpeed()
                 if (spd > 220f) {
-                    puckTrail.addFirst(TablePoint(snap.puckX, snap.puckY))
-                    if (puckTrail.size > 14) puckTrail.removeLast()
+                    val head = puckTrail.firstOrNull()
+                    if (head != null) {
+                        val moved = hypot(snap.puckX - head.x, snap.puckY - head.y)
+                        if (moved > 350f) {
+                            puckTrail.clear()
+                            puckTrail.addFirst(TablePoint(snap.puckX, snap.puckY))
+                        } else if (moved >= 3.5f) {
+                            puckTrail.addFirst(TablePoint(snap.puckX, snap.puckY))
+                            if (puckTrail.size > 14) puckTrail.removeLast()
+                        }
+                    } else {
+                        puckTrail.addFirst(TablePoint(snap.puckX, snap.puckY))
+                    }
                 } else if (puckTrail.isNotEmpty()) {
                     puckTrail.removeLast()
                 }

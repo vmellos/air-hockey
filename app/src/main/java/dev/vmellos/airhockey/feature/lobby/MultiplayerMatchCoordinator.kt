@@ -157,6 +157,7 @@ class MultiplayerMatchCoordinator(
             is TableControlEvent.Start -> {
                 _state.update {
                     it.copy(
+                        mode = if (event.mode.isNotBlank()) event.mode else it.mode,
                         calibratedGapMm = event.gapMm,
                         synchronizedPuckSpeed = event.maxSpeed,
                         aiDifficulty1 = event.aiDiff1,
@@ -196,6 +197,7 @@ class MultiplayerMatchCoordinator(
     ) {
         val effectiveTheme = themeName.ifBlank { _state.value.hostThemeName ?: "" }
         val effectiveDimension = arenaDimension.ifBlank { _state.value.hostArenaDimension ?: "" }
+        val effectiveMode = _state.value.mode.ifBlank { selfMode }
         _state.update {
             it.copy(
                 calibratedGapMm = gapMm,
@@ -208,7 +210,7 @@ class MultiplayerMatchCoordinator(
             )
         }
         scope.launch {
-            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, effectiveTheme, effectiveDimension))
+            transport.sendControl(TableControlEvent.Start(gapMm, maxSpeed, aiDiff1, aiDiff2, effectiveTheme, effectiveDimension, effectiveMode))
         }
     }
 

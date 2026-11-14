@@ -21,7 +21,8 @@ sealed class TableControlEvent {
         val aiDiff1: String = "",
         val aiDiff2: String = "",
         val themeName: String = "",
-        val arenaDimension: String = ""
+        val arenaDimension: String = "",
+        val mode: String = ""
     ) : TableControlEvent()
     data class StateSync(val state: ControlMessages.RemoteMatchState) : TableControlEvent()
     data class TelemetryFallback(val packet: HostTelemetryPacket) : TableControlEvent()
@@ -39,14 +40,12 @@ sealed class TableControlEvent {
             is HandshakeOk -> "HANDSHAKE_OK:$tableCode:$hostName:$mode"
             is HandshakeReject -> "HANDSHAKE_REJECT:$reason"
             Ready -> ControlMessages.READY
-            is Start -> if (arenaDimension.isNotBlank()) {
-                "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName:$arenaDimension"
-            } else if (themeName.isNotBlank()) {
-                "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName"
-            } else if (aiDiff1.isNotBlank() || aiDiff2.isNotBlank()) {
-                "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2"
-            } else {
-                "${ControlMessages.START}:$gapMm:$maxSpeed"
+            is Start -> when {
+                mode.isNotBlank() -> "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName:$arenaDimension:$mode"
+                arenaDimension.isNotBlank() -> "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName:$arenaDimension"
+                themeName.isNotBlank() -> "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2:$themeName"
+                aiDiff1.isNotBlank() || aiDiff2.isNotBlank() -> "${ControlMessages.START}:$gapMm:$maxSpeed:$aiDiff1:$aiDiff2"
+                else -> "${ControlMessages.START}:$gapMm:$maxSpeed"
             }
             is StateSync -> ControlMessages.encodeState(state)
             is TelemetryFallback -> "TELEM:${packet.sequenceNumber},${packet.puckX},${packet.puckY},${packet.puckVx},${packet.puckVy},${packet.hostMalletX},${packet.hostMalletY},${packet.guestMalletX},${packet.guestMalletY},${packet.collisionEvent},${packet.collisionIntensity},${packet.puckLastHitBy}"
@@ -90,7 +89,8 @@ sealed class TableControlEvent {
                     val d2 = parts.getOrNull(3) ?: ""
                     val theme = parts.getOrNull(4) ?: ""
                     val dimension = parts.getOrNull(5) ?: ""
-                    Start(gap, speed, d1, d2, theme, dimension)
+                    val mode = parts.getOrNull(6) ?: ""
+                    Start(gap, speed, d1, d2, theme, dimension, mode)
                 }
                 line.startsWith("TELEM:") -> {
                     val parts = line.removePrefix("TELEM:").split(",")

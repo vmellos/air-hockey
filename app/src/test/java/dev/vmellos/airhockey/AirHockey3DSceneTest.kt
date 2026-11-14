@@ -739,4 +739,32 @@ class AirHockey3DSceneTest {
         assertEquals(0.055f, dev.vmellos.airhockey.feature.game.ui.computeCalibratedBloomStrength(0.05f), 1e-5f)
         assertEquals(0.22f, dev.vmellos.airhockey.feature.game.ui.computeCalibratedBloomStrength(0.10f), 1e-5f)
     }
+
+    @Test
+    fun connectedGuest_wideMascotFraming_preserves180DegreeCameraInversionForAllZooms() {
+        val hostProj = Table3DCameraProjection(TableDimensions(), GameMode.CONNECTED_HOST)
+        val guestProj = Table3DCameraProjection(TableDimensions(), GameMode.CONNECTED_GUEST)
+        val portraitAspect = 9f / 19.5f
+
+        for (zoom in CameraZoom3D.entries) {
+            val hostPreset = hostProj.computeEffectiveTargetPreset(
+                zoom = zoom,
+                screenAspect = portraitAspect,
+                theme = TableTheme.KIARA_CAT,
+                needsWideMascotFraming = true
+            )
+            val guestPreset = guestProj.computeEffectiveTargetPreset(
+                zoom = zoom,
+                screenAspect = portraitAspect,
+                theme = TableTheme.KIARA_CAT,
+                needsWideMascotFraming = true
+            )
+
+            assertTrue("Guest Z must be negative for $zoom", guestPreset.position.z < 0f)
+            assertEquals("Guest Y should mirror Host Y for $zoom", hostPreset.position.y, guestPreset.position.y, 1e-4f)
+            assertEquals("Guest Z should invert Host Z for $zoom", -hostPreset.position.z, guestPreset.position.z, 1e-4f)
+            assertEquals("Guest pitch must match Host for $zoom", hostPreset.rotation.x, guestPreset.rotation.x, 1e-4f)
+            assertEquals("Guest yaw must be 180° for $zoom", 180f, guestPreset.rotation.y, 1e-4f)
+        }
+    }
 }

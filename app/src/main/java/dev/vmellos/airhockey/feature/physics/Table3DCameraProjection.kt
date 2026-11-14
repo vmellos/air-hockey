@@ -207,10 +207,18 @@ class Table3DCameraProjection(
         // Calibração de Enquadramento 3D para Arena com Mascote em telas de celular retrato
         val needsWideFraming = needsWideMascotFraming || (theme != null && theme.canonical() == TableTheme.KIARA_CAT)
         if (needsWideFraming && !isSplitScreen) {
-            return when (zoom) {
-                CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.45f, 2.10f), Float3(-47f, 0f, 0f))
-                CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.85f, 2.45f), Float3(-46f, 0f, 0f))
-                CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 3.25f, 2.80f), Float3(-45f, 0f, 0f))
+            return if (isGuestCamera) {
+                when (zoom) {
+                    CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.45f, -2.10f), Float3(-47f, 180f, 0f))
+                    CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.85f, -2.45f), Float3(-46f, 180f, 0f))
+                    CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 3.25f, -2.80f), Float3(-45f, 180f, 0f))
+                }
+            } else {
+                when (zoom) {
+                    CameraZoom3D.CLOSE -> CameraPreset(Float3(0f, 2.45f, 2.10f), Float3(-47f, 0f, 0f))
+                    CameraZoom3D.STANDARD -> CameraPreset(Float3(0f, 2.85f, 2.45f), Float3(-46f, 0f, 0f))
+                    CameraZoom3D.WIDE -> CameraPreset(Float3(0f, 3.25f, 2.80f), Float3(-45f, 0f, 0f))
+                }
             }
         }
 

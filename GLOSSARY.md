@@ -119,7 +119,7 @@ O voo panorâmico cinematográfico estilo drone que sobrevoa a extensão da aren
 _Avoid_: Animação inicial, intro 3d, câmera giratória, flyover, volta 360, tap to skip
 
 **Níveis de Enquadramento 3D**:
-Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1, para a Câmera 3D Zenital no Modo Tela Dividida e para a Mesa Estendida com ancoragem no topo físico (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e segundo a preferência visual do usuário, alternáveis por controle no Menu de Pausa (preservando o HUD da arena despoluído durante a partida ativa) e persistidos nas preferências.
+Os três patamares de distância e amplitude de visão da câmera 3D calibrados para a perspectiva do Jogador 1, para a inversão espelhada de 180° do Dispositivo Convidado na Mesa Conectada (`z` negativo e guinada de `180°`, inclusive sob recuo de enquadramento para arenas com mascote), para a Câmera 3D Zenital no Modo Tela Dividida e para a Mesa Estendida com ancoragem no topo físico (Próximo, Padrão e Amplo), permitindo enquadrar a arena com ergonomia e segundo a preferência visual do usuário, alternáveis por controle no Menu de Pausa (preservando o HUD da arena despoluído durante a partida ativa) e persistidos nas preferências.
 _Avoid_: Níveis de zoom, distâncias de câmera, câmera longe, câmera perto, botão de zoom
 
 **Desprojeção em Perspectiva 3D**:
@@ -267,7 +267,7 @@ O componente central de autoridade esportiva responsável por governar a linha d
 _Avoid_: Engine, juiz, supervisor, fiscal
 
 **Previsão no Cliente**:
-A projeção imediata do rebatedor no dispositivo convidado em resposta ao toque local, conciliada subsequentemente com a telemetria do dispositivo anfitrião.
+A projeção imediata e soberana do rebatedor no dispositivo convidado durante o toque ativo local (blindada contra retrocessos por pacotes defasados em RTT), combinada à extrapolação cinemática contínua a 120 Hz (*dead reckoning*) da trajetória do disco, reflexão elástica nas tabelas e interpolação do rebatedor adversário entre pacotes UDP de telemetria, conciliada suavemente com o estado autoritativo do dispositivo anfitrião.
 _Avoid_: Client-side prediction, toque instantâneo, lag compensation
 
 **Telemetria de Colisão**:
@@ -313,7 +313,7 @@ O traçado perimetral da mesa com cantos angulados em 45 graus e gradiente lumin
 _Avoid_: Borda redonda, moldura do campo, cantos da mesa
 
 **Rastro de Energia do Disco**:
-O efeito visual fluido de plasma emitido atrás do disco em alta velocidade, cuja tonalidade cromática reflete o último rebatedor a golpeá-lo (ciano para o Jogador 1 e laranja para o Jogador 2).
+O efeito visual fluido de plasma emitido atrás do disco em alta velocidade, amostrado por deslocamento espacial mínimo entre quadros para evitar repetições sob latência de rede, cuja tonalidade cromática reflete o último rebatedor a golpeá-lo (ciano para o Jogador 1 e laranja para o Jogador 2).
 _Avoid_: Fogo da bola, rastro da bola, rastro de fumaça, cauda do puck
 
 **Vórtice de Contagem Regressiva**:

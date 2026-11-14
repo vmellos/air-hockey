@@ -331,7 +331,7 @@ class LobbyViewModel(
             coord.state.collect { cState ->
                 _state.update {
                     it.copy(
-                        targetMode = if (cState.mode.isNotBlank()) cState.mode else it.targetMode,
+                        targetMode = if (cState.mode.isNotBlank() && !cState.mode.equals("ANY", ignoreCase = true)) cState.mode else it.targetMode,
                         aiDifficulty1 = if (cState.aiDifficulty1.isNotBlank()) cState.aiDifficulty1 else it.aiDifficulty1,
                         aiDifficulty2 = if (cState.aiDifficulty2.isNotBlank()) cState.aiDifficulty2 else it.aiDifficulty2,
                         startMatchTrigger = cState.startMatchTrigger,
@@ -378,7 +378,7 @@ class LobbyViewModel(
         // 1. Entrada direta de IP (ex: 192.168.0.180 ou 10.0.2.2)
         if (cleanCode.contains(".") && !cleanCode.startsWith("AIRHOCKEY")) {
             val ip = cleanCode.substringBefore(":")
-            connectToTable(ip, "")
+            connectToTable(ip, "", tableMode = "ANY")
             return
         }
 
@@ -406,7 +406,7 @@ class LobbyViewModel(
             val gatewayIp = nsdManager.getDhcpGatewayIp()
             if (!gatewayIp.isNullOrBlank() && hostProber(gatewayIp, NetworkConstants.DEFAULT_TCP_PORT)) {
                 withContext(mainDispatcher) {
-                    connectToTable(gatewayIp, cleanCode)
+                    connectToTable(gatewayIp, cleanCode, tableMode = "ANY")
                 }
                 return@launch
             }
@@ -418,7 +418,7 @@ class LobbyViewModel(
                 val foundIp = scanSubnetForHost(prefix, NetworkConstants.DEFAULT_TCP_PORT, localIp)
                 if (foundIp != null) {
                     withContext(mainDispatcher) {
-                        connectToTable(foundIp, cleanCode)
+                        connectToTable(foundIp, cleanCode, tableMode = "ANY")
                     }
                     return@launch
                 }
@@ -429,7 +429,7 @@ class LobbyViewModel(
                 val hostPcIp = "10.0.2.2"
                 if (hostProber(hostPcIp, NetworkConstants.DEFAULT_TCP_PORT)) {
                     withContext(mainDispatcher) {
-                        connectToTable(hostPcIp, cleanCode)
+                        connectToTable(hostPcIp, cleanCode, tableMode = "ANY")
                     }
                     return@launch
                 }
@@ -489,11 +489,11 @@ class LobbyViewModel(
         val targetMode = if (qrText.contains("mode=")) {
             qrText.substringAfter("mode=").substringBefore("&").trim()
         } else {
-            _state.value.targetMode
+            "ANY"
         }
         if (targetIp.isNotBlank()) {
             startAsGuest(targetMode)
-            connectToTable(targetIp, targetCode)
+            connectToTable(targetIp, targetCode, targetMode)
         } else {
             _state.update {
                 it.copy(

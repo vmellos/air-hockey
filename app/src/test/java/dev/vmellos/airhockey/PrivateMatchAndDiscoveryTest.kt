@@ -427,4 +427,83 @@ class PrivateMatchAndDiscoveryTest {
         hostVm.stopAll()
         guestVm.stopAll()
     }
+
+    @Test
+    fun testGuestConnectByCodeViaHotspotGatewayAdoptsConnectedModeFromHost() = runBlocking {
+        val fakeDiscoveryTables = kotlinx.coroutines.flow.MutableStateFlow<List<DiscoveredTable>>(emptyList())
+        val fakePort = object : dev.vmellos.airhockey.feature.network.LanDiscoveryPort {
+            override val discoveredTables = fakeDiscoveryTables
+            override fun startBroadcast(tableCode: String, port: Int, mode: String, hostName: String) {}
+            override fun stopBroadcast() {}
+            override fun startDiscovery() {}
+            override fun stopDiscovery() {}
+            override fun sendDirectedDiscoveryProbe() {}
+            override fun restartNsdDiscovery() {}
+            override fun getLocalIpAddress(): String = "192.168.43.15"
+            override fun getDhcpGatewayIp(): String? = "192.168.43.1"
+        }
+
+        val (hostTransport, guestTransport) = InMemoryLoopbackTransportAdapter.createConnectedPair()
+        val hostScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined
+        )
+        val guestScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        val hostVm = dev.vmellos.airhockey.feature.lobby.LobbyViewModel(
+            discoveryPort = fakePort,
+            transportFactory = { _, _ -> hostTransport },
+            wifiInfoProvider = { "HostHotspot" to true },
+            defaultPlayerNameProvider = { "HostHotspotUser" },
+            userPreferencesFlowOverride = kotlinx.coroutines.flow.flowOf(
+                dev.vmellos.airhockey.core.preferences.UserPreferences(playerName = "HostHotspotUser")
+            ),
+            coroutineScopeOverride = hostScope,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            mainDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        hostVm.startAsHost(
+            mode = "CONNECTED",
+            arenaDimension = "THREE_DIMENSIONAL",
+            themeName = "KIARA_CAT"
+        )
+        val tableCode = hostVm.state.value.tableCode
+
+        val guestVm = dev.vmellos.airhockey.feature.lobby.LobbyViewModel(
+            discoveryPort = fakePort,
+            transportFactory = { _, _ -> guestTransport },
+            hostProber = { ip, _ -> ip == "192.168.43.1" },
+            wifiInfoProvider = { "HostHotspot" to true },
+            defaultPlayerNameProvider = { "GuestHotspotUser" },
+            userPreferencesFlowOverride = kotlinx.coroutines.flow.flowOf(
+                dev.vmellos.airhockey.core.preferences.UserPreferences(playerName = "GuestHotspotUser")
+            ),
+            coroutineScopeOverride = guestScope,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined,
+            mainDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
+
+        // Estado inicial no Convidado antes da descoberta UDP/NSD
+        guestVm.startAsGuest()
+        assertTrue(guestVm.state.value.discoveredTables.isEmpty())
+
+        // Conecta via código usando gateway DHCP (caso típico de Hotspot sem mDNS)
+        guestVm.connectByCode(tableCode)
+        delay(80)
+
+        assertTrue("Guest must become ready to play without INVALID_MODE", guestVm.state.value.isReadyToPlay)
+        assertEquals("CONNECTED", guestVm.state.value.targetMode)
+
+        hostVm.startHostMatch(gapMm = 0f)
+        delay(80)
+
+        val guestSpec = guestVm.buildMatchSpec(dev.vmellos.airhockey.core.preferences.UserPreferences())
+        assertEquals(dev.vmellos.airhockey.feature.game.GameMode.CONNECTED_GUEST, guestSpec.mode)
+        assertEquals(dev.vmellos.airhockey.core.preferences.TableTheme.KIARA_CAT, guestSpec.tableTheme)
+
+        hostVm.stopAll()
+        guestVm.stopAll()
+    }
 }

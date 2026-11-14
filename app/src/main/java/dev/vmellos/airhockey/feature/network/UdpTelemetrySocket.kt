@@ -40,6 +40,7 @@ class UdpTelemetrySocket(
         val sock = try {
             DatagramSocket(null).apply {
                 reuseAddress = true
+                runCatching { trafficClass = 0x10 }
                 bind(InetSocketAddress(localPort))
             }
         } catch (e: Exception) {

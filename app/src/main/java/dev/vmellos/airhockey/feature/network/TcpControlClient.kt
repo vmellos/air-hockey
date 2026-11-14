@@ -37,6 +37,10 @@ class TcpControlClient {
             try {
                 val s = Socket()
                 s.connect(InetSocketAddress(hostIp, port), 4000)
+                runCatching {
+                    s.tcpNoDelay = true
+                    s.trafficClass = 0x10
+                }
                 socket = s
                 writer = PrintWriter(s.getOutputStream(), true)
                 val reader = BufferedReader(InputStreamReader(s.getInputStream()))
