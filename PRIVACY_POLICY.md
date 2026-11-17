@@ -33,15 +33,34 @@ To offer the game free of charge, the application displays non-intrusive adverti
 #### D. In-App Purchases (Google Play Billing)
 The application offers an optional, non-consumable one-time purchase (`remove_ads`) to permanently remove banner and interstitial ads. All payment transactions and purchase restorations are processed securely by **Google Play Billing**. We do not collect, access, or store credit card numbers or billing credentials.
 
-#### E. Google Play Games Services (Optional)
-If you sign in with **Google Play Games**, the application uses Google Play Games Services v2 to:
-- Synchronize stage progression, career stats, and cosmetic preferences via Google Play Saved Games (`SnapshotsClient`).
-- Submit Elo ratings and total stage stars to official Google Play Leaderboards.
-Play Games data is governed by Google's Privacy Policy and can be managed or deleted through your Google Play Games account settings.
+#### E. Google OAuth & Google Play Games Services User Data (Optional)
+If you choose to sign in with **Google Play Games Services v2**, the application accesses limited Google user data through Google OAuth solely to enable optional cloud and competitive gaming features:
+- **Google User Data Accessed:** Google Play Games Player ID, public gamertag/display name, Play Games profile avatar image (displayed only locally in the app UI), submitted leaderboard scores (`Elo Ranking` and `Stage Stars`), and encrypted app-specific cloud save snapshots (`SnapshotsClient` / `drive.appdata` scope).
+- **How We Use Google User Data:** Used strictly to authenticate your Play Games session, display your player badge and connection status in the Stats & History screen, synchronize your 100-stage progress, Elo rating, and cosmetic preferences across your own Android devices, and post your scores to official Google Play Games Leaderboards.
+- **Data Sharing & Limited Use Disclosure:** We do **not** sell, rent, transfer, or share Google OAuth user data with third parties, data brokers, or advertising networks (such as AdMob). Air Hockey's use and transfer to any other app of information received from Google APIs adhere to the **Google API Services User Data Policy**, including the **Limited Use** requirements.
 
 ---
 
-### 3. Application Permissions
+### 3. Data Storage, Security & Encryption
+
+- **Local Storage Isolation:** Offline match records, stage progression, and user preferences are stored exclusively within your device's private Android application sandbox (`Room SQLite` and `Jetpack DataStore`) and are not uploaded to any proprietary developer server.
+- **Encryption in Transit:** All network communication between the application and Google services (**Google Play Games Services**, **Google AdMob**, **Google UMP**, and **Google Play Billing**) uses industry-standard **HTTPS/TLS** encryption in transit.
+- **Local P2P Multiplayer:** Wi-Fi and Mobile Hotspot matches communicate directly between the two devices on the local network (`TCP/UDP` sockets and `mDNS`) without passing through external cloud servers.
+
+---
+
+### 4. Data Retention, Consent Revocation & Deletion
+
+- **Retention Period:** Local gameplay records remain on your device until you clear application data or uninstall the app. Google Play Games cloud saves and leaderboard records remain associated with your Google Play Games profile until you delete them or revoke access.
+- **How to Revoke Access or Delete Your Data:**
+  1. **Revoke Google OAuth Access:** Visit [https://myaccount.google.com/permissions](https://myaccount.google.com/permissions), select **Air Hockey**, and revoke access at any time.
+  2. **Delete Play Games Cloud Saves & Profile Data:** Open the **Google Play Games** app on your Android device → *Settings* → *Delete Play Games account & data* (or remove individual game data).
+  3. **Manage Ad Consent & Advertising ID:** Adjust your regional privacy preferences through the Google UMP consent dialog when presented, or reset/delete your Android Advertising ID in Android *Settings → Privacy → Ads*.
+  4. **Delete Local Data or Contact Us:** Clear app storage or uninstall Air Hockey to remove all local data, or contact us directly at **contact@vmellos.dev** (or **contact-vmellos-dev@googlegroups.com**) for assistance with any data deletion inquiry.
+
+---
+
+### 5. Application Permissions
 
 | Permission | Purpose |
 | :--- | :--- |
@@ -58,16 +77,17 @@ Play Games data is governed by Google's Privacy Policy and can be managed or del
 
 ---
 
-### 4. Children's Privacy
+### 6. Children's Privacy
 
 Air Hockey is designed for general audiences (Everyone / Family rating). We do not knowingly collect personal information directly from children under the age of 13, and AdMob consent flows follow applicable regulations.
 
 ---
 
-### 5. Contact & Official Portal
+### 7. Contact & Official Portal
 
-If you have any questions or data inquiries regarding this Privacy Policy, please contact the developer:
-- **Developer:** Vinicius Mellos (VMellos Dev)
-- **Email:** dev@vmellos.dev
+If you have any questions, privacy requests, or data deletion inquiries regarding this Privacy Policy, please contact the developer:
+- **Developer:** VMellos Dev
+- **Email:** contact@vmellos.dev
+- **Support Group Email:** contact-vmellos-dev@googlegroups.com
 - **Official Portal:** https://vmellos.dev
 - **Repository:** https://github.com/vmellos/AirHockey
