@@ -109,7 +109,6 @@ fun MainMenuScreen(
     val billingManager = AirHockeyApp.instance.billingManager
     val isAdsRemovedPermanently by billingManager.isAdsRemoved.collectAsState()
     val isAdFreeTemporarily by adManager.isAdFreeTemporarily.collectAsState()
-    val isRewardedLoaded by adManager.isRewardedLoaded.collectAsState()
     val prefs by AirHockeyApp.instance.preferencesRepository.userPreferencesFlow.collectAsState(initial = UserPreferences())
     val context = LocalContext.current
     val activity = context.findActivity()

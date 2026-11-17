@@ -189,8 +189,6 @@
     <string name="match_result_win">WIN</string>
     <string name="match_result_loss">DEFEAT</string>
     <string name="match_result_draw">DRAW</string>
-    <string name="leaderboard_elo_id" translatable="false"></string>
-    <string name="leaderboard_stages_id" translatable="false"></string>
     <string name="ad_reward_button_desc">Earn 2h Ad-Free</string>
 
     <!-- Remoção Permanente de Anúncios (Billing) -->

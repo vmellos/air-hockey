@@ -16,18 +16,18 @@ object AdConstants {
     const val TEST_REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
 
     /**
-     * Safe Monetization Guard: Set to false during Closed Testing (14 days) to prevent
-     * invalid traffic penalties and AdMob account suspension from testers/internal tests.
-     * Flip to true only when promoted to Public Production.
+     * Safe Monetization Guard: Driven by Gradle BuildConfig (-PUSE_PRODUCTION_ADS=true) and
+     * explicitly blocked in DEBUG builds to prevent invalid traffic penalties during testing.
      */
-    const val USE_PRODUCTION_ADS: Boolean = false
+    val USE_PRODUCTION_ADS: Boolean
+        get() = BuildConfig.USE_PRODUCTION_ADS && !BuildConfig.DEBUG
 
-    fun getBannerAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS && !BuildConfig.DEBUG): String =
+    fun getBannerAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS): String =
         if (useProductionAds) PROD_BANNER_AD_UNIT_ID else TEST_BANNER_AD_UNIT_ID
 
-    fun getInterstitialAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS && !BuildConfig.DEBUG): String =
+    fun getInterstitialAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS): String =
         if (useProductionAds) PROD_INTERSTITIAL_AD_UNIT_ID else TEST_INTERSTITIAL_AD_UNIT_ID
 
-    fun getRewardedAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS && !BuildConfig.DEBUG): String =
+    fun getRewardedAdUnitId(useProductionAds: Boolean = USE_PRODUCTION_ADS): String =
         if (useProductionAds) PROD_REWARDED_AD_UNIT_ID else TEST_REWARDED_AD_UNIT_ID
 }

@@ -16,7 +16,7 @@ Este documento contém todos os metadados, textos de ASO (App Store Optimization
 * **Tipo de app:** Jogo
 * **Categoria principal:** Jogos / Arcade
 * **Categoria secundária:** Jogos / Esportes
-* **Preço:** Gratuito (Sem Anúncios / Zero Ads)
+* **Preço:** Gratuito (Contém anúncios não invasivos e compra única no app `remove_ads` para remoção permanente)
 * **Público-alvo:** Livre para todas as idades (Família / Everyone)
 * **Tags recomendadas da Loja:** Air hockey, Jogo para 2 pessoas, Multiplayer local, Mesa estendida, Jogo sem internet, Wi-Fi hotspot, Jogos de arcade, Esportes de mesa
 
@@ -66,9 +66,9 @@ Sem salas complicadas ou buscas lentas: o anfitrião gera a partida e o segundo 
 • Retomada com contagem regressiva de 3 segundos para ninguém ser pego de surpresa.
 • Calibração personalizada da velocidade do disco (Lenta, Normal ou Rápida).
 
-🔒 PRIVACIDADE TOTAL E ZERO ANÚNCIOS:
-• Sem anúncios chatos interrompendo sua diversão.
-• Sem coleta de dados pessoais, sem rastreadores e sem criar contas.
+🔒 PRIVACIDADE E FOCO NA PARTIDA:
+• Zero anúncios durante as partidas ativas (e opção de remoção permanente de anúncios via compra única).
+• Sem necessidade de criar contas para jogar localmente.
 • Leitura de QR code executada 100% localmente no aparelho.
 
 Baixe agora o Air Hockey 2P e descubra uma forma totalmente nova e mágica de jogar com seus amigos!
@@ -118,9 +118,9 @@ No complicated lobby configurations or friend codes. The host creates the table 
 • 3-second countdown on match resume to keep matches fair and competitive.
 • Customizable puck speed presets (Slow, Normal, Fast).
 
-🔒 ZERO ADS & COMPLETE PRIVACY:
-• 100% Ad-Free experience—pure gameplay with zero interruptions.
-• No account creation, no analytics tracking, no personal data collection.
+🔒 PRIVACY & MATCH-FIRST EXPERIENCE:
+• Zero ads during active matches (with an optional one-time purchase to permanently remove ads).
+• No account creation required for local or offline play.
 • Camera permission used strictly offline for instant QR code table pairing.
 
 Download Air Hockey 2P today and experience the future of local two-player mobile gaming!
@@ -170,9 +170,9 @@ Sin salas complicadas: el anfitrión crea la partida y el segundo jugador escane
 • Reanudación con cuenta regresiva de 3 segundos para duelos justos.
 • Velocidad del disco configurable (Lenta, Normal o Rápida).
 
-🔒 PRIVACIDAD TOTAL Y CERO PUBLICIDAD:
-• Sin anuncios molestos interrumpiendo tu partida.
-• Sin recolección de datos, sin cuentas y sin rastreadores.
+🔒 PRIVACIDAD Y PARTIDAS SIN INTERRUPCIONES:
+• Cero anuncios durante las partidas activas (con compra única opcional para eliminar anuncios definitivamente).
+• Sin registro obligatorio para jugar de forma local u offline.
 • Cámara utilizada exclusivamente de forma local y offline para leer el código QR.
 
 ¡Descarga Air Hockey 2P y vive una forma totalmente nueva de jugar con tus amigos!
@@ -182,16 +182,17 @@ Sin salas complicadas: el anfitrión crea la partida y el segundo jugador escane
 
 ## 3. Declaração de Segurança dos Dados (Google Play Data Safety)
 
-Respostas para preenchimento oficial na seção **Segurança dos Dados (Data safety)** do Play Console:
+Respostas atualizadas para preenchimento na seção **Segurança dos Dados (Data safety)** do Play Console considerando os SDKs ativos no binário de produção (**Google AdMob + UMP**, **Google Play Billing (`remove_ads`)** e **Google Play Games Services v2**):
 
 | Pergunta no Play Console | Resposta Oficial |
 | :--- | :--- |
-| **O app coleta ou compartilha algum dado de usuário relevante?** | **NÃO** (*No personal data collected or shared*) |
-| **Todos os dados coletados pelo app são criptografados em trânsito?** | **Não aplicável** (*Nenhum dado é coletado ou transmitido para servidores de nuvem*) |
-| **O app fornece um meio para os usuários solicitarem a exclusão de dados?** | **Não aplicável** (*Nenhum dado é retido*) |
-| **O app é direcionado ou coleta dados de crianças?** | **NÃO** |
+| **O app coleta ou compartilha algum dado de usuário?** | **SIM** *(processado pelos SDKs oficiais do Google AdMob/UMP, Google Play Billing e Google Play Games Services; não operamos servidores próprios)* |
+| **Quais tipos de dados declarar?** | **1) IDs de dispositivo ou outros IDs** (Advertising ID / Play Games IDs: coletado e compartilhado pelo AdMob/Play Games para publicidade, prevenção a fraudes e rankings); **2) Informações financeiras → Histórico de compras** (coletado via Google Play Billing para gerenciar `remove_ads`); **3) Atividade no app / Desempenho e diagnósticos** (interações de anúncio, logs de falha/diagnóstico do AdMob e salvamento opcional em nuvem do Play Games). |
+| **Todos os dados coletados são criptografados em trânsito?** | **SIM** *(Google AdMob, UMP, Billing e Play Games comunicam via HTTPS/TLS; o multiplayer local P2P via LAN/Hotspot ocorre apenas na rede local)* |
+| **Exclusão de dados:** | O usuário pode gerenciar/revogar consentimento de anúncios via UMP ou configurações do Android (ID de publicidade) e gerenciar/excluir dados de jogos salvos diretamente na conta Google Play Games. |
+| **O app é direcionado principalmente a crianças?** | **NÃO** *(Público geral / todas as idades, sem coleta direta direcionada a menores de 13 anos)* |
 | **Uso da permissão de Câmera (`CAMERA`):** | Utilizada exclusivamente em tempo real para ler o Código QR offline de pareamento local. Nenhum frame, imagem ou vídeo é gravado ou transmitido. |
-| **Uso de Permissões de Rede/Localização (`NEARBY_WIFI_DEVICES`, `ACCESS_FINE_LOCATION`):** | Utilizadas exclusivamente para comunicação direta ponto-a-ponto (P2P/mDNS) na mesma rede local ou Ponto de Acesso. Nenhum dado geográfico de GPS é lido ou registrado. |
+| **Uso de Permissões de Rede/Localização (`NEARBY_WIFI_DEVICES`, `ACCESS_LOCAL_NETWORK`, `ACCESS_FINE_LOCATION`):** | Utilizadas exclusivamente para comunicação direta ponto-a-ponto (P2P/mDNS) na mesma rede local ou Ponto de Acesso. Nenhum dado geográfico de GPS é lido ou registrado. |
 
 ---
 
@@ -206,7 +207,7 @@ Respostas para preenchimento oficial na seção **Segurança dos Dados (Data saf
 | **Substâncias controladas / Álcool / Tabaco:** | Não |
 | **Jogos de azar com dinheiro real:** | Não |
 | **Compartilhamento de localização física:** | Não |
-| **Compras digitais no app (IAP):** | Não |
+| **Compras digitais no app (IAP):** | **Sim** *(Compra única não consumível `remove_ads` para remoção permanente de anúncios)* |
 | **Interação entre usuários:** | Apenas multijogador local físico via Wi-Fi/Hotspot sem chat de texto livre e sem moderação de terceiros necessária |
 | **Classificação Resultante Estimada:** | **Livre (Brasil) / PEGI 3 (Europa) / ESRB Everyone (EUA)** |
 

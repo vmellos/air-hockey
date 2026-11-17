@@ -206,15 +206,15 @@
     <!-- ENGLISH (DEFAULT) -->
     <div id="lang-en" class="card content-section">
       <h1>Privacy Policy — Air Hockey</h1>
-      <div class="last-updated">Last updated: November 2, 2026</div>
+      <div class="last-updated">Last updated: November 17, 2026</div>
       
       <p><strong>Air Hockey 2P</strong> ("we", "our", or "the application", package <code>dev.vmellos.airhockey</code>) is committed to protecting the privacy of its users. This Privacy Policy details how data is handled across Android devices.</p>
 
       <h2>1. Fundamental Principles</h2>
       <ul>
-        <li><strong>Zero Personal Data Collection:</strong> We do not collect, store, transmit, or share any personal identity information, individual user profiles, or usage telemetry.</li>
-        <li><strong>100% Offline & Peer-to-Peer Architecture:</strong> Gameplay runs entirely without relying on external cloud servers or remote database infrastructure. Multiplayer Extended Table matches establish direct socket connections over local Wi-Fi or Mobile Hotspot.</li>
-        <li><strong>Strictly Local Storage:</strong> Match history records, competitive Elo leaderboard scores, and local preferences remain solely stored within your device's isolated local sandbox.</li>
+        <li><strong>Local-First Gameplay & Peer-to-Peer Multiplayer:</strong> Matches run locally without proprietary game servers. Extended Table and Connected Table matches establish direct local TCP/UDP socket connections over Wi-Fi or Mobile Hotspot.</li>
+        <li><strong>Strictly Local Match Storage:</strong> Match history records, stage progression, and local preferences remain stored within your device's isolated sandbox (Room SQLite &amp; Jetpack DataStore).</li>
+        <li><strong>No Mandatory Login:</strong> All offline and local multiplayer modes work without creating an account.</li>
       </ul>
 
       <h2>2. Requested Permissions & Technical Purposes</h2>
@@ -228,11 +228,11 @@
         <tbody>
           <tr>
             <td><code>android.permission.INTERNET</code></td>
-            <td>Used exclusively for peer-to-peer Sockets (TCP/UDP) communication between two devices on the same local Wi-Fi or Hotspot network.</td>
+            <td>Used for local TCP/UDP peer-to-peer multiplayer sockets as well as Google AdMob, Google Play Billing, and Google Play Games Services.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
-            <td>Monitors wireless network state to discover the physical game table.</td>
+            <td>Monitors wireless network state to discover local game tables and manage online SDK connectivity.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
@@ -244,7 +244,15 @@
           </tr>
           <tr>
             <td><code>android.permission.NEARBY_WIFI_DEVICES</code></td>
-            <td>Discovers nearby devices over local Wi-Fi with <code>neverForLocation</code> flag on modern Android versions (API 31+).</td>
+            <td>Discovers nearby devices over local Wi-Fi with <code>neverForLocation</code> flag on Android 13+.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_LOCAL_NETWORK</code></td>
+            <td>Authorizes local network communication for Wi-Fi/Hotspot table discovery on modern Android versions.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_FINE_LOCATION</code></td>
+            <td>Scoped strictly to Android 12 and below (<code>maxSdkVersion="32"</code>) as required by legacy Android APIs for local Wi-Fi/mDNS discovery; never used for GPS tracking.</td>
           </tr>
           <tr>
             <td><code>android.permission.VIBRATE</code></td>
@@ -254,14 +262,19 @@
             <td><code>android.permission.CAMERA</code></td>
             <td>Used strictly on demand to scan the game table QR Code. No camera images or video feeds are ever recorded, stored, or transmitted.</td>
           </tr>
+          <tr>
+            <td><code>com.android.vending.BILLING</code></td>
+            <td>Processes the optional one-time in-app purchase (<code>remove_ads</code>) securely via Google Play Billing.</td>
+          </tr>
         </tbody>
       </table>
 
-      <h2>3. Advertising & Regulatory Compliance (Google AdMob & UMP)</h2>
-      <p>To support continuous development and offer the game completely free of charge, the application may display non-intrusive advertisements served by Google AdMob (bottom banners in menu screens and frequency-capped interstitials upon match completion). The application integrates Google's official User Messaging Platform (UMP) consent SDK, in full compliance with the European General Data Protection Regulation (GDPR), the Brazilian LGPD, and the ePrivacy Directive.</p>
+      <h2>3. Advertising, In-App Purchases &amp; Play Games Services</h2>
+      <p>To offer the game free of charge, the application displays non-intrusive advertisements served by <strong>Google AdMob</strong> (bottom banners on menu screens and frequency-capped post-match interstitials, never during active gameplay). Google's official <strong>User Messaging Platform (UMP)</strong> consent SDK manages regional consent in compliance with GDPR, LGPD, and the ePrivacy Directive. AdMob may process device identifiers (Advertising ID), IP address, and ad interaction diagnostics subject to your consent settings.</p>
+      <p>An optional non-consumable one-time purchase (<code>remove_ads</code>) is available via <strong>Google Play Billing</strong> to permanently disable ads; we never access or store payment card data. If you optionally sign in with <strong>Google Play Games Services v2</strong>, stage progression, stats, and preferences may be backed up via Play Games Cloud Saves (<code>SnapshotsClient</code>) and Elo/stage scores submitted to global leaderboards under Google's Privacy Policy.</p>
 
       <h2>4. Children's Privacy</h2>
-      <p>Air Hockey is rated for all ages (Everyone / Family). The application does not contain harmful content, does not target minors maliciously, and does not knowingly collect data from children under 13.</p>
+      <p>Air Hockey is rated for all ages (Everyone / Family). The application does not contain harmful content and does not knowingly collect personal data directly from children under 13.</p>
 
       <h2>5. Developer Contact</h2>
       <p>If you have any questions or inquiries regarding this Privacy Policy, contact us directly:</p>
@@ -276,15 +289,15 @@
     <!-- PORTUGUESE -->
     <div id="lang-pt" class="card content-section" style="display: none;">
       <h1>Política de Privacidade — Air Hockey</h1>
-      <div class="last-updated">Última atualização: 2 de novembro de 2026</div>
+      <div class="last-updated">Última atualização: 17 de novembro de 2026</div>
 
-      <p>O <strong>Air Hockey 2P</strong> ("nós", "nosso" ou "o aplicativo", pacote <code>dev.vmellos.airhockey</code>) tem como compromisso prioritário a proteção total da privacidade dos seus usuários.</p>
+      <p>O <strong>Air Hockey 2P</strong> ("nós", "nosso" ou "o aplicativo", pacote <code>dev.vmellos.airhockey</code>) tem como compromisso a transparência e a proteção da privacidade dos seus usuários.</p>
 
       <h2>1. Princípios Fundamentais</h2>
       <ul>
-        <li><strong>Zero Coleta de Dados Pessoais:</strong> Não coletamos, não armazenamos, não transmitimos e não compartilhamos nenhum dado pessoal, identificador exclusivo ou histórico.</li>
-        <li><strong>Arquitetura 100% Offline e Peer-to-Peer:</strong> O jogo funciona sem necessidade de conexão com servidores na nuvem ou internet externa. Todas as partidas da Mesa Estendida utilizam comunicação direta via Wi-Fi local ou Ponto de Acesso Móvel (Hotspot).</li>
-        <li><strong>Armazenamento Estritamente Local:</strong> O histórico de partidas, pontuação Elo do Placar de Líderes e preferências ficam guardados exclusivamente no armazenamento seguro e privado do seu dispositivo.</li>
+        <li><strong>Jogabilidade Local-First e Multijogador P2P:</strong> As partidas rodam localmente sem servidores proprietários. Os modos Mesa Estendida e Mesa Conectada estabelecem conexão direta via sockets TCP/UDP em Wi-Fi local ou Ponto de Acesso Móvel (Hotspot).</li>
+        <li><strong>Armazenamento Local:</strong> Histórico de partidas, progresso das 100 fases e preferências permanecem guardados na sandbox privada do dispositivo (Room SQLite e Jetpack DataStore).</li>
+        <li><strong>Sem Cadastro Obrigatório:</strong> Todos os modos offline e multijogador local funcionam sem criar conta ou login.</li>
       </ul>
 
       <h2>2. Permissões Solicitadas e Justificativas Técnicas</h2>
@@ -298,15 +311,15 @@
         <tbody>
           <tr>
             <td><code>android.permission.INTERNET</code></td>
-            <td>Utilizada exclusivamente para comunicação via Sockets (TCP/UDP) entre os dois aparelhos na mesma rede Wi-Fi ou Hotspot local.</td>
+            <td>Utilizada para comunicação via Sockets (TCP/UDP) no multijogador local e para integração com Google AdMob, Google Play Billing e Google Play Games Services.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
-            <td>Detecta o estado da rede sem fio para gerenciar a descoberta da mesa física.</td>
+            <td>Monitora o estado da rede para descoberta da mesa local e conectividade dos serviços Google Play.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
-            <td>Permite descobrir o IP do dispositivo anfitrião em modo Ponto de Acesso (Hotspot) sem necessidade de configuração manual.</td>
+            <td>Permite descobrir o IP do dispositivo anfitrião em modo Ponto de Acesso (Hotspot) sem configuração manual.</td>
           </tr>
           <tr>
             <td><code>android.permission.CHANGE_WIFI_MULTICAST_STATE</code></td>
@@ -314,7 +327,15 @@
           </tr>
           <tr>
             <td><code>android.permission.NEARBY_WIFI_DEVICES</code></td>
-            <td>Descoberta de dispositivos próximos em rede local com flag <code>neverForLocation</code> em versões modernas do Android (API 31+).</td>
+            <td>Descoberta de dispositivos próximos em rede local com flag <code>neverForLocation</code> no Android 13+.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_LOCAL_NETWORK</code></td>
+            <td>Autoriza o acesso à rede local para descoberta de partidas via Wi-Fi/Hotspot em versões recentes do Android.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_FINE_LOCATION</code></td>
+            <td>Restrita ao Android 12 e anteriores (<code>maxSdkVersion="32"</code>) por exigência da API legada de descoberta Wi-Fi/mDNS; nunca usada para rastreamento GPS.</td>
           </tr>
           <tr>
             <td><code>android.permission.VIBRATE</code></td>
@@ -324,14 +345,19 @@
             <td><code>android.permission.CAMERA</code></td>
             <td>Utilizada sob demanda unicamente para escanear o Código QR da mesa. Nenhum vídeo ou foto é gravado ou transmitido.</td>
           </tr>
+          <tr>
+            <td><code>com.android.vending.BILLING</code></td>
+            <td>Processa a compra única opcional de remoção permanente de anúncios (<code>remove_ads</code>) pelo Google Play Billing.</td>
+          </tr>
         </tbody>
       </table>
 
-      <h2>3. Publicidade e Conformidade Regulatória (AdMob & UMP)</h2>
-      <p>Para manter o jogo gratuito e em constante evolução, o aplicativo pode exibir anúncios não invasivos fornecidos pelo Google AdMob (banners nos menus e intersticiais no encerramento de partidas com limitação de frequência). O aplicativo integra a plataforma oficial de consentimento do Google (User Messaging Platform - UMP), em estrita conformidade com o Regulamento Geral de Proteção de Dados (GDPR / LGPD) e a Diretiva ePrivacy.</p>
+      <h2>3. Publicidade, Compras no App e Google Play Games</h2>
+      <p>Para manter o jogo gratuito, o aplicativo exibe anúncios não invasivos fornecidos pelo <strong>Google AdMob</strong> (banners nos menus e intersticiais com limitação de frequência no encerramento de partidas, nunca durante o jogo ativo). A plataforma oficial de consentimento do Google (<strong>User Messaging Platform - UMP</strong>) gerencia permissões em conformidade com a LGPD, o GDPR e a Diretiva ePrivacy. O AdMob pode processar identificadores de dispositivo (Advertising ID), endereço IP e diagnósticos conforme sua escolha de consentimento.</p>
+      <p>O app oferece compra única opcional (<code>remove_ads</code>) via <strong>Google Play Billing</strong> para remover anúncios em definitivo, sem que tenhamos acesso a dados de pagamento. Caso você opte por autenticar no <strong>Google Play Games Services v2</strong>, seu progresso de fases, estatísticas e preferências podem ser salvos na nuvem (<code>SnapshotsClient</code>) e sua pontuação Elo/estrelas enviada aos placares globais sob a Política de Privacidade do Google.</p>
 
       <h2>4. Privacidade Infantil</h2>
-      <p>O Air Hockey é classificado para todas as idades (Classificação Livre / Everyone). O aplicativo não direciona conteúdo prejudicial nem coleta conscientemente dados de crianças menores de 13 anos.</p>
+      <p>O Air Hockey é classificado para todas as idades (Classificação Livre / Everyone). O aplicativo não direciona conteúdo prejudicial nem coleta conscientemente dados pessoais diretamente de crianças menores de 13 anos.</p>
 
       <h2>5. Contato do Desenvolvedor</h2>
       <p>Dúvidas e solicitações podem ser encaminhadas diretamente ao desenvolvedor:</p>
@@ -346,15 +372,15 @@
     <!-- SPANISH -->
     <div id="lang-es" class="card content-section" style="display: none;">
       <h1>Política de Privacidad — Air Hockey</h1>
-      <div class="last-updated">Última actualización: 2 de noviembre de 2026</div>
+      <div class="last-updated">Última actualización: 17 de noviembre de 2026</div>
 
-      <p><strong>Air Hockey 2P</strong> ("nosotros", "nuestro" o "la aplicación", paquete <code>dev.vmellos.airhockey</code>) tiene como prioridad fundamental la protección absoluta de la privacidad de sus usuarios.</p>
+      <p><strong>Air Hockey 2P</strong> ("nosotros", "nuestro" o "la aplicación", paquete <code>dev.vmellos.airhockey</code>) tiene como prioridad la transparencia y protección de la privacidad de sus usuarios.</p>
 
       <h2>1. Principios Fundamentales</h2>
       <ul>
-        <li><strong>Cero Recopilación de Datos Personales:</strong> No recopilamos, no almacenamos, no transmitimos ni compartimos ninguna información personal, identificador exclusivo o historial de uso.</li>
-        <li><strong>Arquitectura 100% Offline y Peer-to-Peer:</strong> El juego funciona completamente sin depender de servidores en la nube ni de internet externa. Las partidas en Mesa Extendida utilizan comunicación directa por sockets vía Wi-Fi local o Punto de Acceso Móvil (Hotspot).</li>
-        <li><strong>Almacenamiento Estrictamente Local:</strong> El historial de partidas, la puntuación Elo de la Tabla de Clasificación y las preferencias se guardan de forma exclusiva en el almacenamiento seguro de tu dispositivo.</li>
+        <li><strong>Juego Local-First y Multijugador P2P:</strong> Las partidas se ejecutan localmente sin servidores propios. Mesa Extendida y Mesa Conectada utilizan sockets TCP/UDP directos por Wi-Fi local o Punto de Acceso Móvil (Hotspot).</li>
+        <li><strong>Almacenamiento Local:</strong> El historial de partidas, el progreso de las 100 fases y las preferencias se guardan en el almacenamiento seguro del dispositivo (Room SQLite y Jetpack DataStore).</li>
+        <li><strong>Sin Registro Obligatorio:</strong> Todos los modos offline y multijugador local funcionan sin crear cuentas.</li>
       </ul>
 
       <h2>2. Permisos Requeridos y Justificación Técnica</h2>
@@ -368,15 +394,15 @@
         <tbody>
           <tr>
             <td><code>android.permission.INTERNET</code></td>
-            <td>Utilizado exclusivamente para la comunicación por Sockets (TCP/UDP) entre ambos dispositivos dentro de la misma red Wi-Fi o Hotspot local.</td>
+            <td>Utilizado para comunicación por Sockets (TCP/UDP) en multijugador local y para la integración de Google AdMob, Google Play Billing y Google Play Games Services.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_NETWORK_STATE</code></td>
-            <td>Supervisa el estado de la red inalámbrica para gestionar la detección de la mesa de juego.</td>
+            <td>Supervisa el estado de la red para la detección de mesas locales y conectividad con servicios de Google Play.</td>
           </tr>
           <tr>
             <td><code>android.permission.ACCESS_WIFI_STATE</code></td>
-            <td>Permite descubrir la dirección IP del dispositivo anfitrión en modo Punto de Acceso (Hotspot) sin configuración manual.</td>
+            <td>Permite descubrir la dirección IP del anfitrión en modo Punto de Acceso (Hotspot) sin configuración manual.</td>
           </tr>
           <tr>
             <td><code>android.permission.CHANGE_WIFI_MULTICAST_STATE</code></td>
@@ -384,24 +410,37 @@
           </tr>
           <tr>
             <td><code>android.permission.NEARBY_WIFI_DEVICES</code></td>
-            <td>Detección de dispositivos cercanos en red local con el flag <code>neverForLocation</code> en versiones modernas de Android (API 31+).</td>
+            <td>Detección de dispositivos cercanos en red local con el flag <code>neverForLocation</code> en Android 13+.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_LOCAL_NETWORK</code></td>
+            <td>Autoriza el acceso a la red local para descubrir mesas por Wi-Fi/Hotspot en versiones modernas de Android.</td>
+          </tr>
+          <tr>
+            <td><code>android.permission.ACCESS_FINE_LOCATION</code></td>
+            <td>Limitado a Android 12 e inferiores (<code>maxSdkVersion="32"</code>) por requisito de la API heredada de descubrimiento Wi-Fi/mDNS; nunca usado para rastreo GPS.</td>
           </tr>
           <tr>
             <td><code>android.permission.VIBRATE</code></td>
-            <td>Proporciona retroalimentación háptica (vibración) al golpear el disco y anotar puntos.</td>
+            <td>Proporciona retroalimentación háptica al golpear el disco y anotar puntos.</td>
           </tr>
           <tr>
             <td><code>android.permission.CAMERA</code></td>
             <td>Utilizada bajo demanda únicamente para escanear el Código QR de la mesa. No se graba, almacena ni transmite ningún vídeo o foto.</td>
           </tr>
+          <tr>
+            <td><code>com.android.vending.BILLING</code></td>
+            <td>Procesa la compra única opcional para eliminar anuncios de forma permanente (<code>remove_ads</code>) mediante Google Play Billing.</td>
+          </tr>
         </tbody>
       </table>
 
-      <h2>3. Publicidad y Conformidad Normativa (AdMob y UMP)</h2>
-      <p>Para mantener el juego gratuito y en constante evolución, la aplicación puede mostrar anuncios no invasivos gestionados por Google AdMob (banners en menús e intersticiales al finalizar partidas con limitación de frecuencia). La aplicación integra la plataforma oficial de consentimiento de Google (User Messaging Platform - UMP), en estricta conformidad con el RGPD europeo, la LGPD y la directiva ePrivacy.</p>
+      <h2>3. Publicidad, Compras en la App y Google Play Games</h2>
+      <p>Para mantener el juego gratuito, la aplicación puede mostrar anuncios no invasivos de <strong>Google AdMob</strong> (banners en menús e intersticiales con límite de frecuencia al finalizar partidas, nunca durante la acción). La plataforma oficial de consentimiento de Google (<strong>User Messaging Platform - UMP</strong>) gestiona el consentimiento conforme al RGPD, la LGPD y la directiva ePrivacy. AdMob puede procesar identificadores de dispositivo (Advertising ID), dirección IP y diagnósticos según tus preferencias de consentimiento.</p>
+      <p>La aplicación ofrece una compra única opcional (<code>remove_ads</code>) mediante <strong>Google Play Billing</strong> para eliminar anuncios definitivamente, sin acceso a datos de pago. Si inicias sesión opcionalmente con <strong>Google Play Games Services v2</strong>, tu progreso, estadísticas y preferencias pueden sincronizarse en la nube (<code>SnapshotsClient</code>) y enviarse puntuaciones Elo y de fases a los marcadores globales bajo la Política de Privacidad de Google.</p>
 
       <h2>4. Privacidad Infantil</h2>
-      <p>Air Hockey está clasificado para todas las edades (Para todos / Everyone). La aplicación no contiene contenidos inapropiados ni recopila intencionadamente datos de menores de 13 años.</p>
+      <p>Air Hockey está clasificado para todas las edades (Para todos / Everyone). La aplicación no contiene contenidos inapropiados ni recopila intencionadamente datos personales directamente de menores de 13 años.</p>
 
       <h2>5. Contacto del Desarrollador</h2>
       <p>Para preguntas o comentarios sobre esta Política de Privacidad, contáctanos directamente:</p>

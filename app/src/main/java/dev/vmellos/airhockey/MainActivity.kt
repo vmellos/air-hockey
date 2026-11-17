@@ -64,10 +64,12 @@ class MainActivity : ComponentActivity() {
         AirHockeyApp.instance.adManager.initialize(this)
 
         deepLinkUri = intent?.dataString
-        val langExtra = intent?.getStringExtra("override_lang")
-        if (!langExtra.isNullOrBlank()) {
-            lifecycleScope.launch {
-                AirHockeyApp.instance.preferencesRepository.setAppLanguage(langExtra)
+        if (BuildConfig.DEBUG) {
+            val langExtra = intent?.getStringExtra("override_lang")
+            if (!langExtra.isNullOrBlank()) {
+                lifecycleScope.launch {
+                    AirHockeyApp.instance.preferencesRepository.setAppLanguage(langExtra)
+                }
             }
         }
 
