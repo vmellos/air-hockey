@@ -1,6 +1,8 @@
 package dev.vmellos.airhockey.feature.stage
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.database.StageProgressDao
 import dev.vmellos.airhockey.core.database.StageProgressEntity
@@ -19,12 +21,23 @@ data class UnlockedCosmetics(
     val malletSkins: Set<MalletSkin> = setOf(MalletSkin.CLASSIC_NEON, MalletSkin.NEKO_STRIKER)
 )
 
+/**
+ * Faixa de Dificuldade nominal exibida nos cartões das fases desbloqueadas do Modo Fases
+ * (GLOSSARY.md), complementar à Curva Gradual de Dificuldade contínua da IA.
+ */
+enum class StageDifficultyTier(@param:StringRes val labelRes: Int) {
+    BEGINNER(R.string.stage_tier_beginner),
+    INTERMEDIATE(R.string.stage_tier_intermediate),
+    ADVANCED(R.string.stage_tier_advanced),
+    MASTER(R.string.stage_tier_master)
+}
+
 data class StageConfig(
     val stageNumber: Int,
     val targetScore: Int,
     val aiDifficulty: AiDifficulty,
     val puckSpeed: PuckSpeedPreset,
-    val tierName: String,
+    val difficultyTier: StageDifficultyTier,
     val tableTheme: TableTheme = TableTheme.CLASSIC_NEON,
     val aiMaxSpeed: Float = calculateAiMaxSpeed(stageNumber),
     val aiReactionDelay: Float = calculateAiReactionDelay(stageNumber),
@@ -140,7 +153,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 3,
                 aiDifficulty = AiDifficulty.EASY,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Iniciante",
+                difficultyTier = StageDifficultyTier.BEGINNER,
                 tableTheme = stageTheme
             )
             in 11..20 -> StageConfig(
@@ -148,7 +161,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 5,
                 aiDifficulty = AiDifficulty.EASY,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Iniciante",
+                difficultyTier = StageDifficultyTier.BEGINNER,
                 tableTheme = stageTheme
             )
             in 21..50 -> StageConfig(
@@ -156,7 +169,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 5,
                 aiDifficulty = AiDifficulty.MEDIUM,
                 puckSpeed = PuckSpeedPreset.NORMAL,
-                tierName = "Intermediario",
+                difficultyTier = StageDifficultyTier.INTERMEDIATE,
                 tableTheme = stageTheme
             )
             in 51..80 -> StageConfig(
@@ -164,7 +177,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 7,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Avancado",
+                difficultyTier = StageDifficultyTier.ADVANCED,
                 tableTheme = stageTheme
             )
             in 81..90 -> StageConfig(
@@ -172,7 +185,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 7,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Mestre",
+                difficultyTier = StageDifficultyTier.MASTER,
                 tableTheme = stageTheme
             )
             else -> StageConfig(
@@ -180,7 +193,7 @@ class StageRepository(private val stageProgressDao: StageProgressDao) {
                 targetScore = 10,
                 aiDifficulty = AiDifficulty.HARD,
                 puckSpeed = PuckSpeedPreset.FAST,
-                tierName = "Mestre",
+                difficultyTier = StageDifficultyTier.MASTER,
                 tableTheme = stageTheme
             )
         }
