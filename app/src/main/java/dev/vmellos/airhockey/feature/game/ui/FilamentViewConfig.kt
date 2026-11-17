@@ -51,11 +51,35 @@ fun resolveNeonBloomDisplayState(
     )
 }
 
+data class FilamentArenaRenderPolicy(
+    val bloomEnabled: Boolean,
+    val bloomStrength: Float,
+    val dynamicResolutionEnabled: Boolean
+)
+
+/**
+ * Resolve a política de pós-processamento e escala da View 3D no Filament.
+ *
+ * A resolução dinâmica permanece desativada enquanto o Bloom HDR está ativo para evitar
+ * vazamentos de halos neon nas bordas do viewport causados pelo downsampling em subescala.
+ */
+fun resolveFilamentArenaRenderPolicy(
+    neonBloomIntensity: Float,
+    bloomEnabledOverride: Boolean = true
+): FilamentArenaRenderPolicy {
+    val bloomActive = bloomEnabledOverride && neonBloomIntensity > 0.002f
+    return FilamentArenaRenderPolicy(
+        bloomEnabled = bloomActive,
+        bloomStrength = computeCalibratedBloomStrength(neonBloomIntensity),
+        dynamicResolutionEnabled = !bloomActive
+    )
+}
+
 /**
  * Configura uma [View] do Filament compartilhada entre a arena 3D em jogo e a vitrine de customização.
  *
- * Habilita resolução dinâmica adaptativa (desativada por padrão no SceneView por causa de streams AR)
- * e calibra o passe de Bloom HDR com menor consumo de largura de banda de GPU.
+ * Calibra o passe de Bloom HDR e restringe a resolução dinâmica adaptativa aos cenários sem Bloom
+ * ativo (ex.: `VisualEffectsProfile.OFF` ou `0%`), evitando vazamento de neon nas bordas da tela.
  */
 fun configureFilamentArenaView(
     view: View,
@@ -63,7 +87,6 @@ fun configureFilamentArenaView(
     bloomEnabledOverride: Boolean = true
 ) {
     view.dynamicResolutionOptions = view.dynamicResolutionOptions.apply {
-        enabled = true
         minScale = 0.65f
         maxScale = 1.0f
         sharpness = 0.9f
@@ -86,22 +109,29 @@ fun computeCalibratedBloomStrength(neonBloomIntensity: Float): Float {
 }
 
 /**
- * Atualiza em tempo real a intensidade de Bloom HDR conforme a Curva Gama de Bloom (ADR 0039)
- * e o estado de ativação do Perfil de Efeitos Visuais em partida.
+ * Atualiza em tempo real o Bloom HDR conforme a Curva Gama de Bloom (ADR 0039) e sincroniza
+ * a resolução dinâmica para que permaneça desativada enquanto o Bloom estiver ativo.
  */
 fun updateFilamentArenaBloom(
     view: View,
     neonBloomIntensity: Float,
     bloomEnabledOverride: Boolean = true
 ) {
-    val calibratedStrength = computeCalibratedBloomStrength(neonBloomIntensity)
+    val policy = resolveFilamentArenaRenderPolicy(
+        neonBloomIntensity = neonBloomIntensity,
+        bloomEnabledOverride = bloomEnabledOverride
+    )
+    view.dynamicResolutionOptions = view.dynamicResolutionOptions.apply {
+        enabled = policy.dynamicResolutionEnabled
+    }
     view.bloomOptions = view.bloomOptions.apply {
-        enabled = bloomEnabledOverride && neonBloomIntensity > 0.002f
+        enabled = policy.bloomEnabled
         threshold = true
         highlight = 0.85f
         levels = 4
         resolution = 256
-        strength = calibratedStrength
+        quality = View.QualityLevel.MEDIUM
+        strength = policy.bloomStrength
         blendMode = View.BloomOptions.BlendMode.ADD
     }
 }

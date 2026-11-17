@@ -256,9 +256,8 @@ fun ArenaCustomizationScreen(
     val previewBoxContent = @Composable { boxModifier: Modifier ->
         Box(
             modifier = boxModifier
-                .clip(CutCornerShape(12.dp))
-                .background(Color(0xFF0B1220))
-                .border(1.2.dp, Color(0xFF1E293B), CutCornerShape(12.dp))
+                .background(Color(0xFF030712))
+                .border(1.2.dp, Color(0xFF1E293B))
         ) {
             if (is3d) {
                 Arena3DLivePreview(

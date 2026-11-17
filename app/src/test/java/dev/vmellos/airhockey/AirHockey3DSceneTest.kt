@@ -767,4 +767,29 @@ class AirHockey3DSceneTest {
             assertEquals("Guest yaw must be 180° for $zoom", 180f, guestPreset.rotation.y, 1e-4f)
         }
     }
+
+    @Test
+    fun filamentArenaRenderPolicy_disablesDynamicResolutionWhenBloomIsActive() {
+        val activeBloom = dev.vmellos.airhockey.feature.game.ui.resolveFilamentArenaRenderPolicy(
+            neonBloomIntensity = 0.05f,
+            bloomEnabledOverride = true
+        )
+        assertTrue(activeBloom.bloomEnabled)
+        org.junit.Assert.assertFalse(activeBloom.dynamicResolutionEnabled)
+        assertEquals(0.055f, activeBloom.bloomStrength, 1e-5f)
+
+        val suppressedByEffectsOff = dev.vmellos.airhockey.feature.game.ui.resolveFilamentArenaRenderPolicy(
+            neonBloomIntensity = 0.05f,
+            bloomEnabledOverride = false
+        )
+        org.junit.Assert.assertFalse(suppressedByEffectsOff.bloomEnabled)
+        assertTrue(suppressedByEffectsOff.dynamicResolutionEnabled)
+
+        val zeroBloom = dev.vmellos.airhockey.feature.game.ui.resolveFilamentArenaRenderPolicy(
+            neonBloomIntensity = 0.0f,
+            bloomEnabledOverride = true
+        )
+        org.junit.Assert.assertFalse(zeroBloom.bloomEnabled)
+        assertTrue(zeroBloom.dynamicResolutionEnabled)
+    }
 }
