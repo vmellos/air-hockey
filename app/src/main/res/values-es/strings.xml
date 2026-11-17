@@ -18,6 +18,10 @@
     <string name="stage_retry_btn">Reintentar</string>
     <string name="stage_list_btn">Fases</string>
     <string name="stage_target_pts">META: %1$d</string>
+    <string name="stage_tier_beginner">Principiante</string>
+    <string name="stage_tier_intermediate">Intermedio</string>
+    <string name="stage_tier_advanced">Avanzado</string>
+    <string name="stage_tier_master">Maestro</string>
     <string name="scoreboard_target">META: %1$d</string>
     <string name="menu_mode_split">Mesa Dividida</string>
     <string name="menu_mode_split_desc">2 jugadores en el mismo dispositivo con pantalla compartida</string>

@@ -7,6 +7,7 @@ import dev.vmellos.airhockey.core.preferences.PuckSpeedPreset
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.catalog.canonical
+import dev.vmellos.airhockey.feature.stage.StageDifficultyTier
 import dev.vmellos.airhockey.feature.stage.StageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,28 +87,55 @@ class StageProgressionTest {
         assertEquals(3, s1.targetScore)
         assertEquals(AiDifficulty.EASY, s1.aiDifficulty)
         assertEquals(PuckSpeedPreset.NORMAL, s1.puckSpeed)
+        assertEquals(StageDifficultyTier.BEGINNER, s1.difficultyTier)
 
         val s15 = repository.getStageConfig(15)
         assertEquals(5, s15.targetScore)
         assertEquals(AiDifficulty.EASY, s15.aiDifficulty)
+        assertEquals(StageDifficultyTier.BEGINNER, s15.difficultyTier)
+
+        val s20 = repository.getStageConfig(20)
+        assertEquals(StageDifficultyTier.BEGINNER, s20.difficultyTier)
+
+        val s21 = repository.getStageConfig(21)
+        assertEquals(StageDifficultyTier.INTERMEDIATE, s21.difficultyTier)
 
         val s35 = repository.getStageConfig(35)
         assertEquals(5, s35.targetScore)
         assertEquals(AiDifficulty.MEDIUM, s35.aiDifficulty)
+        assertEquals(StageDifficultyTier.INTERMEDIATE, s35.difficultyTier)
+
+        val s50 = repository.getStageConfig(50)
+        assertEquals(StageDifficultyTier.INTERMEDIATE, s50.difficultyTier)
+
+        val s51 = repository.getStageConfig(51)
+        assertEquals(StageDifficultyTier.ADVANCED, s51.difficultyTier)
 
         val s65 = repository.getStageConfig(65)
         assertEquals(7, s65.targetScore)
         assertEquals(AiDifficulty.HARD, s65.aiDifficulty)
         assertEquals(PuckSpeedPreset.FAST, s65.puckSpeed)
+        assertEquals(StageDifficultyTier.ADVANCED, s65.difficultyTier)
+
+        val s80 = repository.getStageConfig(80)
+        assertEquals(StageDifficultyTier.ADVANCED, s80.difficultyTier)
+
+        val s81 = repository.getStageConfig(81)
+        assertEquals(StageDifficultyTier.MASTER, s81.difficultyTier)
 
         val s85 = repository.getStageConfig(85)
         assertEquals(7, s85.targetScore)
         assertEquals(AiDifficulty.HARD, s85.aiDifficulty)
+        assertEquals(StageDifficultyTier.MASTER, s85.difficultyTier)
 
         val s95 = repository.getStageConfig(95)
         assertEquals(10, s95.targetScore)
         assertEquals(AiDifficulty.HARD, s95.aiDifficulty)
         assertEquals(PuckSpeedPreset.FAST, s95.puckSpeed)
+        assertEquals(StageDifficultyTier.MASTER, s95.difficultyTier)
+
+        val s100 = repository.getStageConfig(100)
+        assertEquals(StageDifficultyTier.MASTER, s100.difficultyTier)
     }
 
     @Test
