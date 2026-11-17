@@ -49,8 +49,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AirHockey"
         android:localeConfig="@xml/locales_config"
-        android:resizeableActivity="true"
-        android:usesCleartextTraffic="true">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:resizeableActivity="true">
 
         <!-- Google AdMob Application ID (Configured via manifestPlaceholders) -->
         <meta-data

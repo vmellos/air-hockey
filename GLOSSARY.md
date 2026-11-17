@@ -430,8 +430,8 @@ _Avoid_: Propaganda, banner ad, anúncio de rodapé rolante
 O anúncio de tela cheia disparado no encerramento de confrontos, protegido por temporizador de respiro (cooldown de 3 minutos) e contagem mínima de partidas para evitar intrusão, com supressão estrita na revanche e no botão de nova tentativa imediata após derrota no Modo Fases para blindar a retenção do jogador contra interrupções frustrantes.
 _Avoid_: Pop-up, interstitial, comercial pós-jogo
 
-**Anúncio Recompensado** (Pausado na Interface Principal):
-O formato publicitário assistido por decisão do usuário em troca de recompensas temporárias, descontinuado temporariamente da interface inicial enquanto a loja de customizações e skins está em desenvolvimento.
+**Anúncio Recompensado** (Desativado):
+O formato publicitário assistido por decisão do usuário em troca de recompensas temporárias, mantido desativado no aplicativo até a abertura de um fluxo dedicado de recompensas.
 _Avoid_: Pop-up, anúncio invasivo, propaganda fixa
 
 **Remoção Permanente de Anúncios**:
@@ -439,7 +439,7 @@ O produto digital não consumível adquirido na Google Play Store que suprime em
 _Avoid_: Versão paga, premium, versão vip, assinatura, compra pro, pacote ad-free
 
 **Portal Oficial**:
-O sítio institucional estático hospedado no Cloudflare Pages contendo a apresentação do jogo, documentação legal de privacidade e arquivo de validação `app-ads.txt`.
+O sítio institucional público (`https://vmellos.dev`) contendo a apresentação do aplicativo, a documentação legal de privacidade e o arquivo de validação `app-ads.txt`.
 _Avoid_: Site, homepage, web portal
 
 **Trava de Segurança de Teste Fechado**:
@@ -447,7 +447,7 @@ A diretriz de proteção de conta que mantém os identificadores de blocos de an
 _Avoid_: Anúncio real em teste, modo produção antecipado, auto-clique
 
 **Roteamento de Anúncios por Ambiente**:
-A política arquitetural (`USE_PRODUCTION_ADS`) que serve blocos comerciais de anúncios exclusivamente após o lançamento público em produção, isolando builds de depuração e testes fechados em ambiente sandbox.
+A política arquitetural que serve blocos comerciais de anúncios exclusivamente na compilação pública de produção, isolando builds locais, de depuração e testes fechados em ambiente sandbox.
 _Avoid_: Ad toggle manual, hardcoded ads, anúncio fixo
 
 **Internacionalização do Placar**:

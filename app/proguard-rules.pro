@@ -49,9 +49,9 @@
 # 6. Air Hockey Domain & Network Protocol Models
 # -------------------------------------------------------------------
 -keep class dev.vmellos.airhockey.feature.network.ControlMessages$* { *; }
--keep class dev.vmellos.airhockey.feature.network.TelemetryFrame { *; }
--keep class dev.vmellos.airhockey.feature.network.GuestInputMessage { *; }
--keep class dev.vmellos.airhockey.feature.game.MatchState { *; }
+-keep class dev.vmellos.airhockey.feature.network.HostTelemetryPacket { *; }
+-keep class dev.vmellos.airhockey.feature.network.GuestInputPacket { *; }
+-keep class dev.vmellos.airhockey.feature.game.GameState { *; }
 -keep class dev.vmellos.airhockey.feature.physics.PuckSnapshot { *; }
 -keep class dev.vmellos.airhockey.feature.physics.MalletSnapshot { *; }
 -keep class dev.vmellos.airhockey.core.preferences.UserPreferences { *; }

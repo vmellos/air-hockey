@@ -110,7 +110,6 @@ class AdManager(
         isInitialized = true
         MobileAds.initialize(appContext) {
             preloadInterstitial(appContext)
-            preloadRewarded(appContext)
         }
     }
 

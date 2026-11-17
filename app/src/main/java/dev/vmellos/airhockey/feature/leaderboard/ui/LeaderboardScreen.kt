@@ -1,6 +1,5 @@
 package dev.vmellos.airhockey.feature.leaderboard.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +29,6 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SportsEsports
@@ -41,7 +39,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -239,13 +236,6 @@ fun LeaderboardScreen(
                                     }
                                 }
                             },
-                            onOpenAchievements = {
-                                activity?.let { act ->
-                                    AirHockeyApp.instance.playGamesManager.showAchievements(act) { message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            },
                             onNavigateToHistory = {
                                 selectedTabIndex = 1
                             }
@@ -277,7 +267,6 @@ private fun CareerOverviewContent(
     pgsAuth: PlayGamesAuthState,
     recentMatches: List<MatchRecordEntity>,
     onOpenGlobalLeaderboards: () -> Unit,
-    onOpenAchievements: () -> Unit,
     onNavigateToHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -431,33 +420,6 @@ private fun CareerOverviewContent(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.stats_global_rankings_cta),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = onOpenAchievements,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color(0x66FFB800)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFFFB800)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MilitaryTech,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = Color(0xFFFFB800)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.stats_global_achievements_cta),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )

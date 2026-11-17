@@ -11,37 +11,55 @@ android {
     namespace = "dev.vmellos.airhockey"
     compileSdk = 36
 
+    val localProps = project.rootProject.file("local.properties").let { file ->
+        if (file.exists()) {
+            Properties().apply { file.inputStream().use { load(it) } }
+        } else {
+            Properties()
+        }
+    }
+
+    val useProductionAds = (
+        project.findProperty("USE_PRODUCTION_ADS")?.toString()
+            ?: localProps.getProperty("USE_PRODUCTION_ADS")
+            ?: System.getenv("USE_PRODUCTION_ADS")
+            ?: "false"
+        ).toBooleanStrictOrNull() ?: false
+
+    val leaderboardEloId = localProps.getProperty("LEADERBOARD_ELO_ID")
+        ?: System.getenv("LEADERBOARD_ELO_ID")
+        ?: ""
+    val leaderboardStagesId = localProps.getProperty("LEADERBOARD_STAGES_ID")
+        ?: System.getenv("LEADERBOARD_STAGES_ID")
+        ?: ""
+
+    if (useProductionAds && (leaderboardEloId.isBlank() || leaderboardStagesId.isBlank())) {
+        throw GradleException(
+            "USE_PRODUCTION_ADS=true requires LEADERBOARD_ELO_ID and LEADERBOARD_STAGES_ID in local.properties or environment variables."
+        )
+    }
+
     defaultConfig {
         applicationId = "dev.vmellos.airhockey"
         minSdk = 26
         targetSdk = 36
-        versionCode = 27
-        versionName = "1.9.5"
+        versionCode = 28
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val localProps = project.rootProject.file("local.properties").let { file ->
-            if (file.exists()) {
-                Properties().apply { file.inputStream().use { load(it) } }
-            } else {
-                Properties()
-            }
-        }
         val pgsAppId = localProps.getProperty("PLAY_GAMES_APP_ID")
             ?: System.getenv("PLAY_GAMES_APP_ID")
             ?: "925142400705"
         manifestPlaceholders["playGamesAppId"] = pgsAppId
+
+        buildConfigField("boolean", "USE_PRODUCTION_ADS", useProductionAds.toString())
+        resValue("string", "leaderboard_elo_id", leaderboardEloId)
+        resValue("string", "leaderboard_stages_id", leaderboardStagesId)
     }
 
     signingConfigs {
         create("release") {
-            val localProps = project.rootProject.file("local.properties").let { file ->
-                if (file.exists()) {
-                    Properties().apply { file.inputStream().use { load(it) } }
-                } else {
-                    Properties()
-                }
-            }
             val keystoreProp = localProps.getProperty("KEYSTORE_PATH") ?: System.getenv("KEYSTORE_PATH")
             val keystoreFile = keystoreProp?.let { path ->
                 val f = file(path)
@@ -53,6 +71,11 @@ android {
                 keyAlias = localProps.getProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS") ?: ""
                 keyPassword = localProps.getProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD") ?: ""
             } else {
+                if (useProductionAds) {
+                    throw GradleException(
+                        "USE_PRODUCTION_ADS=true requires a valid release keystore configured via KEYSTORE_PATH."
+                    )
+                }
                 initWith(getByName("debug"))
             }
         }
@@ -63,13 +86,6 @@ android {
             manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
         }
         release {
-            val localProps = project.rootProject.file("local.properties").let { file ->
-                if (file.exists()) {
-                    Properties().apply { file.inputStream().use { load(it) } }
-                } else {
-                    Properties()
-                }
-            }
             val admobReleaseId = localProps.getProperty("ADMOB_APP_ID")
                 ?: System.getenv("ADMOB_APP_ID")
                 ?: "ca-app-pub-6935322996335458~9861411597"
@@ -91,6 +107,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
