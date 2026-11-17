@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
@@ -52,13 +54,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
 import dev.vmellos.airhockey.core.database.StageProgressEntity
+import dev.vmellos.airhockey.feature.stage.StageDifficultyTier
 
 @Composable
 fun StageSelectionScreen(
@@ -224,6 +229,13 @@ fun StageSelectionScreen(
 }
 }
 
+private fun StageDifficultyTier.badgeColor(): Color = when (this) {
+    StageDifficultyTier.BEGINNER -> Color(0xFF10B981)
+    StageDifficultyTier.INTERMEDIATE -> Color(0xFF00E5FF)
+    StageDifficultyTier.ADVANCED -> Color(0xFFF97316)
+    StageDifficultyTier.MASTER -> Color(0xFFF43F5E)
+}
+
 @Composable
 fun StageCard(
     stage: StageProgressEntity,
@@ -231,16 +243,21 @@ fun StageCard(
     modifier: Modifier = Modifier
 ) {
     val cardShape = CutCornerShape(12.dp)
+    val cardAspectRatio = 0.68f
     val isBossStage = stage.stageNumber % 10 == 0
     val kit = remember(stage.stageNumber) { ArenaKitCatalog.getKitForStage(stage.stageNumber) }
 
     if (stage.isUnlocked) {
         val isCompleted = stage.starsEarned > 0
         val accentColor = if (isBossStage) kit.visuals.primaryColor else if (isCompleted) Color(0xFFFFB800) else Color(0xFF00E5FF)
+        val stageConfig = remember(stage.stageNumber) {
+            AirHockeyApp.instance.stageRepository.getStageConfig(stage.stageNumber)
+        }
+        val tierColor = stageConfig.difficultyTier.badgeColor()
 
         Box(
             modifier = modifier
-                .aspectRatio(0.74f)
+                .aspectRatio(cardAspectRatio)
                 .background(Color(0xD9080E1A), cardShape)
                 .border(
                     width = if (isBossStage) 1.5.dp else 1.2.dp,
@@ -262,7 +279,7 @@ fun StageCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp),
+                    .padding(horizontal = 6.dp, vertical = 7.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -273,7 +290,7 @@ fun StageCard(
                     border = BorderStroke(0.8.dp, accentColor.copy(alpha = 0.35f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(vertical = 3.dp),
@@ -301,7 +318,7 @@ fun StageCard(
                         Text(
                             text = "${stage.stageNumber}",
                             color = Color.White,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 0.5.sp
                         )
@@ -309,35 +326,66 @@ fun StageCard(
                             imageVector = kit.icon,
                             contentDescription = null,
                             tint = kit.visuals.primaryColor,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 } else {
                     Text(
                         text = "${stage.stageNumber}",
                         color = Color.White,
-                        fontSize = 26.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.5.sp
                     )
                 }
 
-                // Selo da Pontuação Alvo da Fase (Padrão Arcade)
-                val stageConfig = AirHockeyApp.instance.stageRepository.getStageConfig(stage.stageNumber)
-                Surface(
-                    shape = CutCornerShape(4.dp),
-                    color = accentColor.copy(alpha = 0.12f),
-                    border = BorderStroke(0.7.dp, accentColor.copy(alpha = 0.40f)),
-                    modifier = Modifier.padding(bottom = 2.dp)
+                // Selos inferiores: Faixa de Dificuldade e Pontuação Alvo
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                    modifier = Modifier.padding(bottom = 1.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.stage_target_pts, stageConfig.targetScore),
-                        color = Color(0xCCFFFFFF),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                    Surface(
+                        shape = CutCornerShape(4.dp),
+                        color = tierColor.copy(alpha = 0.14f),
+                        border = BorderStroke(0.7.dp, tierColor.copy(alpha = 0.55f))
+                    ) {
+                        BasicText(
+                            text = stringResource(stageConfig.difficultyTier.labelRes).uppercase(),
+                            style = TextStyle(
+                                color = tierColor,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.4.sp,
+                                textAlign = TextAlign.Center
+                            ),
+                            maxLines = 1,
+                            softWrap = false,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 6.5.sp,
+                                maxFontSize = 9.sp,
+                                stepSize = 0.5.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Surface(
+                        shape = CutCornerShape(4.dp),
+                        color = accentColor.copy(alpha = 0.12f),
+                        border = BorderStroke(0.7.dp, accentColor.copy(alpha = 0.40f))
+                    ) {
+                        Text(
+                            text = stringResource(R.string.stage_target_pts, stageConfig.targetScore),
+                            color = Color(0xCCFFFFFF),
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.4.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
         }
@@ -345,7 +393,7 @@ fun StageCard(
         // Cartão Bloqueado
         Box(
             modifier = modifier
-                .aspectRatio(0.74f)
+                .aspectRatio(cardAspectRatio)
                 .background(Color(0x99080E1A), cardShape)
                 .border(
                     width = 1.dp,

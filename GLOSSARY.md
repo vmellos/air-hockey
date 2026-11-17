@@ -188,6 +188,10 @@ _Avoid_: Modo campanha, stage mode, levels, fases infinitas
 A classificação de 1 a 3 estrelas concedida ao concluir uma fase no Modo Fases, avaliando a eficiência defensiva do jogador pelo número de pontos cedidos ao adversário sob escala proporcional à Pontuação Alvo da fase (Alvo 3: 0 pontos cedidos para 3⭐; Alvo 5: até 1 ponto; Alvo 7: até 2 pontos; Alvo 10: até 3 pontos).
 _Avoid_: Stars, rating de fase, nota da fase
 
+**Faixa de Dificuldade**:
+A classificação nominal em quatro patamares (Iniciante, Intermediário, Avançado e Mestre) atribuída às fases desbloqueadas do Modo Fases para indicar visualmente o nível de desafio ao jogador, complementar à Curva Gradual de Dificuldade contínua da inteligência artificial.
+_Avoid_: Stage, tier de dificuldade, dificuldade de stage, dificuldade em bloco
+
 **Tela de Desfecho da Fase**:
 A interface modal translúcida com bordas chanfradas neon exibida ao término de uma fase no Modo Fases, destacando as estrelas conquistadas e os controles de avanço em caso de vitória, ou a opção de nova tentativa imediata em caso de derrota.
 _Avoid_: Win screen, tela de parabéns, resultado da fase, tela de vitória da fase, lose screen
