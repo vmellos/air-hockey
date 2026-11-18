@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy — Air Hockey 2P</title>
-  <meta name="description" content="Privacy Policy for Air Hockey 2P (dev.vmellos.airhockey) on Android. 100% offline, local-first privacy, zero data collection.">
+  <meta name="description" content="Privacy Policy for Air Hockey 2P (dev.vmellos.airhockey) on Android covering local-first gameplay, Google Play Games OAuth data usage, AdMob/UMP consent, and Google Play Billing.">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
   <link rel="icon" type="image/png" href="/favicon.png?v=2">
@@ -269,18 +269,42 @@
         </tbody>
       </table>
 
-      <h2>3. Advertising, In-App Purchases &amp; Play Games Services</h2>
+      <h2>3. Advertising &amp; In-App Purchases (Google AdMob, UMP &amp; Play Billing)</h2>
       <p>To offer the game free of charge, the application displays non-intrusive advertisements served by <strong>Google AdMob</strong> (bottom banners on menu screens and frequency-capped post-match interstitials, never during active gameplay). Google's official <strong>User Messaging Platform (UMP)</strong> consent SDK manages regional consent in compliance with GDPR, LGPD, and the ePrivacy Directive. AdMob may process device identifiers (Advertising ID), IP address, and ad interaction diagnostics subject to your consent settings.</p>
-      <p>An optional non-consumable one-time purchase (<code>remove_ads</code>) is available via <strong>Google Play Billing</strong> to permanently disable ads; we never access or store payment card data. If you optionally sign in with <strong>Google Play Games Services v2</strong>, stage progression, stats, and preferences may be backed up via Play Games Cloud Saves (<code>SnapshotsClient</code>) and Elo/stage scores submitted to global leaderboards under Google's Privacy Policy.</p>
+      <p>An optional non-consumable one-time purchase (<code>remove_ads</code>) is available via <strong>Google Play Billing</strong> to permanently disable ads; we never access or store payment card data.</p>
 
-      <h2>4. Children's Privacy</h2>
+      <h2>4. Google OAuth &amp; Google Play Games Services User Data</h2>
+      <p>Authentication with <strong>Google Play Games Services v2</strong> is strictly optional. When you choose to sign in, the application accesses Google user data solely for gameplay synchronization and competitive leaderboards:</p>
+      <ul>
+        <li><strong>Google User Data Accessed:</strong> Google Play Games Player ID, public gamertag/display name, profile avatar image, leaderboard scores (<code>Elo Ranking</code> and <code>Stage Stars</code>), and app-specific cloud save snapshots (<code>SnapshotsClient</code> / <code>drive.appdata</code>).</li>
+        <li><strong>Purpose of Use:</strong> Used exclusively to authenticate your session, show your player profile inside the app, synchronize your 100-stage progression, Elo statistics, and cosmetic preferences across your own devices, and submit scores to official Google Play Games Leaderboards.</li>
+        <li><strong>Sharing &amp; Limited Use Compliance:</strong> We do <strong>not</strong> sell, rent, or share Google OAuth user data with third parties, advertisers, or data brokers. Air Hockey's use and transfer to any other app of information received from Google APIs adhere to the <strong>Google API Services User Data Policy</strong>, including the <strong>Limited Use</strong> requirements.</li>
+      </ul>
+
+      <h2>5. Data Storage, Security &amp; Encryption</h2>
+      <ul>
+        <li><strong>Android Sandbox Storage:</strong> Offline match history, stage progress, and preferences are stored locally within your device's private Android application sandbox (<code>Room SQLite</code> and <code>Jetpack DataStore</code>); we do not operate proprietary backend servers.</li>
+        <li><strong>Encryption in Transit:</strong> All communication with Google services (Play Games, AdMob, UMP, and Google Play Billing) is encrypted in transit via <strong>HTTPS/TLS</strong>.</li>
+      </ul>
+
+      <h2>6. Data Retention, Revocation &amp; Deletion</h2>
+      <p>Local data remains on your device until you clear app storage or uninstall the app. Google Play Games cloud data remains on your Google account until deleted or revoked by you:</p>
+      <ul>
+        <li><strong>Revoke OAuth Access:</strong> Remove Air Hockey's access at any time at <a href="https://myaccount.google.com/permissions" target="_blank" style="color: var(--cyan);">myaccount.google.com/permissions</a>.</li>
+        <li><strong>Delete Play Games Cloud Data:</strong> Open the <strong>Google Play Games</strong> app on Android &rarr; <em>Settings</em> &rarr; <em>Delete Play Games account &amp; data</em>.</li>
+        <li><strong>Reset Ad Preferences:</strong> Manage consent via Google UMP or reset/delete your Android Advertising ID in system <em>Settings &rarr; Privacy &rarr; Ads</em>.</li>
+        <li><strong>Direct Assistance:</strong> Contact <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a> or <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a> for any data deletion inquiry.</li>
+      </ul>
+
+      <h2>7. Children's Privacy</h2>
       <p>Air Hockey is rated for all ages (Everyone / Family). The application does not contain harmful content and does not knowingly collect personal data directly from children under 13.</p>
 
-      <h2>5. Developer Contact</h2>
+      <h2>8. Developer Contact</h2>
       <p>If you have any questions or inquiries regarding this Privacy Policy, contact us directly:</p>
       <ul>
-        <li><strong>Developer:</strong> Vinicius Mellos (VMellos Dev)</li>
-        <li><strong>Email:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
+        <li><strong>Developer:</strong> VMellos Dev</li>
+        <li><strong>Email:</strong> <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a></li>
+        <li><strong>Support Group:</strong> <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a></li>
         <li><strong>Official Portal:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
         <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P on Google Play</a></li>
       </ul>
@@ -352,18 +376,42 @@
         </tbody>
       </table>
 
-      <h2>3. Publicidade, Compras no App e Google Play Games</h2>
+      <h2>3. Publicidade e Compras no App (AdMob, UMP &amp; Play Billing)</h2>
       <p>Para manter o jogo gratuito, o aplicativo exibe anúncios não invasivos fornecidos pelo <strong>Google AdMob</strong> (banners nos menus e intersticiais com limitação de frequência no encerramento de partidas, nunca durante o jogo ativo). A plataforma oficial de consentimento do Google (<strong>User Messaging Platform - UMP</strong>) gerencia permissões em conformidade com a LGPD, o GDPR e a Diretiva ePrivacy. O AdMob pode processar identificadores de dispositivo (Advertising ID), endereço IP e diagnósticos conforme sua escolha de consentimento.</p>
-      <p>O app oferece compra única opcional (<code>remove_ads</code>) via <strong>Google Play Billing</strong> para remover anúncios em definitivo, sem que tenhamos acesso a dados de pagamento. Caso você opte por autenticar no <strong>Google Play Games Services v2</strong>, seu progresso de fases, estatísticas e preferências podem ser salvos na nuvem (<code>SnapshotsClient</code>) e sua pontuação Elo/estrelas enviada aos placares globais sob a Política de Privacidade do Google.</p>
+      <p>O app oferece compra única opcional (<code>remove_ads</code>) via <strong>Google Play Billing</strong> para remover anúncios em definitivo, sem que tenhamos acesso a dados de pagamento.</p>
 
-      <h2>4. Privacidade Infantil</h2>
+      <h2>4. Dados de Usuário do Google OAuth e Play Games Services</h2>
+      <p>A autenticação no <strong>Google Play Games Services v2</strong> é totalmente opcional. Caso você opte por conectar sua conta, o aplicativo acessa dados restritos do Google exclusivamente para recursos do jogo:</p>
+      <ul>
+        <li><strong>Dados Acessados:</strong> ID de jogador do Google Play Games, gamertag/nome de exibição público, avatar do perfil, pontuações submetidas aos placares (<code>Elo Ranking</code> e <code>Stage Stars</code>) e arquivos de progresso do app salvos na nuvem (<code>SnapshotsClient</code> / escopo <code>drive.appdata</code>).</li>
+        <li><strong>Finalidade de Uso:</strong> Utilizados estritamente para autenticar sua sessão, exibir seu perfil dentro do app, sincronizar seu progresso das 100 fases, estatísticas Elo e preferências entre seus dispositivos e registrar pontuações nos Placares Globais oficiais.</li>
+        <li><strong>Compartilhamento e Uso Limitado:</strong> Nós <strong>não</strong> vendemos, alugamos ou compartilhamos dados obtidos via Google OAuth com terceiros, corretores de dados ou redes de anúncios. O uso e a transferência de informações recebidas das APIs do Google aderem à <strong>Google API Services User Data Policy</strong>, incluindo os requisitos de <strong>Limited Use</strong> (Uso Limitado).</li>
+      </ul>
+
+      <h2>5. Armazenamento, Segurança e Criptografia</h2>
+      <ul>
+        <li><strong>Sandbox do Dispositivo:</strong> O histórico de partidas, progresso e preferências locais ficam restritos ao armazenamento privado do aplicativo no Android (<code>Room SQLite</code> e <code>Jetpack DataStore</code>), sem servidores próprios do desenvolvedor.</li>
+        <li><strong>Criptografia em Trânsito:</strong> Toda comunicação com os serviços Google (Play Games, AdMob, UMP e Play Billing) utiliza criptografia <strong>HTTPS/TLS</strong>.</li>
+      </ul>
+
+      <h2>6. Retenção, Revogação de Acesso e Exclusão de Dados</h2>
+      <p>Os dados locais permanecem no aparelho até você limpar o armazenamento ou desinstalar o app. Os dados do Google Play Games permanecem na sua conta Google até serem excluídos ou revogados por você:</p>
+      <ul>
+        <li><strong>Revogar Acesso OAuth:</strong> Remova o acesso do Air Hockey a qualquer momento em <a href="https://myaccount.google.com/permissions" target="_blank" style="color: var(--cyan);">myaccount.google.com/permissions</a>.</li>
+        <li><strong>Excluir Dados na Nuvem do Play Games:</strong> Abra o app <strong>Google Play Games</strong> no Android &rarr; <em>Configurações</em> &rarr; <em>Excluir conta e dados do Play Games</em>.</li>
+        <li><strong>Gerenciar Anúncios:</strong> Altere seu consentimento pelo Google UMP ou redefina/exclua o ID de Publicidade em <em>Configurações &rarr; Privacidade &rarr; Anúncios</em> do Android.</li>
+        <li><strong>Suporte Direto:</strong> Envie solicitações de exclusão ou dúvidas para <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a> ou <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a>.</li>
+      </ul>
+
+      <h2>7. Privacidade Infantil</h2>
       <p>O Air Hockey é classificado para todas as idades (Classificação Livre / Everyone). O aplicativo não direciona conteúdo prejudicial nem coleta conscientemente dados pessoais diretamente de crianças menores de 13 anos.</p>
 
-      <h2>5. Contato do Desenvolvedor</h2>
+      <h2>8. Contato do Desenvolvedor</h2>
       <p>Dúvidas e solicitações podem ser encaminhadas diretamente ao desenvolvedor:</p>
       <ul>
-        <li><strong>Desenvolvedor:</strong> Vinicius Mellos (VMellos Dev)</li>
-        <li><strong>E-mail:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
+        <li><strong>Desenvolvedor:</strong> VMellos Dev</li>
+        <li><strong>E-mail:</strong> <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a></li>
+        <li><strong>E-mail de Suporte:</strong> <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a></li>
         <li><strong>Portal Web:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
         <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P no Google Play</a></li>
       </ul>
@@ -435,18 +483,42 @@
         </tbody>
       </table>
 
-      <h2>3. Publicidad, Compras en la App y Google Play Games</h2>
+      <h2>3. Publicidad y Compras en la App (Google AdMob, UMP y Play Billing)</h2>
       <p>Para mantener el juego gratuito, la aplicación puede mostrar anuncios no invasivos de <strong>Google AdMob</strong> (banners en menús e intersticiales con límite de frecuencia al finalizar partidas, nunca durante la acción). La plataforma oficial de consentimiento de Google (<strong>User Messaging Platform - UMP</strong>) gestiona el consentimiento conforme al RGPD, la LGPD y la directiva ePrivacy. AdMob puede procesar identificadores de dispositivo (Advertising ID), dirección IP y diagnósticos según tus preferencias de consentimiento.</p>
-      <p>La aplicación ofrece una compra única opcional (<code>remove_ads</code>) mediante <strong>Google Play Billing</strong> para eliminar anuncios definitivamente, sin acceso a datos de pago. Si inicias sesión opcionalmente con <strong>Google Play Games Services v2</strong>, tu progreso, estadísticas y preferencias pueden sincronizarse en la nube (<code>SnapshotsClient</code>) y enviarse puntuaciones Elo y de fases a los marcadores globales bajo la Política de Privacidad de Google.</p>
+      <p>La aplicación ofrece una compra única opcional (<code>remove_ads</code>) mediante <strong>Google Play Billing</strong> para eliminar anuncios definitivamente, sin acceso a datos de pago.</p>
 
-      <h2>4. Privacidad Infantil</h2>
+      <h2>4. Datos de Usuario de Google OAuth y Play Games Services</h2>
+      <p>El inicio de sesión con <strong>Google Play Games Services v2</strong> es opcional. Cuando decides conectarte, la aplicación accede a datos limitados de Google únicamente para las funciones del juego:</p>
+      <ul>
+        <li><strong>Datos Accedidos:</strong> ID de jugador de Google Play Games, gamertag/nombre público, imagen de avatar, puntuaciones enviadas a marcadores (<code>Elo Ranking</code> y <code>Stage Stars</code>) y copias de guardado en la nube de la app (<code>SnapshotsClient</code> / alcance <code>drive.appdata</code>).</li>
+        <li><strong>Finalidad de Uso:</strong> Utilizados exclusivamente para autenticar tu sesión, mostrar tu perfil dentro de la app, sincronizar tu progreso de las 100 fases, estadísticas Elo y preferencias entre tus dispositivos y enviar puntuaciones a los Marcadores Globales oficiales.</li>
+        <li><strong>Compartición y Uso Limitado:</strong> No vendemos, alquilamos ni compartimos datos de usuario de Google OAuth con terceros, redes publicitarias ni corredores de datos. El uso y la transferencia de información recibida de las APIs de Google cumplen con la <strong>Google API Services User Data Policy</strong>, incluidos los requisitos de <strong>Limited Use</strong>.</li>
+      </ul>
+
+      <h2>5. Almacenamiento, Seguridad y Cifrado</h2>
+      <ul>
+        <li><strong>Sandbox de Android:</strong> El historial local, el progreso y las preferencias se guardan exclusivamente en el almacenamiento privado de la app en tu dispositivo (<code>Room SQLite</code> y <code>Jetpack DataStore</code>), sin servidores propios del desarrollador.</li>
+        <li><strong>Cifrado en Tránsito:</strong> Toda comunicación con los servicios de Google (Play Games, AdMob, UMP y Play Billing) se realiza cifrada mediante <strong>HTTPS/TLS</strong>.</li>
+      </ul>
+
+      <h2>6. Retención, Revocación y Eliminación de Datos</h2>
+      <p>Los datos locales permanecen en tu dispositivo hasta que borres los datos de la app o la desinstales. Los datos de Google Play Games permanecen en tu cuenta de Google hasta que los elimines o revoques el acceso:</p>
+      <ul>
+        <li><strong>Revocar Acceso OAuth:</strong> Retira el permiso de Air Hockey en cualquier momento en <a href="https://myaccount.google.com/permissions" target="_blank" style="color: var(--cyan);">myaccount.google.com/permissions</a>.</li>
+        <li><strong>Eliminar Datos en la Nube de Play Games:</strong> Abre la app <strong>Google Play Games</strong> en Android &rarr; <em>Ajustes</em> &rarr; <em>Eliminar cuenta y datos de Play Games</em>.</li>
+        <li><strong>Gestionar Anuncios:</strong> Cambia tus preferencias en Google UMP o restablece/elimina tu ID de publicidad en <em>Ajustes &rarr; Privacidad &rarr; Anuncios</em> de Android.</li>
+        <li><strong>Contacto Directo:</strong> Escribe a <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a> o <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a> para solicitar ayuda con la eliminación de datos.</li>
+      </ul>
+
+      <h2>7. Privacidad Infantil</h2>
       <p>Air Hockey está clasificado para todas las edades (Para todos / Everyone). La aplicación no contiene contenidos inapropiados ni recopila intencionadamente datos personales directamente de menores de 13 años.</p>
 
-      <h2>5. Contacto del Desarrollador</h2>
+      <h2>8. Contacto del Desarrollador</h2>
       <p>Para preguntas o comentarios sobre esta Política de Privacidad, contáctanos directamente:</p>
       <ul>
-        <li><strong>Desarrollador:</strong> Vinicius Mellos (VMellos Dev)</li>
-        <li><strong>Correo:</strong> <a href="mailto:dev@vmellos.dev" style="color: var(--cyan);">dev@vmellos.dev</a></li>
+        <li><strong>Desarrollador:</strong> VMellos Dev</li>
+        <li><strong>Correo:</strong> <a href="mailto:contact@vmellos.dev" style="color: var(--cyan);">contact@vmellos.dev</a></li>
+        <li><strong>Correo de Soporte:</strong> <a href="mailto:contact-vmellos-dev@googlegroups.com" style="color: var(--cyan);">contact-vmellos-dev@googlegroups.com</a></li>
         <li><strong>Sitio Web Oficial:</strong> <a href="https://vmellos.dev" target="_blank" style="color: var(--cyan);">https://vmellos.dev</a></li>
         <li><strong>Google Play Store:</strong> <a href="https://play.google.com/store/apps/details?id=dev.vmellos.airhockey" target="_blank" style="color: var(--cyan);">Air Hockey 2P en Google Play</a></li>
       </ul>
@@ -454,7 +526,7 @@
   </div>
 
   <footer>
-    <p>&copy; 2026 Air Hockey 2P &bull; Developed by <a href="https://vmellos.dev" target="_blank">Vinicius Mellos</a>. All rights reserved.</p>
+    <p>&copy; 2026 Air Hockey 2P &bull; Developed by <a href="https://vmellos.dev" target="_blank">VMellos Dev</a>. All rights reserved.</p>
   </footer>
 
   <script>
