@@ -506,4 +506,20 @@ class PrivateMatchAndDiscoveryTest {
         hostVm.stopAll()
         guestVm.stopAll()
     }
+
+    @Test
+    fun testNsdDiscoveryManagerHandlesMissingWifiAndNsdServicesGracefully() {
+        val contextWithoutServices = object : android.content.ContextWrapper(null) {
+            override fun getApplicationContext(): android.content.Context = this
+            override fun getSystemService(name: String): Any? = null
+        }
+
+        val manager = dev.vmellos.airhockey.feature.network.NsdDiscoveryManager(contextWithoutServices)
+        manager.startBroadcast(tableCode = "1234", port = 8888, mode = "CONNECTED", hostName = "Host")
+        manager.stopBroadcast()
+        manager.startDiscovery()
+        manager.restartNsdDiscovery()
+        manager.stopDiscovery()
+        assertEquals(null, manager.getDhcpGatewayIp())
+    }
 }

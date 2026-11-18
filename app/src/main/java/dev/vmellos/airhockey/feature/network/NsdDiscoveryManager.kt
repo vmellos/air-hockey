@@ -37,8 +37,8 @@ data class DiscoveredTable(
 
 class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
 
-    private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-    private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as? NsdManager
+    private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
 
     private var multicastLock: WifiManager.MulticastLock? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
@@ -69,7 +69,7 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
     private fun acquireMulticastLock() {
         try {
             if (multicastLock == null) {
-                multicastLock = wifiManager.createMulticastLock("AirHockey:MulticastLock").apply {
+                multicastLock = wifiManager?.createMulticastLock("AirHockey:MulticastLock")?.apply {
                     setReferenceCounted(false)
                 }
             }
@@ -117,16 +117,18 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
             }
         }
 
-        registrationListener = object : NsdManager.RegistrationListener {
-            override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {}
-            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-            override fun onServiceUnregistered(arg0: NsdServiceInfo) {}
-            override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-        }
+        nsdManager?.let { manager ->
+            registrationListener = object : NsdManager.RegistrationListener {
+                override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {}
+                override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
+                override fun onServiceUnregistered(arg0: NsdServiceInfo) {}
+                override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
+            }
 
-        try {
-            nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
-        } catch (_: Exception) {}
+            try {
+                manager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+            } catch (_: Exception) {}
+        }
 
         // 2. Canal Ativo UDP Broadcast (Beacon + Resposta Direta a Consultas)
         startUdpBeacon(tableCode, port, hostIp, mode, hostName)
@@ -244,7 +246,7 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
 
         registrationListener?.let {
             try {
-                nsdManager.unregisterService(it)
+                nsdManager?.unregisterService(it)
             } catch (_: Exception) {}
             registrationListener = null
         }
@@ -288,12 +290,14 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
         _discoveredTables.value = emptyList()
 
         // 1. Canal NSD / mDNS
-        val listener = createDiscoveryListener()
-        discoveryListener = listener
+        nsdManager?.let { manager ->
+            val listener = createDiscoveryListener()
+            discoveryListener = listener
 
-        try {
-            nsdManager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
-        } catch (_: Exception) {}
+            try {
+                manager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
+            } catch (_: Exception) {}
+        }
 
         // 2. Canal Ativo UDP Discovery (Sondagem via Broadcast, Sub-rede /24 e Gateway de Hotspot)
         startUdpDiscovery()
@@ -306,16 +310,17 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
             try {
                 discoveryListener?.let { oldListener ->
                     try {
-                        nsdManager.stopServiceDiscovery(oldListener)
+                        nsdManager?.stopServiceDiscovery(oldListener)
                     } catch (_: Exception) {}
                 }
                 delay(200)
                 if (!isDiscovering) return@launch
 
+                val manager = nsdManager ?: return@launch
                 val newListener = createDiscoveryListener()
                 discoveryListener = newListener
                 try {
-                    nsdManager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, newListener)
+                    manager.discoverServices(NetworkConstants.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, newListener)
                 } catch (_: Exception) {}
             } finally {
                 isRestartingNsd = false
@@ -410,7 +415,7 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
 
         discoveryListener?.let {
             try {
-                nsdManager.stopServiceDiscovery(it)
+                nsdManager?.stopServiceDiscovery(it)
             } catch (_: Exception) {}
             discoveryListener = null
         }
@@ -510,7 +515,7 @@ class NsdDiscoveryManager(private val context: Context) : LanDiscoveryPort {
         }
 
         try {
-            nsdManager.resolveService(service, resolveListener)
+            nsdManager?.resolveService(service, resolveListener)
         } catch (_: Exception) {}
     }
 
