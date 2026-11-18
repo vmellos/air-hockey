@@ -97,7 +97,7 @@ private class Scene3DState(
     var puckYawDeg: Float = 0f
 
     // Estado da Mascote Kiara 3D
-    var currentMascotAnim: String = "LickPaw"
+    var currentMascotAnim: String = ""
     var lastFrameNanoTime: Long = 0L
 
     fun toPose(): CameraPose3D = CameraPose3D(camX, camY, camZ, camPitch, camYaw, camFocusX, camFocusY, camFocusZ)
@@ -571,10 +571,11 @@ fun AirHockeyArena3DScene(
     }
     val mascotNode = remember(mascotInstance) {
         mascotInstance?.let {
-            ModelNode(it, autoAnimate = true).apply {
+            ModelNode(it, autoAnimate = false).apply {
                 position = Float3(-0.74f, -0.045f, -0.15f)
                 rotation = Float3(0f, 90f, 0f)
                 scale = Float3(1.0f, 1.0f, 1.0f)
+                runCatching { playExclusiveAnimation("LickPaw", loop = true) }
             }
         }
     }
@@ -793,9 +794,9 @@ fun AirHockeyArena3DScene(
                     val targetAnim = ctrl.currentAnimation
                     if (sceneState.currentMascotAnim != targetAnim) {
                         sceneState.currentMascotAnim = targetAnim
-                        try {
-                            mascotNode?.playAnimation(targetAnim, loop = true)
-                        } catch (_: Exception) {}
+                        runCatching {
+                            mascotNode?.playExclusiveAnimation(targetAnim, loop = true)
+                        }
                     }
                 }
             }
@@ -961,4 +962,16 @@ fun AirHockeyArena3DScene(
             }
         }
     }
+}
+
+/**
+ * Reproduz exatamente uma faixa de animação no [ModelNode], interrompendo todas as demais
+ * antes de iniciar [animationName] para evitar mesclagem involuntária do `autoAnimate` do Sceneview.
+ */
+internal fun ModelNode.playExclusiveAnimation(animationName: String, loop: Boolean = true) {
+    if (animator.animationCount <= 0) return
+    playingAnimations.keys.toList().forEach { index ->
+        stopAnimation(index)
+    }
+    playAnimation(animationName, loop = loop)
 }

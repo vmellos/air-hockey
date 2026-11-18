@@ -391,4 +391,10 @@
     <string name="pgs_open_leaderboards">Global Rankings</string>
     <string name="pgs_saved_games_title">Cloud Saves</string>
     <string name="pgs_profile_sync_btn">Cloud Sync</string>
+
+    <!-- Third-party 3D asset credits -->
+    <string name="settings_credits_link">Credits &amp; Licenses</string>
+    <string name="settings_credits_title">3D Credits &amp; Attributions</string>
+    <string name="settings_credits_body">Kiara Cat 3D base sculpt:\n\"Realistic cat - Pets for your project\" by Micael Martins (Sketchfab Free Standard License, sketchfab.com/3d-models/ec407d89f7304194bc04f2b4710eab8c), customized with Kiara fur coat markings, collar, and quadruped animation rig.</string>
+    <string name="settings_credits_close">Close</string>
 </resources>

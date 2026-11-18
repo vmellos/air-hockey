@@ -390,4 +390,10 @@
     <string name="pgs_open_leaderboards">Clasificaciones Globales</string>
     <string name="pgs_saved_games_title">Juegos Guardados</string>
     <string name="pgs_profile_sync_btn">Sincronizar Nube</string>
+
+    <!-- Créditos de terceros -->
+    <string name="settings_credits_link">Créditos y Licencias</string>
+    <string name="settings_credits_title">Créditos 3D y Atribuciones</string>
+    <string name="settings_credits_body">Escultura base de Kiara Cat 3D:\n\"Realistic cat - Pets for your project\" por Micael Martins (Licencia Estándar Gratuita de Sketchfab, sketchfab.com/3d-models/ec407d89f7304194bc04f2b4710eab8c), personalizada con el pelaje de Kiara, collar y esqueleto cuadrúpedo animado.</string>
+    <string name="settings_credits_close">Cerrar</string>
 </resources>

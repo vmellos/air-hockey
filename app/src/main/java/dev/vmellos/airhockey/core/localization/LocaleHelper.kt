@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
 
@@ -125,6 +126,7 @@ fun ProvideAppLocale(
     CompositionLocalProvider(
         LocalConfiguration provides localizedConfiguration,
         LocalContext provides localizedContext,
+        LocalResources provides localizedContext.resources,
         content = content
     )
 }
