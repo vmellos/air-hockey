@@ -139,8 +139,8 @@ android {
         applicationId = "dev.vmellos.airhockey"
         minSdk = 26
         targetSdk = 36
-        versionCode = 29
-        versionName = "2.0.1"
+        versionCode = 30
+        versionName = "2.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
