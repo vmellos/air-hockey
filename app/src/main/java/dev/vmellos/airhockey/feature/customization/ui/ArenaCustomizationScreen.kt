@@ -72,6 +72,7 @@ import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.feature.game.ui.Arena2DRenderer
 import dev.vmellos.airhockey.feature.stage.UnlockedCosmetics
 import dev.vmellos.airhockey.feature.game.ui.configureFilamentArenaView
+import dev.vmellos.airhockey.feature.game.ui.playExclusiveAnimation
 import dev.vmellos.airhockey.feature.game.ui.updateFilamentArenaBloom
 import io.github.sceneview.Scene
 import io.github.sceneview.SceneView
@@ -821,10 +822,11 @@ internal fun Arena3DLivePreview(
     }
     val mascotNode = remember(mascotInstance) {
         mascotInstance?.let {
-            ModelNode(it, autoAnimate = true).apply {
+            ModelNode(it, autoAnimate = false).apply {
                 position = Float3(-0.74f, -0.045f, -0.15f)
                 rotation = Float3(0f, 90f, 0f)
                 scale = Float3(1.0f, 1.0f, 1.0f)
+                runCatching { playExclusiveAnimation("Idle", loop = true) }
             }
         }
     }
