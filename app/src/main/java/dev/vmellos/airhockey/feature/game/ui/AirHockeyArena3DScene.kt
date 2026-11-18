@@ -27,8 +27,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import dev.romainguy.kotlin.math.Float3
 import dev.vmellos.airhockey.AirHockeyApp
+import dev.vmellos.airhockey.core.assets.ProtectedAssetLoader
 import dev.vmellos.airhockey.core.catalog.ArenaPresetCatalog
 import dev.vmellos.airhockey.core.preferences.CameraZoom3D
 import dev.vmellos.airhockey.core.preferences.TableTheme
@@ -451,7 +453,9 @@ fun AirHockeyArena3DScene(
         }
     }
 
-    // Inicialização do Motor 3D Filament e Carregamento dos Assets .glb
+    // Inicialização do Motor 3D Filament e Carregamento Protegido dos Assets em RAM
+    val context = LocalContext.current
+    val protectedAssetLoader = remember(context) { ProtectedAssetLoader(context.applicationContext) }
     val engine3d = rememberEngine()
     val modelLoader = rememberModelLoader(engine3d)
     val view3d = rememberView(engine3d) {
@@ -498,33 +502,33 @@ fun AirHockeyArena3DScene(
         cosmetics.p2MalletSkin.spec().model3dAsset(isPlayer1 = false)
     }
 
-    val tableInstance = remember(modelLoader, tableAsset) {
+    val tableInstance = remember(modelLoader, protectedAssetLoader, tableAsset) {
         try {
-            modelLoader.createModelInstance(tableAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, tableAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val puckInstance = remember(modelLoader, puckAsset) {
+    val puckInstance = remember(modelLoader, protectedAssetLoader, puckAsset) {
         try {
-            modelLoader.createModelInstance(puckAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, puckAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p1Instance = remember(modelLoader, p1MalletAsset) {
+    val p1Instance = remember(modelLoader, protectedAssetLoader, p1MalletAsset) {
         try {
-            modelLoader.createModelInstance(p1MalletAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, p1MalletAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p2Instance = remember(modelLoader, p2MalletAsset) {
+    val p2Instance = remember(modelLoader, protectedAssetLoader, p2MalletAsset) {
         try {
-            modelLoader.createModelInstance(p2MalletAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, p2MalletAsset)
         } catch (_: Exception) {
             null
         }
@@ -533,10 +537,10 @@ fun AirHockeyArena3DScene(
     val floorAsset = remember(isExtended, arenaKit) {
         if (isExtended) null else arenaKit.floor3dAsset
     }
-    val floorInstance = remember(modelLoader, floorAsset) {
+    val floorInstance = remember(modelLoader, protectedAssetLoader, floorAsset) {
         floorAsset?.let { path ->
             try {
-                modelLoader.createModelInstance(path)
+                protectedAssetLoader.loadModelInstance(modelLoader, path)
             } catch (_: Exception) {
                 null
             }
@@ -556,10 +560,10 @@ fun AirHockeyArena3DScene(
     val mascotController = remember(arenaKit) {
         if (arenaKit.hasMascot) KiaraMascotController() else null
     }
-    val mascotInstance = remember(modelLoader, mascotAsset) {
+    val mascotInstance = remember(modelLoader, protectedAssetLoader, mascotAsset) {
         mascotAsset?.let { path ->
             try {
-                modelLoader.createModelInstance(path)
+                protectedAssetLoader.loadModelInstance(modelLoader, path)
             } catch (_: Exception) {
                 null
             }

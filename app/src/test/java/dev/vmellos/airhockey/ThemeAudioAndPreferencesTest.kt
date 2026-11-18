@@ -4,6 +4,7 @@ import dev.vmellos.airhockey.core.audio.ProceduralAudioSynthesizer
 import dev.vmellos.airhockey.core.preferences.TableTheme
 import dev.vmellos.airhockey.core.preferences.UserPreferences
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -114,31 +115,35 @@ class ThemeAudioAndPreferencesTest {
 
     @Test
     fun testArenaKitCatalogResolvesExistingAssetsForAllThemes() {
-        val assetsDir = File("src/main/assets")
-        assertTrue("Diretório assets deve existir", assetsDir.exists())
+        val rawAssetsDir = File("src/main/raw_assets")
+        assertTrue("Diretório raw_assets deve existir", rawAssetsDir.exists())
+        assertFalse(
+            "Diretório src/main/assets não deve conter modelos .glb crus",
+            File("src/main/assets/models").exists()
+        )
 
         for (theme in TableTheme.entries) {
             val kit = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getKit(theme)
             val tableModel = kit.tableFullAsset
-            assertTrue("Arquivo da mesa 3D deve existir: $tableModel", File(assetsDir, tableModel).exists())
+            assertTrue("Arquivo da mesa 3D deve existir: $tableModel", File(rawAssetsDir, tableModel).exists())
 
             val halfTableP1 = kit.tableAsset(isExtended = true, isPlayer1 = true)
             val halfTableP2 = kit.tableAsset(isExtended = true, isPlayer1 = false)
-            assertTrue("Arquivo da meia-mesa P1 deve existir: $halfTableP1", File(assetsDir, halfTableP1).exists())
-            assertTrue("Arquivo da meia-mesa P2 deve existir: $halfTableP2", File(assetsDir, halfTableP2).exists())
+            assertTrue("Arquivo da meia-mesa P1 deve existir: $halfTableP1", File(rawAssetsDir, halfTableP1).exists())
+            assertTrue("Arquivo da meia-mesa P2 deve existir: $halfTableP2", File(rawAssetsDir, halfTableP2).exists())
         }
 
         for (puck in dev.vmellos.airhockey.core.preferences.PuckSkin.entries) {
             val puckModel = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getPuckSpec(puck).model3dAsset
-            assertTrue("Arquivo do disco 3D deve existir: $puckModel", File(assetsDir, puckModel).exists())
+            assertTrue("Arquivo do disco 3D deve existir: $puckModel", File(rawAssetsDir, puckModel).exists())
         }
 
         for (mallet in dev.vmellos.airhockey.core.preferences.MalletSkin.entries) {
             val spec = dev.vmellos.airhockey.feature.game.ui.ArenaKitCatalog.getMalletSpec(mallet)
             val m1 = spec.model3dAsset(isPlayer1 = true)
             val m2 = spec.model3dAsset(isPlayer1 = false)
-            assertTrue("Arquivo do rebatedor p1 deve existir: $m1", File(assetsDir, m1).exists())
-            assertTrue("Arquivo do rebatedor p2 deve existir: $m2", File(assetsDir, m2).exists())
+            assertTrue("Arquivo do rebatedor p1 deve existir: $m1", File(rawAssetsDir, m1).exists())
+            assertTrue("Arquivo do rebatedor p2 deve existir: $m2", File(rawAssetsDir, m2).exists())
         }
     }
 

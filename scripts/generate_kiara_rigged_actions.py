@@ -4,8 +4,8 @@ import math
 import os
 import json
 
-src_path = 'app/src/main/assets/models/kiara_3d.glb'
-bak_path = 'app/src/main/assets/models/kiara_3d_orig.glb'
+src_path = 'app/src/main/raw_assets/models/kiara_3d.glb'
+bak_path = 'app/src/main/raw_assets/models/kiara_3d_orig.glb'
 if not os.path.exists(bak_path):
     import shutil
     shutil.copyfile(src_path, bak_path)

@@ -2,7 +2,7 @@ import bpy
 import os
 import math
 
-OUTPUT_MODELS_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/assets/models"
+OUTPUT_MODELS_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/raw_assets/models"
 os.makedirs(OUTPUT_MODELS_DIR, exist_ok=True)
 
 def reset_scene():

@@ -552,8 +552,8 @@ class AirHockey3DSceneTest {
 
     @Test
     fun cyberFloorGlb_isOrientedHorizontallyInXZPlane() {
-        val file = java.io.File("src/main/assets/models/piso_arena_cyber.glb").let {
-            if (it.exists()) it else java.io.File("app/src/main/assets/models/piso_arena_cyber.glb")
+        val file = java.io.File("src/main/raw_assets/models/piso_arena_cyber.glb").let {
+            if (it.exists()) it else java.io.File("app/src/main/raw_assets/models/piso_arena_cyber.glb")
         }
         assertTrue("piso_arena_cyber.glb must exist", file.exists())
         val bytes = file.readBytes()

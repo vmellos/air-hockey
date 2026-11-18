@@ -359,7 +359,7 @@ def build_quadruped_kiara():
                         space.shading.type = 'MATERIAL'
 
     # 6. EXPORTA O MODELO .GLB FINAL
-    out_dir = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/assets/models"
+    out_dir = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/raw_assets/models"
     os.makedirs(out_dir, exist_ok=True)
     out_glb = os.path.join(out_dir, "kiara_3d.glb")
 
