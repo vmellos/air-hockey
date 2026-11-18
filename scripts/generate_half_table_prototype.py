@@ -2,7 +2,7 @@ import bpy
 import os
 import math
 
-OUTPUT_MODELS_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/assets/models"
+OUTPUT_MODELS_DIR = "/home/vinicius/AndroidStudioProjects/AirHockey/app/src/main/raw_assets/models"
 OUTPUT_RENDER_DIR = "/home/vinicius/.gemini/antigravity-cli/brain/92d27fd2-ddb9-4ed4-a0f8-06939303b080"
 
 os.makedirs(OUTPUT_MODELS_DIR, exist_ok=True)

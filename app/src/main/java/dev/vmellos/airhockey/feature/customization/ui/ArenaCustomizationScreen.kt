@@ -107,6 +107,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -116,6 +117,7 @@ import androidx.compose.ui.unit.sp
 import dev.vmellos.airhockey.AirHockeyApp
 import dev.vmellos.airhockey.R
 import dev.vmellos.airhockey.core.ads.AdBanner
+import dev.vmellos.airhockey.core.assets.ProtectedAssetLoader
 import dev.vmellos.airhockey.core.preferences.ArenaDimension
 import dev.vmellos.airhockey.core.preferences.MalletSkin
 import dev.vmellos.airhockey.core.preferences.PuckSkin
@@ -737,6 +739,8 @@ internal fun Arena3DLivePreview(
     isExtended: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val protectedAssetLoader = remember(context) { ProtectedAssetLoader(context.applicationContext) }
     val engine3d = rememberEngine()
     val modelLoader = rememberModelLoader(engine3d)
     val view3d = rememberView(engine3d) {
@@ -771,33 +775,33 @@ internal fun Arena3DLivePreview(
         malletSkin.spec().model3dAsset(isPlayer1 = false)
     }
 
-    val tableInstance = remember(modelLoader, tableAsset) {
+    val tableInstance = remember(modelLoader, protectedAssetLoader, tableAsset) {
         try {
-            modelLoader.createModelInstance(tableAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, tableAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val puckInstance = remember(modelLoader, puckAsset) {
+    val puckInstance = remember(modelLoader, protectedAssetLoader, puckAsset) {
         try {
-            modelLoader.createModelInstance(puckAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, puckAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p1Instance = remember(modelLoader, p1MalletAsset) {
+    val p1Instance = remember(modelLoader, protectedAssetLoader, p1MalletAsset) {
         try {
-            modelLoader.createModelInstance(p1MalletAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, p1MalletAsset)
         } catch (_: Exception) {
             null
         }
     }
 
-    val p2Instance = remember(modelLoader, p2MalletAsset) {
+    val p2Instance = remember(modelLoader, protectedAssetLoader, p2MalletAsset) {
         try {
-            modelLoader.createModelInstance(p2MalletAsset)
+            protectedAssetLoader.loadModelInstance(modelLoader, p2MalletAsset)
         } catch (_: Exception) {
             null
         }
@@ -806,10 +810,10 @@ internal fun Arena3DLivePreview(
     val mascotAsset = remember(tableKit) {
         tableKit.mascot3dAsset
     }
-    val mascotInstance = remember(modelLoader, mascotAsset) {
+    val mascotInstance = remember(modelLoader, protectedAssetLoader, mascotAsset) {
         mascotAsset?.let { path ->
             try {
-                modelLoader.createModelInstance(path)
+                protectedAssetLoader.loadModelInstance(modelLoader, path)
             } catch (_: Exception) {
                 null
             }

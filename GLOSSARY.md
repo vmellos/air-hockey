@@ -111,7 +111,7 @@ O alinhamento analítico da Câmera 3D Zenital que ancora a extremidade aberta d
 _Avoid_: Centralização vertical, câmera solta, offset fixo, topo flutuante
 
 **Kit de Ativos 3D**:
-A coleção integrada de arquivos binários glTF otimizados (`.glb`) composta por Mesa Temática, Disco Temático e Rebatedores P1/P2 correspondentes a uma identidade visual de Conjunto Temático Esportivo, carregada dinamicamente pelo motor Sceneview com fallback automático para o conjunto clássico.
+A coleção integrada de modelos tridimensionais composta por Mesa Temática, Disco Temático e Rebatedores P1/P2 correspondentes a uma identidade visual de Conjunto Temático Esportivo, carregada dinamicamente pelo motor Sceneview com fallback automático para o conjunto clássico.
 _Avoid_: Pasta de modelos, pack 3D, skins 3D, bundle glb
 
 **Apresentação de Abertura da Mesa 3D**:
@@ -584,13 +584,31 @@ O módulo declarativo de regras por `GameMode` que determina perspectiva da Mesa
 A interface estável observada pelos renderizadores 2D/3D e pelo HUD de partida para leitura instantânea de estado (`StateFlow<MatchState>`), captura de snapshot físico, drenagem de eventos de colisão e submissão de comandos do Rebatedor e pausa.
 
 **Catálogo de Presets e Kits da Arena (`ArenaPresetCatalog` / `ArenaKitCatalog`)**:
-Os dois módulos complementares de identidade visual e acústica: `ArenaPresetCatalog` provê em Kotlin puro os parâmetros acústicos, tiers da Conquista da Arena e presets canônicos de cada Mesa; `ArenaKitCatalog` concentra paletas 2D, recursos 3D (.glb) da Mesa, Disco, Rebatedor e estilos de sobreposição com liberdade local de escolha entre Aparelhos.
+Os dois módulos complementares de identidade visual e acústica: `ArenaPresetCatalog` provê em Kotlin puro os parâmetros acústicos, tiers da Conquista da Arena e presets canônicos de cada Mesa; `ArenaKitCatalog` concentra paletas 2D, identificadores de modelos 3D da Mesa, Disco, Rebatedor e estilos de sobreposição com liberdade local de escolha entre Aparelhos.
 
 **Base Vetorial da Câmera 3D (`CameraBasis3D`)**:
 A estrutura imutável pré-calculada por quadro em `Table3DCameraProjection` que reaproveita seno/cosseno de pitch/yaw e proporção de tela entre a projeção de partículas, o rastro do Disco e a desprojeção de toque para a Mesa.
 
 **Portas de Descoberta, Snapshot em Nuvem e Áudio (`LanDiscoveryPort`, `CloudSnapshotPort`, `AudioPlaybackPort`)**:
 Os pontos de acoplamento estreitos (*seams*) que isolam respectivamente a descoberta em rede local (`TableDiscoveryRegistry` com expiração em TTL de 7 segundos), o sincronismo atômico de progresso em nuvem (`PlayGamesSaveManager` em transação única de banco Room e DataStore) e a reprodução de áudio cuja síntese WAV executa integralmente fora da thread principal.
+
+## Proteção e Empacotamento de Ativos
+
+**Cofre de Ativos**:
+O repositório ofuscado e autenticado distribuído no pacote do aplicativo para armazenar os modelos 3D sob identificadores opacos, substituindo arquivos originais em texto puro.
+_Avoid_: Pasta raw, zip de modelos, assets abertos
+
+**Ativos Brutos**:
+Os arquivos originais de origem mantidos fora do pacote final da aplicação como entrada exclusiva da etapa de empacotamento protegido.
+_Avoid_: Assets crus, pasta assets direta, originais no APK
+
+**Caminho Canônico**:
+O identificador lógico de cada recurso no catálogo ao qual permanecem vinculadas a derivação de chave, a ofuscação de caminho e a autenticação em tempo de execução.
+_Avoid_: Nome físico do blob, caminho opaco, arquivo solto
+
+**Carregador Protegido de Ativos**:
+O componente responsável por decifrar e autenticar recursos do Cofre de Ativos diretamente em memória volátil e invalidar os buffers temporários logo após o consumo pelo motor gráfico, sem persistência em disco.
+_Avoid_: Extrator em cache, cache de modelos, asset loader padrão
 
 
 

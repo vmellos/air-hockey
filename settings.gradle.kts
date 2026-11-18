@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Air Hockey"
 include(":app")
+include(":asset-crypto")

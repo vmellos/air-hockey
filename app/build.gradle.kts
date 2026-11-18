@@ -1,4 +1,21 @@
+import java.io.ByteArrayInputStream
+import java.util.Arrays
 import java.util.Properties
+import javax.inject.Inject
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,6 +23,79 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
 }
+
+@CacheableTask
+abstract class PackageProtectedAssetsTask : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val rawAssetsDir: DirectoryProperty
+
+    @get:Classpath
+    abstract val packerClasspath: ConfigurableFileCollection
+
+    @get:Input
+    abstract val variantName: Property<String>
+
+    @get:Input
+    abstract val vaultSecret: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputAssetsDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val outputKotlinDir: DirectoryProperty
+
+    @get:Inject
+    abstract val execOperations: ExecOperations
+
+    @TaskAction
+    fun packageAssets() {
+        val assetsOut = outputAssetsDir.get().asFile
+        val kotlinOut = outputKotlinDir.get().asFile
+        val secretBytes = vaultSecret.get().toByteArray(Charsets.UTF_8)
+        try {
+            execOperations.javaexec {
+                classpath = packerClasspath
+                mainClass.set("dev.vmellos.airhockey.assetcrypto.AssetPackerCli")
+                args(
+                    "--input-dir", rawAssetsDir.get().asFile.absolutePath,
+                    "--output-assets-dir", assetsOut.absolutePath,
+                    "--output-kotlin-dir", kotlinOut.absolutePath,
+                    "--package", "dev.vmellos.airhockey.core.assets",
+                    "--class-name", "GeneratedAssetVaultKey",
+                    "--variant", variantName.get()
+                )
+                standardInput = ByteArrayInputStream(secretBytes)
+            }
+        } finally {
+            Arrays.fill(secretBytes, 0.toByte())
+        }
+    }
+}
+
+val assetPackerClasspath = configurations.create("assetPackerClasspath") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+val localPropsProvider = providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+    .asText
+    .map { text -> Properties().apply { text.reader().use { load(it) } } }
+    .orElse(Properties())
+
+val configuredVaultSecretProvider = providers.gradleProperty("ASSET_VAULT_SECRET")
+    .map { it.trim() }
+    .filter { it.isNotEmpty() }
+    .orElse(
+        localPropsProvider
+            .map { props -> props.getProperty("ASSET_VAULT_SECRET")?.trim().orEmpty() }
+            .filter { it.isNotEmpty() }
+    )
+    .orElse(
+        providers.environmentVariable("ASSET_VAULT_SECRET")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+    )
 
 android {
     namespace = "dev.vmellos.airhockey"
@@ -36,6 +126,12 @@ android {
     if (useProductionAds && (leaderboardEloId.isBlank() || leaderboardStagesId.isBlank())) {
         throw GradleException(
             "USE_PRODUCTION_ADS=true requires LEADERBOARD_ELO_ID and LEADERBOARD_STAGES_ID in local.properties or environment variables."
+        )
+    }
+
+    if (useProductionAds && !configuredVaultSecretProvider.isPresent) {
+        throw GradleException(
+            "USE_PRODUCTION_ADS=true requires ASSET_VAULT_SECRET in local.properties, Gradle property, or environment variables."
         )
     }
 
@@ -109,9 +205,37 @@ android {
         buildConfig = true
         resValues = true
     }
+    androidResources {
+        noCompress += "lpkg"
+    }
     testOptions {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
+    }
+}
+
+androidComponents {
+    val rawAssetsDirectory = layout.projectDirectory.dir("src/main/raw_assets")
+    val appNamespace = android.namespace ?: "dev.vmellos.airhockey"
+    onVariants { variant ->
+        val capName = variant.name.replaceFirstChar { it.uppercase() }
+        val variantSecret = configuredVaultSecretProvider.orElse(
+            "airhockey-local-vault-v1:$appNamespace:${variant.name}"
+        )
+        val packTask = tasks.register<PackageProtectedAssetsTask>("packageProtectedAssets$capName") {
+            rawAssetsDir.set(rawAssetsDirectory)
+            packerClasspath.from(assetPackerClasspath)
+            variantName.set(variant.name)
+            vaultSecret.set(variantSecret)
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            packTask,
+            PackageProtectedAssetsTask::outputAssetsDir
+        )
+        variant.sources.kotlin?.addGeneratedSourceDirectory(
+            packTask,
+            PackageProtectedAssetsTask::outputKotlinDir
+        )
     }
 }
 
@@ -120,6 +244,8 @@ room {
 }
 
 dependencies {
+    implementation(project(":asset-crypto"))
+    assetPackerClasspath(project(":asset-crypto"))
     implementation(libs.androidx.appcompat)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
